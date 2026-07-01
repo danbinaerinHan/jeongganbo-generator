@@ -414,33 +414,178 @@
     return out;
   }
 
-  // 한 칸(정간) 그리기: 공백=열 구분(오른쪽→왼쪽), 붙임=세로 쌓기
-  function drawCell(svg, x, yTop, cell, content) {
-    const cols = content.split(/\s+/).filter(Boolean);
-    if (!cols.length) return;
-    const nCols = cols.length;
-    const colToks = cols.map(tokenizeNotes);
-    const maxRows = Math.max.apply(null, colToks.map(function (t) { return t.length; }));
-    const fs = Math.min(cell * 0.58, (cell * 0.84) / nCols, (cell * 0.92) / maxRows);
-    const lineH = fs * 1.05;
-    for (let ci = 0; ci < nCols; ci++) {
-      const cx = x + cell * (ci + 0.5) / nCols;   // ci=0 → 왼쪽 열 (칸 안은 왼→오른쪽)
-      const toks = colToks[ci], n = toks.length;
-      let ty = yTop + cell / 2 - (lineH * n) / 2 + fs * 0.80;
-      for (const tk of toks) {
+  // ---------- 율명 이미지 매핑 ----------
+  // symbol_samples/notes/ 안에 실제로 존재하는 파일만 등록(gitignore로 커밋 제외).
+  const NOTE_DIR = "symbol_samples/notes/";
+  const NOTE_STEM = { 황: "hwang", 태: "tae", 협: "hyeop", 고: "go", 중: "joong",
+                      임: "lim", 이: "ee", 남: "nam", 무: "mu", 응: "eung" };
+  const OCT_SUFFIX = { "-3": "_ddd", "-2": "_dd", "-1": "_d", "0": "", "1": "_u", "2": "_uu" };
+  const NOTE_FILES = new Set([
+    "ee", "ee_d", "ee_dd", "eung", "eung_d", "go", "go_d", "go_u",
+    "hwang", "hwang_d", "hwang_d_ot", "hwang_dd_ot", "hwang_ot", "hwang_u", "hwang_u_ot", "hwang_uu",
+    "hyeop", "hyeop_d", "hyeop_dd", "hyeop_u", "joong", "joong_d", "joong_dd", "joong_u",
+    "lim", "lim_d", "lim_dd", "lim_ddd", "lim_u", "mu", "mu_d", "mu_dd", "mu_u",
+    "nam", "nam_d", "nam_dd", "nam_u", "tae", "tae_d", "tae_dd", "tae_u"
+  ]);
+
+  // base(한글 율명) + oct → 존재하는 파일명(stem) 또는 null(없으면 폰트로 대체)
+  function resolveNoteFile(base, oct) {
+    const stem = NOTE_STEM[base];
+    if (!stem) return null;
+    const suf = OCT_SUFFIX[String(oct)] || "";
+    const cands = [stem + suf, stem + suf + "_ot"];
+    for (const c of cands) if (NOTE_FILES.has(c)) return c;
+    return null;
+  }
+
+  // 이미지 캐시: 로드 성공 시 dataURL 저장(→ SVG 직렬화/PNG에 그대로 포함).
+  // 로컬 서버가 아니면 fetch가 막힐 수 있어, 그때는 상대경로로 화면 표시만 하고 PNG 포함은 생략.
+  let noteMode = "font";
+  const noteImgCache = {};      // file -> dataURL
+  const noteImgTried = {};      // file -> true (중복 요청 방지)
+  let noteImgFailed = false;
+  let reRenderPending = false;
+
+  function scheduleReRender() {
+    if (reRenderPending) return;
+    reRenderPending = true;
+    setTimeout(function () { reRenderPending = false; render(); }, 60);
+  }
+
+  function preloadNoteImage(file) {
+    if (noteImgCache[file] || noteImgTried[file]) return;
+    noteImgTried[file] = true;
+    fetch(NOTE_DIR + file + ".png")
+      .then(function (r) { return r.ok ? r.blob() : Promise.reject(); })
+      .then(function (b) {
+        return new Promise(function (res, rej) {
+          const fr = new FileReader();
+          fr.onload = function () { res(fr.result); };
+          fr.onerror = rej;
+          fr.readAsDataURL(b);
+        });
+      })
+      .then(function (url) { noteImgCache[file] = url; scheduleReRender(); })
+      .catch(function () { noteImgFailed = true; });
+  }
+
+  // 화면 표시용 href: 캐시에 dataURL이 있으면 그것을, 없으면 상대경로(+백그라운드 프리로드)
+  function noteImageHref(file) {
+    if (window.NOTE_DATA && window.NOTE_DATA[file]) return window.NOTE_DATA[file];
+    if (noteImgCache[file]) return noteImgCache[file];
+    preloadNoteImage(file);
+    return NOTE_DIR + file + ".png";
+  }
+
+  // ---------- 율명 이미지 팔레트 ----------
+  // 입력 가능한 옥타브(청/기본/배/배탁)와 멜로디에 넣을 입력 접두어
+  const OCT_INPUT = [
+    { oct: 1, prefix: "청" },
+    { oct: 0, prefix: "" },
+    { oct: -1, prefix: "배" },
+    { oct: -2, prefix: "배탁" }
+  ];
+  const NOTE_ORDER = ["황", "태", "협", "고", "중", "임", "이", "남", "무", "응"];
+
+  // 커서 위치에 토큰(율명 텍스트) 삽입
+  function insertToken(txt) {
+    const ta = $("melody");
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.setRangeText(txt, s, e, "end");
+    ta.focus();
+    ta.dispatchEvent(new Event("input"));
+  }
+
+  function showPaletteError() {
+    const wrap = $("notePalette");
+    if (!wrap || wrap.querySelector(".pmsg")) return;
+    const msg = document.createElement("div");
+    msg.className = "pmsg err";
+    msg.textContent = "이미지를 불러올 수 없습니다. 폴더를 로컬 서버로 열어주세요 (iCloud 밖 권장).";
+    wrap.prepend(msg);
+  }
+
+  // 사용 가능한 율명 이미지를 미리보기로 나열(클릭 시 멜로디에 입력)
+  function buildPalette() {
+    const wrap = $("notePalette");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    let probed = false;
+    NOTE_ORDER.forEach(function (base) {
+      OCT_INPUT.forEach(function (oi) {
+        const file = resolveNoteFile(base, oi.oct);
+        if (!file) return;
+        const label = oi.prefix + base;
+        const item = document.createElement("div");
+        item.className = "pi";
+        item.title = "‘" + label + "’ 입력";
+        const img = document.createElement("img");
+        img.src = (window.NOTE_DATA && window.NOTE_DATA[file]) ? window.NOTE_DATA[file] : NOTE_DIR + file + ".png";
+        img.alt = label;
+        if (!probed) { probed = true; img.addEventListener("error", showPaletteError); }
+        const cap = document.createElement("span");
+        cap.textContent = label;
+        item.appendChild(img);
+        item.appendChild(cap);
+        item.addEventListener("click", function () { insertToken(label); });
+        wrap.appendChild(item);
+      });
+    });
+  }
+
+  // 한 칸(정간) 그리기: 공백=줄바꿈(행, 위→아래 / 2분박·3분박…), 붙임=가로 배치(왼→오른쪽)
+  function drawCell(svg, x, yTop, cell, content, uniformSmall) {
+    const rows = content.split(/\s+/).filter(Boolean);
+    if (!rows.length) return;
+    const nRows = rows.length;
+    const rowToks = rows.map(tokenizeNotes);
+    const maxCols = Math.max.apply(null, rowToks.map(function (t) { return t.length; }));
+
+    // 글자 크기는 정간별이 아니라 곡 전체 기준으로 통일한다.
+    // - 어느 정간이든 2행 이상이 하나라도 있으면(uniformSmall) 전부 3행 기준의 작은 크기
+    // - 곡 전체가 모두 1행이면 큰 크기 유지
+    // - 한 정간에 가로로 여러 글자면 넘침 방지로만 추가 축소
+    const ROWS_REF = 3;
+    let gs = uniformSmall ? (cell * 0.90) / ROWS_REF : cell * 0.60;
+    if (maxCols > 1) gs = Math.min(gs, (cell * 0.86) / maxCols);
+
+    const rowH = cell / nRows;
+    for (let ri = 0; ri < nRows; ri++) {
+      const cyc = yTop + rowH * (ri + 0.5);        // 행 세로 중심 (ri=0 위)
+      const toks = rowToks[ri], n = toks.length;
+      const colW = cell / n;
+      for (let ci = 0; ci < n; ci++) {
+        const cx = x + colW * (ci + 0.5);          // 왼 → 오른쪽
+        const tk = toks[ci];
+        const file = (noteMode === "image" && tk.literal == null)
+          ? resolveNoteFile(tk.base, tk.oct) : null;
+
+        if (file) {
+          // 이미지 모드: 옥타브 표기가 그림에 이미 포함 → 점을 따로 그리지 않음.
+          const box = Math.min(gs * 1.32, rowH * 0.96, colW * 0.96);
+          const href = noteImageHref(file);
+          const im = el("image", {
+            x: cx - box / 2, y: cyc - box / 2, width: box, height: box,
+            preserveAspectRatio: "xMidYMid meet"
+          });
+          im.setAttribute("href", href);
+          im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
+          svg.appendChild(im);
+          continue;
+        }
+
+        // 폰트 모드(또는 이미지 없는 음): 한자 + 옥타브 점
         const ch = tk.literal != null ? tk.literal : (YUL[tk.base] || tk.base);
-        const t = el("text", { x: cx, y: ty, "text-anchor": "middle",
-          "font-size": fs, "font-family": CJK, fill: "#111" });
+        const t = el("text", { x: cx, y: cyc + gs * 0.34, "text-anchor": "middle",
+          "font-size": gs, "font-family": CJK, fill: "#111" });
         t.textContent = ch; svg.appendChild(t);
-        if (tk.oct) {   // 옥타브 점 표기 (청=위, 배=아래, 두 옥타브=점2개)
-          const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.28, fs * 0.075);
-          const dxp = cx + fs * 0.40;
+        if (tk.oct) {   // 옥타브 점 (청=위, 배=아래, 두 옥타브=2개)
+          const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.26, gs * 0.07);
           for (let d = 0; d < dots; d++) {
-            const dy = up ? (ty - fs * 0.58 - d * r * 3) : (ty + fs * 0.10 + d * r * 3);
-            svg.appendChild(el("circle", { cx: dxp, cy: dy, r: r, fill: "#111" }));
+            const dy = up ? (cyc - gs * 0.52 - d * r * 3) : (cyc + gs * 0.52 + d * r * 3);
+            svg.appendChild(el("circle", { cx: cx, cy: dy, r: r, fill: "#111" }));
           }
         }
-        ty += lineH;
       }
     }
   }
@@ -471,7 +616,8 @@
     const desiredSubOff = parseFloat($("subOffset").value) || 0;
     const titleFontFam = $("titleFont").value || CJK;
 
-    const svg = el("svg", { viewBox: `0 0 ${PAGE_W} ${PAGE_H}`, xmlns: NS });
+    const svg = el("svg", { viewBox: `0 0 ${PAGE_W} ${PAGE_H}`, xmlns: NS,
+      "xmlns:xlink": "http://www.w3.org/1999/xlink" });
     svg.appendChild(rect(0, 0, PAGE_W, PAGE_H, 0, { fill: "#fff", stroke: "none" }));
 
     const frameX = MARGIN, frameY = MARGIN;
@@ -609,6 +755,9 @@
   function downloadPng() {
     const svg = $("sheet").querySelector("svg");
     if (!svg) return;
+    if (noteMode === "image" && noteImgFailed) {
+      alert("율명 이미지를 PNG에 담으려면 로컬 서버로 열어야 합니다.\n예) 폴더에서  python3 -m http.server  실행 후 http://localhost:8000 접속.\n\n지금은 파일을 직접 연 상태라 이미지가 빠진 채 저장될 수 있어요.");
+    }
     const xml = new XMLSerializer().serializeToString(svg);
     const svg64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
     const img = new Image();
