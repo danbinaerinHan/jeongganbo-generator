@@ -49,6 +49,7 @@
     font-family: inherit;
   }
   .field input:disabled { background: #f2f0ec; color: var(--muted); }
+  .field input[type="range"] { width: 100%; padding: 0; accent-color: var(--accent); cursor: pointer; }
   .field select {
     width: 100%; padding: 8px 10px; border: 1px solid var(--line);
     border-radius: 6px; font-size: 14px; font-family: inherit; background: #fff; cursor: pointer;
@@ -106,16 +107,38 @@
   .btns button.secondary { background: #fff; color: var(--accent); }
   .btns button:hover { opacity: .9; }
 
-  /* ---------- 미리보기 ---------- */
-  #main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
-  #sheet { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
-  #sheet svg { display: block; height: 88vh; width: auto; }
+  /* ---------- 미리보기 + 멜로디 에디터 ---------- */
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  #sheetArea { position: relative; flex: 1 1 auto; min-height: 0; display: flex;
+               align-items: flex-start; justify-content: center; padding: 16px; overflow: auto; }
+  #sheet { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18);
+           transform-origin: top center; transition: transform .08s ease; }
+  #sheet svg { display: block; height: calc(100vh - 210px); width: auto; }
+
+  #zoomBar { position: absolute; top: 12px; left: 14px; z-index: 5;
+             display: flex; align-items: center; gap: 3px;
+             background: rgba(255,255,255,.94); border: 1px solid var(--line);
+             border-radius: 9px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  #zoomBar button { min-width: 27px; height: 27px; border: none; background: transparent;
+                    font-size: 16px; line-height: 1; cursor: pointer; border-radius: 6px; color: var(--ink); }
+  #zoomBar button:hover { background: #eee; }
+  #zoomBar .zval { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); }
+  #zoomBar .fit { font-size: 12px; padding: 0 8px; }
+  #melodyArea { flex: 0 0 auto; border-top: 1px solid var(--line);
+                background: var(--panel); padding: 10px 14px 14px; }
+  .melody-head { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+  .melody-head .mono { color: var(--muted); font-weight: 400;
+                       font-family: ui-monospace, Menlo, monospace; margin-left: 4px; }
+  .melody-head #melodyInfo { color: var(--muted); font-weight: 400; margin-left: 8px; }
+  #melody { width: 100%; height: 118px; resize: vertical; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar { display: none !important; }
-    #main { display: block; padding: 0; overflow: visible; }
-    #sheet { box-shadow: none; }
+    #sidebar, #melodyArea, #zoomBar { display: none !important; }
+    #main, #sheetArea { display: block; padding: 0; overflow: visible; }
+    #sheet { box-shadow: none; transform: none !important; }
     #sheet svg { height: 297mm; width: 210mm; }
     @page { size: A4 portrait; margin: 0; }
   }
@@ -152,6 +175,12 @@
       <label for="daegang">대강 분절 (선택)</label>
       <input type="text" id="daegang" placeholder="예: 3 3 3 3">
       <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
+    </div>
+
+    <div class="field">
+      <label for="sizeScale">정간 크기 배율 (노인모드) — <span id="sizeScaleVal">1.0×</span></label>
+      <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
+      <div class="hint">격자 전체(정간·간격)를 키우거나 줄임. A4를 넘으면 자동으로 맞춰집니다. 화면만 크게 보려면 미리보기 왼쪽 위 <b>확대 버튼</b>을 쓰세요.</div>
     </div>
 
     <!-- ===== 세부 조정 (제목 위) ===== -->
@@ -235,7 +264,21 @@
   </aside>
 
   <main id="main">
-    <div id="sheet"></div>
+    <div id="sheetArea">
+      <div id="zoomBar">
+        <button id="zoomOut" title="축소">−</button>
+        <span class="zval" id="zoomVal">100%</span>
+        <button id="zoomIn" title="확대">+</button>
+        <button id="zoomFit" class="fit" title="화면 맞춤">맞춤</button>
+      </div>
+      <div id="sheet"></div>
+    </div>
+    <div id="melodyArea">
+      <div class="melody-head">멜로디 <span class="mono">| 정간 · || 각</span>
+        <span id="melodyInfo"></span></div>
+      <textarea id="melody" spellcheck="false"
+        placeholder="정간(칸)을 클릭하면 해당 칸으로 커서가 이동합니다. | 로 정간, || 로 각을 구분."></textarea>
+    </div>
   </main>
 
 <script>
@@ -293,6 +336,115 @@
     return { g, endY: y };
   }
 
+  // ---------- 멜로디(내용) 레이어 ----------
+  // 인코딩 문자열을 각[][] (각마다 {text,start,end} 칸 배열)로 파싱. start/end=원본 문자 위치.
+  function parseMelodyOffsets(text) {
+    const gaks = [];
+    let cur = [], cellText = "", cellBeg = 0, i = 0;
+    const pushCell = (endIdx) => { cur.push({ text: cellText.trim(), start: cellBeg, end: endIdx }); cellText = ""; };
+    while (i < text.length) {
+      if (text[i] === "|" && text[i + 1] === "|") { pushCell(i); gaks.push(cur); cur = []; i += 2; cellBeg = i; }
+      else if (text[i] === "|") { pushCell(i); i += 1; cellBeg = i; }
+      else { cellText += text[i]; i += 1; }
+    }
+    pushCell(i); gaks.push(cur);
+    return gaks;
+  }
+
+  // 현재 폼의 구조(정간수, 총 각 수 등). reconcile/render 매핑 공용.
+  function formStructure() {
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const gakPerRow = Math.max(1, parseInt($("gakPerRow").value) || 1);
+    const autoStack = stackFor(beats);
+    const stack = $("stackAuto").checked ? autoStack
+      : Math.max(1, Math.min(12, parseInt($("stackCount").value) || autoStack));
+    let titleGak = 0;
+    if ($("title").value.trim()) {
+      titleGak = gakPerRow >= 6 ? 2 : 1;
+      if (gakPerRow - titleGak < 1) titleGak = Math.max(0, gakPerRow - 1);
+    }
+    const totalGak = (gakPerRow - titleGak) + gakPerRow * (stack - 1);
+    return { beats, gakPerRow, stack, titleGak, totalGak };
+  }
+
+  // 폼 변경 시: 멜로디 텍스트를 새 구조에 맞춰 재구성(내용 보존, 칸 수만 맞춤).
+  function reconcileMelody() {
+    const { beats, totalGak } = formStructure();
+    const parsed = parseMelodyOffsets($("melody").value);
+    const lines = [];
+    for (let g = 0; g < totalGak; g++) {
+      const cells = [];
+      for (let c = 0; c < beats; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
+      lines.push(cells.join(" | "));
+    }
+    const next = lines.join(" ||\n");
+    if (next !== $("melody").value) $("melody").value = next;
+  }
+
+  // 정간 클릭 → 텍스트박스의 해당 칸으로 커서 이동
+  function jumpToCell(gi, ci) {
+    const ta = $("melody");
+    const parsed = parseMelodyOffsets(ta.value);
+    const cell = parsed[gi] && parsed[gi][ci];
+    ta.focus();
+    if (cell) ta.setSelectionRange(cell.start, cell.end);
+  }
+
+  // ---------- 율명(한글→한자) 변환 ----------
+  const YUL = { 황: "黃", 대: "大", 태: "太", 협: "夾", 고: "姑", 중: "仲",
+                유: "蕤", 임: "林", 이: "夷", 남: "南", 무: "無", 응: "應" };
+  const BASESET = new Set(Object.keys(YUL));
+  const PRE2 = ["배탁", "하배"];   // 두 옥타브 아래
+  const PRE1U = ["청"];            // 한 옥타브 위
+  const PRE1D = ["배", "탁"];      // 한 옥타브 아래
+
+  // 공백 없는 문자열 → 음표 토큰 배열 [{base,oct} | {literal}]
+  function tokenizeNotes(str) {
+    const a = Array.from(str), out = [];
+    let i = 0;
+    while (i < a.length) {
+      const two = a[i] + (a[i + 1] || "");
+      if (PRE2.indexOf(two) >= 0 && BASESET.has(a[i + 2])) { out.push({ base: a[i + 2], oct: -2 }); i += 3; continue; }
+      const one = a[i];
+      if (PRE1U.indexOf(one) >= 0 && BASESET.has(a[i + 1])) { out.push({ base: a[i + 1], oct: 1 }); i += 2; continue; }
+      if (PRE1D.indexOf(one) >= 0 && BASESET.has(a[i + 1])) { out.push({ base: a[i + 1], oct: -1 }); i += 2; continue; }
+      if (BASESET.has(one)) { out.push({ base: one, oct: 0 }); i += 1; continue; }
+      out.push({ literal: one }); i += 1;   // 한자/기호 등 그대로 통과
+    }
+    return out;
+  }
+
+  // 한 칸(정간) 그리기: 공백=열 구분(오른쪽→왼쪽), 붙임=세로 쌓기
+  function drawCell(svg, x, yTop, cell, content) {
+    const cols = content.split(/\s+/).filter(Boolean);
+    if (!cols.length) return;
+    const nCols = cols.length;
+    const colToks = cols.map(tokenizeNotes);
+    const maxRows = Math.max.apply(null, colToks.map(function (t) { return t.length; }));
+    const fs = Math.min(cell * 0.58, (cell * 0.84) / nCols, (cell * 0.92) / maxRows);
+    const lineH = fs * 1.05;
+    for (let ci = 0; ci < nCols; ci++) {
+      const cx = x + cell * (ci + 0.5) / nCols;   // ci=0 → 왼쪽 열 (칸 안은 왼→오른쪽)
+      const toks = colToks[ci], n = toks.length;
+      let ty = yTop + cell / 2 - (lineH * n) / 2 + fs * 0.80;
+      for (const tk of toks) {
+        const ch = tk.literal != null ? tk.literal : (YUL[tk.base] || tk.base);
+        const t = el("text", { x: cx, y: ty, "text-anchor": "middle",
+          "font-size": fs, "font-family": CJK, fill: "#111" });
+        t.textContent = ch; svg.appendChild(t);
+        if (tk.oct) {   // 옥타브 점 표기 (청=위, 배=아래, 두 옥타브=점2개)
+          const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.28, fs * 0.075);
+          const dxp = cx + fs * 0.40;
+          for (let d = 0; d < dots; d++) {
+            const dy = up ? (ty - fs * 0.58 - d * r * 3) : (ty + fs * 0.10 + d * r * 3);
+            svg.appendChild(el("circle", { cx: dxp, cy: dy, r: r, fill: "#111" }));
+          }
+        }
+        ty += lineH;
+      }
+    }
+  }
+
   function render() {
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const gakPerRow = Math.max(1, parseInt($("gakPerRow").value) || 1);
@@ -308,9 +460,11 @@
     const wantHeader = $("header").checked;
     const dg = parseDaegang($("daegang").value, beats);
 
-    const desiredCell = Math.max(2, parseFloat($("cellSize").value) || 11);
-    const desiredGap = Math.max(0, parseFloat($("gakGap").value) || 0);
-    const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0);
+    const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
+    $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
+    const desiredCell = Math.max(2, parseFloat($("cellSize").value) || 11) * sizeScale;
+    const desiredGap = Math.max(0, parseFloat($("gakGap").value) || 0) * sizeScale;
+    const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0) * sizeScale;
     const desiredTitle = Math.max(1, parseFloat($("titleSize").value) || 10);
     const desiredTitleOff = parseFloat($("titleOffset").value) || 0;
     const desiredSub = Math.max(1, parseFloat($("subSize").value) || 5);
@@ -355,6 +509,10 @@
     svg.appendChild(rect(gridX - INNER_PAD, gridY - INNER_PAD,
       gridTotalW + 2 * INNER_PAD, gridTotalH + 2 * INNER_PAD, T_FRAME));
 
+    // 멜로디(내용) 파싱 + 각 매핑 누적자
+    const parsed = parseMelodyOffsets($("melody").value);
+    let gakAccum = 0;
+
     for (let b = 0; b < stack; b++) {
       const bandTop = gridY + b * (bandH + bandGap);
       const gridTop = bandTop + headH;
@@ -370,7 +528,7 @@
       // 머리단: 가로로 쭉 이어진 빈 칸(세로선 없음). 위 선은 전체 폭.
       if (wantHeader) svg.appendChild(line(gridX, bandTop, bandRight, bandTop, T_THICK));
 
-      // 각마다: 좌우 세로선 + 얇은 정간 가로선 (정간 격자 구간에만)
+      // 각마다: 좌우 세로선 + 얇은 정간 가로선 (정간 격자 구간에만) + 음표/클릭영역
       for (let g = 0; g < musicGak; g++) {
         const x = gridX + g * slot;
         svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
@@ -379,7 +537,21 @@
           if (dgSet.has(i)) continue;
           svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
         }
+        // 이 각이 담당하는 멜로디 각 (오른쪽→왼쪽 읽기)
+        const melIdx = gakAccum + (musicGak - 1 - g);
+        const gakCells = parsed[melIdx];
+        for (let j = 0; j < beats; j++) {
+          const cyTop = gridTop + j * cell;
+          const hit = rect(x, cyTop, cell, cell, 0,
+            { fill: "transparent", stroke: "none", "pointer-events": "all" });
+          hit.style.cursor = "text";
+          (function (gi, ci) { hit.addEventListener("click", function () { jumpToCell(gi, ci); }); })(melIdx, j);
+          svg.appendChild(hit);
+          const content = gakCells && gakCells[j] ? gakCells[j].text : "";
+          if (content) drawCell(svg, x, cyTop, cell, content);
+        }
       }
+      gakAccum += musicGak;   // 다음 밴드의 멜로디 각 시작 인덱스
 
       // 통줄 가로선 — 격자 상/하단은 제목까지 포함해 전체 폭으로 이어짐
       svg.appendChild(line(gridX, gridTop, bandRight, gridTop, T_THICK));
@@ -460,17 +632,38 @@
     img.src = svg64;
   }
 
-  $("beats").addEventListener("input", () => { fillDaegangPreset(); render(); });
-  ["gakPerRow", "stackCount", "stackAuto", "cellSize", "gakGap", "bandGap",
-   "daegang", "title", "subtitle", "titleSize", "titleOffset",
+  function onFormChange() { reconcileMelody(); render(); }
+
+  // 구조(칸 수)에 영향을 주는 입력 → 멜로디 재구성 후 렌더
+  $("beats").addEventListener("input", () => { fillDaegangPreset(); onFormChange(); });
+  ["gakPerRow", "stackCount", "stackAuto", "title"].forEach(id => {
+    $(id).addEventListener("input", onFormChange);
+    $(id).addEventListener("change", onFormChange);
+  });
+  // 모양만 바꾸는 입력 → 렌더만
+  ["cellSize", "gakGap", "bandGap", "sizeScale", "daegang", "subtitle", "titleSize", "titleOffset",
    "subSize", "subOffset", "titleFont", "header"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
+
+  // 보기 확대/축소 (화면만, 출력에는 영향 없음)
+  let viewZoom = 1;
+  function applyZoom() {
+    $("sheet").style.transform = "scale(" + viewZoom + ")";
+    $("zoomVal").textContent = Math.round(viewZoom * 100) + "%";
+  }
+  $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(3, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
+  $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
+  $("zoomFit").addEventListener("click", () => { viewZoom = 1; applyZoom(); });
+  applyZoom();
+  // 멜로디 편집 → 렌더만 (텍스트박스는 건드리지 않음)
+  $("melody").addEventListener("input", render);
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => window.print());
 
   fillDaegangPreset();
+  reconcileMelody();
   render();
 })();
 </script>
