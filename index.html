@@ -205,14 +205,21 @@
     <div class="field">
       <label for="subtitle">부제 (선택)</label>
       <input type="text" id="subtitle" placeholder="예: (한숨정)">
+      <div class="mini">
+        <span>크기</span>
+        <input type="number" id="subSize" min="1" max="20" step="0.5" value="5">
+        <span>위치</span>
+        <input type="number" id="subOffset" step="1" value="0">
+        <span class="u">mm</span>
+      </div>
       <div class="hint">제목 아래에 작은 글씨로 들어감.</div>
     </div>
     <div class="field">
       <label for="titleFont">제목 글씨체</label>
       <select id="titleFont">
+        <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
         <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
         <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
-        <option value="'GungSeo','궁서','Batang',serif">궁서체(붓글씨)</option>
         <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
         <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
       </select>
@@ -306,6 +313,8 @@
     const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0);
     const desiredTitle = Math.max(1, parseFloat($("titleSize").value) || 10);
     const desiredTitleOff = parseFloat($("titleOffset").value) || 0;
+    const desiredSub = Math.max(1, parseFloat($("subSize").value) || 5);
+    const desiredSubOff = parseFloat($("subOffset").value) || 0;
     const titleFontFam = $("titleFont").value || CJK;
 
     const svg = el("svg", { viewBox: `0 0 ${PAGE_W} ${PAGE_H}`, xmlns: NS });
@@ -393,8 +402,8 @@
         svg.appendChild(tt.g);
 
         if (subTxt) {
-          const subFont = titleFont * 0.5;
-          const subStart = tt.endY + titleFont * 0.6 + subFont;
+          const subFont = Math.min(desiredSub * scale, (panelRight - panelX) * 0.72);
+          const subStart = tt.endY + titleFont * 0.5 + subFont + desiredSubOff * scale;
           if (subStart < gridBottom) {
             const st = verticalText(cx, subStart, subTxt, subFont, 400, "#333", titleFontFam);
             svg.appendChild(st.g);
@@ -453,7 +462,8 @@
 
   $("beats").addEventListener("input", () => { fillDaegangPreset(); render(); });
   ["gakPerRow", "stackCount", "stackAuto", "cellSize", "gakGap", "bandGap",
-   "daegang", "title", "subtitle", "titleSize", "titleOffset", "titleFont", "header"].forEach(id => {
+   "daegang", "title", "subtitle", "titleSize", "titleOffset",
+   "subSize", "subOffset", "titleFont", "header"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
