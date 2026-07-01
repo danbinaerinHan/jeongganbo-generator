@@ -132,9 +132,10 @@
   #main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
   #sheetArea { position: relative; flex: 1 1 auto; min-height: 0; display: flex;
                align-items: flex-start; justify-content: center; padding: 16px; overflow: auto; }
-  #sheet { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18);
-           transform-origin: top center; transition: transform .08s ease; }
-  #sheet svg { display: block; height: calc(100vh - 210px); width: auto; }
+  #sheet { transform-origin: top center; transition: transform .08s ease;
+           display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .page { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+  .page svg { display: block; height: calc(100vh - 230px); width: auto; }
 
   #zoomBar { position: absolute; top: 12px; left: 14px; z-index: 5;
              display: flex; align-items: center; gap: 3px;
@@ -202,13 +203,16 @@
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar, #melodyArea, #zoomBar { display: none !important; }
+    #sidebar, #melodyArea, #zoomBar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; }
-    #sheet { box-shadow: none; transform: none !important; }
-    #sheet svg { height: 297mm; width: 210mm; }
-    @page { size: A4 portrait; margin: 0; }
+    #sheet { transform: none !important; display: block; gap: 0; }
+    .page { box-shadow: none; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .page svg { width: 210mm; height: 297mm; }
+    body.landscape .page svg { width: 297mm; height: 210mm; }
   }
 </style>
+<style id="pageStyle">@page { size: A4 portrait; margin: 0; }</style>
 </head>
 <body>
   <aside id="sidebar">
@@ -220,129 +224,163 @@
       <button type="button" id="sidebarToggle" class="side-toggle" title="설정 폼 접기">✕</button>
     </div>
 
-    <!-- ===== 주요 설정 ===== -->
-    <div class="field">
-      <label for="beats">① 한 각의 정간 수 (몇 박)</label>
-      <input type="number" id="beats" min="1" max="64" value="12">
-      <div class="hint">한 각(세로줄)에 들어갈 정간(칸)의 개수 = 몇 박 장단인지.</div>
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="doc">문서</button>
+      <button type="button" class="tab" data-tab="layout">레이아웃</button>
+      <button type="button" class="tab" data-tab="out">출력</button>
     </div>
 
-    <div class="field">
-      <label for="gakPerRow">② 한 줄에 놓을 각 수 (가로)</label>
-      <input type="number" id="gakPerRow" min="1" max="40" value="10">
-      <div class="hint">한 밴드(가로 한 줄)에 오른쪽→왼쪽으로 나란히 놓을 각의 개수 (기본 10).</div>
-    </div>
-
-    <div class="field">
-      <label for="stackCount">③ 세로로 쌓을 밴드 수 (최대)</label>
-      <div class="row">
-        <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
-        <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
+    <!-- ===== 문서 ===== -->
+    <div class="tabpanel active" data-tab="doc">
+      <div class="field">
+        <label for="orientation">종이 방향</label>
+        <select id="orientation">
+          <option value="portrait" selected>세로 (Portrait)</option>
+          <option value="landscape">가로 (Landscape)</option>
+        </select>
+        <div class="hint">A4 세로/가로. 가로로 하면 한 줄에 더 많은 각이 들어갑니다.</div>
       </div>
-      <div class="hint">한 페이지에 세로로 <b>최대</b> 몇 줄(밴드)까지 쌓을지. 자동: 정간 수에 따라 (&gt;12→1, 6~12→2, ≤5→3).</div>
-    </div>
-
-    <div class="field">
-      <label for="gakCount">④ 총 각 수 (마디 수)</label>
-      <div class="row">
-        <input type="number" id="gakCount" min="1" max="480" value="18" style="flex:1;">
-        <label class="chk"><input type="checkbox" id="gakCountAuto"> 자동</label>
-      </div>
-      <div class="hint">실제로 그릴 각(마디)의 총 개수. 직접 넣기 전까지는 위 설정대로 <b>한 페이지를 꽉 채웁니다</b>. 자동 체크 시 멜로디의 각(‖) 개수만큼만 생성합니다.</div>
-    </div>
-
-    <div class="field">
-      <label for="daegang">대강 분절 (선택)</label>
-      <input type="text" id="daegang" placeholder="예: 3 3 3 3">
-      <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
-    </div>
-
-    <!-- ===== 크기 · 간격 ===== -->
-    <div class="sec">크기 · 간격</div>
-    <div class="sizebox">
-      <div class="field slider-field">
-        <label for="sizeScale">전체 배율 <small>정간·간격 한번에</small> — <span id="sizeScaleVal">1.0×</span></label>
-        <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
-        <div class="hint">격자 전체를 한번에 키우거나 줄임. A4를 넘으면 자동 맞춤. 아래 세부 조정으로 항목별 미세 조정을 할 수 있어요. (화면만 크게 보려면 왼쪽 위 <b>확대</b> 버튼)</div>
-      </div>
-
-      <details class="adv">
-        <summary>
-          <span class="lbl">⚙︎ 항목별 세부 조정 <small>각 너비 · 간격 · 머리단</small></span>
-          <span class="chev">▾</span>
-        </summary>
 
       <div class="field">
-        <label for="cellSize">각(정간 칸) 너비 (mm)</label>
-        <input type="number" id="cellSize" min="4" max="30" step="0.5" value="11">
-        <div class="hint">정간 한 칸의 크기(정사각형). 각의 너비이기도 함.</div>
+        <label for="beats">한 각의 정간 수 (몇 박)</label>
+        <input type="number" id="beats" min="1" max="64" value="12">
+        <div class="hint">한 각(세로줄)에 들어갈 정간(칸)의 개수 = 몇 박 장단인지.</div>
       </div>
 
-      <div class="two">
-        <div class="field">
-          <label for="gakGap">각 사이 간격 (mm)</label>
-          <input type="number" id="gakGap" min="0" max="40" step="0.5" value="7">
-        </div>
-        <div class="field">
-          <label for="bandGap">열 사이 간격 (mm)</label>
-          <input type="number" id="bandGap" min="0" max="60" step="0.5" value="10">
-        </div>
+      <div class="field">
+        <label for="daegang">대강 분절 (선택)</label>
+        <input type="text" id="daegang" placeholder="예: 3 3 3 3">
+        <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
       </div>
 
-      <div class="field" style="margin-bottom:4px;">
+      <div class="sec">제목</div>
+      <div class="field">
+        <label for="title">곡 제목</label>
+        <input type="text" id="title" placeholder="예: 언편">
+        <div class="mini">
+          <span>크기</span>
+          <input type="number" id="titleSize" min="2" max="30" step="0.5" value="10">
+          <span>위치</span>
+          <input type="number" id="titleOffset" step="1" value="0">
+          <span class="u">mm</span>
+        </div>
+        <div class="hint">첫 장 맨 처음(오른쪽) 세로 칸에 큰 글씨로 들어감.</div>
+      </div>
+      <div class="field">
+        <label for="subtitle">부제 (선택)</label>
+        <input type="text" id="subtitle" placeholder="예: (한숨정)">
+        <div class="mini">
+          <span>크기</span>
+          <input type="number" id="subSize" min="1" max="20" step="0.5" value="5">
+          <span>위치</span>
+          <input type="number" id="subOffset" step="1" value="0">
+          <span class="u">mm</span>
+        </div>
+        <div class="hint">제목 아래에 작은 글씨로 들어감.</div>
+      </div>
+      <div class="field">
+        <label for="titleFont">제목 글씨체</label>
+        <select id="titleFont">
+          <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+          <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+          <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+          <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+          <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+        </select>
+        <div class="hint">제목·부제에 적용. 시스템에 설치된 글꼴만 표시되며, 없으면 기본 글꼴로 대체됩니다.</div>
+      </div>
+    </div>
+
+    <!-- ===== 레이아웃 ===== -->
+    <div class="tabpanel" data-tab="layout">
+      <div class="field">
+        <label for="gakPerRow">한 줄에 놓을 각 수 (가로)</label>
+        <input type="number" id="gakPerRow" min="1" max="40" value="10">
+        <div class="hint">한 밴드(가로 한 줄)에 오른쪽→왼쪽으로 나란히 놓을 각의 개수 (기본 10).</div>
+      </div>
+
+      <div class="field">
+        <label for="stackCount">세로로 쌓을 밴드 수 (최대)</label>
+        <div class="row">
+          <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
+          <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
+        </div>
+        <div class="hint">한 페이지에 세로로 <b>최대</b> 몇 줄(밴드)까지 쌓을지. 자동: 정간 수에 따라 (&gt;12→1, 6~12→2, ≤5→3).</div>
+      </div>
+
+      <div class="field">
+        <label for="gakCount">총 각 수 (마디 수)</label>
+        <div class="row">
+          <input type="number" id="gakCount" min="1" max="480" value="18" style="flex:1;">
+          <label class="chk"><input type="checkbox" id="gakCountAuto"> 자동</label>
+        </div>
+        <div class="hint">실제로 그릴 각(마디)의 총 개수. 직접 넣기 전까지는 위 설정대로 <b>한 페이지를 꽉 채웁니다</b>. 넘치면 다음 페이지로 이어집니다. 자동 체크 시 멜로디의 각(‖) 개수만큼만.</div>
+      </div>
+
+      <div class="field">
         <label class="chk" style="font-size:13px; font-weight:600;">
-          <input type="checkbox" id="header"> 각 밴드 위에 이름 칸(머리단) 두기
+          <input type="checkbox" id="frame" checked> 바깥 테두리(가장 큰 박스) 그리기
         </label>
-        <div class="hint">각 열 위에 가로로 이어진 빈 칸을 추가 (악절 이름 등 기입용).</div>
+        <div class="hint">격자 전체를 감싸는 굵은 사각 테두리. 끄면 테두리 없이 격자만 남습니다.</div>
       </div>
 
-      <div class="hint" style="margin-top:2px;">A4 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
-      </details>
-    </div>
+      <div class="sec">크기 · 간격</div>
+      <div class="sizebox">
+        <div class="field slider-field">
+          <label for="sizeScale">전체 배율 <small>정간·간격 한번에</small> — <span id="sizeScaleVal">1.0×</span></label>
+          <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
+          <div class="hint">격자 전체를 한번에 키우거나 줄임. A4를 넘으면 자동 맞춤. (화면만 크게 보려면 왼쪽 위 <b>확대</b> 버튼)</div>
+        </div>
 
-    <!-- ===== 제목 ===== -->
-    <div class="sec">제목</div>
-    <div class="field">
-      <label for="title">곡 제목</label>
-      <input type="text" id="title" placeholder="예: 언편">
-      <div class="mini">
-        <span>크기</span>
-        <input type="number" id="titleSize" min="2" max="30" step="0.5" value="10">
-        <span>위치</span>
-        <input type="number" id="titleOffset" step="1" value="0">
-        <span class="u">mm</span>
+        <details class="adv">
+          <summary>
+            <span class="lbl">⚙︎ 항목별 세부 조정 <small>각 너비 · 간격 · 머리단</small></span>
+            <span class="chev">▾</span>
+          </summary>
+
+        <div class="field">
+          <label for="cellSize">각(정간 칸) 너비 (mm)</label>
+          <input type="number" id="cellSize" min="4" max="30" step="0.5" value="11">
+          <div class="hint">정간 한 칸의 크기(정사각형). 각의 너비이기도 함.</div>
+        </div>
+
+        <div class="two">
+          <div class="field">
+            <label for="gakGap">각 사이 간격 (mm)</label>
+            <input type="number" id="gakGap" min="0" max="40" step="0.5" value="7">
+          </div>
+          <div class="field">
+            <label for="bandGap">열 사이 간격 (mm)</label>
+            <input type="number" id="bandGap" min="0" max="60" step="0.5" value="10">
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:4px;">
+          <label class="chk" style="font-size:13px; font-weight:600;">
+            <input type="checkbox" id="header"> 각 밴드 위에 이름 칸(머리단) 두기
+          </label>
+          <div class="hint">각 열 위에 가로로 이어진 빈 칸을 추가 (악절 이름 등 기입용).</div>
+        </div>
+
+        <div class="hint" style="margin-top:2px;">A4 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
+        </details>
       </div>
-      <div class="hint">첫 장 맨 처음(오른쪽) 세로 칸에 큰 글씨로 들어감.</div>
     </div>
-    <div class="field">
-      <label for="subtitle">부제 (선택)</label>
-      <input type="text" id="subtitle" placeholder="예: (한숨정)">
-      <div class="mini">
-        <span>크기</span>
-        <input type="number" id="subSize" min="1" max="20" step="0.5" value="5">
-        <span>위치</span>
-        <input type="number" id="subOffset" step="1" value="0">
-        <span class="u">mm</span>
+
+    <!-- ===== 출력 ===== -->
+    <div class="tabpanel" data-tab="out">
+      <div class="readout" id="readout"></div>
+
+      <div class="btns">
+        <button id="btnPrint">인쇄 / PDF 저장</button>
+        <button id="btnPng" class="secondary">PNG 다운로드</button>
       </div>
-      <div class="hint">제목 아래에 작은 글씨로 들어감.</div>
-    </div>
-    <div class="field">
-      <label for="titleFont">제목 글씨체</label>
-      <select id="titleFont">
-        <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
-        <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
-        <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
-        <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
-        <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
-      </select>
-      <div class="hint">제목·부제에 적용. 시스템에 설치된 글꼴만 표시되며, 없으면 기본 글꼴로 대체됩니다.</div>
-    </div>
-
-    <div class="readout" id="readout"></div>
-
-    <div class="btns">
-      <button id="btnPrint">인쇄 / PDF 저장</button>
-      <button id="btnPng" class="secondary">PNG 다운로드</button>
+      <div class="btns">
+        <button id="btnExport" class="secondary">파일로 저장</button>
+        <button id="btnImport" class="secondary">불러오기</button>
+        <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
+      </div>
+      <div class="hint" style="margin-top:6px;">작업은 자동 저장되어 새로고침해도 유지됩니다. ‘파일로 저장’으로 곡을 따로 보관/공유할 수 있어요.</div>
     </div>
   </aside>
 
@@ -409,8 +447,10 @@
   let gakUserSet = false;   // 사용자가 '총 각 수'를 직접 입력했는지(아니면 페이지를 꽉 채움)
   let activeGak = -1, activeCellIdx = -1;   // 현재 편집 중인 정간
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
-  let cellGeom = {};                        // 렌더 시 정간 좌표 저장(하이라이트용)
-  let highlightEl = null;
+  let cellGeom = {};                        // 렌더 시 정간 좌표 저장(하이라이트용, page 포함)
+  let pageHi = [];                          // 페이지별 하이라이트 사각형
+  let pageSvgs = [];                        // 페이지별 svg
+  let cellEditor = null, cellEditInput = null;  // 정간 위 인라인 입력
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
 
   function stackFor(beats) {
@@ -502,7 +542,7 @@
       for (let c = 0; c < beats; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
       lines.push(cells.join(" | "));
     }
-    const next = lines.join(" ||\n");
+    const next = lines.join("\n");
     if (next !== $("melody").value) $("melody").value = next;
   }
 
@@ -520,20 +560,19 @@
 
   // 현재 편집 중인 정간을 밝은 색으로 표시
   function updateHighlight() {
-    if (!highlightEl) return;
+    for (let i = 0; i < pageHi.length; i++) pageHi[i].style.display = "none";
     const g = cellGeom[activeGak];
     const cg = g && g[activeCellIdx];
-    if (cg) {
-      let y = cg.y, h = cg.h;
-      if (activeRow >= 0 && activeRows > 1) { h = cg.h / activeRows; y = cg.y + activeRow * h; }
-      highlightEl.setAttribute("x", cg.x);
-      highlightEl.setAttribute("y", y);
-      highlightEl.setAttribute("width", cg.w);
-      highlightEl.setAttribute("height", h);
-      highlightEl.style.display = "";
-    } else {
-      highlightEl.style.display = "none";
-    }
+    if (!cg) return;
+    const hi = pageHi[cg.page];
+    if (!hi) return;
+    let y = cg.y, h = cg.h;
+    if (activeRow >= 0 && activeRows > 1) { h = cg.h / activeRows; y = cg.y + activeRow * h; }
+    hi.setAttribute("x", cg.x);
+    hi.setAttribute("y", y);
+    hi.setAttribute("width", cg.w);
+    hi.setAttribute("height", h);
+    hi.style.display = "";
   }
 
   // 텍스트 커서 위치 → 해당 정간을 활성 표시
@@ -856,12 +895,15 @@
     const desiredSubOff = parseFloat($("subOffset").value) || 0;
     const titleFontFam = $("titleFont").value || CJK;
 
-    const svg = el("svg", { viewBox: `0 0 ${PAGE_W} ${PAGE_H}`, xmlns: NS,
-      "xmlns:xlink": "http://www.w3.org/1999/xlink" });
-    svg.appendChild(rect(0, 0, PAGE_W, PAGE_H, 0, { fill: "#fff", stroke: "none" }));
+    const landscape = $("orientation").value === "landscape";
+    document.body.classList.toggle("landscape", landscape);
+    const PW = landscape ? PAGE_H : PAGE_W;
+    const PH = landscape ? PAGE_W : PAGE_H;
+    const ps = $("pageStyle");
+    if (ps) ps.textContent = "@page { size: A4 " + (landscape ? "landscape" : "portrait") + "; margin: 0; }";
 
     const frameX = MARGIN, frameY = MARGIN;
-    const frameW = PAGE_W - 2 * MARGIN, frameH = PAGE_H - 2 * MARGIN;
+    const frameW = PW - 2 * MARGIN, frameH = PH - 2 * MARGIN;
     const availW = frameW - 2 * INNER_PAD;
     const availH = frameH - 2 * INNER_PAD;
 
@@ -874,34 +916,50 @@
 
     // 멜로디(내용) 파싱
     const parsed = parseMelodyOffsets($("melody").value);
+    const uniformSmall = parsed.some(function (g) {
+      return g && g.some(function (c) { return c.text && /\s/.test(c.text); });
+    });
 
-    // 한 페이지 최대 각 수 + 실제로 그릴 각 수(자동=멜로디 각 수 / 수동=입력값)
+    // 페이지 용량 + 실제로 그릴 각 수
     const cap0 = Math.max(1, gakPerRow - titleGak);
-    const capacity = cap0 + gakPerRow * (stack - 1);
+    const page0cap = cap0 + gakPerRow * (stack - 1);   // 첫 페이지(제목 포함)
+    const pageNcap = gakPerRow * stack;                 // 이후 페이지
     const gakAuto = $("gakCountAuto").checked;
     const wantGak = gakAuto ? Math.max(1, parsed.length)
-                  : (!gakUserSet ? capacity
+                  : (!gakUserSet ? page0cap
                                  : Math.max(1, parseInt($("gakCount").value) || 1));
-    const drawGak = Math.min(wantGak, capacity);
-    const overflow = Math.max(0, wantGak - capacity);
     $("gakCount").disabled = gakAuto;
-    if (gakAuto || !gakUserSet) $("gakCount").value = drawGak;
+    if (gakAuto || !gakUserSet) $("gakCount").value = wantGak;
 
-    // 각을 밴드에 분배(band0 = cap0, 이후 = gakPerRow). 필요한 밴드만 사용.
-    const bandMusic = [];
-    let remain = drawGak;
-    { const first = Math.min(cap0, remain); bandMusic.push(first); remain -= first; }
-    while (remain > 0 && bandMusic.length < stack) {
-      const bn = Math.min(gakPerRow, remain); bandMusic.push(bn); remain -= bn;
+    // 각을 페이지·밴드에 분배 (첫 페이지 첫 밴드만 제목 자리 차지)
+    const pages = [];
+    let remaining = wantGak;
+    while (remaining > 0 && pages.length < 300) {
+      const isFirst = pages.length === 0;
+      const pcap = isFirst ? page0cap : pageNcap;
+      const take = Math.min(pcap, remaining);
+      const bands = [];
+      let leftover = take;
+      const b0 = Math.min(isFirst ? cap0 : gakPerRow, leftover); bands.push(b0); leftover -= b0;
+      while (leftover > 0 && bands.length < stack) {
+        const bn = Math.min(gakPerRow, leftover); bands.push(bn); leftover -= bn;
+      }
+      pages.push({ bands: bands, hasTitle: isFirst && titleGak > 0 });
+      remaining -= take;
     }
-    const usedBands = bandMusic.length;
-    const maxBandCols = Math.max.apply(null,
-      bandMusic.map(function (m, i) { return m + (i === 0 ? titleGak : 0); }));
 
-    // A4 맞춤 스케일 — 실제로 그리는 열/밴드 기준
+    // 모든 페이지 공통 스케일(가장 꽉 찬 페이지 기준) → 페이지끼리 크기 일치
+    let maxCols = 1, maxBands = 1;
+    pages.forEach(function (p) {
+      p.bands.forEach(function (m, i) {
+        const cols = m + ((i === 0 && p.hasTitle) ? titleGak : 0);
+        if (cols > maxCols) maxCols = cols;
+      });
+      if (p.bands.length > maxBands) maxBands = p.bands.length;
+    });
     const headRatio = wantHeader ? 1.1 : 0;
-    const wNeed = maxBandCols * desiredCell + (maxBandCols - 1) * desiredGap;
-    const hNeed = usedBands * (beats + headRatio) * desiredCell + (usedBands - 1) * desiredBandGap;
+    const wNeed = maxCols * desiredCell + (maxCols - 1) * desiredGap;
+    const hNeed = maxBands * (beats + headRatio) * desiredCell + (maxBands - 1) * desiredBandGap;
     const scale = Math.min(1, availW / wNeed, availH / hNeed);
 
     const cell = desiredCell * scale;
@@ -909,125 +967,123 @@
     const bandGap = desiredBandGap * scale;
     const headH = cell * headRatio;
     const slot = cell + gap;
-
     const bandH = headH + beats * cell;
-    const gridTotalW = maxBandCols * cell + (maxBandCols - 1) * gap;
-    const gridTotalH = usedBands * bandH + (usedBands - 1) * bandGap;
-
-    const gridX = frameX + frameW - INNER_PAD - gridTotalW;
-    const gridY = frameY + (frameH - gridTotalH) / 2;
-    const bandRight = gridX + gridTotalW;   // 모든 밴드의 오른쪽 끝(오른쪽 정렬)
+    const gridTotalW = maxCols * cell + (maxCols - 1) * gap;
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
 
-    // 외곽 프레임 (실제 격자를 감싸도록)
-    svg.appendChild(rect(gridX - INNER_PAD, gridY - INNER_PAD,
-      gridTotalW + 2 * INNER_PAD, gridTotalH + 2 * INNER_PAD, T_FRAME));
+    const dgSet = new Set();
+    if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
 
-    // 편집 중인 정간 하이라이트 (내용 아래 레이어)
-    cellGeom = {};
-    highlightEl = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none" });
-    highlightEl.style.display = "none";
-    svg.appendChild(highlightEl);
-
+    cellGeom = {}; pageHi = []; pageSvgs = []; cellEditor = null; cellEditInput = null;
+    const sheet = $("sheet"); sheet.innerHTML = "";
     let gakAccum = 0;
 
-    // 곡 전체에 2행 이상인 정간이 하나라도 있으면 글자 크기를 작은 쪽으로 통일
-    const uniformSmall = parsed.some(function (g) {
-      return g && g.some(function (c) { return c.text && /\s/.test(c.text); });
-    });
+    pages.forEach(function (page, pageIdx) {
+      const svg = el("svg", { viewBox: `0 0 ${PW} ${PH}`, xmlns: NS,
+        "xmlns:xlink": "http://www.w3.org/1999/xlink" });
+      svg.appendChild(rect(0, 0, PW, PH, 0, { fill: "#fff", stroke: "none" }));
 
-    for (let b = 0; b < usedBands; b++) {
-      const bandTop = gridY + b * (bandH + bandGap);
-      const gridTop = bandTop + headH;
-      const gridBottom = gridTop + beats * cell;
+      const usedBands = page.bands.length;
+      const gridTotalH = usedBands * bandH + (usedBands - 1) * bandGap;
+      const gridX = frameX + frameW - INNER_PAD - gridTotalW;
+      const gridY = frameY + (frameH - gridTotalH) / 2;
+      const bandRight = gridX + gridTotalW;
 
-      const hasTitle = (b === 0 && titleGak > 0);
-      const nMusic = bandMusic[b];
+      if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, gridY - INNER_PAD,
+        gridTotalW + 2 * INNER_PAD, gridTotalH + 2 * INNER_PAD, T_FRAME));
 
-      // 오른쪽 정렬: 제목 패널이 가장 오른쪽, 그 왼쪽으로 음악 각들
-      const panelRight = bandRight;
-      const panelX = hasTitle ? (bandRight - titleWidth) : bandRight;
-      const musicRightEdge = hasTitle ? (panelX - gap) : bandRight;
-      const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap);
+      // 편집 하이라이트 자리(내용 아래 레이어)
+      const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none" });
+      hi.style.display = "none"; svg.appendChild(hi); pageHi.push(hi); pageSvgs.push(svg);
 
-      const dgSet = new Set();
-      if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
+      for (let b = 0; b < usedBands; b++) {
+        const bandTop = gridY + b * (bandH + bandGap);
+        const gridTop = bandTop + headH;
+        const gridBottom = gridTop + beats * cell;
+        const hasTitle = (b === 0 && page.hasTitle);
+        const nMusic = page.bands[b];
 
-      // 머리단 위 선 (그린 폭만큼)
-      if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
+        const panelRight = bandRight;
+        const panelX = hasTitle ? (bandRight - titleWidth) : bandRight;
+        const musicRightEdge = hasTitle ? (panelX - gap) : bandRight;
+        const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap);
 
-      // 음악 각: m=0 이 가장 오른쪽(= 그 밴드의 첫 마디)
-      for (let m = 0; m < nMusic; m++) {
-        const x = musicRightEdge - cell - m * slot;
-        const melIdx = gakAccum + m;
-        const gakCells = parsed[melIdx];
+        if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
 
-        // 1) 내용(이미지/글자) — 격자선 아래 레이어에 먼저 그림
-        for (let j = 0; j < beats; j++) {
-          const content = gakCells && gakCells[j] ? gakCells[j].text : "";
-          if (content) drawCell(svg, x, gridTop + j * cell, cell, content, uniformSmall);
+        for (let m = 0; m < nMusic; m++) {
+          const x = musicRightEdge - cell - m * slot;
+          const melIdx = gakAccum + m;
+          const gakCells = parsed[melIdx];
+
+          for (let j = 0; j < beats; j++) {
+            const content = gakCells && gakCells[j] ? gakCells[j].text : "";
+            if (content) drawCell(svg, x, gridTop + j * cell, cell, content, uniformSmall);
+          }
+          svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
+          svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
+          for (let i = 1; i < beats; i++) {
+            if (dgSet.has(i)) continue;
+            svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
+          }
+          for (let j = 0; j < beats; j++) {
+            const cyTop = gridTop + j * cell;
+            (cellGeom[melIdx] = cellGeom[melIdx] || {})[j] = { page: pageIdx, x: x, y: cyTop, w: cell, h: cell };
+            const hit = rect(x, cyTop, cell, cell, 0,
+              { fill: "transparent", stroke: "none", "pointer-events": "all" });
+            hit.style.cursor = "text";
+            (function (gi, ci) {
+              hit.addEventListener("mousedown", function (e) {
+                e.preventDefault();
+                if (cellEditInput) commitCellEditor(false);
+                openCellEditor(gi, ci);
+              });
+            })(melIdx, j);
+            svg.appendChild(hit);
+          }
         }
-        // 2) 격자선 — 내용 위에 그려 이미지의 여백이 선을 가리지 않게
-        svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
-        svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
-        for (let i = 1; i < beats; i++) {
-          if (dgSet.has(i)) continue;
-          svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
-        }
-        // 3) 클릭 영역 — 최상단(투명), 좌표는 하이라이트용으로 저장
-        for (let j = 0; j < beats; j++) {
-          const cyTop = gridTop + j * cell;
-          (cellGeom[melIdx] = cellGeom[melIdx] || {})[j] = { x: x, y: cyTop, w: cell, h: cell };
-          const hit = rect(x, cyTop, cell, cell, 0,
-            { fill: "transparent", stroke: "none", "pointer-events": "all" });
-          hit.style.cursor = "text";
-          (function (gi, ci) { hit.addEventListener("click", function () { jumpToCell(gi, ci); }); })(melIdx, j);
-          svg.appendChild(hit);
-        }
-      }
-      gakAccum += nMusic;   // 다음 밴드의 멜로디 각 시작 인덱스
+        gakAccum += nMusic;
 
-      // 통줄 가로선 (그린 폭만큼), 대강선은 음악영역만
-      svg.appendChild(line(musicLeft, gridTop, bandRight, gridTop, T_THICK));
-      dgSet.forEach(function (i) {
-        svg.appendChild(line(musicLeft, gridTop + i * cell, musicRightEdge, gridTop + i * cell, T_DAEGANG));
-      });
-      svg.appendChild(line(musicLeft, gridBottom, bandRight, gridBottom, T_THICK));
+        svg.appendChild(line(musicLeft, gridTop, bandRight, gridTop, T_THICK));
+        dgSet.forEach(function (i) {
+          svg.appendChild(line(musicLeft, gridTop + i * cell, musicRightEdge, gridTop + i * cell, T_DAEGANG));
+        });
+        svg.appendChild(line(musicLeft, gridBottom, bandRight, gridBottom, T_THICK));
 
-      // 제목 세로 패널 (band0, 가장 오른쪽)
-      if (hasTitle) {
-        svg.appendChild(line(panelX, gridTop, panelX, gridBottom, T_THICK));         // 왼쪽 세로선
-        svg.appendChild(line(panelRight, gridTop, panelRight, gridBottom, T_THICK)); // 오른쪽 세로선
-
-        const cx = (panelX + panelRight) / 2;
-        const titleFont = Math.min(desiredTitle * scale, (panelRight - panelX) * 0.78);
-        const startY = gridTop + titleFont * 1.05 + desiredTitleOff * scale;
-        const tt = verticalText(cx, startY, titleTxt, titleFont, 700, "#000", titleFontFam);
-        svg.appendChild(tt.g);
-
-        if (subTxt) {
-          const subFont = Math.min(desiredSub * scale, (panelRight - panelX) * 0.72);
-          const subStart = tt.endY + titleFont * 0.5 + subFont + desiredSubOff * scale;
-          if (subStart < gridBottom) {
-            const st = verticalText(cx, subStart, subTxt, subFont, 400, "#333", titleFontFam);
-            svg.appendChild(st.g);
+        if (hasTitle) {
+          svg.appendChild(line(panelX, gridTop, panelX, gridBottom, T_THICK));
+          svg.appendChild(line(panelRight, gridTop, panelRight, gridBottom, T_THICK));
+          const cx = (panelX + panelRight) / 2;
+          const titleFont = Math.min(desiredTitle * scale, (panelRight - panelX) * 0.78);
+          const startY = gridTop + titleFont * 1.05 + desiredTitleOff * scale;
+          const tt = verticalText(cx, startY, titleTxt, titleFont, 700, "#000", titleFontFam);
+          svg.appendChild(tt.g);
+          if (subTxt) {
+            const subFont = Math.min(desiredSub * scale, (panelRight - panelX) * 0.72);
+            const subStart = tt.endY + titleFont * 0.5 + subFont + desiredSubOff * scale;
+            if (subStart < gridBottom) {
+              const st = verticalText(cx, subStart, subTxt, subFont, 400, "#333", titleFontFam);
+              svg.appendChild(st.g);
+            }
           }
         }
       }
-    }
 
-    $("sheet").innerHTML = "";
-    $("sheet").appendChild(svg);
+      const wrap = document.createElement("div");
+      wrap.className = "page";
+      wrap.appendChild(svg);
+      sheet.appendChild(wrap);
+    });
+
     updateHighlight();
+    saveState();
 
     $("readout").innerHTML =
-      `그린 각: <b>${drawGak}</b>${gakAuto ? " (자동)" : ""} · 페이지 용량 <b>${capacity}</b>각<br>` +
-      `가로 각 <b>${gakPerRow}</b> · 세로 밴드 <b>${usedBands}</b>/${stack}${stackAuto ? " (자동)" : ""}<br>` +
+      `그린 각: <b>${wantGak}</b>${gakAuto ? " (자동)" : ""} · 페이지 <b>${pages.length}</b>장<br>` +
+      `가로 각 <b>${gakPerRow}</b> · 세로 밴드 최대 <b>${stack}</b>${stackAuto ? " (자동)" : ""} · ${landscape ? "가로" : "세로"}<br>` +
       `각 너비: <b>${cell.toFixed(1)}</b> · 각 간격: <b>${gap.toFixed(1)}</b> · 밴드 간격: <b>${bandGap.toFixed(1)}</b> mm` +
       (scale < 0.999 ? ` <span style="color:#8a6d3b">(A4 맞춤 ${Math.round(scale * 100)}%)</span>` : "") + `<br>` +
       `<span style="font-size:11px">읽는 순서: 오른쪽 → 왼쪽 (전통)</span>` +
-      (dg.ok ? "" : `<div class="warn">⚠ 대강 값의 합이 정간 수(${beats})와 달라 무시했습니다.</div>`) +
-      (overflow > 0 ? `<div class="warn">⚠ ${overflow}각이 한 페이지 용량을 넘어 표시되지 않았습니다. (밴드 수/가로 각 수를 늘리세요)</div>` : "");
+      (dg.ok ? "" : `<div class="warn">⚠ 대강 값의 합이 정간 수(${beats})와 달라 무시했습니다.</div>`);
   }
 
   function fillDaegangPreset() {
@@ -1041,32 +1097,107 @@
   }
 
   function downloadPng() {
-    const svg = $("sheet").querySelector("svg");
-    if (!svg) return;
+    const svgs = $("sheet").querySelectorAll(".page svg");
+    if (!svgs.length) return;
     if (noteMode === "image" && noteImgFailed) {
       alert("율명 이미지를 PNG에 담으려면 로컬 서버로 열어야 합니다.\n예) 폴더에서  python3 -m http.server  실행 후 http://localhost:8000 접속.\n\n지금은 파일을 직접 연 상태라 이미지가 빠진 채 저장될 수 있어요.");
     }
-    const xml = new XMLSerializer().serializeToString(svg);
-    const svg64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
-    const img = new Image();
-    img.onload = function () {
-      const s = 300 / 25.4;
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(PAGE_W * s);
-      canvas.height = Math.round(PAGE_H * s);
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(function (blob) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = ($("title").value.trim() || "정간보") + ".png";
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
+    const base = $("title").value.trim() || "정간보";
+    const multi = svgs.length > 1;
+    svgs.forEach(function (svg, idx) {
+      const vb = (svg.getAttribute("viewBox") || "0 0 210 297").split(/\s+/).map(Number);
+      const pw = vb[2] || 210, ph = vb[3] || 297;
+      const xml = new XMLSerializer().serializeToString(svg);
+      const svg64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+      const img = new Image();
+      img.onload = function () {
+        const s = 300 / 25.4;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(pw * s);
+        canvas.height = Math.round(ph * s);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function (blob) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = base + (multi ? "-" + (idx + 1) : "") + ".png";
+          a.click();
+          URL.revokeObjectURL(a.href);
+        });
+      };
+      img.src = svg64;
+    });
+  }
+
+  // ---------- 저장 / 불러오기 ----------
+  const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
+    "daegang", "noteMode", "sizeScale", "cellSize", "gakGap", "bandGap", "header", "frame",
+    "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont"];
+  const LS_KEY = "jgb_state_v1";
+
+  function collectState() {
+    const c = {};
+    CTRL_IDS.forEach(function (id) {
+      const el = $(id);
+      c[id] = (el.type === "checkbox") ? el.checked : el.value;
+    });
+    const at = document.querySelector(".tab.active");
+    return { v: 1, controls: c, melody: $("melody").value, gakUserSet: gakUserSet,
+             daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input" };
+  }
+
+  function applyState(s) {
+    if (!s || !s.controls) return;
+    CTRL_IDS.forEach(function (id) {
+      if (!(id in s.controls)) return;
+      const el = $(id);
+      if (el.type === "checkbox") el.checked = !!s.controls[id];
+      else el.value = s.controls[id];
+    });
+    if (typeof s.melody === "string") $("melody").value = s.melody;
+    gakUserSet = !!s.gakUserSet;
+    daegangAuto = s.daegangAuto || "";
+    if (s.activeTab) applyActiveTab(s.activeTab);
+  }
+
+  function applyActiveTab(name) {
+    const valid = Array.from(document.querySelectorAll(".tab"))
+      .some(function (b) { return b.getAttribute("data-tab") === name; });
+    if (!valid) name = "doc";
+    document.querySelectorAll(".tab").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-tab") === name);
+    });
+    document.querySelectorAll(".tabpanel").forEach(function (p) {
+      p.classList.toggle("active", p.getAttribute("data-tab") === name);
+    });
+  }
+
+  function saveState() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(collectState())); } catch (e) {}
+  }
+
+  function exportFile() {
+    const blob = new Blob([JSON.stringify(collectState(), null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = ($("title").value.trim() || "정간보") + ".jgb.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importFile(file) {
+    const fr = new FileReader();
+    fr.onload = function () {
+      try {
+        applyState(JSON.parse(fr.result));
+        render();
+        syncActiveFromCursor();
+        refreshUndoBtn();
+      } catch (e) { alert("불러오기 실패: 올바른 정간보 파일이 아닙니다."); }
     };
-    img.src = svg64;
+    fr.readAsText(file);
   }
 
   function onFormChange() { reconcileMelody(); render(); }
@@ -1134,6 +1265,15 @@
   refreshUndoBtn();
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => window.print());
+  $("btnExport").addEventListener("click", exportFile);
+  $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
+  $("fileImport").addEventListener("change", function (e) {
+    if (e.target.files && e.target.files[0]) importFile(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  // 이전 작업 복구(localStorage)
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
 
   buildPalette();
   fillDaegangPreset();
