@@ -649,6 +649,76 @@
     $("melodyUndo").disabled = melodyUndo.length === 0;
   }
 
+  // ---------- 정간 위 인라인 입력 ----------
+  function currentCellText(gi, ci) {
+    const p = parseMelodyOffsets($("melody").value);
+    return (p[gi] && p[gi][ci]) ? p[gi][ci].text : "";
+  }
+
+  // 한 정간의 내용을 바꾸고 텍스트 에디터·격자에 반영(양방향 동기화)
+  function setCellText(gi, ci, val) {
+    val = String(val).replace(/[|\n]+/g, " ").replace(/\s+/g, " ").trim();
+    const rows = parseMelodyOffsets($("melody").value).map(function (g) {
+      return g.map(function (c) { return c.text; });
+    });
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    while (rows.length <= gi) rows.push([]);
+    while (rows[gi].length <= ci) rows[gi].push("");
+    rows[gi][ci] = val;
+    while (rows[gi].length < beats) rows[gi].push("");   // 편집한 각은 박수만큼 칸 채움
+    $("melody").value = rows.map(function (g) { return g.join(" | "); }).join("\n");
+    render();
+  }
+
+  function closeCellEditor() {
+    if (cellEditor && cellEditor.parentNode) cellEditor.parentNode.removeChild(cellEditor);
+    cellEditor = null; cellEditInput = null;
+  }
+
+  function openCellEditor(gi, ci) {
+    closeCellEditor();
+    const g = cellGeom[gi]; const cg = g && g[ci];
+    if (!cg) return;
+    const svg = pageSvgs[cg.page]; if (!svg) return;
+    activeGak = gi; activeCellIdx = ci; activeRow = -1; activeRows = 1;
+    updateHighlight();
+
+    const fo = document.createElementNS(NS, "foreignObject");
+    fo.setAttribute("x", cg.x); fo.setAttribute("y", cg.y);
+    fo.setAttribute("width", cg.w); fo.setAttribute("height", cg.h);
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.value = currentCellText(gi, ci);
+    inp.style.cssText = "width:100%;height:100%;box-sizing:border-box;border:1.5px solid " +
+      "var(--accent,#8a6d3b);border-radius:1px;text-align:center;padding:0;background:#fffbe6;" +
+      "font-family:inherit;font-size:" + (cg.h * 0.5) + "px;";
+    fo.appendChild(inp);
+    svg.appendChild(fo);
+    cellEditor = fo; cellEditInput = inp;
+    inp.focus(); inp.select();
+
+    inp.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); commitCellEditor(true); }
+      else if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
+    });
+    inp.addEventListener("blur", function () { if (cellEditInput === inp) commitCellEditor(false); });
+  }
+
+  // 커밋: 값 저장 후 렌더. moveNext면 아래 정간(없으면 다음 각 첫 정간)으로 이동
+  function commitCellEditor(moveNext) {
+    if (!cellEditInput) return;
+    const gi = activeGak, ci = activeCellIdx, val = cellEditInput.value;
+    closeCellEditor();
+    setCellText(gi, ci, val);
+    updateHighlight();
+    if (moveNext) {
+      const beats = Math.max(1, parseInt($("beats").value) || 1);
+      let ng = gi, ni = ci + 1;
+      if (ni >= beats) { ni = 0; ng = gi + 1; }
+      if (cellGeom[ng] && cellGeom[ng][ni]) openCellEditor(ng, ni);
+    }
+  }
+
   // ---------- 율명(한글→한자) 변환 ----------
   const YUL = { 황: "黃", 대: "大", 태: "太", 협: "夾", 고: "姑", 중: "仲",
                 유: "蕤", 임: "林", 이: "夷", 남: "南", 무: "無", 응: "應" };
@@ -753,6 +823,16 @@
 
   // 커서 위치에 토큰(율명 텍스트) 삽입
   function insertToken(txt) {
+    if (cellEditInput) {   // 정간 인라인 편집 중이면 그 칸에 삽입
+      const inp = cellEditInput;
+      const s = inp.selectionStart != null ? inp.selectionStart : inp.value.length;
+      const e = inp.selectionEnd != null ? inp.selectionEnd : s;
+      inp.value = inp.value.slice(0, s) + txt + inp.value.slice(e);
+      const pos = s + txt.length;
+      inp.setSelectionRange(pos, pos);
+      inp.focus();
+      return;
+    }
     const ta = $("melody");
     const s = ta.selectionStart, e = ta.selectionEnd;
     ta.setRangeText(txt, s, e, "end");
@@ -898,6 +978,7 @@
     const titleTxt = $("title").value.trim();
     const subTxt = $("subtitle").value.trim();
     const wantHeader = $("header").checked;
+    const wantFrame = $("frame").checked;
     const dg = parseDaegang($("daegang").value, beats);
     noteMode = $("noteMode").value === "image" ? "image" : "font";
 
@@ -1229,7 +1310,7 @@
   });
   // 모양만 바꾸는 입력 → 렌더만
   ["cellSize", "gakGap", "bandGap", "sizeScale", "daegang", "subtitle", "titleSize", "titleOffset",
-   "subSize", "subOffset", "titleFont", "header", "noteMode"].forEach(id => {
+   "subSize", "subOffset", "titleFont", "header", "frame", "noteMode", "orientation"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
