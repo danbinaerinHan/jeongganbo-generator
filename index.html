@@ -606,6 +606,11 @@
     const a = Array.from(str), out = [];
     let i = 0;
     while (i < a.length) {
+      if (a[i] === "{") {   // {파일명} = 쉼표·연음 등 기호 이미지
+        let j = i + 1, name = "";
+        while (j < a.length && a[j] !== "}") { name += a[j]; j++; }
+        if (j < a.length) { out.push({ sym: name }); i = j + 1; continue; }
+      }
       const two = a[i] + (a[i + 1] || "");
       if (PRE2.indexOf(two) >= 0 && BASESET.has(a[i + 2])) { out.push({ base: a[i + 2], oct: -2 }); i += 3; continue; }
       const one = a[i];
@@ -730,10 +735,36 @@
         cap.textContent = label;
         item.appendChild(img);
         item.appendChild(cap);
+        item.addEventListener("mousedown", function (e) { e.preventDefault(); });
         item.addEventListener("click", function () { insertToken(label); });
         wrap.appendChild(item);
       });
     });
+
+    // 쉼표 · 연음 기호 ({파일명} 토큰으로 삽입)
+    const syms = Object.keys(window.NOTE_DATA || {})
+      .filter(function (k) { return /^(pause|conti)/.test(k); }).sort();
+    if (syms.length) {
+      const head = document.createElement("div");
+      head.className = "pmsg"; head.textContent = "쉼표 · 연음";
+      wrap.appendChild(head);
+      let np = 0, nc = 0;
+      syms.forEach(function (k) {
+        const isPause = k.indexOf("pause") === 0;
+        const label = isPause ? ("쉼표" + (++np)) : ("이음" + (++nc));
+        const item = document.createElement("div");
+        item.className = "pi"; item.title = label + " 입력";
+        const img = document.createElement("img");
+        img.src = window.NOTE_DATA[k];
+        const cap = document.createElement("span");
+        cap.textContent = label;
+        item.appendChild(img);
+        item.appendChild(cap);
+        item.addEventListener("mousedown", function (e) { e.preventDefault(); });
+        item.addEventListener("click", function () { insertToken("{" + k + "}"); });
+        wrap.appendChild(item);
+      });
+    }
   }
 
   // 한 칸(정간) 그리기: 공백=줄바꿈(행, 위→아래 / 2분박·3분박…), 붙임=가로 배치(왼→오른쪽)
@@ -760,8 +791,12 @@
       for (let ci = 0; ci < n; ci++) {
         const cx = x + colW * (ci + 0.5);          // 왼 → 오른쪽
         const tk = toks[ci];
-        const file = (noteMode === "image" && tk.literal == null)
-          ? resolveNoteFile(tk.base, tk.oct) : null;
+        let file = null;
+        if (tk.sym) {
+          file = (window.NOTE_DATA && window.NOTE_DATA[tk.sym]) ? tk.sym : null;
+        } else if (noteMode === "image" && tk.literal == null) {
+          file = resolveNoteFile(tk.base, tk.oct);
+        }
 
         if (file) {
           // 이미지 모드: 옥타브 표기가 그림에 이미 포함 → 점을 따로 그리지 않음.
@@ -777,8 +812,9 @@
           continue;
         }
 
-        // 폰트 모드(또는 이미지 없는 음): 한자 + 옥타브 점
-        const ch = tk.literal != null ? tk.literal : (YUL[tk.base] || tk.base);
+        // 폰트 모드(또는 이미지 없는 음/기호): 한자 + 옥타브 점
+        const ch = tk.literal != null ? tk.literal
+                 : (tk.sym != null ? tk.sym : (YUL[tk.base] || tk.base));
         const t = el("text", { x: cx, y: cyc + gs * 0.34, "text-anchor": "middle",
           "font-size": gs, "font-family": CJK, fill: "#111" });
         t.textContent = ch; svg.appendChild(t);
