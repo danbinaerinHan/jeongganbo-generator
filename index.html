@@ -170,6 +170,17 @@
             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
+  /* 모드 탭 */
+  .tabs { display: flex; gap: 2px; margin: 12px 0 16px; border-bottom: 1px solid var(--line); }
+  .tab { flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
+         font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+         border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
+  .tabpanel .sec:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
   /* 사이드바 접기/펼치기 */
   .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .side-toggle { flex: 0 0 auto; width: 28px; height: 28px; border: 1px solid var(--line);
@@ -417,7 +428,7 @@
 
       <div class="melody-head">
         <button type="button" id="editorToggle" class="mini-toggle" title="편집창 접기/펼치기">▾</button>
-        멜로디 <span class="mono">| 정간 · || 각</span>
+        멜로디 <span class="mono">| 정간 · ⏎ 줄바꿈 = 각</span>
         <span id="melodyInfo"></span>
         <span class="mel-actions">
           <button type="button" id="melodyUndo" class="mel-btn" title="초기화 되돌리기">↶ 되돌리기</button>
@@ -426,7 +437,7 @@
       </div>
       <div id="editorBody">
         <textarea id="melody" spellcheck="false"
-          placeholder="정간(칸)을 클릭하면 해당 칸으로 커서가 이동합니다. | 로 정간, || 로 각을 구분."></textarea>
+          placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
       </div>
     </div>
   </main>
@@ -502,8 +513,14 @@
     let cur = [], cellText = "", cellBeg = 0, i = 0;
     const pushCell = (endIdx) => { cur.push({ text: cellText.trim(), start: cellBeg, end: endIdx }); cellText = ""; };
     while (i < text.length) {
-      if (text[i] === "|" && text[i + 1] === "|") { pushCell(i); gaks.push(cur); cur = []; i += 2; cellBeg = i; }
-      else if (text[i] === "|") { pushCell(i); i += 1; cellBeg = i; }
+      // 각 구분: 줄바꿈(기본) 또는 || (기존 호환). "||\n"은 한 번만 처리.
+      if (text[i] === "|" && text[i + 1] === "|") {
+        pushCell(i); gaks.push(cur); cur = []; i += 2;
+        if (text[i] === "\n") i += 1;
+        cellBeg = i;
+      } else if (text[i] === "\n") {
+        pushCell(i); gaks.push(cur); cur = []; i += 1; cellBeg = i;
+      } else if (text[i] === "|") { pushCell(i); i += 1; cellBeg = i; }
       else { cellText += text[i]; i += 1; }
     }
     pushCell(i); gaks.push(cur);
@@ -1227,6 +1244,14 @@
   $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
   $("zoomFit").addEventListener("click", () => { viewZoom = 1; applyZoom(); });
   applyZoom();
+  // 모드 탭 전환
+  document.querySelectorAll(".tab").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      applyActiveTab(btn.getAttribute("data-tab"));
+      saveState();
+    });
+  });
+
   // 설정 폼 접기/펼치기
   $("sidebarToggle").addEventListener("click", function () { document.body.classList.add("sidebar-collapsed"); });
   $("sidebarOpen").addEventListener("click", function () { document.body.classList.remove("sidebar-collapsed"); });
