@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정간보 생성기</title>
+<style>
+  :root {
+    --bg: #f4f4f2;
+    --panel: #ffffff;
+    --line: #d9d6cf;
+    --ink: #1c1b19;
+    --accent: #8a6d3b;
+    --muted: #6b6a66;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ---------- 사이드바 ---------- */
+  #sidebar {
+    width: 330px;
+    flex: 0 0 330px;
+    order: 2;                       /* 오른쪽 배치 */
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  #sidebar h1 { font-size: 18px; margin: 0 0 4px; letter-spacing: 2px; }
+  #sidebar .sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .field input[type="number"],
+  .field input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .field input:disabled { background: #f2f0ec; color: var(--muted); }
+  .field select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 14px; font-family: inherit; background: #fff; cursor: pointer;
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .two { display: flex; gap: 10px; }
+  .two .field { flex: 1; margin-bottom: 16px; }
+  .chk { display: flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 400;
+         white-space: nowrap; margin: 0; cursor: pointer; }
+  .chk input { width: 15px; height: 15px; }
+  .mini { display: flex; align-items: center; gap: 6px; margin-top: 7px;
+          font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+  .mini input[type="number"] { width: 52px; padding: 4px 6px; font-size: 12px;
+                border: 1px solid var(--line); border-radius: 5px; font-family: inherit; }
+  .mini .u { margin-left: -2px; }
+
+  .sec { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent);
+         text-transform: uppercase; margin: 6px 0 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  details.adv { margin: 4px 0 18px; }
+  details.adv > summary {
+    cursor: pointer; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: #f4efe6; border: 1px solid var(--accent); border-radius: 8px;
+    padding: 11px 13px; margin-bottom: 14px; transition: background .15s ease;
+  }
+  details.adv > summary:hover { background: #ece2d0; }
+  details.adv > summary::-webkit-details-marker { display: none; }
+  details.adv > summary .lbl { display: flex; align-items: baseline; gap: 8px;
+    font-size: 13px; font-weight: 700; color: var(--accent); }
+  details.adv > summary .lbl small { font-weight: 400; font-size: 11px; color: var(--muted); }
+  details.adv > summary .chev { font-size: 11px; color: var(--accent); transition: transform .15s ease; }
+  details.adv[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 12px; }
+  details.adv[open] > summary .chev { transform: rotate(180deg); }
+
+  .readout {
+    background: #f7f5f0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .readout b { color: var(--ink); }
+  .warn { color: #b23b3b; font-size: 11px; margin-top: 6px; }
+
+  .btns { display: flex; gap: 8px; margin-top: 8px; }
+  .btns button {
+    flex: 1; padding: 10px;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btns button.secondary { background: #fff; color: var(--accent); }
+  .btns button:hover { opacity: .9; }
+
+  /* ---------- 미리보기 ---------- */
+  #main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
+  #sheet { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+  #sheet svg { display: block; height: 88vh; width: auto; }
+
+  @media print {
+    body { display: block; height: auto; overflow: visible; }
+    #sidebar { display: none !important; }
+    #main { display: block; padding: 0; overflow: visible; }
+    #sheet { box-shadow: none; }
+    #sheet svg { height: 297mm; width: 210mm; }
+    @page { size: A4 portrait; margin: 0; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <h1>정간보 생성기</h1>
+    <div class="sub">井間譜 · A4 세로 · 격자 세팅</div>
+
+    <!-- ===== 주요 설정 ===== -->
+    <div class="field">
+      <label for="beats">1) 한 각의 정간 수 (박)</label>
+      <input type="number" id="beats" min="1" max="64" value="12">
+      <div class="hint">한 각(세로 열)에 들어갈 정간(칸)의 개수 = 몇 박짜리 곡인지.</div>
+    </div>
+
+    <div class="field">
+      <label for="gakPerRow">2) 각 수 (가로)</label>
+      <input type="number" id="gakPerRow" min="1" max="40" value="10">
+      <div class="hint">한 행에 가로로 나열할 각의 개수 (기본 10).</div>
+    </div>
+
+    <div class="field">
+      <label for="stackCount">3) 열 수 (세로 밴드)</label>
+      <div class="row">
+        <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
+        <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
+      </div>
+      <div class="hint">세로로 쌓을 밴드(줄) 수. 자동: 정간 수에 따라 (&gt;12→1, 6~12→2, ≤5→3).</div>
+    </div>
+
+    <div class="field">
+      <label for="daegang">대강 분절 (선택)</label>
+      <input type="text" id="daegang" placeholder="예: 3 3 3 3">
+      <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
+    </div>
+
+    <!-- ===== 세부 조정 (제목 위) ===== -->
+    <details class="adv">
+      <summary>
+        <span class="lbl">⚙︎ 세부 조정 <small>각 크기 · 간격 · 머리단</small></span>
+        <span class="chev">▾</span>
+      </summary>
+
+      <div class="field">
+        <label for="cellSize">각(정간 칸) 너비 (mm)</label>
+        <input type="number" id="cellSize" min="4" max="30" step="0.5" value="11">
+        <div class="hint">정간 한 칸의 크기(정사각형). 각의 너비이기도 함.</div>
+      </div>
+
+      <div class="two">
+        <div class="field">
+          <label for="gakGap">각 사이 간격 (mm)</label>
+          <input type="number" id="gakGap" min="0" max="40" step="0.5" value="7">
+        </div>
+        <div class="field">
+          <label for="bandGap">열 사이 간격 (mm)</label>
+          <input type="number" id="bandGap" min="0" max="60" step="0.5" value="10">
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:4px;">
+        <label class="chk" style="font-size:13px; font-weight:600;">
+          <input type="checkbox" id="header"> 각 밴드 위에 이름 칸(머리단) 두기
+        </label>
+        <div class="hint">각 열 위에 가로로 이어진 빈 칸을 추가 (악절 이름 등 기입용).</div>
+      </div>
+
+      <div class="hint" style="margin-top:2px;">A4 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
+    </details>
+
+    <!-- ===== 제목 ===== -->
+    <div class="sec">제목</div>
+    <div class="field">
+      <label for="title">곡 제목</label>
+      <input type="text" id="title" placeholder="예: 언편">
+      <div class="mini">
+        <span>크기</span>
+        <input type="number" id="titleSize" min="2" max="30" step="0.5" value="10">
+        <span>위치</span>
+        <input type="number" id="titleOffset" step="1" value="0">
+        <span class="u">mm</span>
+      </div>
+      <div class="hint">첫 장 맨 처음(오른쪽) 세로 칸에 큰 글씨로 들어감.</div>
+    </div>
+    <div class="field">
+      <label for="subtitle">부제 (선택)</label>
+      <input type="text" id="subtitle" placeholder="예: (한숨정)">
+      <div class="hint">제목 아래에 작은 글씨로 들어감.</div>
+    </div>
+    <div class="field">
+      <label for="titleFont">제목 글씨체</label>
+      <select id="titleFont">
+        <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+        <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+        <option value="'GungSeo','궁서','Batang',serif">궁서체(붓글씨)</option>
+        <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+        <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+      </select>
+      <div class="hint">제목·부제에 적용. 시스템에 설치된 글꼴만 표시되며, 없으면 기본 글꼴로 대체됩니다.</div>
+    </div>
+
+    <div class="readout" id="readout"></div>
+
+    <div class="btns">
+      <button id="btnPrint">인쇄 / PDF 저장</button>
+      <button id="btnPng" class="secondary">PNG 다운로드</button>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="sheet"></div>
+  </main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+  const CJK = "'Apple SD Gothic Neo','Noto Sans KR',sans-serif";
+
+  const PAGE_W = 210, PAGE_H = 297;
+  const MARGIN = 12, INNER_PAD = 5;
+  const T_THIN = 0.18, T_THICK = 0.4, T_FRAME = 0.7, T_DAEGANG = 0.62;
+
+  const DAEGANG_PRESET = { 8: "", 10: "7 3", 12: "3 3 3 3", 16: "3 2 3 3 2 3", 20: "6 4 4 6" };
+  let daegangAuto = "";
+
+  function stackFor(beats) {
+    if (beats > 12) return 1;
+    if (beats >= 6) return 2;
+    return 3;
+  }
+
+  function parseDaegang(str, beats) {
+    if (!str.trim()) return { groups: null, ok: true };
+    const parts = str.split(/[\s,]+/).filter(Boolean).map(Number);
+    if (parts.some(n => !Number.isFinite(n) || n <= 0)) return { groups: null, ok: false };
+    const sum = parts.reduce((a, b) => a + b, 0);
+    if (sum !== beats) return { groups: null, ok: false };
+    return { groups: parts, ok: true };
+  }
+
+  function el(name, attrs) {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function rect(x, y, w, h, sw, extra) {
+    return el("rect", Object.assign({ x, y, width: w, height: h, fill: "none",
+      stroke: "#000", "stroke-width": sw }, extra || {}));
+  }
+  function line(x1, y1, x2, y2, sw) {
+    return el("line", { x1, y1, x2, y2, stroke: "#000", "stroke-width": sw, "stroke-linecap": "square" });
+  }
+  function verticalText(cx, startY, str, font, weight, color, family) {
+    const g = el("g", {});
+    const lineH = font * 1.12;
+    let y = startY;
+    for (const ch of Array.from(str)) {
+      if (ch === " ") { y += lineH * 0.55; continue; }
+      const t = el("text", { x: cx, y: y, "text-anchor": "middle",
+        "font-size": font, "font-family": family || CJK, "font-weight": weight, fill: color });
+      t.textContent = ch;
+      g.appendChild(t);
+      y += lineH;
+    }
+    return { g, endY: y };
+  }
+
+  function render() {
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const gakPerRow = Math.max(1, parseInt($("gakPerRow").value) || 1);
+
+    const autoStack = stackFor(beats);
+    const stackAuto = $("stackAuto").checked;
+    $("stackCount").disabled = stackAuto;
+    if (stackAuto) $("stackCount").value = autoStack;
+    const stack = stackAuto ? autoStack : Math.max(1, Math.min(12, parseInt($("stackCount").value) || autoStack));
+
+    const titleTxt = $("title").value.trim();
+    const subTxt = $("subtitle").value.trim();
+    const wantHeader = $("header").checked;
+    const dg = parseDaegang($("daegang").value, beats);
+
+    const desiredCell = Math.max(2, parseFloat($("cellSize").value) || 11);
+    const desiredGap = Math.max(0, parseFloat($("gakGap").value) || 0);
+    const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0);
+    const desiredTitle = Math.max(1, parseFloat($("titleSize").value) || 10);
+    const desiredTitleOff = parseFloat($("titleOffset").value) || 0;
+    const titleFontFam = $("titleFont").value || CJK;
+
+    const svg = el("svg", { viewBox: `0 0 ${PAGE_W} ${PAGE_H}`, xmlns: NS });
+    svg.appendChild(rect(0, 0, PAGE_W, PAGE_H, 0, { fill: "#fff", stroke: "none" }));
+
+    const frameX = MARGIN, frameY = MARGIN;
+    const frameW = PAGE_W - 2 * MARGIN, frameH = PAGE_H - 2 * MARGIN;
+    const availW = frameW - 2 * INNER_PAD;
+    const availH = frameH - 2 * INNER_PAD;
+
+    const headRatio = wantHeader ? 1.1 : 0;
+    const wNeed = gakPerRow * desiredCell + (gakPerRow - 1) * desiredGap;
+    const hNeed = stack * (beats + headRatio) * desiredCell + (stack - 1) * desiredBandGap;
+    const scale = Math.min(1, availW / wNeed, availH / hNeed);
+
+    const cell = desiredCell * scale;
+    const gap = desiredGap * scale;
+    const bandGap = desiredBandGap * scale;
+    const headH = cell * headRatio;
+    const slot = cell + gap;
+
+    const bandH = headH + beats * cell;
+    const gridTotalW = gakPerRow * cell + (gakPerRow - 1) * gap;
+    const gridTotalH = stack * bandH + (stack - 1) * bandGap;
+
+    const gridX = frameX + frameW - INNER_PAD - gridTotalW;
+    const gridY = frameY + (frameH - gridTotalH) / 2;
+    const bandRight = gridX + gridTotalW;   // 밴드 전체(음악+제목)의 오른쪽 끝
+
+    // 제목이 차지할 각(열) 수
+    let titleGak = 0;
+    if (titleTxt) {
+      titleGak = gakPerRow >= 6 ? 2 : 1;
+      if (gakPerRow - titleGak < 1) titleGak = Math.max(0, gakPerRow - 1);
+    }
+
+    // 외곽 프레임 (격자를 감싸도록)
+    svg.appendChild(rect(gridX - INNER_PAD, gridY - INNER_PAD,
+      gridTotalW + 2 * INNER_PAD, gridTotalH + 2 * INNER_PAD, T_FRAME));
+
+    for (let b = 0; b < stack; b++) {
+      const bandTop = gridY + b * (bandH + bandGap);
+      const gridTop = bandTop + headH;
+      const gridBottom = gridTop + beats * cell;
+
+      const hasTitle = (b === 0 && titleGak > 0);
+      const musicGak = hasTitle ? (gakPerRow - titleGak) : gakPerRow;
+      const musicRight = gridX + (musicGak - 1) * slot + cell;
+
+      const dgSet = new Set();
+      if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
+
+      // 머리단: 가로로 쭉 이어진 빈 칸(세로선 없음). 위 선은 전체 폭.
+      if (wantHeader) svg.appendChild(line(gridX, bandTop, bandRight, bandTop, T_THICK));
+
+      // 각마다: 좌우 세로선 + 얇은 정간 가로선 (정간 격자 구간에만)
+      for (let g = 0; g < musicGak; g++) {
+        const x = gridX + g * slot;
+        svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
+        svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
+        for (let i = 1; i < beats; i++) {
+          if (dgSet.has(i)) continue;
+          svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
+        }
+      }
+
+      // 통줄 가로선 — 격자 상/하단은 제목까지 포함해 전체 폭으로 이어짐
+      svg.appendChild(line(gridX, gridTop, bandRight, gridTop, T_THICK));
+      dgSet.forEach(function (i) {   // 대강선은 음악영역만(제목 칸은 비움)
+        svg.appendChild(line(gridX, gridTop + i * cell, musicRight, gridTop + i * cell, T_DAEGANG));
+      });
+      svg.appendChild(line(gridX, gridBottom, bandRight, gridBottom, T_THICK));
+
+      // 제목 세로 패널 — 마지막 각에 붙여서(가로줄 연결), 정간 격자 높이만큼
+      if (hasTitle) {
+        const panelX = gridX + musicGak * slot;   // 마지막 각과 다른 각 사이만큼 간격 두고 시작
+        const panelRight = bandRight;
+        svg.appendChild(line(panelX, gridTop, panelX, gridBottom, T_THICK));         // 왼쪽 세로선
+        svg.appendChild(line(panelRight, gridTop, panelRight, gridBottom, T_THICK)); // 오른쪽 세로선
+
+        const cx = (panelX + panelRight) / 2;
+        const titleFont = Math.min(desiredTitle * scale, (panelRight - panelX) * 0.78);
+        const startY = gridTop + titleFont * 1.05 + desiredTitleOff * scale;
+        const tt = verticalText(cx, startY, titleTxt, titleFont, 700, "#000", titleFontFam);
+        svg.appendChild(tt.g);
+
+        if (subTxt) {
+          const subFont = titleFont * 0.5;
+          const subStart = tt.endY + titleFont * 0.6 + subFont;
+          if (subStart < gridBottom) {
+            const st = verticalText(cx, subStart, subTxt, subFont, 400, "#333", titleFontFam);
+            svg.appendChild(st.g);
+          }
+        }
+      }
+    }
+
+    $("sheet").innerHTML = "";
+    $("sheet").appendChild(svg);
+
+    $("readout").innerHTML =
+      `각 수(가로): <b>${gakPerRow}</b> · 열 수(세로): <b>${stack}</b>${stackAuto ? " (자동)" : ""} · 총 <b>${stack * gakPerRow}</b>각<br>` +
+      `각 너비: <b>${cell.toFixed(1)}</b> · 각 간격: <b>${gap.toFixed(1)}</b> · 열 간격: <b>${bandGap.toFixed(1)}</b> mm` +
+      (scale < 0.999 ? ` <span style="color:#8a6d3b">(A4 맞춤 ${Math.round(scale * 100)}%)</span>` : "") + `<br>` +
+      `격자 전체: <b>${gridTotalW.toFixed(0)} × ${gridTotalH.toFixed(0)} mm</b><br>` +
+      `<span style="font-size:11px">읽는 순서: 오른쪽 → 왼쪽 (전통)</span>` +
+      (dg.ok ? "" : `<div class="warn">⚠ 대강 값의 합이 정간 수(${beats})와 달라 무시했습니다.</div>`);
+  }
+
+  function fillDaegangPreset() {
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const cur = $("daegang").value.trim();
+    if (cur === "" || cur === daegangAuto) {
+      const preset = DAEGANG_PRESET[beats] || "";
+      $("daegang").value = preset;
+      daegangAuto = preset;
+    }
+  }
+
+  function downloadPng() {
+    const svg = $("sheet").querySelector("svg");
+    if (!svg) return;
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svg64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
+    const img = new Image();
+    img.onload = function () {
+      const s = 300 / 25.4;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(PAGE_W * s);
+      canvas.height = Math.round(PAGE_H * s);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function (blob) {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = ($("title").value.trim() || "정간보") + ".png";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+    };
+    img.src = svg64;
+  }
+
+  $("beats").addEventListener("input", () => { fillDaegangPreset(); render(); });
+  ["gakPerRow", "stackCount", "stackAuto", "cellSize", "gakGap", "bandGap",
+   "daegang", "title", "subtitle", "titleSize", "titleOffset", "titleFont", "header"].forEach(id => {
+    $(id).addEventListener("input", render);
+    $(id).addEventListener("change", render);
+  });
+  $("btnPng").addEventListener("click", downloadPng);
+  $("btnPrint").addEventListener("click", () => window.print());
+
+  fillDaegangPreset();
+  render();
+})();
+</script>
+</body>
+</html>
