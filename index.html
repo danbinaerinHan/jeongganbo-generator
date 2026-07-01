@@ -85,6 +85,27 @@
   details.adv[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 12px; }
   details.adv[open] > summary .chev { transform: rotate(180deg); }
 
+  /* 율명 이미지 팔레트 */
+  .palette { display: flex; flex-wrap: wrap; gap: 4px;
+             padding: 10px; border: 1px solid var(--accent); border-top: none;
+             border-radius: 0 0 8px 8px; background: #fff; margin-bottom: 14px; }
+  .palette .pi { display: flex; flex-direction: column; align-items: center; gap: 2px;
+                 width: 44px; padding: 4px 2px; border-radius: 6px; cursor: pointer; }
+  .palette .pi:hover { background: #f0ece3; }
+  .palette .pi img { width: 28px; height: 28px; object-fit: contain; }
+  .palette .pi span { font-size: 10px; color: var(--muted); }
+  .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
+  .palette .pmsg.err { color: #b23b3b; }
+
+  /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
+  .sizebox { border: 1px solid var(--line); border-radius: 10px;
+             background: #faf8f3; padding: 14px 14px 6px; margin-bottom: 18px; }
+  .sizebox .slider-field { margin-bottom: 12px; }
+  .sizebox label small { font-weight: 400; font-size: 11px; color: var(--muted); }
+  .sizebox details.adv { margin: 0; }
+  .sizebox details.adv > summary { margin-bottom: 0; }
+  .sizebox details.adv[open] > summary { margin-bottom: 12px; }
+
   .readout {
     background: #f7f5f0;
     border: 1px solid var(--line);
@@ -126,13 +147,58 @@
   #zoomBar .fit { font-size: 12px; padding: 0 8px; }
   #melodyArea { flex: 0 0 auto; border-top: 1px solid var(--line);
                 background: var(--panel); padding: 10px 14px 14px; }
-  .melody-head { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
+  #melodyResizer { height: 12px; margin: -10px -14px 2px; cursor: ns-resize;
+                   display: flex; align-items: center; justify-content: center;
+                   touch-action: none; }
+  #melodyResizer::before { content: ""; width: 46px; height: 4px; border-radius: 2px;
+                           background: var(--line); transition: background .12s ease; }
+  #melodyResizer:hover::before { background: var(--accent); }
+  .melody-head { display: flex; align-items: center; gap: 6px;
+                 font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
   .melody-head .mono { color: var(--muted); font-weight: 400;
-                       font-family: ui-monospace, Menlo, monospace; margin-left: 4px; }
-  .melody-head #melodyInfo { color: var(--muted); font-weight: 400; margin-left: 8px; }
-  #melody { width: 100%; height: 118px; resize: vertical; box-sizing: border-box;
+                       font-family: ui-monospace, Menlo, monospace; }
+  .melody-head #melodyInfo { color: var(--muted); font-weight: 400; }
+  .mel-actions { margin-left: auto; display: flex; gap: 6px; }
+  .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: #fff;
+             border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; color: var(--ink); }
+  .mel-btn:hover { background: #f0ece3; }
+  .mel-btn:disabled { opacity: .45; cursor: default; }
+  #melodyReset { color: #b23b3b; border-color: #e3b7b7; }
+  #melodyReset:hover { background: #f7ecec; }
+  #melody { width: 100%; height: 118px; resize: none; box-sizing: border-box;
             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+  /* 사이드바 접기/펼치기 */
+  .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .side-toggle { flex: 0 0 auto; width: 28px; height: 28px; border: 1px solid var(--line);
+                 background: #fff; border-radius: 6px; cursor: pointer; color: var(--muted);
+                 font-size: 14px; line-height: 1; }
+  .side-toggle:hover { background: #f0ece3; color: var(--ink); }
+  .side-open { display: none; position: fixed; top: 12px; right: 12px; z-index: 30;
+               padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent);
+               color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+               font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+  body.sidebar-collapsed #sidebar { display: none; }
+  body.sidebar-collapsed .side-open { display: inline-flex; }
+
+  /* 에디터 상단 도구줄 (율명 표기 · 팔레트) */
+  .editor-tools { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
+                  margin-bottom: 8px; }
+  .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+  .tool-inline select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+                        font-size: 12px; font-family: inherit; background: #fff; cursor: pointer; }
+  #paletteWrap { flex: 1 1 260px; min-width: 220px; margin: 0; }
+  #paletteWrap .palette { max-height: 148px; overflow-y: auto; }
+
+  /* 편집창 접기 */
+  .mini-toggle { width: 22px; height: 22px; margin-right: 6px; border: 1px solid var(--line);
+                 background: #fff; border-radius: 5px; cursor: pointer; color: var(--muted);
+                 font-size: 12px; line-height: 1; vertical-align: middle; transition: transform .12s ease; }
+  .mini-toggle:hover { background: #f0ece3; }
+  #melodyArea.editor-collapsed .editor-tools,
+  #melodyArea.editor-collapsed #editorBody { display: none; }
+  #melodyArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
@@ -146,29 +212,43 @@
 </head>
 <body>
   <aside id="sidebar">
-    <h1>정간보 생성기</h1>
-    <div class="sub">井間譜 · A4 세로 · 격자 세팅</div>
+    <div class="side-head">
+      <div>
+        <h1>정간보 생성기</h1>
+        <div class="sub">井間譜 · A4 세로 · 격자 세팅</div>
+      </div>
+      <button type="button" id="sidebarToggle" class="side-toggle" title="설정 폼 접기">✕</button>
+    </div>
 
     <!-- ===== 주요 설정 ===== -->
     <div class="field">
-      <label for="beats">1) 한 각의 정간 수 (박)</label>
+      <label for="beats">① 한 각의 정간 수 (몇 박)</label>
       <input type="number" id="beats" min="1" max="64" value="12">
-      <div class="hint">한 각(세로 열)에 들어갈 정간(칸)의 개수 = 몇 박짜리 곡인지.</div>
+      <div class="hint">한 각(세로줄)에 들어갈 정간(칸)의 개수 = 몇 박 장단인지.</div>
     </div>
 
     <div class="field">
-      <label for="gakPerRow">2) 각 수 (가로)</label>
+      <label for="gakPerRow">② 한 줄에 놓을 각 수 (가로)</label>
       <input type="number" id="gakPerRow" min="1" max="40" value="10">
-      <div class="hint">한 행에 가로로 나열할 각의 개수 (기본 10).</div>
+      <div class="hint">한 밴드(가로 한 줄)에 오른쪽→왼쪽으로 나란히 놓을 각의 개수 (기본 10).</div>
     </div>
 
     <div class="field">
-      <label for="stackCount">3) 열 수 (세로 밴드)</label>
+      <label for="stackCount">③ 세로로 쌓을 밴드 수 (최대)</label>
       <div class="row">
         <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
         <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
       </div>
-      <div class="hint">세로로 쌓을 밴드(줄) 수. 자동: 정간 수에 따라 (&gt;12→1, 6~12→2, ≤5→3).</div>
+      <div class="hint">한 페이지에 세로로 <b>최대</b> 몇 줄(밴드)까지 쌓을지. 자동: 정간 수에 따라 (&gt;12→1, 6~12→2, ≤5→3).</div>
+    </div>
+
+    <div class="field">
+      <label for="gakCount">④ 총 각 수 (마디 수)</label>
+      <div class="row">
+        <input type="number" id="gakCount" min="1" max="480" value="18" style="flex:1;">
+        <label class="chk"><input type="checkbox" id="gakCountAuto"> 자동</label>
+      </div>
+      <div class="hint">실제로 그릴 각(마디)의 총 개수. 직접 넣기 전까지는 위 설정대로 <b>한 페이지를 꽉 채웁니다</b>. 자동 체크 시 멜로디의 각(‖) 개수만큼만 생성합니다.</div>
     </div>
 
     <div class="field">
@@ -177,18 +257,20 @@
       <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
     </div>
 
-    <div class="field">
-      <label for="sizeScale">정간 크기 배율 (노인모드) — <span id="sizeScaleVal">1.0×</span></label>
-      <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
-      <div class="hint">격자 전체(정간·간격)를 키우거나 줄임. A4를 넘으면 자동으로 맞춰집니다. 화면만 크게 보려면 미리보기 왼쪽 위 <b>확대 버튼</b>을 쓰세요.</div>
-    </div>
+    <!-- ===== 크기 · 간격 ===== -->
+    <div class="sec">크기 · 간격</div>
+    <div class="sizebox">
+      <div class="field slider-field">
+        <label for="sizeScale">전체 배율 <small>정간·간격 한번에</small> — <span id="sizeScaleVal">1.0×</span></label>
+        <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
+        <div class="hint">격자 전체를 한번에 키우거나 줄임. A4를 넘으면 자동 맞춤. 아래 세부 조정으로 항목별 미세 조정을 할 수 있어요. (화면만 크게 보려면 왼쪽 위 <b>확대</b> 버튼)</div>
+      </div>
 
-    <!-- ===== 세부 조정 (제목 위) ===== -->
-    <details class="adv">
-      <summary>
-        <span class="lbl">⚙︎ 세부 조정 <small>각 크기 · 간격 · 머리단</small></span>
-        <span class="chev">▾</span>
-      </summary>
+      <details class="adv">
+        <summary>
+          <span class="lbl">⚙︎ 항목별 세부 조정 <small>각 너비 · 간격 · 머리단</small></span>
+          <span class="chev">▾</span>
+        </summary>
 
       <div class="field">
         <label for="cellSize">각(정간 칸) 너비 (mm)</label>
@@ -215,7 +297,8 @@
       </div>
 
       <div class="hint" style="margin-top:2px;">A4 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
-    </details>
+      </details>
+    </div>
 
     <!-- ===== 제목 ===== -->
     <div class="sec">제목</div>
@@ -263,6 +346,8 @@
     </div>
   </aside>
 
+  <button type="button" id="sidebarOpen" class="side-open" title="설정 폼 열기">⚙︎ 설정</button>
+
   <main id="main">
     <div id="sheetArea">
       <div id="zoomBar">
@@ -274,13 +359,41 @@
       <div id="sheet"></div>
     </div>
     <div id="melodyArea">
-      <div class="melody-head">멜로디 <span class="mono">| 정간 · || 각</span>
-        <span id="melodyInfo"></span></div>
-      <textarea id="melody" spellcheck="false"
-        placeholder="정간(칸)을 클릭하면 해당 칸으로 커서가 이동합니다. | 로 정간, || 로 각을 구분."></textarea>
+      <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
+
+      <div class="editor-tools">
+        <label class="tool-inline">율명 표기
+          <select id="noteMode">
+            <option value="image" selected>이미지</option>
+            <option value="font" disabled>폰트(준비중)</option>
+          </select>
+        </label>
+        <details class="adv" id="paletteWrap">
+          <summary>
+            <span class="lbl">🎵 사용 가능한 율명 <small>클릭하면 입력</small></span>
+            <span class="chev">▾</span>
+          </summary>
+          <div id="notePalette" class="palette"></div>
+        </details>
+      </div>
+
+      <div class="melody-head">
+        <button type="button" id="editorToggle" class="mini-toggle" title="편집창 접기/펼치기">▾</button>
+        멜로디 <span class="mono">| 정간 · || 각</span>
+        <span id="melodyInfo"></span>
+        <span class="mel-actions">
+          <button type="button" id="melodyUndo" class="mel-btn" title="초기화 되돌리기">↶ 되돌리기</button>
+          <button type="button" id="melodyReset" class="mel-btn" title="멜로디 내용 비우기">초기화</button>
+        </span>
+      </div>
+      <div id="editorBody">
+        <textarea id="melody" spellcheck="false"
+          placeholder="정간(칸)을 클릭하면 해당 칸으로 커서가 이동합니다. | 로 정간, || 로 각을 구분."></textarea>
+      </div>
     </div>
   </main>
 
+<script src="notes-data.js"></script>
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -604,6 +717,7 @@
     const subTxt = $("subtitle").value.trim();
     const wantHeader = $("header").checked;
     const dg = parseDaegang($("daegang").value, beats);
+    noteMode = $("noteMode").value === "image" ? "image" : "font";
 
     const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
     $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
