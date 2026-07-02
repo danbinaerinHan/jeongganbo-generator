@@ -227,10 +227,10 @@
              font-size: 15px; font-weight: 800; letter-spacing: .2px;
              box-shadow: 0 2px 6px rgba(138,109,59,.35); }
   #btnPlay:hover { opacity: .92; }
-  #btnStop { height: 30px; padding: 0 11px; border: 1px solid var(--line); background: #fff;
-             color: var(--muted); font-size: 12px; font-weight: 600; }
-  #btnStop:hover { background: #f0ece3; color: var(--ink); }
-  #btnPlay:disabled, #btnStop:disabled { opacity: .35; cursor: default; background: #fff; color: var(--muted);
+  #btnPause, #btnStop { height: 30px; padding: 0 11px; border: 1px solid var(--line); background: #fff;
+             color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  #btnPause:hover, #btnStop:hover { background: #f0ece3; color: var(--ink); }
+  #btnPlay:disabled, #btnPause:disabled, #btnStop:disabled { opacity: .35; cursor: default; background: #fff; color: var(--muted);
                                           border-color: var(--line); box-shadow: none; }
   #playSettingsToggle { width: 26px; height: 30px; }
 
@@ -643,6 +643,7 @@
         </div>
         <div id="playBar">
           <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
+          <button type="button" id="btnPause" title="일시정지" disabled>⏸ 일시정지</button>
           <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
           <button type="button" id="playSettingsToggle" class="icon-btn" title="재생 설정 (기준음·템포)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -2171,7 +2172,7 @@
     return events.filter(function (e) { return e.dur > 0; });
   }
 
-  let audioCtx = null, playTimer = null, playing = false;
+  let audioCtx = null, playTimer = null, playing = false, paused = false, playState = null;
 
   function highlightPlay(gak, cell) {
     playHi.forEach(function (h) { h.style.display = "none"; });
@@ -2184,14 +2185,56 @@
     h.style.display = "";
   }
 
+  // 재생/일시정지/정지 버튼의 활성 상태 + 라벨을 한곳에서 갱신
+  function updatePlayButtons() {
+    if (!$("btnPlay")) return;
+    $("btnPlay").disabled = playing;
+    $("btnPause").disabled = !playing;
+    $("btnStop").disabled = !playing;
+    $("btnPause").textContent = paused ? "▶ 이어하기" : "⏸ 일시정지";
+    $("btnPause").title = paused ? "이어 재생" : "일시정지";
+  }
+
   function stopPlayback() {
     if (!playing && !audioCtx) return;
-    playing = false;
+    playing = false; paused = false; playState = null;
     if (playTimer) { clearTimeout(playTimer); playTimer = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
     playHi.forEach(function (h) { h.style.display = "none"; });
-    if ($("btnPlay")) $("btnPlay").disabled = false;
-    if ($("btnStop")) $("btnStop").disabled = true;
+    updatePlayButtons();
+  }
+
+  // audioCtx.currentTime 기준으로 진행 상황을 갱신 — suspend() 동안은 currentTime이
+  // 멈춰있으므로 일시정지해도 하이라이트가 어긋나지 않는다.
+  function tick() {
+    if (!playing || paused || !playState) return;
+    const now = audioCtx.currentTime - playState.startAt;
+    if (now >= playState.total) { stopPlayback(); return; }
+    const events = playState.events;
+    for (let i = events.length - 1; i >= 0; i--) {
+      if (now >= events[i].t) { highlightPlay(events[i].gak, events[i].cell); break; }
+    }
+    playTimer = setTimeout(tick, 60);
+  }
+
+  function pausePlayback() {
+    if (!playing || paused) return;
+    paused = true;
+    if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+    audioCtx.suspend();
+    updatePlayButtons();
+  }
+
+  function resumePlayback() {
+    if (!playing || !paused) return;
+    paused = false;
+    audioCtx.resume();
+    tick();
+    updatePlayButtons();
+  }
+
+  function togglePause() {
+    if (paused) resumePlayback(); else pausePlayback();
   }
 
   function playMelody() {
@@ -2222,20 +2265,11 @@
       osc.start(on); osc.stop(off + 0.02);
     });
 
-    playing = true;
-    $("btnPlay").disabled = true;
-    $("btnStop").disabled = false;
+    playing = true; paused = false;
     const total = events[events.length - 1].t + events[events.length - 1].dur;
-    const t0 = performance.now();
-    (function tick() {
-      if (!playing) return;
-      const now = (performance.now() - t0) / 1000 - 0.15;
-      if (now >= total) { stopPlayback(); return; }
-      for (let i = events.length - 1; i >= 0; i--) {
-        if (now >= events[i].t) { highlightPlay(events[i].gak, events[i].cell); break; }
-      }
-      playTimer = setTimeout(tick, 60);
-    })();
+    playState = { startAt: startAt, total: total, events: events };
+    updatePlayButtons();
+    tick();
   }
 
   // ---------- 저장 / 불러오기 ----------
@@ -2449,6 +2483,7 @@
     });
   });
   $("btnPlay").addEventListener("click", playMelody);
+  $("btnPause").addEventListener("click", togglePause);
   $("btnStop").addEventListener("click", stopPlayback);
   $("hwangPitch").addEventListener("change", saveState);
   // 템포(BPM)는 재생뿐 아니라 템포 표시(악보)에도 쓰이므로 바뀌면 다시 그림
