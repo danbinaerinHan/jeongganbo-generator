@@ -107,7 +107,7 @@
   .palette .pi img { width: 24px; height: 24px; object-fit: contain; }
   .palette .pi .pch { display: flex; align-items: center; justify-content: center;
                       font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
-                      font-size: 19px; color: #333; }
+                      font-size: 19px; color: #333; white-space: nowrap; }
   .palette .pi.nofile { opacity: .5; }
   .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
   .palette .pmsg.err { color: #b23b3b; }
@@ -1165,7 +1165,12 @@
       if (dim) item.classList.add("nofile");
       const ch = document.createElement("span");
       ch.className = "pch";
-      ch.textContent = fallbackChar || label;
+      const text = fallbackChar || label;
+      ch.textContent = text;
+      // 한글 접두어(하배/중청 등)처럼 여러 글자면 칸 폭에 맞춰 글자 크기를 줄인다
+      const len = Array.from(text).length;
+      if (len >= 3) ch.style.fontSize = "9px";
+      else if (len === 2) ch.style.fontSize = "13px";
       item.appendChild(ch);
     }
     item.addEventListener("mousedown", function (e) { e.preventDefault(); });
@@ -1331,9 +1336,12 @@
       return;
     }
     if (noteMode === "hangul" && tk.literal == null && tk.sym == null && tk.base != null) {
+      const txt = octPrefix(tk.oct) + tk.base;
+      // 하배/중청 등 접두어가 붙어 여러 글자면 정간 폭에 맞춰 글자 크기를 줄인다
+      const fs = txt.length >= 3 ? size * 0.5 : txt.length === 2 ? size * 0.68 : size;
       const t = el("text", { x: cx, y: cyc + size * 0.34, "text-anchor": "middle",
-        "font-size": size, "font-family": NOTE_FONT, fill: "#111" });
-      t.textContent = octPrefix(tk.oct) + tk.base; svg.appendChild(t);
+        "font-size": fs, "font-family": NOTE_FONT, fill: "#111" });
+      t.textContent = txt; svg.appendChild(t);
       return;
     }
     // 폰트 폴백: ① 옥타브 변형 한자(폰트 지원 시) ② 기본자 + 옥타브 점
