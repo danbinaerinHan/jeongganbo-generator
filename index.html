@@ -542,7 +542,7 @@
 
       <div class="melody-head">
         <button type="button" id="editorToggle" class="mini-toggle" title="접기/펼치기">▾</button>
-        멜로디 <span class="melody-hint">— 세로줄(각)이 바뀔 땐 줄바꿈, 그 안의 칸(정간)은 <span class="mono">|</span> 로 나눠 적어요</span>
+        멜로디 <span class="melody-hint">— 음은 한글 율명(황·태·협…)으로, 세로줄(각)이 바뀔 땐 줄바꿈, 그 안의 칸(정간)은 <span class="mono">|</span> 로 나눠 적어요</span>
         <span id="melodyInfo"></span>
         <span class="mel-actions">
           <button type="button" id="ornEditToggle" class="mel-btn tip" data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있어요">🎚 시김새 수정</button>
@@ -562,6 +562,7 @@
               <select id="noteMode">
                 <option value="image" selected>이미지</option>
                 <option value="font">폰트 (한자)</option>
+                <option value="hangul">폰트 (한글)</option>
               </select>
             </label>
             <span class="pal-hint">클릭하면 입력</span>
@@ -1085,6 +1086,10 @@
     { oct: 1,  label: "청",   prefix: "청" },
     { oct: 2,  label: "중청", prefix: "중청" }
   ];
+  function octPrefix(oct) {
+    const row = OCT_ROWS.find(function (r) { return r.oct === oct; });
+    return row ? row.prefix : "";
+  }
 
   // 커서 위치에 토큰(율명 텍스트) 삽입
   function insertToken(txt) {
@@ -1200,16 +1205,21 @@
       lab.textContent = row.label;
       rowEl.appendChild(lab);
       SCALE.forEach(function (base) {
-        const fontMode = $("noteMode").value === "font";
-        // 폰트 모드: 이미지 대신 변형 한자로 표시(악보와 동일하게)
-        const file = fontMode ? null : resolveNoteFile(base, row.oct);
+        const mode = $("noteMode").value;
+        // 이미지 모드가 아니면(한자/한글 폰트) 이미지 대신 글자로 표시(악보와 동일하게)
+        const file = mode === "image" ? resolveNoteFile(base, row.oct) : null;
         const label = row.prefix + base;
         const first = !probed && !!file;
         if (first) probed = true;
-        // 이미지 없으면: 변형 한자(지원 시) → 기본 한자(흐리게, 악보엔 점 표기)
-        const variant = row.oct ? octHanja(base, row.oct) : null;
-        const fallback = variant || YUL[base] || base;
-        rowEl.appendChild(paletteChip(label, file, label, first, fallback, !variant && row.oct !== 0));
+        let fallback, dim;
+        if (mode === "hangul") { fallback = label; dim = false; }
+        else {
+          // 이미지 없으면: 변형 한자(지원 시) → 기본 한자(흐리게, 악보엔 점 표기)
+          const variant = row.oct ? octHanja(base, row.oct) : null;
+          fallback = variant || YUL[base] || base;
+          dim = !variant && row.oct !== 0;
+        }
+        rowEl.appendChild(paletteChip(label, file, label, first, fallback, dim));
       });
       wrap.appendChild(rowEl);
     });
@@ -1288,6 +1298,12 @@
 
     if (file) {
       drawSymImage(svg, file, cx, cyc, size * 1.06);
+      return;
+    }
+    if (noteMode === "hangul" && tk.literal == null && tk.sym == null && tk.base != null) {
+      const t = el("text", { x: cx, y: cyc + size * 0.34, "text-anchor": "middle",
+        "font-size": size, "font-family": NOTE_FONT, fill: "#111" });
+      t.textContent = octPrefix(tk.oct) + tk.base; svg.appendChild(t);
       return;
     }
     // 폰트 폴백: ① 옥타브 변형 한자(폰트 지원 시) ② 기본자 + 옥타브 점
@@ -1401,7 +1417,7 @@
     const wantHeader = $("header").checked;
     const wantFrame = $("frame").checked;
     const dg = parseDaegang($("daegang").value, beats);
-    noteMode = $("noteMode").value === "image" ? "image" : "font";
+    noteMode = $("noteMode").value;   // "image" | "font" | "hangul"
 
     const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
     $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
