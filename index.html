@@ -437,6 +437,38 @@
         </select>
       </div>
 
+      <div class="sec">제목</div>
+      <div class="field">
+        <label for="title">곡 제목</label>
+        <input type="text" id="title" placeholder="예: 언편">
+        <div class="mini">
+          <span>크기</span>
+          <span class="num-unit"><input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"><span class="unit">mm</span></span>
+          <span>위치</span>
+          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="0"><span class="unit">mm</span></span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="subtitle">부제 (선택)</label>
+        <input type="text" id="subtitle" placeholder="예: (한숨정)">
+        <div class="mini">
+          <span>크기</span>
+          <span class="num-unit"><input type="number" id="subSize" min="1" max="20" step="0.5" value="5"><span class="unit">mm</span></span>
+          <span>위치</span>
+          <span class="num-unit"><input type="number" id="subOffset" step="1" value="0"><span class="unit">mm</span></span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="titleFont">제목 글씨체</label>
+        <select id="titleFont">
+          <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+          <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+          <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+          <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+          <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+        </select>
+      </div>
+
       <div class="chk-cluster">
         <div class="field">
           <div class="chk-row">
@@ -486,38 +518,6 @@
             </span>
           </div>
         </div>
-      </div>
-
-      <div class="sec">제목</div>
-      <div class="field">
-        <label for="title">곡 제목</label>
-        <input type="text" id="title" placeholder="예: 언편">
-        <div class="mini">
-          <span>크기</span>
-          <span class="num-unit"><input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"><span class="unit">mm</span></span>
-          <span>위치</span>
-          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="0"><span class="unit">mm</span></span>
-        </div>
-      </div>
-      <div class="field">
-        <label for="subtitle">부제 (선택)</label>
-        <input type="text" id="subtitle" placeholder="예: (한숨정)">
-        <div class="mini">
-          <span>크기</span>
-          <span class="num-unit"><input type="number" id="subSize" min="1" max="20" step="0.5" value="5"><span class="unit">mm</span></span>
-          <span>위치</span>
-          <span class="num-unit"><input type="number" id="subOffset" step="1" value="0"><span class="unit">mm</span></span>
-        </div>
-      </div>
-      <div class="field">
-        <label for="titleFont">제목 글씨체</label>
-        <select id="titleFont">
-          <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
-          <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
-          <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
-          <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
-          <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
-        </select>
       </div>
     </div>
 
