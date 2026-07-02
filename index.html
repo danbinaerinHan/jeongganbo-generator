@@ -109,6 +109,9 @@
                       font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
                       font-size: 19px; color: #333; white-space: nowrap; }
   .palette .pi.nofile .pch { color: #aaa; }
+  .palette .pi.has-cap { flex-direction: column; height: auto; padding: 3px 0 2px; gap: 0; }
+  .palette .pi .pch-cap { font-size: 8px; color: #aaa; line-height: 1.1; white-space: nowrap;
+                          font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif; }
   .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
   .palette .pmsg.err { color: #b23b3b; }
 
@@ -626,8 +629,8 @@
             </div>
             <label class="tool-inline">표기
               <select id="noteMode">
-                <option value="font" selected>폰트 (한자)</option>
-                <option value="hangul">폰트 (한글)</option>
+                <option value="font" selected>한자</option>
+                <option value="hangul">한글</option>
               </select>
             </label>
             <span class="pal-hint">클릭하면 입력</span>
@@ -1284,7 +1287,8 @@
   }
 
   // 팔레트 칩 하나 생성(쉼표 등 기호 이미지가 없으면 한자 폰트로 표시)
-  function paletteChip(label, file, insertText, fallbackChar, dim) {
+  // caption: 주 글자 아래 작은 회색 글자로 보여줄 보조 표기(예: 한자 모드엔 입력용 한글, 한글 모드엔 한자)
+  function paletteChip(label, file, insertText, fallbackChar, dim, caption) {
     const item = document.createElement("div");
     item.className = "pi";
     item.title = "‘" + label + "’ 입력";
@@ -1295,6 +1299,7 @@
       item.appendChild(img);
     } else {
       if (dim) item.classList.add("nofile");
+      if (caption) item.classList.add("has-cap");
       const ch = document.createElement("span");
       ch.className = "pch";
       const text = fallbackChar || label;
@@ -1304,6 +1309,12 @@
       if (len >= 3) ch.style.fontSize = "9px";
       else if (len === 2) ch.style.fontSize = "13px";
       item.appendChild(ch);
+      if (caption) {
+        const cap = document.createElement("span");
+        cap.className = "pch-cap";
+        cap.textContent = caption;
+        item.appendChild(cap);
+      }
     }
     item.addEventListener("mousedown", function (e) { e.preventDefault(); });
     item.addEventListener("click", function () { insertToken(insertText); });
@@ -1373,15 +1384,13 @@
       SCALE.forEach(function (base) {
         const mode = $("noteMode").value;
         const label = row.prefix + base;
-        let fallback, dim;
-        if (mode === "hangul") { fallback = label; dim = false; }
-        else {
-          // 변형 한자(지원 시) → 기본 한자(변형자 없으면 흐리게, 악보엔 점 표기)
-          const variant = row.oct ? octHanja(base, row.oct) : null;
-          fallback = variant || YUL[base] || base;
-          dim = !variant && row.oct !== 0;
-        }
-        rowEl.appendChild(paletteChip(label, null, label, fallback, dim));
+        // 변형 한자(지원 시) → 기본 한자(변형자 없으면 흐리게, 악보엔 점 표기)
+        const variant = row.oct ? octHanja(base, row.oct) : null;
+        const hanja = variant || YUL[base] || base;
+        let fallback, dim, caption;
+        if (mode === "hangul") { fallback = label; dim = false; caption = hanja; }
+        else { fallback = hanja; dim = !variant && row.oct !== 0; caption = label; }
+        rowEl.appendChild(paletteChip(label, null, label, fallback, dim, caption));
       });
       wrap.appendChild(rowEl);
     });
