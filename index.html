@@ -17,6 +17,49 @@
   html, body { margin: 0; height: 100%; }
   button, select, input, textarea { transition: border-color .12s ease, background .12s ease; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(138,109,59,.15);
+  }
+
+  /* 체크박스 = 토글 스위치 하나로 통일 (기본 브라우저 체크박스 대체) */
+  input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
+    width: 30px; height: 18px; border-radius: 999px;
+    background: #e4e0d6; border: 1px solid var(--line); position: relative; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  input[type="checkbox"]::after {
+    content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.28);
+    transition: transform .15s ease;
+  }
+  input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  input[type="checkbox"]:checked::after { transform: translateX(12px); }
+
+  /* 셀렉트 = 화살표 아이콘 통일 (기본 브라우저 화살표 대체) */
+  select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6a66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; background-size: 12px;
+  }
+
+  /* 아이콘 버튼 하나로 통일(⚙ · ? · ✕ · ▾ 등 텍스트 이모지 대신 같은 획 굵기의 SVG) */
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; padding: 0; border: none; background: transparent;
+    border-radius: 6px; color: var(--muted); cursor: pointer; flex: 0 0 auto;
+    transition: background .12s ease, color .12s ease, transform .12s ease;
+  }
+  .icon-btn svg { width: 15px; height: 15px; stroke-width: 2; }
+  .icon-btn:hover { background: #f0ece3; color: var(--ink); }
+  .icon-btn.on { background: var(--accent); color: #fff; }
+  .icon-btn.collapsed svg.chev { transform: rotate(-90deg); }
+
+  /* 숫자 입력 + 단위 접미(mm) 한 부품으로 */
+  .num-unit { position: relative; display: inline-flex; }
+  .num-unit input[type="number"] { padding-right: 22px; }
+  .num-unit .unit { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 9px; color: var(--muted); pointer-events: none; user-select: none; }
   body {
     font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     background: var(--bg);
@@ -53,20 +96,26 @@
   .field input:disabled { background: #f2f0ec; color: var(--muted); }
   .field input[type="range"] { width: 100%; padding: 0; accent-color: var(--accent); cursor: pointer; }
   .field select {
-    width: 100%; padding: 8px 10px; border: 1px solid var(--line);
-    border-radius: 6px; font-size: 14px; font-family: inherit; background: #fff; cursor: pointer;
+    width: 100%; padding: 8px 26px 8px 10px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 14px; font-family: inherit; background-color: #fff; cursor: pointer;
   }
   .row { display: flex; gap: 8px; align-items: center; }
   .two { display: flex; gap: 10px; }
   .two .field { flex: 1; margin-bottom: 16px; }
-  .chk { display: flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 400;
+  .chk { display: flex; gap: 7px; align-items: center; font-size: 12px; font-weight: 400;
          white-space: nowrap; margin: 0; cursor: pointer; }
-  .chk input { width: 15px; height: 15px; }
+  /* 관련 옵션(장단/가사/템포)은 바짝 붙이고, 다음 그룹과는 확실히 띄움 */
+  .chk-cluster { margin-bottom: 26px; }
+  .chk-cluster .field { margin-bottom: 2px; padding: 6px 0; }
+  .chk-cluster .field + .field { border-top: 1px solid var(--line); }
+  .chk-cluster .field .hint { margin: 4px 0 2px 37px; }
+  .chk-cluster .field select { margin: 6px 0 2px 37px; width: calc(100% - 37px); }
   .mini { display: flex; align-items: center; gap: 6px; margin-top: 7px;
           font-size: 11px; color: var(--muted); flex-wrap: wrap; }
-  .mini input[type="number"] { width: 52px; padding: 4px 6px; font-size: 12px;
+  .mini input[type="number"] { width: 60px; padding: 4px 6px; font-size: 12px;
                 border: 1px solid var(--line); border-radius: 5px; font-family: inherit; }
-  .mini .u { margin-left: -2px; }
+  .mini .num-unit input[type="number"] { width: 62px; padding-right: 22px; }
+  .mini .num-unit .unit { font-size: 9px; }
 
   .sec { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent);
          text-transform: uppercase; margin: 6px 0 14px; border-top: 1px solid var(--line); padding-top: 16px; }
@@ -158,41 +207,42 @@
 
   #topBar { position: absolute; top: 12px; left: 14px; z-index: 5;
             display: flex; align-items: center; gap: 8px; }
-  #zoomBar { display: flex; align-items: center; gap: 3px;
+  /* 위계: 재생이 주 액션 → 크게. 줌/보조 버튼은 작게 눌러줌 */
+  #zoomBar { display: flex; align-items: center; gap: 1px;
              background: rgba(255,255,255,.94); border: 1px solid var(--line);
-             border-radius: 9px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
-  #zoomBar button { min-width: 27px; height: 27px; border: none; background: transparent;
-                    font-size: 16px; line-height: 1; cursor: pointer; border-radius: 6px; color: var(--ink); }
-  #zoomBar button:hover { background: #eee; }
-  #zoomBar .zval { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); }
-  #zoomBar .fit { font-size: 12px; padding: 0 8px; white-space: nowrap; }
+             border-radius: 8px; padding: 3px 5px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  #zoomBar button { min-width: 22px; height: 22px; border: none; background: transparent;
+                    font-size: 13px; line-height: 1; cursor: pointer; border-radius: 5px; color: var(--muted); }
+  #zoomBar button:hover { background: #eee; color: var(--ink); }
+  #zoomBar .zval { font-size: 11px; min-width: 38px; text-align: center; color: var(--muted); }
+  #zoomBar .fit { font-size: 11px; padding: 0 6px; white-space: nowrap; }
   #zoomBar button:disabled { opacity: .35; cursor: default; }
   #zoomBar button:disabled:hover { background: transparent; }
 
   /* 재생 컨트롤: 줌 바 옆에 별도의 눈에 띄는 그룹으로 */
-  #playBar { position: relative; display: flex; align-items: center; gap: 4px;
+  #playBar { position: relative; display: flex; align-items: center; gap: 5px;
              background: rgba(255,255,255,.94); border: 1px solid var(--line);
-             border-radius: 9px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
-  #playBar button { height: 29px; border-radius: 7px; cursor: pointer; font-family: inherit;
-                     font-size: 13px; font-weight: 700; }
-  #btnPlay { padding: 0 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
-  #btnPlay:hover { opacity: .9; }
-  #btnStop { padding: 0 12px; border: 1px solid var(--accent); background: #fff; color: var(--accent); }
-  #btnStop:hover { background: #faf3e7; }
+             border-radius: 10px; padding: 5px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  #playBar button { border-radius: 7px; cursor: pointer; font-family: inherit; }
+  #btnPlay { height: 38px; padding: 0 20px; border: none; background: var(--accent); color: #fff;
+             font-size: 15px; font-weight: 800; letter-spacing: .2px;
+             box-shadow: 0 2px 6px rgba(138,109,59,.35); }
+  #btnPlay:hover { opacity: .92; }
+  #btnStop { height: 30px; padding: 0 11px; border: 1px solid var(--line); background: #fff;
+             color: var(--muted); font-size: 12px; font-weight: 600; }
+  #btnStop:hover { background: #f0ece3; color: var(--ink); }
   #btnPlay:disabled, #btnStop:disabled { opacity: .35; cursor: default; background: #fff; color: var(--muted);
-                                          border-color: var(--line); }
-  #playSettingsToggle { min-width: 27px; height: 29px; border: none; background: transparent;
-                         font-size: 15px; color: var(--ink); }
-  #playSettingsToggle:hover { background: #eee; }
-  #playSettingsToggle.on { background: #eee; }
+                                          border-color: var(--line); box-shadow: none; }
+  #playSettingsToggle { width: 26px; height: 30px; }
 
-  .play-pop { position: absolute; top: 40px; left: 0; z-index: 6; display: none;
+  .play-pop { position: absolute; top: 48px; left: 0; z-index: 6; display: none;
               background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 200px; font-size: 12px; }
   .play-pop.on { display: block; }
   .play-pop .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
   .play-pop select, .play-pop input { width: 96px; padding: 3px 5px; border: 1px solid var(--line);
                                        border-radius: 5px; font-family: inherit; font-size: 12px; }
+  .play-pop select { padding-right: 20px; background-position: right 6px center; background-size: 10px; }
   .play-pop .hint { color: var(--muted); line-height: 1.4; }
   @media print { .play-pop { display: none !important; } }
 
@@ -204,7 +254,6 @@
   .orn-panel.on { display: block; }
   .orn-title { display: flex; justify-content: space-between; align-items: center;
                font-weight: 700; color: var(--accent); margin-bottom: 8px; }
-  .orn-title button { border: none; background: none; cursor: pointer; font-size: 13px; color: var(--muted); }
   .orn-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
   .orn-row span { flex: 0 0 34px; color: var(--muted); }
   .orn-row button { flex: 1; padding: 4px 0; border: 1px solid var(--line); background: #fff;
@@ -260,10 +309,12 @@
   #paletteCol { flex: 0 0 auto; max-width: 60%; display: flex; flex-direction: column;
                 min-height: 0; }
   .pal-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-  .pal-views { display: inline-flex; gap: 2px; }
-  .pal-view { padding: 3px 12px; border: 1px solid var(--line); background: #fff; cursor: pointer;
-              font-size: 11px; font-weight: 600; font-family: inherit; color: var(--muted); border-radius: 6px; }
-  .pal-view.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* 상단 문서/레이아웃/출력 탭과 같은 부품(밑줄 방식)을 축소해 재사용 */
+  .pal-views { display: inline-flex; gap: 10px; border-bottom: 1px solid var(--line); }
+  .pal-view { padding: 3px 1px 6px; border: none; border-bottom: 2px solid transparent; background: none;
+              cursor: pointer; font-size: 11px; font-weight: 600; font-family: inherit; color: var(--muted); }
+  .pal-view:hover { color: var(--ink); }
+  .pal-view.active { color: var(--accent); border-bottom-color: var(--accent); }
   #paletteCol .pal-hint { font-weight: 400; font-size: 11px; color: var(--muted); }
   /* 시김새 칩 (이미지 + 한글 이름) */
   .palette .ornrow { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
@@ -316,36 +367,28 @@
 
   /* 사이드바 접기/펼치기 */
   .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-  .side-toggle { flex: 0 0 auto; width: 28px; height: 28px; border: 1px solid var(--line);
-                 background: #fff; border-radius: 6px; cursor: pointer; color: var(--muted);
-                 font-size: 14px; line-height: 1; }
-  .side-toggle:hover { background: #f0ece3; color: var(--ink); }
   .side-open { display: none; position: fixed; top: 12px; right: 12px; z-index: 30;
+               align-items: center; gap: 6px;
                padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent);
                color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
                font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+  .side-open svg { width: 15px; height: 15px; stroke-width: 2; }
   body.sidebar-collapsed #sidebar { display: none; }
   body.sidebar-collapsed .side-open { display: inline-flex; }
 
   /* 율명 표기 셀렉트 */
   .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
-  .tool-inline select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
-                        font-size: 12px; font-family: inherit; background: #fff; cursor: pointer; }
+  .tool-inline select { padding: 5px 24px 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+                        font-size: 12px; font-family: inherit; background-color: #fff; cursor: pointer;
+                        background-position: right 7px center; background-size: 10px; }
 
   /* 편집창 접기 */
-  .mini-toggle { width: 22px; height: 22px; margin-right: 6px; border: 1px solid var(--line);
-                 background: #fff; border-radius: 5px; cursor: pointer; color: var(--muted);
-                 font-size: 12px; line-height: 1; vertical-align: middle; transition: transform .12s ease; }
-  .mini-toggle:hover { background: #f0ece3; }
+  .mini-toggle { margin-right: 2px; transition: transform .12s ease; }
   #melodyArea.editor-collapsed #melodyRow { display: none; }
   #melodyArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
 
-  /* 입력 방법 가이드 (?) 토글 */
+  /* 입력 방법 가이드 (?) 토글 — 다른 아이콘 버튼과 같은 부품(.icon-btn) 사용 */
   .guide-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
-  #melodyGuideToggle { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--accent);
-                        background: #fff; color: var(--accent); font-size: 11px; font-weight: 700;
-                        line-height: 1; cursor: pointer; padding: 0; }
-  #melodyGuideToggle:hover, #melodyGuideToggle.on { background: var(--accent); color: #fff; }
   .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
                   background: rgba(255,255,255,.98); border: 1px solid var(--accent); border-radius: 10px;
                   padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
@@ -375,7 +418,9 @@
         <h1>정간보 생성기</h1>
         <div class="sub">井間譜 · A4 세로 · 격자 세팅</div>
       </div>
-      <button type="button" id="sidebarToggle" class="side-toggle" title="설정 폼 접기">✕</button>
+      <button type="button" id="sidebarToggle" class="icon-btn" title="설정 폼 접기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
 
     <div class="tabs">
@@ -407,26 +452,28 @@
         <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
       </div>
 
-      <div class="field">
-        <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
-        <div class="hint">켜면 맨 처음 각 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 한 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다.</div>
-      </div>
+      <div class="chk-cluster">
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
+          <div class="hint">켜면 맨 처음 각 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 한 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다.</div>
+        </div>
 
-      <div class="field">
-        <label class="chk"><input type="checkbox" id="wantLyrics"> 가사 추가</label>
-        <div class="hint">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다. 정간마다 한 글자씩 적는다.</div>
-        <select id="lyricsFont">
-          <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
-          <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
-          <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
-          <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
-          <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
-        </select>
-      </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="wantLyrics"> 가사 추가</label>
+          <div class="hint">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다. 정간마다 한 글자씩 적는다.</div>
+          <select id="lyricsFont">
+            <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+            <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+            <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+            <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+            <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+          </select>
+        </div>
 
-      <div class="field">
-        <label class="chk"><input type="checkbox" id="wantTempo"> 템포 표시</label>
-        <div class="hint">켜면 맨 처음 각 위에 一分・三十井(1분에 30정간) 식으로 템포를 한자로 표시한다. 값은 재생 설정(⚙)의 템포(BPM)를 그대로 쓴다.</div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="wantTempo"> 템포 표시</label>
+          <div class="hint">켜면 맨 처음 각 위에 一分・三十井(1분에 30정간) 식으로 템포를 한자로 표시한다. 값은 재생 설정(⚙)의 템포(BPM)를 그대로 쓴다.</div>
+        </div>
       </div>
 
       <div class="sec">제목</div>
@@ -435,10 +482,9 @@
         <input type="text" id="title" placeholder="예: 언편">
         <div class="mini">
           <span>크기</span>
-          <input type="number" id="titleSize" min="2" max="30" step="0.5" value="10">
+          <span class="num-unit"><input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"><span class="unit">mm</span></span>
           <span>위치</span>
-          <input type="number" id="titleOffset" step="1" value="0">
-          <span class="u">mm</span>
+          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="0"><span class="unit">mm</span></span>
         </div>
         <div class="hint">첫 장 맨 처음(오른쪽) 세로 칸에 큰 글씨로 들어감.</div>
       </div>
@@ -447,10 +493,9 @@
         <input type="text" id="subtitle" placeholder="예: (한숨정)">
         <div class="mini">
           <span>크기</span>
-          <input type="number" id="subSize" min="1" max="20" step="0.5" value="5">
+          <span class="num-unit"><input type="number" id="subSize" min="1" max="20" step="0.5" value="5"><span class="unit">mm</span></span>
           <span>위치</span>
-          <input type="number" id="subOffset" step="1" value="0">
-          <span class="u">mm</span>
+          <span class="num-unit"><input type="number" id="subOffset" step="1" value="0"><span class="unit">mm</span></span>
         </div>
         <div class="hint">제목 아래에 작은 글씨로 들어감.</div>
       </div>
@@ -510,7 +555,8 @@
 
         <details class="adv">
           <summary>
-            <span class="lbl">⚙︎ 항목별 세부 조정 <small>각 너비 · 간격 · 머리단</small></span>
+            <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              항목별 세부 조정 <small>각 너비 · 간격 · 머리단</small></span>
             <span class="chev">▾</span>
           </summary>
 
@@ -560,7 +606,10 @@
     </div>
   </aside>
 
-  <button type="button" id="sidebarOpen" class="side-open" title="설정 폼 열기">⚙︎ 설정</button>
+  <button type="button" id="sidebarOpen" class="side-open" title="설정 폼 열기">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    설정
+  </button>
 
   <main id="main">
     <div id="sheetArea">
@@ -575,7 +624,9 @@
         <div id="playBar">
           <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
           <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
-          <button type="button" id="playSettingsToggle" title="재생 설정 (기준음·템포)">⚙</button>
+          <button type="button" id="playSettingsToggle" class="icon-btn" title="재생 설정 (기준음·템포)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
           <div id="playPop" class="play-pop">
             <div class="pp-row"><span>기준음 (황·黃)</span>
               <select id="hwangPitch">
@@ -591,7 +642,9 @@
         </div>
       </div>
       <div id="ornPanel" class="orn-panel">
-        <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" title="닫기">✕</button></div>
+        <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" class="icon-btn" title="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button></div>
         <div class="orn-row"><span>크기</span>
           <button type="button" data-a="sz-">−</button><button type="button" data-a="sz+">+</button></div>
         <div class="orn-row"><span>좌우</span>
@@ -606,10 +659,14 @@
       <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
 
       <div class="melody-head">
-        <button type="button" id="editorToggle" class="mini-toggle" title="접기/펼치기">▾</button>
+        <button type="button" id="editorToggle" class="icon-btn mini-toggle" title="접기/펼치기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
         선율 입력
         <span class="guide-wrap">
-          <button type="button" id="melodyGuideToggle" title="입력 방법 안내">?</button>
+          <button type="button" id="melodyGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
           <div id="melodyGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
               ① 악보의 정간을 클릭해서 바로 입력<br>
@@ -628,7 +685,9 @@
         <span class="mel-actions">
           <span class="guide-wrap">
             <button type="button" id="ornEditToggle" class="mel-btn">시김새 조정하기</button>
-            <button type="button" id="ornGuideToggle" title="설명 보기">?</button>
+            <button type="button" id="ornGuideToggle" class="icon-btn" title="설명 보기">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </button>
             <div id="ornGuide" class="melody-guide">
               <div class="mg-sec">켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있다.</div>
             </div>
@@ -663,10 +722,14 @@
     </div>
     <div id="jangdanArea">
       <div class="melody-head">
-        <button type="button" id="jangdanToggle" class="mini-toggle" title="접기/펼치기">▾</button>
+        <button type="button" id="jangdanToggle" class="icon-btn mini-toggle" title="접기/펼치기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
         장단 입력
         <span class="guide-wrap">
-          <button type="button" id="jangdanGuideToggle" title="입력 방법 안내">?</button>
+          <button type="button" id="jangdanGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
           <div id="jangdanGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
               장단은 맨 처음 각 옆에 한 번만 표시된다.<br>
@@ -693,10 +756,14 @@
     </div>
     <div id="lyricsArea">
       <div class="melody-head">
-        <button type="button" id="lyricsToggle" class="mini-toggle" title="접기/펼치기">▾</button>
+        <button type="button" id="lyricsToggle" class="icon-btn mini-toggle" title="접기/펼치기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
         가사 입력
         <span class="guide-wrap">
-          <button type="button" id="lyricsGuideToggle" title="입력 방법 안내">?</button>
+          <button type="button" id="lyricsGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
           <div id="lyricsGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
               선율처럼 각(세로줄)마다 한 줄, 정간마다 한 글자를 적는다.<br>
