@@ -1544,14 +1544,13 @@
             const content = gakCells && gakCells[j] ? gakCells[j].text : "";
             if (content) drawCell(svg, x, gridTop + j * cell, cell, content, uniformSmall, melIdx, j, pageIdx);
           }
-          // 세로선·정간 가로선(대강은 굵게)·아래 마감 — 항상 전체 높이
+          // 세로선·정간 가로선(대강은 굵게) — 항상 전체 높이. 위/아래 마감은 밴드 통줄이 담당.
           svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
           svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
           for (let i = 1; i < beats; i++) {
             svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell,
               dgSet.has(i) ? T_DAEGANG : T_THIN));
           }
-          svg.appendChild(line(x, gridBottom, x + cell, gridBottom, T_THICK));
 
           // 클릭·하이라이트 영역은 숨은 정간 포함 전체 beats (여전히 입력 가능)
           for (let j = 0; j < beats; j++) {
@@ -1573,8 +1572,9 @@
         }
         gakAccum += nMusic;
 
-        // 밴드 위 통줄 (전체 폭, 모든 각이 위에서 시작)
+        // 밴드 위/아래 통줄 (전체 폭 — 각 사이 간격까지 끊기지 않게 한 줄로)
         svg.appendChild(line(musicLeft, gridTop, bandRight, gridTop, T_THICK));
+        svg.appendChild(line(musicLeft, gridBottom, bandRight, gridBottom, T_THICK));
 
         if (hasTitle) {
           svg.appendChild(line(panelX, gridTop, panelX, gridBottom, T_THICK));
