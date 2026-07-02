@@ -90,6 +90,8 @@
   /* 율명 팔레트 — 음역(행) × 음계(열) 매트릭스 */
   .palette { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
              width: max-content; min-width: 100%; }
+  /* 시김새 뷰: 폭을 컬럼에 맞춰 줄바꿈 → 세로(위아래) 스크롤 */
+  .palette.orn-view { width: auto; min-width: 0; }
   .palette .prow { display: flex; align-items: center; gap: 1px; margin-bottom: 3px; }
   .palette .prow:last-child { margin-bottom: 0; }
   .palette .prow.headrow { margin-bottom: 4px; }
@@ -160,6 +162,25 @@
   #zoomBar button:hover { background: #eee; }
   #zoomBar .zval { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); }
   #zoomBar .fit { font-size: 12px; padding: 0 8px; }
+
+  /* 시김새 수정 패널 */
+  #ornEditToggle.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .orn-panel { position: absolute; top: 12px; right: 14px; z-index: 6; display: none;
+               background: rgba(255,255,255,.97); border: 1px solid var(--accent); border-radius: 10px;
+               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 156px; font-size: 12px; }
+  .orn-panel.on { display: block; }
+  .orn-title { display: flex; justify-content: space-between; align-items: center;
+               font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .orn-title button { border: none; background: none; cursor: pointer; font-size: 13px; color: var(--muted); }
+  .orn-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+  .orn-row span { flex: 0 0 34px; color: var(--muted); }
+  .orn-row button { flex: 1; padding: 4px 0; border: 1px solid var(--line); background: #fff;
+                    border-radius: 5px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .orn-row button:hover { background: #f0ece3; }
+  .orn-reset { width: 100%; margin-top: 4px; padding: 5px; border: 1px solid var(--line);
+               background: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .orn-reset:hover { background: #f0ece3; }
+  @media print { .orn-panel { display: none !important; } }
   #melodyArea { flex: 0 0 auto; border-top: 1px solid var(--line);
                 background: var(--panel); padding: 10px 14px 14px; }
   #melodyResizer { height: 12px; margin: -10px -14px 2px; cursor: ns-resize;
@@ -184,8 +205,18 @@
   #melodyRow { display: flex; gap: 12px; height: 296px; align-items: stretch; }
   #paletteCol { flex: 0 0 auto; max-width: 60%; display: flex; flex-direction: column;
                 min-height: 0; }
-  #paletteCol .tool-inline { margin-bottom: 6px; }
-  #paletteCol .pal-hint { font-weight: 400; font-size: 11px; color: var(--muted); margin-left: 4px; }
+  .pal-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .pal-views { display: inline-flex; gap: 2px; }
+  .pal-view { padding: 3px 12px; border: 1px solid var(--line); background: #fff; cursor: pointer;
+              font-size: 11px; font-weight: 600; font-family: inherit; color: var(--muted); border-radius: 6px; }
+  .pal-view.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #paletteCol .pal-hint { font-weight: 400; font-size: 11px; color: var(--muted); }
+  /* 시김새 칩 (이미지 + 한글 이름) */
+  .palette .ornrow { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+  .palette .ornchip { flex: 0 0 auto; width: auto; height: auto; min-width: 36px;
+                      flex-direction: column; gap: 1px; padding: 3px 4px; }
+  .palette .ornchip img { width: 22px; height: 22px; object-fit: contain; }
+  .palette .ornchip .ocap { font-size: 9px; color: var(--muted); white-space: nowrap; }
   #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
   #editorCol { flex: 1 1 auto; min-width: 0; display: flex; }
   #melody { width: 100%; height: 100%; resize: none; box-sizing: border-box;
@@ -422,6 +453,16 @@
         <button id="zoomIn" title="확대">+</button>
         <button id="zoomFit" class="fit" title="화면 맞춤">맞춤</button>
       </div>
+      <div id="ornPanel" class="orn-panel">
+        <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" title="닫기">✕</button></div>
+        <div class="orn-row"><span>크기</span>
+          <button type="button" data-a="sz-">−</button><button type="button" data-a="sz+">+</button></div>
+        <div class="orn-row"><span>좌우</span>
+          <button type="button" data-a="x-">←</button><button type="button" data-a="x+">→</button></div>
+        <div class="orn-row"><span>상하</span>
+          <button type="button" data-a="y-">↑</button><button type="button" data-a="y+">↓</button></div>
+        <button type="button" id="ornReset" class="orn-reset">위치·크기 초기화</button>
+      </div>
       <div id="sheet"></div>
     </div>
     <div id="melodyArea">
@@ -432,6 +473,7 @@
         멜로디 <span class="mono">| 정간 · ⏎ 줄바꿈 = 각</span>
         <span id="melodyInfo"></span>
         <span class="mel-actions">
+          <button type="button" id="ornEditToggle" class="mel-btn" title="악보의 시김새를 클릭해 크기·위치 조절">🎚 시김새 수정</button>
           <button type="button" id="melodyUndo" class="mel-btn" title="초기화 되돌리기">↶ 되돌리기</button>
           <button type="button" id="melodyReset" class="mel-btn" title="멜로디 내용 비우기">초기화</button>
         </span>
@@ -439,13 +481,19 @@
 
       <div id="melodyRow">
         <div id="paletteCol">
-          <label class="tool-inline">율명 표기
-            <select id="noteMode">
-              <option value="image" selected>이미지</option>
-              <option value="font">폰트 (한자)</option>
-            </select>
+          <div class="pal-head">
+            <div class="pal-views">
+              <button type="button" class="pal-view active" data-view="yul">율명</button>
+              <button type="button" class="pal-view" data-view="orn">시김새</button>
+            </div>
+            <label class="tool-inline">표기
+              <select id="noteMode">
+                <option value="image" selected>이미지</option>
+                <option value="font">폰트 (한자)</option>
+              </select>
+            </label>
             <span class="pal-hint">🎵 클릭하면 입력</span>
-          </label>
+          </div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
         </div>
         <div id="editorCol">
@@ -457,6 +505,7 @@
   </main>
 
 <script src="notes-data.js"></script>
+<script src="symbols-data.js"></script>
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -469,6 +518,7 @@
 
   const DAEGANG_PRESET = { 8: "", 10: "7 3", 12: "3 3 3 3", 16: "3 2 3 3 2 3", 20: "6 4 4 6" };
   let daegangAuto = "";
+  let palView = "yul";       // 팔레트 보기: 율명 / 시김새(orn)
   let gakUserSet = false;   // 사용자가 '총 각 수'를 직접 입력했는지(아니면 페이지를 꽉 채움)
   let activeGak = -1, activeCellIdx = -1;   // 현재 편집 중인 정간
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
@@ -476,6 +526,9 @@
   let pageHi = [];                          // 페이지별 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
   let cellEditor = null, cellEditInput = null;  // 정간 위 인라인 입력
+  let ornEditMode = false;                  // 시김새 수정 모드
+  let ornSel = null;                        // 선택된 시김새 {gak, cell, k}
+  let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
 
   function stackFor(beats) {
@@ -703,9 +756,9 @@
     const inp = document.createElement("input");
     inp.type = "text";
     inp.value = currentCellText(gi, ci);
-    inp.style.cssText = "width:100%;height:100%;box-sizing:border-box;border:1.5px solid " +
+    inp.style.cssText = "width:100%;height:100%;box-sizing:border-box;border:1px solid " +
       "var(--accent,#8a6d3b);border-radius:1px;text-align:center;padding:0;background:#fffbe6;" +
-      "font-family:inherit;font-size:" + (cg.h * 0.5) + "px;";
+      "font-family:inherit;line-height:1;font-size:" + (cg.h * 0.3) + "px;";
     fo.appendChild(inp);
     svg.appendChild(fo);
     cellEditor = fo; cellEditInput = inp;
@@ -785,6 +838,53 @@
   }
   // 기호 약어 → 파일명 (짧게 입력). 이음은 이미지 대신 '-' 문자 그대로 사용.
   const SYM_MARK = { "쉼": "pause_001", "쉼표": "pause_001" };
+
+  // ---------- 시김새(장식음) 매핑 ----------
+  // c: "wo"=음길이 없음(음표 오른쪽에 작게 붙임) / "with"=음길이 있음(독립 칸) / "both"=둘 다
+  const ORN_LIST = [
+    { s: "push", k: "미는표", c: "wo" }, { s: "flow", k: "흘림표", c: "wo" },
+    { s: "flow-rep", k: "겹흘림표", c: "wo" }, { s: "vib", k: "농음표", c: "wo" },
+    { s: "vib-long", k: "풀어내림표", c: "wo" }, { s: "roll", k: "떠이어표", c: "wo" },
+    { s: "diff-str-fast", k: "싸랭", c: "wo" }, { s: "diff-str-1", k: "슬기둥1", c: "wo" },
+    { s: "diff-str-2", k: "슬기둥2", c: "wo" }, { s: "diff-str-3", k: "슬기둥3", c: "wo" },
+    { s: "roll-str", k: "전성", c: "wo" }, { s: "pizzicato", k: "자출", c: "wo" },
+    { s: "splash", k: "잉어질표", c: "wo" }, { s: "between-up", k: "루러표", c: "wo" },
+    { s: "between-down", k: "시루표", c: "wo" }, { s: "down-pitched", k: "낮게", c: "wo" },
+    { s: "tongue", k: "서침표", c: "wo" }, { s: "nanina", k: "나니나", c: "wo" },
+    { s: "naneuna", k: "나느나", c: "wo" }, { s: "nire", k: "니레", c: "wo" },
+    { s: "nina", k: "니나", c: "wo" }, { s: "niro", k: "니로", c: "wo" },
+    { s: "none", k: "노네", c: "wo" }, { s: "neonye", k: "너녜", c: "wo" },
+    { s: "noniro", k: "노니로", c: "wo" }, { s: "norino", k: "노리노", c: "wo" },
+    { s: "nerone", k: "네로네", c: "wo" }, { s: "neuneneu", k: "느네느", c: "wo" },
+    { s: "naniro", k: "나니로", c: "wo" }, { s: "neunira", k: "느니라", c: "wo" },
+    { s: "neuronireu", k: "느로니르", c: "wo" }, { s: "neunireu", k: "느니르", c: "wo" },
+    { s: "niruni", k: "니루니", c: "wo" }, { s: "nanireunonireu", k: "나니르노니르", c: "wo" },
+    { s: "staccato", k: "끊는표", c: "wo" }, { s: "accent", k: "특강표", c: "wo" },
+    { s: "fermata", k: "늘임표", c: "wo" }, { s: "len-double", k: "덧길이표", c: "wo" },
+    { s: "len-half", k: "반길이표", c: "wo" },
+    { s: "no", k: "노", c: "with" }, { s: "ni", k: "니", c: "with" },
+    { s: "ro", k: "로", c: "with" }, { s: "ri", k: "리", c: "with" },
+    { s: "nina-dur", k: "니나", c: "with" }, { s: "neuna", k: "느나", c: "with" },
+    { s: "nora", k: "노라", c: "with" }, { s: "neuni", k: "느니", c: "with" },
+    { s: "noraneuni", k: "노라느니", c: "with" }, { s: "nirena", k: "니레나", c: "with" },
+    { s: "nerona", k: "네로나", c: "with" }, { s: "nirona", k: "니로나", c: "with" },
+    { s: "nineurani", k: "니느라니", c: "with" }, { s: "neunanina", k: "느나니나", c: "with" },
+    { s: "neunareunani", k: "느나르나니", c: "with" }, { s: "shake", k: "요성표", c: "with" },
+    { s: "shake-rep", k: "겹요성표", c: "with" }, { s: "repeat", k: "같은음표", c: "with" },
+    { s: "bend-down", k: "퇴성", c: "both" }, { s: "bend-up", k: "추성", c: "both" }
+  ];
+  const ORN_CAT = {};
+  ORN_LIST.forEach(function (o) { ORN_CAT[o.s] = o.c; });
+  // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름 중복(니나)은 먼저 나온 것 우선.
+  const ORN_KO = {};
+  ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
+
+  // 기호/시김새 이미지 dataURL (없으면 null)
+  function symURL(key) {
+    if (window.SYM_DATA && window.SYM_DATA[key]) return window.SYM_DATA[key];
+    if (window.NOTE_DATA && window.NOTE_DATA[key]) return window.NOTE_DATA[key];
+    return null;
+  }
   const PRE2 = ["배탁", "하배"];   // 두 옥타브 아래
   const PRE2U = ["중청", "겹청"];  // 두 옥타브 위
   const PRE1U = ["청"];            // 한 옥타브 위
@@ -795,10 +895,20 @@
     const a = Array.from(str), out = [];
     let i = 0;
     while (i < a.length) {
-      if (a[i] === "{") {   // {파일명} = 쉼표·연음 등 기호 이미지
+      if (a[i] === "{") {   // {파일명} 또는 {파일명@크기,좌우,상하} = 기호 이미지(+개별 조정)
         let j = i + 1, name = "";
         while (j < a.length && a[j] !== "}") { name += a[j]; j++; }
-        if (j < a.length) { out.push({ sym: name }); i = j + 1; continue; }
+        if (j < a.length) {
+          let sym = name, adj = null;
+          const at = name.indexOf("@");
+          if (at >= 0) {
+            sym = name.slice(0, at);
+            const p = name.slice(at + 1).split(",");
+            adj = { sz: parseFloat(p[0]) || 100, dx: parseFloat(p[1]) || 0, dy: parseFloat(p[2]) || 0 };
+          }
+          out.push({ sym: ORN_KO[sym] || sym, adj: adj });   // 한글 이름이면 stem으로 변환
+          i = j + 1; continue;
+        }
       }
       // 기호 약어: -=이음(연음), 쉼/쉼표=쉼표
       const t2 = a[i] + (a[i + 1] || "");
@@ -942,10 +1052,43 @@
     return item;
   }
 
+  // 시김새 팔레트 (붙임 / 독립 / 퇴성·추성 그룹)
+  function buildOrnPalette(wrap) {
+    wrap.innerHTML = "";
+    wrap.classList.add("orn-view");
+    const groups = [
+      { title: "붙임표 — 음표 오른쪽에 작게", cat: "wo" },
+      { title: "독립 기호 — 한 칸 차지", cat: "with" },
+      { title: "퇴성 · 추성", cat: "both" }
+    ];
+    groups.forEach(function (grp) {
+      const head = document.createElement("div");
+      head.className = "pmsg"; head.textContent = grp.title;
+      wrap.appendChild(head);
+      const g = document.createElement("div");
+      g.className = "ornrow";
+      ORN_LIST.filter(function (o) { return o.c === grp.cat; }).forEach(function (o) {
+        const item = document.createElement("div");
+        item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
+        const url = symURL(o.s);
+        if (url) { const img = document.createElement("img"); img.src = url; img.alt = o.k; item.appendChild(img); }
+        const cap = document.createElement("span");
+        cap.className = "ocap"; cap.textContent = o.k;
+        item.appendChild(cap);
+        item.addEventListener("mousedown", function (e) { e.preventDefault(); });
+        item.addEventListener("click", function () { insertToken("{" + o.k + "}"); });
+        g.appendChild(item);
+      });
+      wrap.appendChild(g);
+    });
+  }
+
   function buildPalette() {
     const wrap = $("notePalette");
     if (!wrap) return;
+    if (palView === "orn") { buildOrnPalette(wrap); return; }
     wrap.innerHTML = "";
+    wrap.classList.remove("orn-view");
     let probed = false;
 
     // 열 머리글 (음계: 황~응)
@@ -1005,10 +1148,11 @@
   }
 
   // 한 칸(정간) 그리기: 공백=줄바꿈(행, 위→아래 / 2분박·3분박…), 붙임=가로 배치(왼→오른쪽)
-  function drawCell(svg, x, yTop, cell, content, uniformSmall) {
+  function drawCell(svg, x, yTop, cell, content, uniformSmall, gakIdx, cellIdx, pageIdx) {
     const rows = content.split(/\s+/).filter(Boolean);
     if (!rows.length) return;
     const nRows = rows.length;
+    let symK = -1;   // 이 정간 안의 기호(시김새) 순번 (원본 {…} 등장 순서)
     const rowToks = rows.map(tokenizeNotes);
     const maxCols = Math.max.apply(null, rowToks.map(function (t) { return t.length; }));
 
@@ -1023,50 +1167,143 @@
     const rowH = cell / nRows;
     for (let ri = 0; ri < nRows; ri++) {
       const cyc = yTop + rowH * (ri + 0.5);        // 행 세로 중심 (ri=0 위)
-      const toks = rowToks[ri], n = toks.length;
+      const toks = rowToks[ri];
+
+      // 토큰을 [주 글자(음표/독립기호) + 붙임 시김새] 그룹으로 묶는다
+      const groups = [];
+      toks.forEach(function (tk) {
+        const cat = tk.sym ? ORN_CAT[tk.sym] : null;
+        const attach = (cat === "wo") || (cat === "both" && groups.length > 0);
+        if (attach && groups.length) groups[groups.length - 1].att.push(tk);
+        else groups.push({ main: tk, att: [] });
+      });
+
+      const n = groups.length || 1;
       const colW = cell / n;
-      for (let ci = 0; ci < n; ci++) {
-        const cx = x + colW * (ci + 0.5);          // 왼 → 오른쪽
-        const tk = toks[ci];
-        let file = null;
-        if (tk.sym) {
-          file = (window.NOTE_DATA && window.NOTE_DATA[tk.sym]) ? tk.sym : null;
-        } else if (noteMode === "image" && tk.literal == null) {
-          file = resolveNoteFile(tk.base, tk.oct);
-        }
-
-        if (file) {
-          // 이미지 모드: 옥타브 표기가 그림에 이미 포함 → 점을 따로 그리지 않음.
-          // 박스를 폰트 글자(gs) 높이에 맞춰 두 모드의 크기를 일치시킴.
-          const box = Math.min(gs * 1.06, rowH * 0.96, colW * 0.96);
-          const href = noteImageHref(file);
-          const im = el("image", {
-            x: cx - box / 2, y: cyc - box / 2, width: box, height: box,
-            preserveAspectRatio: "xMidYMid meet"
-          });
-          im.setAttribute("href", href);
-          im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
-          svg.appendChild(im);
-          continue;
-        }
-
-        // 폰트 폴백: ① 옥타브 변형 한자(潢·僙·㣖…, 폰트 지원 시) ② 기본자 + 옥타브 점
-        const variant = (tk.base != null && tk.oct) ? octHanja(tk.base, tk.oct) : null;
-        const ch = tk.literal != null ? tk.literal
-                 : (tk.sym != null ? tk.sym
-                 : (variant || YUL[tk.base] || tk.base));
-        const t = el("text", { x: cx, y: cyc + gs * 0.34, "text-anchor": "middle",
-          "font-size": gs, "font-family": NOTE_FONT, fill: "#111" });
-        t.textContent = ch; svg.appendChild(t);
-        if (tk.oct && !variant) {   // 변형자가 없을 때만 옥타브 점 (청=위, 배=아래, 두 옥타브=2개)
-          const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.26, gs * 0.07);
-          for (let d = 0; d < dots; d++) {
-            const dy = up ? (cyc - gs * 0.52 - d * r * 3) : (cyc + gs * 0.52 + d * r * 3);
-            svg.appendChild(el("circle", { cx: cx, cy: dy, r: r, fill: "#111" }));
+      for (let gi = 0; gi < groups.length; gi++) {
+        const g = groups[gi];
+        const cx = x + colW * (gi + 0.5);
+        if (g.main.sym != null) { symK++; drawAdjSym(svg, g.main, cx, cyc, gs * 1.06, cell, gakIdx, cellIdx, pageIdx, symK); }
+        else drawGlyph(svg, g.main, cx, cyc, gs);
+        // 붙임 시김새: 주 글자 오른쪽에 작게 (여러 개면 세로로 쌓음)
+        if (g.att.length) {
+          const groupRight = x + colW * (gi + 1);
+          const sa = Math.min(gs * 0.55, colW * 0.34);
+          const ax = Math.min(cx + gs * 0.42 + sa * 0.5, groupRight - sa * 0.55);
+          const total = g.att.length;
+          for (let ai = 0; ai < total; ai++) {
+            const ay = cyc + (ai - (total - 1) / 2) * sa * 1.05;
+            symK++; drawAdjSym(svg, g.att[ai], ax, ay, sa, cell, gakIdx, cellIdx, pageIdx, symK);
           }
         }
       }
     }
+  }
+
+  // 주 글자 하나(음표 / 독립 기호 / 글자)를 (cx,cyc) 중심, size 크기로 그림
+  function drawGlyph(svg, tk, cx, cyc, size) {
+    let file = null;
+    if (tk.sym) file = symURL(tk.sym) ? tk.sym : null;
+    else if (noteMode === "image" && tk.literal == null) file = resolveNoteFile(tk.base, tk.oct);
+
+    if (file) {
+      drawSymImage(svg, file, cx, cyc, size * 1.06);
+      return;
+    }
+    // 폰트 폴백: ① 옥타브 변형 한자(폰트 지원 시) ② 기본자 + 옥타브 점
+    const variant = (tk.base != null && tk.oct) ? octHanja(tk.base, tk.oct) : null;
+    const ch = tk.literal != null ? tk.literal
+             : (tk.sym != null ? tk.sym : (variant || YUL[tk.base] || tk.base));
+    const t = el("text", { x: cx, y: cyc + size * 0.34, "text-anchor": "middle",
+      "font-size": size, "font-family": NOTE_FONT, fill: "#111" });
+    t.textContent = ch; svg.appendChild(t);
+    if (tk.oct && !variant && tk.base != null) {
+      const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.26, size * 0.07);
+      for (let d = 0; d < dots; d++) {
+        const dy = up ? (cyc - size * 0.52 - d * r * 3) : (cyc + size * 0.52 + d * r * 3);
+        svg.appendChild(el("circle", { cx: cx, cy: dy, r: r, fill: "#111" }));
+      }
+    }
+  }
+
+  // 이미지(음표/기호) 한 개를 (cx,cyc) 중심, box 크기로 그림
+  function drawSymImage(svg, key, cx, cyc, box) {
+    const href = symURL(key) || (NOTE_DIR + key + ".png");
+    const im = el("image", {
+      x: cx - box / 2, y: cyc - box / 2, width: box, height: box,
+      preserveAspectRatio: "xMidYMid meet"
+    });
+    im.setAttribute("href", href);
+    im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
+    svg.appendChild(im);
+  }
+
+  // 기호(시김새) 하나를 개별 조정값(adj) 적용해 그리고, 위치를 기록(수정 모드 히트용)
+  function drawAdjSym(svg, tk, cx, cyc, baseBox, unit, gakIdx, cellIdx, pageIdx, k) {
+    const adj = tk.adj || { sz: 100, dx: 0, dy: 0 };
+    const box = baseBox * (adj.sz / 100);
+    const px = cx + (adj.dx / 100) * unit;
+    const py = cyc + (adj.dy / 100) * unit;
+    if (symURL(tk.sym)) drawSymImage(svg, tk.sym, px, py, box);
+    else {
+      const t = el("text", { x: px, y: py + box * 0.34, "text-anchor": "middle",
+        "font-size": box, "font-family": NOTE_FONT, fill: "#111" });
+      t.textContent = tk.sym; svg.appendChild(t);
+    }
+    ornInstances.push({ gak: gakIdx, cell: cellIdx, k: k, page: pageIdx,
+      x: px - box / 2, y: py - box / 2, w: box, h: box });
+  }
+
+  // ---------- 시김새 수정 모드 ----------
+  // 선택된 시김새의 원본 토큰 {stem@sz,dx,dy} 정보를 찾는다
+  function getOrnToken(sel) {
+    if (!sel) return null;
+    const parsed = parseMelodyOffsets($("melody").value);
+    const c = parsed[sel.gak] && parsed[sel.gak][sel.cell];
+    if (!c) return null;
+    const raw = $("melody").value.slice(c.start, c.end);
+    const re = /\{[^}]*\}/g; let m, cnt = 0;
+    while ((m = re.exec(raw))) {
+      if (cnt === sel.k) {
+        let inner = m[0].slice(1, -1), stem = inner, sz = 100, dx = 0, dy = 0;
+        const at = inner.indexOf("@");
+        if (at >= 0) {
+          stem = inner.slice(0, at);
+          const p = inner.slice(at + 1).split(",");
+          sz = parseFloat(p[0]) || 100; dx = parseFloat(p[1]) || 0; dy = parseFloat(p[2]) || 0;
+        }
+        return { stem: stem, sz: sz, dx: dx, dy: dy, abs: c.start + m.index, len: m[0].length };
+      }
+      cnt++;
+    }
+    return null;
+  }
+
+  function hideOrnPanel() { $("ornPanel").classList.remove("on"); }
+
+  function showOrnPanel() {
+    const t = getOrnToken(ornSel);
+    if (!t) { hideOrnPanel(); return; }
+    const o = ORN_LIST.find(function (x) { return x.s === t.stem || x.k === t.stem; });
+    $("ornName").textContent = (o ? o.k : t.stem) + " · " + Math.round(t.sz) + "%";
+    $("ornPanel").classList.add("on");
+  }
+
+  function selectOrn(sel) { ornSel = sel; render(); showOrnPanel(); }
+
+  function updateOrnParams(dSz, dDx, dDy, reset) {
+    const t = getOrnToken(ornSel);
+    if (!t) return;
+    const cl = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+    const sz = reset ? 100 : cl(t.sz + dSz, 40, 300);
+    const dx = reset ? 0 : cl(t.dx + dDx, -90, 90);
+    const dy = reset ? 0 : cl(t.dy + dDy, -90, 90);
+    const inner = (sz === 100 && dx === 0 && dy === 0)
+      ? t.stem : (t.stem + "@" + Math.round(sz) + "," + Math.round(dx) + "," + Math.round(dy));
+    const v = $("melody").value;
+    $("melody").value = v.slice(0, t.abs) + "{" + inner + "}" + v.slice(t.abs + t.len);
+    render();
+    showOrnPanel();
   }
 
   function render() {
@@ -1176,7 +1413,7 @@
     const dgSet = new Set();
     if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
 
-    cellGeom = {}; pageHi = []; pageSvgs = []; cellEditor = null; cellEditInput = null;
+    cellGeom = {}; pageHi = []; pageSvgs = []; ornInstances = []; cellEditor = null; cellEditInput = null;
     const sheet = $("sheet"); sheet.innerHTML = "";
     let gakAccum = 0;
 
@@ -1217,16 +1454,26 @@
           const melIdx = gakAccum + m;
           const gakCells = parsed[melIdx];
 
-          for (let j = 0; j < beats; j++) {
+          // 이 각에서 그릴 정간 수 = 실제 정간(|로 나뉜 칸) 개수. 비어 있어도 칸이 있으면 그림.
+          // 사용자가 |를 지워 칸이 줄면 그만큼만 그려짐. (각이 아예 없으면 빈 격자 전체 유지)
+          const cellCount = gakCells ? gakCells.length : 0;
+          const filled = cellCount > 0 ? Math.min(beats, cellCount) : beats;
+          const gakBottom = gridTop + filled * cell;
+
+          for (let j = 0; j < filled; j++) {
             const content = gakCells && gakCells[j] ? gakCells[j].text : "";
-            if (content) drawCell(svg, x, gridTop + j * cell, cell, content, uniformSmall);
+            if (content) drawCell(svg, x, gridTop + j * cell, cell, content, uniformSmall, melIdx, j, pageIdx);
           }
-          svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
-          svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
-          for (let i = 1; i < beats; i++) {
-            if (dgSet.has(i)) continue;
-            svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
+          // 세로선·정간 가로선(대강은 굵게)·아래 마감 — 그린 높이까지만
+          svg.appendChild(line(x, gridTop, x, gakBottom, T_THICK));
+          svg.appendChild(line(x + cell, gridTop, x + cell, gakBottom, T_THICK));
+          for (let i = 1; i < filled; i++) {
+            svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell,
+              dgSet.has(i) ? T_DAEGANG : T_THIN));
           }
+          svg.appendChild(line(x, gakBottom, x + cell, gakBottom, T_THICK));
+
+          // 클릭·하이라이트 영역은 숨은 정간 포함 전체 beats (여전히 입력 가능)
           for (let j = 0; j < beats; j++) {
             const cyTop = gridTop + j * cell;
             (cellGeom[melIdx] = cellGeom[melIdx] || {})[j] = { page: pageIdx, x: x, y: cyTop, w: cell, h: cell };
@@ -1236,6 +1483,7 @@
             (function (gi, ci) {
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
+                if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
                 if (cellEditInput) commitCellEditor(false);
                 openCellEditor(gi, ci);
               });
@@ -1245,15 +1493,13 @@
         }
         gakAccum += nMusic;
 
+        // 밴드 위 통줄 (전체 폭, 모든 각이 위에서 시작)
         svg.appendChild(line(musicLeft, gridTop, bandRight, gridTop, T_THICK));
-        dgSet.forEach(function (i) {
-          svg.appendChild(line(musicLeft, gridTop + i * cell, musicRightEdge, gridTop + i * cell, T_DAEGANG));
-        });
-        svg.appendChild(line(musicLeft, gridBottom, bandRight, gridBottom, T_THICK));
 
         if (hasTitle) {
           svg.appendChild(line(panelX, gridTop, panelX, gridBottom, T_THICK));
           svg.appendChild(line(panelRight, gridTop, panelRight, gridBottom, T_THICK));
+          svg.appendChild(line(panelX, gridBottom, panelRight, gridBottom, T_THICK));  // 제목칸 아래 마감
           const cx = (panelX + panelRight) / 2;
           const titleFont = Math.min(desiredTitle * scale, (panelRight - panelX) * 0.78);
           const startY = gridTop + titleFont * 1.05 + desiredTitleOff * scale;
@@ -1275,6 +1521,25 @@
       wrap.appendChild(svg);
       sheet.appendChild(wrap);
     });
+
+    // 시김새 수정 모드: 선택 박스 + 클릭 히트(내용 위에 얹음)
+    if (ornEditMode) {
+      ornInstances.forEach(function (o) {
+        const svg = pageSvgs[o.page]; if (!svg) return;
+        const selected = ornSel && ornSel.gak === o.gak && ornSel.cell === o.cell && ornSel.k === o.k;
+        if (selected) {
+          svg.appendChild(rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, 0.4,
+            { fill: "none", stroke: "#c0392b" }));
+        }
+        const hit = rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, 0,
+          { fill: "transparent", stroke: "none", "pointer-events": "all" });
+        hit.style.cursor = "pointer";
+        (function (sel) {
+          hit.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); selectOrn(sel); });
+        })({ gak: o.gak, cell: o.cell, k: o.k });
+        svg.appendChild(hit);
+      });
+    }
 
     updateHighlight();
     saveState();
@@ -1421,6 +1686,14 @@
   });
   // 표기 모드가 바뀌면 팔레트도 이미지↔한자로 다시 그림
   $("noteMode").addEventListener("change", buildPalette);
+  // 팔레트 보기 전환 (율명 / 시김새)
+  document.querySelectorAll(".pal-view").forEach(function (b) {
+    b.addEventListener("click", function () {
+      palView = b.getAttribute("data-view");
+      document.querySelectorAll(".pal-view").forEach(function (x) { x.classList.toggle("active", x === b); });
+      buildPalette();
+    });
+  });
 
   // 보기 확대/축소 (화면만, 출력에는 영향 없음)
   let viewZoom = 1;
@@ -1476,6 +1749,27 @@
   $("melodyReset").addEventListener("click", resetMelody);
   $("melodyUndo").addEventListener("click", undoMelody);
   refreshUndoBtn();
+
+  // 시김새 수정 모드 토글 + 조정 패널
+  $("ornEditToggle").addEventListener("click", function () {
+    ornEditMode = !ornEditMode;
+    $("ornEditToggle").classList.toggle("on", ornEditMode);
+    if (!ornEditMode) { ornSel = null; hideOrnPanel(); }
+    render();
+  });
+  $("ornClose").addEventListener("click", function () { ornSel = null; hideOrnPanel(); render(); });
+  $("ornReset").addEventListener("click", function () { updateOrnParams(0, 0, 0, true); });
+  document.querySelectorAll("#ornPanel .orn-row button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      const a = b.getAttribute("data-a");
+      if (a === "sz+") updateOrnParams(10, 0, 0);
+      else if (a === "sz-") updateOrnParams(-10, 0, 0);
+      else if (a === "x+") updateOrnParams(0, 5, 0);
+      else if (a === "x-") updateOrnParams(0, -5, 0);
+      else if (a === "y+") updateOrnParams(0, 0, 5);
+      else if (a === "y-") updateOrnParams(0, 0, -5);
+    });
+  });
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => window.print());
   $("btnExport").addEventListener("click", exportFile);
