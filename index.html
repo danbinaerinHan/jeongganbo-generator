@@ -451,6 +451,25 @@
     <div class="tabpanel" data-tab="out">
       <div class="readout" id="readout"></div>
 
+      <div class="sec">재생 (사인파, 시김새 제외)</div>
+      <div class="field">
+        <label for="hwangPitch">기준음 (황·黃)</label>
+        <select id="hwangPitch">
+          <option value="63" selected>E♭4</option>
+          <option value="60">C4</option>
+        </select>
+        <div class="hint">12율(황~응)은 여기서부터 반음계로 이어집니다.</div>
+      </div>
+      <div class="field">
+        <label for="tempoBpm">템포 (1정간 = 1박)</label>
+        <input type="number" id="tempoBpm" min="20" max="240" value="60">
+        <div class="hint">분박(칸 안 여러 줄)은 박을 등분, 빈 정간·이음(-)은 앞 음을 지속합니다.</div>
+      </div>
+      <div class="btns">
+        <button type="button" id="btnPlay">▶ 재생</button>
+        <button type="button" id="btnStop" class="secondary" disabled>■ 정지</button>
+      </div>
+
       <div class="btns">
         <button id="btnPrint">인쇄 / PDF 저장</button>
         <button id="btnPng" class="secondary">PNG 다운로드</button>
@@ -513,7 +532,7 @@
                 <option value="font">폰트 (한자)</option>
               </select>
             </label>
-            <span class="pal-hint">🎵 클릭하면 입력</span>
+            <span class="pal-hint">클릭하면 입력</span>
           </div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
         </div>
@@ -545,6 +564,7 @@
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
   let cellGeom = {};                        // 렌더 시 정간 좌표 저장(하이라이트용, page 포함)
   let pageHi = [];                          // 페이지별 하이라이트 사각형
+  let playHi = [];                          // 페이지별 재생 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
   let cellEditor = null, cellEditInput = null;  // 정간 위 인라인 입력
   let ornEditMode = false;                  // 시김새 수정 모드
@@ -900,6 +920,19 @@
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
 
+  // 한 행의 토큰을 [주 글자(음표/독립기호) + 붙임 시김새] 그룹으로 묶는다. 렌더(drawCell)와
+  // 재생(buildAudioEvents)이 같은 규칙을 공유해야 화면과 소리가 어긋나지 않는다.
+  function groupRowTokens(toks) {
+    const groups = [];
+    toks.forEach(function (tk) {
+      const cat = tk.sym ? ORN_CAT[tk.sym] : null;
+      const attach = (cat === "wo") || (cat === "both" && groups.length > 0);
+      if (attach && groups.length) groups[groups.length - 1].att.push(tk);
+      else groups.push({ main: tk, att: [] });
+    });
+    return groups;
+  }
+
   // 기호/시김새 이미지 dataURL (없으면 null)
   function symURL(key) {
     if (window.SYM_DATA && window.SYM_DATA[key]) return window.SYM_DATA[key];
@@ -1191,13 +1224,7 @@
       const toks = rowToks[ri];
 
       // 토큰을 [주 글자(음표/독립기호) + 붙임 시김새] 그룹으로 묶는다
-      const groups = [];
-      toks.forEach(function (tk) {
-        const cat = tk.sym ? ORN_CAT[tk.sym] : null;
-        const attach = (cat === "wo") || (cat === "both" && groups.length > 0);
-        if (attach && groups.length) groups[groups.length - 1].att.push(tk);
-        else groups.push({ main: tk, att: [] });
-      });
+      const groups = groupRowTokens(toks);
 
       const n = groups.length || 1;
       const colW = cell / n;
@@ -1434,7 +1461,8 @@
     const dgSet = new Set();
     if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
 
-    cellGeom = {}; pageHi = []; pageSvgs = []; ornInstances = []; cellEditor = null; cellEditInput = null;
+    stopPlayback();
+    cellGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = []; cellEditor = null; cellEditInput = null;
     const sheet = $("sheet"); sheet.innerHTML = "";
     let gakAccum = 0;
 
@@ -1455,6 +1483,9 @@
       // 편집 하이라이트 자리(내용 아래 레이어)
       const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none" });
       hi.style.display = "none"; svg.appendChild(hi); pageHi.push(hi); pageSvgs.push(svg);
+      // 재생 하이라이트 자리(내용 아래 레이어)
+      const ph = rect(0, 0, 0, 0, 0, { fill: "#60a5fa", "fill-opacity": "0.5", stroke: "none" });
+      ph.style.display = "none"; svg.appendChild(ph); playHi.push(ph);
 
       for (let b = 0; b < usedBands; b++) {
         const bandTop = gridY + b * (bandH + bandGap);
@@ -1619,10 +1650,142 @@
     });
   }
 
+  // ---------- 재생 (사인파 sonification) ----------
+  // 규칙: 정간 1칸 = 1박. 칸 안 공백 행(분박)은 박을 등분. 빈 정간·이음(-)·시김새 단독 토큰은
+  // 앞 음을 지속(새 음을 시작하지 않고 직전 이벤트 길이를 늘림). 쉼표만 실제 무음.
+  function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  // 멜로디 텍스트 → 재생 이벤트 목록 [{ t, dur, freq, gak, cell }] (freq=null → 무음).
+  function buildAudioEvents() {
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
+    const hwangMidi = parseInt($("hwangPitch").value) || 63;
+    const secPerBeat = 60 / bpm;
+    const gaks = parseMelodyOffsets($("melody").value);
+
+    const events = [];
+    let t = 0;
+    let lastEvent = null;   // 지속(빈 정간/이음) 대상이 되는 마지막 유음 이벤트
+
+    function extend(dur, gakIdx, cellIdx) {
+      if (lastEvent) lastEvent.dur += dur;
+      else events.push({ t: t, dur: dur, freq: null, gak: gakIdx, cell: cellIdx });
+      t += dur;
+    }
+    function rest(dur, gakIdx, cellIdx) {
+      events.push({ t: t, dur: dur, freq: null, gak: gakIdx, cell: cellIdx });
+      lastEvent = null;
+      t += dur;
+    }
+    function note(freq, dur, gakIdx, cellIdx) {
+      const ev = { t: t, dur: dur, freq: freq, gak: gakIdx, cell: cellIdx };
+      events.push(ev);
+      lastEvent = ev;
+      t += dur;
+    }
+
+    for (let g = 0; g < gaks.length; g++) {
+      const gakCells = gaks[g];
+      const filled = gakCells.length > 0 ? Math.min(beats, gakCells.length) : beats;
+      for (let j = 0; j < filled; j++) {
+        const text = gakCells[j] ? gakCells[j].text : "";
+        const rows = text.split(/\s+/).filter(Boolean);
+        if (!rows.length) { extend(secPerBeat, g, j); continue; }
+        const rowDur = secPerBeat / rows.length;
+        for (let r = 0; r < rows.length; r++) {
+          const toks = tokenizeNotes(rows[r]);
+          const groups = groupRowTokens(toks);
+          if (!groups.length) { extend(rowDur, g, j); continue; }
+          const slotDur = rowDur / groups.length;
+          for (let gi = 0; gi < groups.length; gi++) {
+            const tk = groups[gi].main;
+            if (tk.base) {
+              const semis = SCALE.indexOf(tk.base) + tk.oct * 12;
+              note(midiToFreq(hwangMidi + semis), slotDur, g, j);
+            } else if (tk.sym === "pause_001") {
+              rest(slotDur, g, j);
+            } else {
+              extend(slotDur, g, j);   // 이음(-)·시김새 단독·기타 문자 → 지속
+            }
+          }
+        }
+      }
+    }
+    return events.filter(function (e) { return e.dur > 0; });
+  }
+
+  let audioCtx = null, playTimer = null, playing = false;
+
+  function highlightPlay(gak, cell) {
+    playHi.forEach(function (h) { h.style.display = "none"; });
+    const g = cellGeom[gak]; const cg = g && g[cell];
+    if (!cg) return;
+    const h = playHi[cg.page];
+    if (!h) return;
+    h.setAttribute("x", cg.x); h.setAttribute("y", cg.y);
+    h.setAttribute("width", cg.w); h.setAttribute("height", cg.h);
+    h.style.display = "";
+  }
+
+  function stopPlayback() {
+    if (!playing && !audioCtx) return;
+    playing = false;
+    if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+    if (audioCtx) { audioCtx.close(); audioCtx = null; }
+    playHi.forEach(function (h) { h.style.display = "none"; });
+    if ($("btnPlay")) $("btnPlay").disabled = false;
+    if ($("btnStop")) $("btnStop").disabled = true;
+  }
+
+  function playMelody() {
+    if (playing) return;
+    const events = buildAudioEvents();
+    if (!events.length) return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx = ctx;
+    const startAt = ctx.currentTime + 0.15;
+    const master = ctx.createGain();
+    master.gain.value = 0.25;
+    master.connect(ctx.destination);
+
+    events.forEach(function (e) {
+      if (e.freq == null) return;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = e.freq;
+      const on = startAt + e.t, off = on + e.dur;
+      const atk = Math.min(0.02, e.dur * 0.3);
+      const rel = Math.min(0.05, e.dur * 0.3);
+      g.gain.setValueAtTime(0, on);
+      g.gain.linearRampToValueAtTime(1, on + atk);
+      g.gain.setValueAtTime(1, Math.max(on + atk, off - rel));
+      g.gain.linearRampToValueAtTime(0, off);
+      osc.connect(g); g.connect(master);
+      osc.start(on); osc.stop(off + 0.02);
+    });
+
+    playing = true;
+    $("btnPlay").disabled = true;
+    $("btnStop").disabled = false;
+    const total = events[events.length - 1].t + events[events.length - 1].dur;
+    const t0 = performance.now();
+    (function tick() {
+      if (!playing) return;
+      const now = (performance.now() - t0) / 1000 - 0.15;
+      if (now >= total) { stopPlayback(); return; }
+      for (let i = events.length - 1; i >= 0; i--) {
+        if (now >= events[i].t) { highlightPlay(events[i].gak, events[i].cell); break; }
+      }
+      playTimer = setTimeout(tick, 60);
+    })();
+  }
+
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "cellSize", "gakGap", "bandGap", "header", "frame",
-    "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont"];
+    "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont",
+    "hwangPitch", "tempoBpm"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -1791,6 +1954,9 @@
       else if (a === "y-") updateOrnParams(0, 0, -5);
     });
   });
+  $("btnPlay").addEventListener("click", playMelody);
+  $("btnStop").addEventListener("click", stopPlayback);
+  ["hwangPitch", "tempoBpm"].forEach(id => { $(id).addEventListener("change", saveState); });
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => window.print());
   $("btnExport").addEventListener("click", exportFile);
