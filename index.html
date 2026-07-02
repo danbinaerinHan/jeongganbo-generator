@@ -274,6 +274,20 @@
             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
+  /* 장단 입력 (선율 입력과 같은 구조, 6개짜리라 팔레트만 간소화) */
+  #jangdanArea { flex: 0 0 auto; border-top: 1px solid var(--line);
+                 background: var(--panel); padding: 10px 14px 14px; display: none; }
+  body.want-jangdan #jangdanArea { display: block; }
+  #jangdanArea.editor-collapsed #jangdanRow { display: none; }
+  #jangdanArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
+  #jangdanRow { display: flex; gap: 12px; height: 100px; align-items: stretch; }
+  #jangdanPaletteWrap { flex: 0 0 auto; max-width: 45%; overflow: auto; }
+  #jangdanPalette.palette { height: 100%; align-content: flex-start; }
+  #jangdanEditorCol { flex: 1 1 auto; min-width: 0; display: flex; }
+  #jangdan { width: 100%; height: 100%; resize: none; box-sizing: border-box;
+             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
   /* 모드 탭 */
   .tabs { display: flex; gap: 2px; margin: 12px 0 16px; border-bottom: 1px solid var(--line); }
   .tab { flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
@@ -328,7 +342,7 @@
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar, #melodyArea, #topBar, .side-open { display: none !important; }
+    #sidebar, #melodyArea, #jangdanArea, #topBar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
@@ -376,6 +390,11 @@
         <label for="daegang">대강 분절 (선택)</label>
         <input type="text" id="daegang" placeholder="예: 3 3 3 3">
         <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
+      </div>
+
+      <div class="field">
+        <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
+        <div class="hint">켜면 선율 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 줄이 함께 표시되고, 아래 편집창에 별도 입력창이 생겨요.</div>
       </div>
 
       <div class="sec">제목</div>
@@ -605,10 +624,41 @@
         </div>
       </div>
     </div>
+    <div id="jangdanArea">
+      <div class="melody-head">
+        <button type="button" id="jangdanToggle" class="mini-toggle" title="접기/펼치기">▾</button>
+        장단 입력
+        <span class="guide-wrap">
+          <button type="button" id="jangdanGuideToggle" title="입력 방법 안내">?</button>
+          <div id="jangdanGuide" class="melody-guide">
+            <div class="mg-sec"><b>입력 방법</b><br>
+              선율과 같은 방식으로, 정간마다 궁·덩·기덕·덕·다·더러러러 중 하나를 적어요.
+            </div>
+            <div class="mg-sec"><b>텍스트로 입력할 때</b><br>
+              줄바꿈은 각(세로줄) 구분<br>
+              <span class="mono">|</span> 는 정간(칸) 구분<br>
+              선율과 각 수가 자동으로 맞춰져요
+            </div>
+          </div>
+        </span>
+        <span class="mel-actions">
+          <button type="button" id="jangdanUndo" class="mel-btn tip" data-tip="방금 초기화한 장단을 되돌려요">↶ 되돌리기</button>
+          <button type="button" id="jangdanReset" class="mel-btn tip" data-tip="장단 내용을 모두 비워요 (되돌리기로 복구 가능)">초기화</button>
+        </span>
+      </div>
+      <div id="jangdanRow">
+        <div id="jangdanPaletteWrap"><div id="jangdanPalette" class="palette"></div></div>
+        <div id="jangdanEditorCol">
+          <textarea id="jangdan" spellcheck="false"
+            placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  덩 | 기덕 | 궁 | 덕"></textarea>
+        </div>
+      </div>
+    </div>
   </main>
 
 <script src="notes-data.js"></script>
 <script src="symbols-data.js"></script>
+<script src="janggu-data.js"></script>
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -634,6 +684,7 @@
   let ornSel = null;                        // 선택된 시김새 {gak, cell, k}
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
+  const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
 
   function stackFor(beats) {
     if (beats > 12) return 1;
@@ -734,6 +785,23 @@
     if (next !== $("melody").value) $("melody").value = next;
   }
 
+  // 장단 텍스트를 선율과 같은 구조(각 수·정간 수)로 맞춤(내용 보존). 장단 미사용 시 건너뜀.
+  function reconcileJangdan() {
+    if (!$("wantJangdan").checked) return;
+    const { beats } = formStructure();
+    const melParsed = parseMelodyOffsets($("melody").value);
+    const jdParsed = parseMelodyOffsets($("jangdan").value);
+    const target = Math.max(1, melParsed.length);
+    const lines = [];
+    for (let g = 0; g < target; g++) {
+      const cells = [];
+      for (let c = 0; c < beats; c++) cells.push((jdParsed[g] && jdParsed[g][c]) ? jdParsed[g][c].text : "");
+      lines.push(cells.join(" | "));
+    }
+    const next = lines.join("\n");
+    if (next !== $("jangdan").value) $("jangdan").value = next;
+  }
+
   // 정간 클릭 → 텍스트박스의 해당 칸으로 커서 이동
   function jumpToCell(gi, ci) {
     const ta = $("melody");
@@ -805,6 +873,7 @@
     melodyUndo.push($("melody").value);
     $("melody").value = "";
     reconcileMelody();
+    reconcileJangdan();
     render();
     syncActiveFromCursor();
     refreshUndoBtn();
@@ -818,6 +887,24 @@
   }
   function refreshUndoBtn() {
     $("melodyUndo").disabled = melodyUndo.length === 0;
+  }
+
+  // 장단 초기화 / 되돌리기
+  function resetJangdan() {
+    jangdanUndoStack.push($("jangdan").value);
+    $("jangdan").value = "";
+    reconcileJangdan();
+    render();
+    refreshJangdanUndoBtn();
+  }
+  function undoJangdan() {
+    if (!jangdanUndoStack.length) return;
+    $("jangdan").value = jangdanUndoStack.pop();
+    render();
+    refreshJangdanUndoBtn();
+  }
+  function refreshJangdanUndoBtn() {
+    $("jangdanUndo").disabled = jangdanUndoStack.length === 0;
   }
 
   // ---------- 정간 위 인라인 입력 ----------
@@ -1140,6 +1227,42 @@
     ta.dispatchEvent(new Event("input"));
   }
 
+  function insertJangdanToken(txt) {
+    const ta = $("jangdan");
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.setRangeText(txt, s, e, "end");
+    ta.focus();
+    ta.dispatchEvent(new Event("input"));
+  }
+
+  // ---------- 장단 팔레트 (장구 구음 6종) ----------
+  const JANGGU_NAMES = ["덩", "기덕", "궁", "덕", "다", "더러러러"];
+  function buildJangdanPalette() {
+    const wrap = $("jangdanPalette");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    const data = window.JANGGU_DATA || {};
+    const row = document.createElement("div");
+    row.className = "ornrow";
+    JANGGU_NAMES.forEach(function (name) {
+      const item = document.createElement("div");
+      item.className = "pi ornchip";
+      item.title = "'" + name + "' 입력";
+      if (data[name]) {
+        const img = document.createElement("img");
+        img.src = data[name]; img.alt = name;
+        item.appendChild(img);
+      }
+      const cap = document.createElement("span");
+      cap.className = "ocap"; cap.textContent = name;
+      item.appendChild(cap);
+      item.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      item.addEventListener("click", function () { insertJangdanToken(name); });
+      row.appendChild(item);
+    });
+    wrap.appendChild(row);
+  }
+
   function showPaletteError() {
     const wrap = $("notePalette");
     if (!wrap || wrap.querySelector(".pmsg")) return;
@@ -1276,6 +1399,25 @@
       });
       wrap.appendChild(rowEl);
     }
+  }
+
+  // 장단 칸 하나 그리기: 정간 옆 좁은 줄에 구음 기호(들)를 세로로 배치(분박과 동일한 공백 규칙)
+  function drawJangdanCell(svg, x, yTop, width, cellH, content) {
+    const rows = content.split(/\s+/).filter(Boolean);
+    if (!rows.length) return;
+    const data = window.JANGGU_DATA || {};
+    const rowH = cellH / rows.length;
+    rows.forEach(function (name, i) {
+      const href = data[name];
+      if (!href) return;
+      const cy = yTop + rowH * (i + 0.5);
+      const box = Math.min(width * 0.86, rowH * 0.86);
+      const im = el("image", { x: x + (width - box) / 2, y: cy - box / 2, width: box, height: box,
+        preserveAspectRatio: "xMidYMid meet" });
+      im.setAttribute("href", href);
+      im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
+      svg.appendChild(im);
+    });
   }
 
   // 한 칸(정간) 그리기: 공백=줄바꿈(행, 위→아래 / 2분박·3분박…), 붙임=가로 배치(왼→오른쪽)
@@ -1454,6 +1596,8 @@
     const subTxt = $("subtitle").value.trim();
     const wantHeader = $("header").checked;
     const wantFrame = $("frame").checked;
+    const wantJangdan = $("wantJangdan").checked;
+    document.body.classList.toggle("want-jangdan", wantJangdan);
     const dg = parseDaegang($("daegang").value, beats);
     noteMode = $("noteMode").value;   // "image" | "font" | "hangul"
 
@@ -1489,6 +1633,7 @@
 
     // 멜로디(내용) 파싱
     const parsed = parseMelodyOffsets($("melody").value);
+    const jdParsed = wantJangdan ? parseMelodyOffsets($("jangdan").value) : null;
     const uniformSmall = parsed.some(function (g) {
       return g && g.some(function (c) { return c.text && /\s/.test(c.text); });
     });
@@ -1530,18 +1675,26 @@
       });
       if (p.bands.length > maxBands) maxBands = p.bands.length;
     });
+    // 장단 줄(선율 옆 좁은 칸) 너비 — 켜져 있을 때만 각의 폭에 더해짐
+    const desiredJdGap = wantJangdan ? desiredGap * 0.5 : 0;
+    const desiredJdW = wantJangdan ? desiredCell * 0.34 : 0;
+    const desiredGakW = desiredCell + desiredJdGap + desiredJdW;
+
     const headRatio = wantHeader ? 1.1 : 0;
-    const wNeed = maxCols * desiredCell + (maxCols - 1) * desiredGap;
+    const wNeed = maxCols * desiredGakW + (maxCols - 1) * desiredGap;
     const hNeed = maxBands * (beats + headRatio) * desiredCell + (maxBands - 1) * desiredBandGap;
     const scale = Math.min(1, availW / wNeed, availH / hNeed);
 
     const cell = desiredCell * scale;
     const gap = desiredGap * scale;
     const bandGap = desiredBandGap * scale;
+    const jdGap = desiredJdGap * scale;
+    const jdW = desiredJdW * scale;
+    const gakW = cell + jdGap + jdW;   // 각 하나(선율+장단)가 차지하는 가로 폭
     const headH = cell * headRatio;
-    const slot = cell + gap;
+    const slot = gakW + gap;
     const bandH = headH + beats * cell;
-    const gridTotalW = maxCols * cell + (maxCols - 1) * gap;
+    const gridTotalW = maxCols * gakW + (maxCols - 1) * gap;
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
 
     const dgSet = new Set();
@@ -1583,12 +1736,13 @@
         const panelRight = bandRight;
         const panelX = hasTitle ? (bandRight - titleWidth) : bandRight;
         const musicRightEdge = hasTitle ? (panelX - gap) : bandRight;
-        const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap);
+        const musicLeft = musicRightEdge - (nMusic * gakW + (nMusic - 1) * gap);
 
         if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
 
         for (let m = 0; m < nMusic; m++) {
-          const x = musicRightEdge - cell - m * slot;
+          const xFoot = musicRightEdge - gakW - m * slot;   // 각 하나(선율+장단) 전체 폭의 왼쪽 끝
+          const x = xFoot + jdGap + jdW;                    // 선율 칸의 왼쪽 끝(장단 폭만큼 오른쪽으로)
           const melIdx = gakAccum + m;
           const gakCells = parsed[melIdx];
 
@@ -1625,6 +1779,19 @@
               });
             })(melIdx, j);
             svg.appendChild(hit);
+          }
+
+          // 장단 줄(선율 왼쪽 좁은 칸) — 켜져 있을 때만
+          if (wantJangdan) {
+            const jdCells = jdParsed && jdParsed[melIdx];
+            const jdCount = jdCells ? jdCells.length : 0;
+            const jdFilled = jdCount > 0 ? Math.min(beats, jdCount) : 0;
+            for (let j = 0; j < jdFilled; j++) {
+              const content = jdCells[j] ? jdCells[j].text : "";
+              if (content) drawJangdanCell(svg, xFoot, gridTop + j * cell, jdW, cell, content);
+            }
+            svg.appendChild(line(xFoot, gridTop, xFoot, gridBottom, T_THIN));
+            svg.appendChild(line(xFoot + jdW, gridTop, xFoot + jdW, gridBottom, T_THIN));
           }
         }
         gakAccum += nMusic;
@@ -1870,7 +2037,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont",
-    "hwangPitch", "tempoBpm"];
+    "hwangPitch", "tempoBpm", "wantJangdan"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -1880,7 +2047,7 @@
       c[id] = (el.type === "checkbox") ? el.checked : el.value;
     });
     const at = document.querySelector(".tab.active");
-    return { v: 1, controls: c, melody: $("melody").value, gakUserSet: gakUserSet,
+    return { v: 1, controls: c, melody: $("melody").value, jangdan: $("jangdan").value, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input" };
   }
 
@@ -1893,6 +2060,7 @@
       else el.value = s.controls[id];
     });
     if (typeof s.melody === "string") $("melody").value = s.melody;
+    if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
     if (s.activeTab) applyActiveTab(s.activeTab);
@@ -1937,13 +2105,13 @@
     fr.readAsText(file);
   }
 
-  function onFormChange() { reconcileMelody(); render(); }
+  function onFormChange() { reconcileMelody(); reconcileJangdan(); render(); }
 
   // 구조(칸 수)에 영향을 주는 입력 → 멜로디 재구성 후 렌더
   $("beats").addEventListener("input", () => { fillDaegangPreset(); onFormChange(); });
   // 총 각 수를 직접 입력하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
   $("gakCount").addEventListener("input", function () { gakUserSet = true; });
-  ["gakPerRow", "stackCount", "stackAuto", "title", "gakCount", "gakCountAuto"].forEach(id => {
+  ["gakPerRow", "stackCount", "stackAuto", "title", "gakCount", "gakCountAuto", "wantJangdan"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
   });
@@ -2004,6 +2172,9 @@
   $("editorToggle").addEventListener("click", function () {
     $("melodyArea").classList.toggle("editor-collapsed");
   });
+  $("jangdanToggle").addEventListener("click", function () {
+    $("jangdanArea").classList.toggle("editor-collapsed");
+  });
 
   // 멜로디 편집창 높이 조절 (위로 드래그 → 커짐 / 아래로 → 작아짐)
   (function () {
@@ -2032,6 +2203,12 @@
   $("melodyReset").addEventListener("click", resetMelody);
   $("melodyUndo").addEventListener("click", undoMelody);
   refreshUndoBtn();
+
+  // 장단 편집 → 렌더
+  $("jangdan").addEventListener("input", render);
+  $("jangdanReset").addEventListener("click", resetJangdan);
+  $("jangdanUndo").addEventListener("click", undoJangdan);
+  refreshJangdanUndoBtn();
 
   // 시김새 수정 모드 토글 + 조정 패널
   $("ornEditToggle").addEventListener("click", function () {
@@ -2090,12 +2267,27 @@
     }
   });
 
+  // 장단 입력 방법 가이드(?) 팝오버
+  function toggleJangdanGuide(show) {
+    const on = typeof show === "boolean" ? show : !$("jangdanGuide").classList.contains("on");
+    $("jangdanGuide").classList.toggle("on", on);
+    $("jangdanGuideToggle").classList.toggle("on", on);
+  }
+  $("jangdanGuideToggle").addEventListener("click", function (e) { e.stopPropagation(); toggleJangdanGuide(); });
+  document.addEventListener("click", function (e) {
+    if ($("jangdanGuide").classList.contains("on") && !$("jangdanGuide").contains(e.target) && e.target !== $("jangdanGuideToggle")) {
+      toggleJangdanGuide(false);
+    }
+  });
+
   // 이전 작업 복구(localStorage)
   try { const raw = localStorage.getItem(LS_KEY); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
 
   buildPalette();
+  buildJangdanPalette();
   fillDaegangPreset();
   reconcileMelody();
+  reconcileJangdan();
   render();
 
   // 처음 방문했을 때만 입력 방법 가이드를 자동으로 한 번 열어줌(이후엔 ? 버튼으로 직접 확인)
