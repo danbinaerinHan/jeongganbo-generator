@@ -223,7 +223,6 @@
                  font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
   .melody-head .mono { color: var(--muted); font-weight: 400;
                        font-family: ui-monospace, Menlo, monospace; }
-  .melody-head .melody-hint { color: var(--muted); font-weight: 400; }
   .melody-head #melodyInfo { color: var(--muted); font-weight: 400; }
   .mel-actions { margin-left: auto; display: flex; gap: 6px; }
   .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: #fff;
@@ -311,6 +310,21 @@
   .mini-toggle:hover { background: #f0ece3; }
   #melodyArea.editor-collapsed #melodyRow { display: none; }
   #melodyArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
+
+  /* 입력 방법 가이드 (?) 토글 */
+  .guide-wrap { position: relative; display: inline-flex; }
+  #melodyGuideToggle { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--accent);
+                        background: #fff; color: var(--accent); font-size: 11px; font-weight: 700;
+                        line-height: 1; cursor: pointer; padding: 0; }
+  #melodyGuideToggle:hover, #melodyGuideToggle.on { background: var(--accent); color: #fff; }
+  .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
+                  background: rgba(255,255,255,.98); border: 1px solid var(--accent); border-radius: 10px;
+                  padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
+                  font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6; }
+  .melody-guide.on { display: block; }
+  .melody-guide b { color: var(--accent); font-size: 11px; letter-spacing: .5px; }
+  .melody-guide .mg-sec { margin-top: 8px; }
+  .melody-guide .mg-sec:first-child { margin-top: 0; }
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
@@ -542,7 +556,21 @@
 
       <div class="melody-head">
         <button type="button" id="editorToggle" class="mini-toggle" title="접기/펼치기">▾</button>
-        멜로디 <span class="melody-hint">— 음은 한글 율명(황·태·협…)으로, 세로줄(각)이 바뀔 땐 줄바꿈, 그 안의 칸(정간)은 <span class="mono">|</span> 로 나눠 적어요</span>
+        멜로디
+        <span class="guide-wrap">
+          <button type="button" id="melodyGuideToggle" title="입력 방법 안내">?</button>
+          <div id="melodyGuide" class="melody-guide">
+            <div class="mg-sec"><b>입력 방법</b><br>
+              ① 악보의 정간을 클릭해서 바로 입력<br>
+              ② 아래 텍스트창에 직접 입력
+            </div>
+            <div class="mg-sec"><b>텍스트로 입력할 때</b><br>
+              음은 한글 율명(황·태·협…)으로<br>
+              줄바꿈은 각(세로줄) 구분<br>
+              <span class="mono">|</span> 는 정간(칸) 구분
+            </div>
+          </div>
+        </span>
         <span id="melodyInfo"></span>
         <span class="mel-actions">
           <button type="button" id="ornEditToggle" class="mel-btn tip" data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있어요">🎚 시김새 수정</button>
@@ -2039,6 +2067,19 @@
     e.target.value = "";
   });
 
+  // 입력 방법 가이드(?) 팝오버
+  function toggleMelodyGuide(show) {
+    const on = typeof show === "boolean" ? show : !$("melodyGuide").classList.contains("on");
+    $("melodyGuide").classList.toggle("on", on);
+    $("melodyGuideToggle").classList.toggle("on", on);
+  }
+  $("melodyGuideToggle").addEventListener("click", function (e) { e.stopPropagation(); toggleMelodyGuide(); });
+  document.addEventListener("click", function (e) {
+    if ($("melodyGuide").classList.contains("on") && !$("melodyGuide").contains(e.target) && e.target !== $("melodyGuideToggle")) {
+      toggleMelodyGuide(false);
+    }
+  });
+
   // 이전 작업 복구(localStorage)
   try { const raw = localStorage.getItem(LS_KEY); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
 
@@ -2046,6 +2087,15 @@
   fillDaegangPreset();
   reconcileMelody();
   render();
+
+  // 처음 방문했을 때만 입력 방법 가이드를 자동으로 한 번 열어줌(이후엔 ? 버튼으로 직접 확인)
+  const GUIDE_LS_KEY = "jgb_guide_seen_v1";
+  try {
+    if (!localStorage.getItem(GUIDE_LS_KEY)) {
+      toggleMelodyGuide(true);
+      localStorage.setItem(GUIDE_LS_KEY, "1");
+    }
+  } catch (e) {}
 })();
 </script>
 </body>
