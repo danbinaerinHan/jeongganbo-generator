@@ -79,8 +79,7 @@
     padding: 20px;
     overflow-y: auto;
   }
-  #sidebar h1 { font-size: 18px; margin: 0 0 4px; letter-spacing: 2px; }
-  #sidebar .sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  #sidebar h1 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
   .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
@@ -108,8 +107,8 @@
   .chk-cluster { margin-bottom: 26px; }
   .chk-cluster .field { margin-bottom: 2px; padding: 6px 0; }
   .chk-cluster .field + .field { border-top: 1px solid var(--line); }
-  .chk-cluster .field .hint { margin: 4px 0 2px 37px; }
   .chk-cluster .field select { margin: 6px 0 2px 37px; width: calc(100% - 37px); }
+  .chk-row { display: flex; align-items: center; gap: 6px; }
   .mini { display: flex; align-items: center; gap: 6px; margin-top: 7px;
           font-size: 11px; color: var(--muted); flex-wrap: wrap; }
   .mini input[type="number"] { width: 60px; padding: 4px 6px; font-size: 12px;
@@ -416,7 +415,6 @@
     <div class="side-head">
       <div>
         <h1>정간보 생성기</h1>
-        <div class="sub">井間譜 · A4 세로 · 격자 세팅</div>
       </div>
       <button type="button" id="sidebarToggle" class="icon-btn" title="설정 폼 접기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -437,30 +435,35 @@
           <option value="portrait" selected>세로 (Portrait)</option>
           <option value="landscape">가로 (Landscape)</option>
         </select>
-        <div class="hint">A4 세로/가로. 가로로 하면 한 줄에 더 많은 각이 들어간다.</div>
-      </div>
-
-      <div class="field">
-        <label for="beats">한 각의 정간 수 (몇 박)</label>
-        <input type="number" id="beats" min="1" max="64" value="12">
-        <div class="hint">한 각(세로줄)에 들어갈 정간(칸)의 개수 = 몇 박 장단인지.</div>
-      </div>
-
-      <div class="field">
-        <label for="daegang">대강 분절 (선택)</label>
-        <input type="text" id="daegang" placeholder="예: 3 3 3 3">
-        <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
       </div>
 
       <div class="chk-cluster">
         <div class="field">
-          <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
-          <div class="hint">켜면 맨 처음 각 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 한 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다.</div>
+          <div class="chk-row">
+            <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
+            <span class="guide-wrap">
+              <button type="button" id="jangdanOptGuideToggle" class="icon-btn" title="설명 보기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </button>
+              <div id="jangdanOptGuide" class="melody-guide">
+                <div class="mg-sec">켜면 맨 처음 각 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 한 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다.</div>
+              </div>
+            </span>
+          </div>
         </div>
 
         <div class="field">
-          <label class="chk"><input type="checkbox" id="wantLyrics"> 가사 추가</label>
-          <div class="hint">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다. 정간마다 한 글자씩 적는다.</div>
+          <div class="chk-row">
+            <label class="chk"><input type="checkbox" id="wantLyrics"> 가사 추가</label>
+            <span class="guide-wrap">
+              <button type="button" id="lyricsOptGuideToggle" class="icon-btn" title="설명 보기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </button>
+              <div id="lyricsOptGuide" class="melody-guide">
+                <div class="mg-sec">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생긴다. 정간마다 한 글자씩 적는다.</div>
+              </div>
+            </span>
+          </div>
           <select id="lyricsFont">
             <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
             <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
@@ -471,8 +474,17 @@
         </div>
 
         <div class="field">
-          <label class="chk"><input type="checkbox" id="wantTempo"> 템포 표시</label>
-          <div class="hint">켜면 맨 처음 각 위에 一分・三十井(1분에 30정간) 식으로 템포를 한자로 표시한다. 값은 재생 설정(⚙)의 템포(BPM)를 그대로 쓴다.</div>
+          <div class="chk-row">
+            <label class="chk"><input type="checkbox" id="wantTempo"> 템포 표시</label>
+            <span class="guide-wrap">
+              <button type="button" id="tempoGuideToggle" class="icon-btn" title="설명 보기">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </button>
+              <div id="tempoGuide" class="melody-guide">
+                <div class="mg-sec">켜면 맨 처음 각 위에 一分・三十井(1분에 30정간) 식으로 템포를 한자로 표시한다. 값은 재생 설정(⚙)의 템포(BPM)를 그대로 쓴다.</div>
+              </div>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -486,7 +498,6 @@
           <span>위치</span>
           <span class="num-unit"><input type="number" id="titleOffset" step="1" value="0"><span class="unit">mm</span></span>
         </div>
-        <div class="hint">첫 장 맨 처음(오른쪽) 세로 칸에 큰 글씨로 들어감.</div>
       </div>
       <div class="field">
         <label for="subtitle">부제 (선택)</label>
@@ -497,7 +508,6 @@
           <span>위치</span>
           <span class="num-unit"><input type="number" id="subOffset" step="1" value="0"><span class="unit">mm</span></span>
         </div>
-        <div class="hint">제목 아래에 작은 글씨로 들어감.</div>
       </div>
       <div class="field">
         <label for="titleFont">제목 글씨체</label>
@@ -508,12 +518,22 @@
           <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
           <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
         </select>
-        <div class="hint">제목·부제에 적용. 시스템에 설치된 글꼴만 표시되며, 없으면 기본 글꼴로 대체된다.</div>
       </div>
     </div>
 
     <!-- ===== 레이아웃 ===== -->
     <div class="tabpanel" data-tab="layout">
+      <div class="field">
+        <label for="beats">한 각의 정간 수 (몇 박)</label>
+        <input type="number" id="beats" min="1" max="64" value="12">
+      </div>
+
+      <div class="field">
+        <label for="daegang">대강 분절 (선택)</label>
+        <input type="text" id="daegang" placeholder="예: 3 3 3 3">
+        <div class="hint">각 안에서 굵은 선으로 나눌 정간 묶음. 공백/쉼표 구분, 합이 정간 수와 같아야 함. 비우면 대강선 없음. (박수 바꾸면 대표 패턴 자동 입력)</div>
+      </div>
+
       <div class="field">
         <label for="gakPerRow">한 줄에 놓을 각 수 (가로)</label>
         <input type="number" id="gakPerRow" min="1" max="40" value="10">
@@ -1820,8 +1840,8 @@
     const desiredJdW = wantJangdan ? desiredCell : 0;
     const desiredJdExtra = desiredJdGap + desiredJdW;
     // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨
-    const desiredLyGap = wantLyrics ? desiredGap * 0.5 : 0;
-    const desiredLyW = wantLyrics ? desiredCell * 0.5 : 0;
+    const desiredLyGap = wantLyrics ? desiredGap * 0.18 : 0;
+    const desiredLyW = wantLyrics ? desiredCell * 0.4 : 0;
     const desiredLyExtra = desiredLyGap + desiredLyW;
 
     const headRatio = wantHeader ? 1.1 : 0;
@@ -2507,6 +2527,24 @@
       toggleOrnGuide(false);
     }
   });
+
+  // 장단/가사/템포 옵션 설명(?) 팝오버 — 셋 다 같은 방식이라 헬퍼 하나로 묶음
+  function setupOptGuide(toggleId, guideId) {
+    function toggle(show) {
+      const on = typeof show === "boolean" ? show : !$(guideId).classList.contains("on");
+      $(guideId).classList.toggle("on", on);
+      $(toggleId).classList.toggle("on", on);
+    }
+    $(toggleId).addEventListener("click", function (e) { e.stopPropagation(); toggle(); });
+    document.addEventListener("click", function (e) {
+      if ($(guideId).classList.contains("on") && !$(guideId).contains(e.target) && e.target !== $(toggleId)) {
+        toggle(false);
+      }
+    });
+  }
+  setupOptGuide("jangdanOptGuideToggle", "jangdanOptGuide");
+  setupOptGuide("lyricsOptGuideToggle", "lyricsOptGuide");
+  setupOptGuide("tempoGuideToggle", "tempoGuide");
 
   // 이전 작업 복구(localStorage)
   try { const raw = localStorage.getItem(LS_KEY); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
