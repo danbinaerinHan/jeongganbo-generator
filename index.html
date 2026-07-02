@@ -445,7 +445,7 @@
           <span>크기</span>
           <span class="num-unit"><input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"><span class="unit">mm</span></span>
           <span>위치</span>
-          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="0"><span class="unit">mm</span></span>
+          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="3"><span class="unit">mm</span></span>
         </div>
       </div>
       <div class="field">
@@ -469,6 +469,7 @@
         </select>
       </div>
 
+      <div class="sec">옵션</div>
       <div class="chk-cluster">
         <div class="field">
           <div class="chk-row">
@@ -1576,12 +1577,15 @@
     const nRows = rows.length;
     let symK = -1;   // 이 정간 안의 기호(시김새) 순번 (원본 {…} 등장 순서)
     const rowToks = rows.map(tokenizeNotes);
-    const maxCols = Math.max.apply(null, rowToks.map(function (t) { return t.length; }));
+    // 붙임 시김새(음표 오른쪽에 작게 붙는 것)는 별도 칸을 차지하지 않으므로
+    // 그룹핑(groupRowTokens) 후의 칸 수로 넓힘 여부를 판단한다 — 그래야 시김새가
+    // 붙어도 음표 글자 자체 크기가 줄어들지 않는다.
+    const maxCols = Math.max.apply(null, rowToks.map(function (t) { return groupRowTokens(t).length; }));
 
     // 글자 크기는 정간별이 아니라 곡 전체 기준으로 통일한다.
     // - 어느 정간이든 2행 이상이 하나라도 있으면(uniformSmall) 전부 3행 기준의 작은 크기
     // - 곡 전체가 모두 1행이면 큰 크기 유지
-    // - 한 정간에 가로로 여러 글자면 넘침 방지로만 추가 축소
+    // - 한 정간에 가로로 여러 '주 글자'(붙임 시김새 제외)가 있으면 넘침 방지로만 추가 축소
     const ROWS_REF = 3;
     let gs = uniformSmall ? (cell * 0.90) / ROWS_REF : cell * 0.60;
     if (maxCols > 1) gs = Math.min(gs, (cell * 0.86) / maxCols);
