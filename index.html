@@ -394,7 +394,7 @@
 
       <div class="field">
         <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
-        <div class="hint">켜면 선율 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 줄이 함께 표시되고, 아래 편집창에 별도 입력창이 생겨요.</div>
+        <div class="hint">켜면 맨 처음 각 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 한 줄이 표시되고, 아래 편집창에 별도 입력창이 생겨요.</div>
       </div>
 
       <div class="sec">제목</div>
@@ -632,12 +632,12 @@
           <button type="button" id="jangdanGuideToggle" title="입력 방법 안내">?</button>
           <div id="jangdanGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
-              선율과 같은 방식으로, 정간마다 궁·덩·기덕·덕·다·더러러러 중 하나를 적어요.
+              장단은 맨 처음 각 옆에 한 번만 표시돼요.<br>
+              정간마다 궁·덩·기덕·덕·다·더러러러 중 하나를 적어요.
             </div>
             <div class="mg-sec"><b>텍스트로 입력할 때</b><br>
-              줄바꿈은 각(세로줄) 구분<br>
               <span class="mono">|</span> 는 정간(칸) 구분<br>
-              선율과 각 수가 자동으로 맞춰져요
+              정간 수는 선율과 자동으로 맞춰져요
             </div>
           </div>
         </span>
@@ -650,7 +650,7 @@
         <div id="jangdanPaletteWrap"><div id="jangdanPalette" class="palette"></div></div>
         <div id="jangdanEditorCol">
           <textarea id="jangdan" spellcheck="false"
-            placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  덩 | 기덕 | 궁 | 덕"></textarea>
+            placeholder="| 로 정간 구분(맨 처음 각 옆에만 표시).  예)  덩 | 기덕 | 궁 | 덕"></textarea>
         </div>
       </div>
     </div>
@@ -785,20 +785,14 @@
     if (next !== $("melody").value) $("melody").value = next;
   }
 
-  // 장단 텍스트를 선율과 같은 구조(각 수·정간 수)로 맞춤(내용 보존). 장단 미사용 시 건너뜀.
+  // 장단은 맨 처음 각 옆에만 붙으므로, 정간 수(beats)만큼만 한 줄로 맞춤(내용 보존). 미사용 시 건너뜀.
   function reconcileJangdan() {
     if (!$("wantJangdan").checked) return;
     const { beats } = formStructure();
-    const melParsed = parseMelodyOffsets($("melody").value);
     const jdParsed = parseMelodyOffsets($("jangdan").value);
-    const target = Math.max(1, melParsed.length);
-    const lines = [];
-    for (let g = 0; g < target; g++) {
-      const cells = [];
-      for (let c = 0; c < beats; c++) cells.push((jdParsed[g] && jdParsed[g][c]) ? jdParsed[g][c].text : "");
-      lines.push(cells.join(" | "));
-    }
-    const next = lines.join("\n");
+    const cells = [];
+    for (let c = 0; c < beats; c++) cells.push((jdParsed[0] && jdParsed[0][c]) ? jdParsed[0][c].text : "");
+    const next = cells.join(" | ");
     if (next !== $("jangdan").value) $("jangdan").value = next;
   }
 
@@ -1675,13 +1669,13 @@
       });
       if (p.bands.length > maxBands) maxBands = p.bands.length;
     });
-    // 장단 줄(선율 옆 좁은 칸) 너비 — 켜져 있을 때만 각의 폭에 더해짐
+    // 장단 줄(선율 옆 좁은 칸) 너비 — 켜져 있으면 맨 처음 각 옆에만 한 번 추가됨
     const desiredJdGap = wantJangdan ? desiredGap * 0.5 : 0;
     const desiredJdW = wantJangdan ? desiredCell * 0.34 : 0;
-    const desiredGakW = desiredCell + desiredJdGap + desiredJdW;
+    const desiredJdExtra = desiredJdGap + desiredJdW;
 
     const headRatio = wantHeader ? 1.1 : 0;
-    const wNeed = maxCols * desiredGakW + (maxCols - 1) * desiredGap;
+    const wNeed = maxCols * desiredCell + (maxCols - 1) * desiredGap + desiredJdExtra;
     const hNeed = maxBands * (beats + headRatio) * desiredCell + (maxBands - 1) * desiredBandGap;
     const scale = Math.min(1, availW / wNeed, availH / hNeed);
 
@@ -1690,11 +1684,11 @@
     const bandGap = desiredBandGap * scale;
     const jdGap = desiredJdGap * scale;
     const jdW = desiredJdW * scale;
-    const gakW = cell + jdGap + jdW;   // 각 하나(선율+장단)가 차지하는 가로 폭
+    const jdExtraFull = jdGap + jdW;   // 첫 각 옆 장단 줄이 차지하는 폭(간격 포함)
     const headH = cell * headRatio;
-    const slot = gakW + gap;
+    const slot = cell + gap;
     const bandH = headH + beats * cell;
-    const gridTotalW = maxCols * gakW + (maxCols - 1) * gap;
+    const gridTotalW = maxCols * cell + (maxCols - 1) * gap + (wantJangdan ? jdExtraFull : 0);
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
 
     const dgSet = new Set();
@@ -1736,13 +1730,15 @@
         const panelRight = bandRight;
         const panelX = hasTitle ? (bandRight - titleWidth) : bandRight;
         const musicRightEdge = hasTitle ? (panelX - gap) : bandRight;
-        const musicLeft = musicRightEdge - (nMusic * gakW + (nMusic - 1) * gap);
+        // 장단은 전체 악곡의 맨 처음 각(gakAccum===0) 옆에만 붙으므로, 그 밴드만 폭이 그만큼 더 필요함
+        const bandJdExtra = (wantJangdan && gakAccum === 0) ? jdExtraFull : 0;
+        const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap) - bandJdExtra;
 
         if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
 
         for (let m = 0; m < nMusic; m++) {
-          const xFoot = musicRightEdge - gakW - m * slot;   // 각 하나(선율+장단) 전체 폭의 왼쪽 끝
-          const x = xFoot + jdGap + jdW;                    // 선율 칸의 왼쪽 끝(장단 폭만큼 오른쪽으로)
+          // 첫 각(melIdx===0) 옆에 장단 줄이 붙는 만큼, 그 뒤(m>=1)의 각들은 전부 왼쪽으로 밀림
+          const x = musicRightEdge - cell - m * slot - (m >= 1 ? bandJdExtra : 0);
           const melIdx = gakAccum + m;
           const gakCells = parsed[melIdx];
 
@@ -1781,17 +1777,18 @@
             svg.appendChild(hit);
           }
 
-          // 장단 줄(선율 왼쪽 좁은 칸) — 켜져 있을 때만
-          if (wantJangdan) {
-            const jdCells = jdParsed && jdParsed[melIdx];
+          // 장단 줄(선율 왼쪽 좁은 칸) — 켜져 있고, 악곡 맨 처음 각일 때만
+          if (wantJangdan && melIdx === 0) {
+            const jdRight = x - jdGap, jdLeft = jdRight - jdW;
+            const jdCells = jdParsed && jdParsed[0];
             const jdCount = jdCells ? jdCells.length : 0;
             const jdFilled = jdCount > 0 ? Math.min(beats, jdCount) : 0;
             for (let j = 0; j < jdFilled; j++) {
               const content = jdCells[j] ? jdCells[j].text : "";
-              if (content) drawJangdanCell(svg, xFoot, gridTop + j * cell, jdW, cell, content);
+              if (content) drawJangdanCell(svg, jdLeft, gridTop + j * cell, jdW, cell, content);
             }
-            svg.appendChild(line(xFoot, gridTop, xFoot, gridBottom, T_THIN));
-            svg.appendChild(line(xFoot + jdW, gridTop, xFoot + jdW, gridBottom, T_THIN));
+            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THIN));
+            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THIN));
           }
         }
         gakAccum += nMusic;
