@@ -15,6 +15,8 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
+  button, select, input, textarea { transition: border-color .12s ease, background .12s ease; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
   body {
     font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     background: var(--bg);
@@ -85,15 +87,26 @@
   details.adv[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 12px; }
   details.adv[open] > summary .chev { transform: rotate(180deg); }
 
-  /* 율명 이미지 팔레트 */
-  .palette { display: flex; flex-wrap: wrap; gap: 4px;
-             padding: 10px; border: 1px solid var(--accent); border-top: none;
-             border-radius: 0 0 8px 8px; background: #fff; margin-bottom: 14px; }
-  .palette .pi { display: flex; flex-direction: column; align-items: center; gap: 2px;
-                 width: 44px; padding: 4px 2px; border-radius: 6px; cursor: pointer; }
+  /* 율명 팔레트 — 음역(행) × 음계(열) 매트릭스 */
+  .palette { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+             width: max-content; min-width: 100%; }
+  .palette .prow { display: flex; align-items: center; gap: 1px; margin-bottom: 3px; }
+  .palette .prow:last-child { margin-bottom: 0; }
+  .palette .prow.headrow { margin-bottom: 4px; }
+  .palette .prow.symrow { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 4px; }
+  .palette .plabel { flex: 0 0 32px; font-size: 10px; font-weight: 700; color: var(--accent);
+                     text-align: center; letter-spacing: .5px; }
+  .palette .phead { flex: 0 0 31px; text-align: center; font-size: 11px; font-weight: 700;
+                    color: var(--muted); font-family: "Batang","AppleMyungjo",serif; }
+  .palette .pi { flex: 0 0 31px; height: 29px; display: flex; align-items: center;
+                 justify-content: center; border-radius: 5px; cursor: pointer;
+                 transition: background .1s ease; }
   .palette .pi:hover { background: #f0ece3; }
-  .palette .pi img { width: 28px; height: 28px; object-fit: contain; }
-  .palette .pi span { font-size: 10px; color: var(--muted); }
+  .palette .pi img { width: 24px; height: 24px; object-fit: contain; }
+  .palette .pi .pch { display: flex; align-items: center; justify-content: center;
+                      font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
+                      font-size: 19px; color: #333; }
+  .palette .pi.nofile { opacity: .5; }
   .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
   .palette .pmsg.err { color: #b23b3b; }
 
@@ -131,11 +144,12 @@
   /* ---------- 미리보기 + 멜로디 에디터 ---------- */
   #main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
   #sheetArea { position: relative; flex: 1 1 auto; min-height: 0; display: flex;
-               align-items: flex-start; justify-content: center; padding: 16px; overflow: auto; }
+               align-items: flex-start; justify-content: center; padding: 16px; overflow: auto;
+               background: #e8e5de; }
   #sheet { transform-origin: top center; transition: transform .08s ease;
            display: flex; flex-direction: column; align-items: center; gap: 16px; }
   .page { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
-  .page svg { display: block; height: calc(100vh - 230px); width: auto; }
+  .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
 
   #zoomBar { position: absolute; top: 12px; left: 14px; z-index: 5;
              display: flex; align-items: center; gap: 3px;
@@ -166,7 +180,15 @@
   .mel-btn:disabled { opacity: .45; cursor: default; }
   #melodyReset { color: #b23b3b; border-color: #e3b7b7; }
   #melodyReset:hover { background: #f7ecec; }
-  #melody { width: 100%; height: 118px; resize: none; box-sizing: border-box;
+  /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
+  #melodyRow { display: flex; gap: 12px; height: 296px; align-items: stretch; }
+  #paletteCol { flex: 0 0 auto; max-width: 60%; display: flex; flex-direction: column;
+                min-height: 0; }
+  #paletteCol .tool-inline { margin-bottom: 6px; }
+  #paletteCol .pal-hint { font-weight: 400; font-size: 11px; color: var(--muted); margin-left: 4px; }
+  #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  #editorCol { flex: 1 1 auto; min-width: 0; display: flex; }
+  #melody { width: 100%; height: 100%; resize: none; box-sizing: border-box;
             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
@@ -194,28 +216,23 @@
   body.sidebar-collapsed #sidebar { display: none; }
   body.sidebar-collapsed .side-open { display: inline-flex; }
 
-  /* 에디터 상단 도구줄 (율명 표기 · 팔레트) */
-  .editor-tools { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
-                  margin-bottom: 8px; }
+  /* 율명 표기 셀렉트 */
   .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
   .tool-inline select { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
                         font-size: 12px; font-family: inherit; background: #fff; cursor: pointer; }
-  #paletteWrap { flex: 1 1 260px; min-width: 220px; margin: 0; }
-  #paletteWrap .palette { max-height: 148px; overflow-y: auto; }
 
   /* 편집창 접기 */
   .mini-toggle { width: 22px; height: 22px; margin-right: 6px; border: 1px solid var(--line);
                  background: #fff; border-radius: 5px; cursor: pointer; color: var(--muted);
                  font-size: 12px; line-height: 1; vertical-align: middle; transition: transform .12s ease; }
   .mini-toggle:hover { background: #f0ece3; }
-  #melodyArea.editor-collapsed .editor-tools,
-  #melodyArea.editor-collapsed #editorBody { display: none; }
+  #melodyArea.editor-collapsed #melodyRow { display: none; }
   #melodyArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
     #sidebar, #melodyArea, #zoomBar, .side-open { display: none !important; }
-    #main, #sheetArea { display: block; padding: 0; overflow: visible; }
+    #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
@@ -410,24 +427,8 @@
     <div id="melodyArea">
       <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
 
-      <div class="editor-tools">
-        <label class="tool-inline">율명 표기
-          <select id="noteMode">
-            <option value="image" selected>이미지</option>
-            <option value="font" disabled>폰트(준비중)</option>
-          </select>
-        </label>
-        <details class="adv" id="paletteWrap">
-          <summary>
-            <span class="lbl">🎵 사용 가능한 율명 <small>클릭하면 입력</small></span>
-            <span class="chev">▾</span>
-          </summary>
-          <div id="notePalette" class="palette"></div>
-        </details>
-      </div>
-
       <div class="melody-head">
-        <button type="button" id="editorToggle" class="mini-toggle" title="편집창 접기/펼치기">▾</button>
+        <button type="button" id="editorToggle" class="mini-toggle" title="접기/펼치기">▾</button>
         멜로디 <span class="mono">| 정간 · ⏎ 줄바꿈 = 각</span>
         <span id="melodyInfo"></span>
         <span class="mel-actions">
@@ -435,9 +436,22 @@
           <button type="button" id="melodyReset" class="mel-btn" title="멜로디 내용 비우기">초기화</button>
         </span>
       </div>
-      <div id="editorBody">
-        <textarea id="melody" spellcheck="false"
-          placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
+
+      <div id="melodyRow">
+        <div id="paletteCol">
+          <label class="tool-inline">율명 표기
+            <select id="noteMode">
+              <option value="image" selected>이미지</option>
+              <option value="font">폰트 (한자)</option>
+            </select>
+            <span class="pal-hint">🎵 클릭하면 입력</span>
+          </label>
+          <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
+        </div>
+        <div id="editorCol">
+          <textarea id="melody" spellcheck="false"
+            placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
+        </div>
       </div>
     </div>
   </main>
@@ -723,7 +737,56 @@
   const YUL = { 황: "黃", 대: "大", 태: "太", 협: "夾", 고: "姑", 중: "仲",
                 유: "蕤", 임: "林", 이: "夷", 남: "南", 무: "無", 응: "應" };
   const BASESET = new Set(Object.keys(YUL));
+
+  // 옥타브 변형 한자(유니코드에 존재가 확인된 것만).
+  // 청성=삼수변(氵), 배성=사람인변(亻), 하배=두인변(彳), 중청=氵 계열 확장자.
+  // 여기 없는 조합(유빈 전체, 하배대 등)은 기본자 + 옥타브 점으로 표기.
+  const OCT_HANJA = {
+    "1":  { 황: "潢", 대: "汏", 태: "汰", 협: "浹", 중: "㳞", 임: "淋", 남: "湳", 무: "潕", 이: "洟" },
+    "-1": { 황: "僙", 태: "㑀", 협: "俠", 중: "㑖", 임: "㑣", 남: "㑲", 무: "㒇", 이: "侇" },
+    "2":  { 황: "㶂", 태: "㳲", 중: "㴢", 임: "㵉", 남: "㵜" },
+    "-2": { 태: "㣖", 중: "㣡", 임: "㣩", 남: "㣮" }
+  };
+
+  // 악보 음표용 서체(이미지 글씨와 어울리는 해서·명조 계열)
+  const NOTE_FONT = "'Kaiti SC','STKaiti','KaiTi','GungSeo','Batang','AppleMyungjo','Noto Serif KR',serif";
+
+  // 폰트가 해당 글자를 실제로 그릴 수 있는지(두부 □ 방지) 캔버스로 검사
+  const glyphCache = {};
+  let glyphCtx = null, tofuSigs = null;
+  function canGlyph(ch) {
+    if (ch in glyphCache) return glyphCache[ch];
+    let ok = true;
+    try {
+      if (!glyphCtx) {
+        const c = document.createElement("canvas");
+        c.width = 28; c.height = 28;
+        glyphCtx = c.getContext("2d", { willReadFrequently: true });
+        glyphCtx.font = "22px " + NOTE_FONT;
+        glyphCtx.textBaseline = "top";
+      }
+      const sig = function (s) {
+        glyphCtx.clearRect(0, 0, 28, 28);
+        if (s) glyphCtx.fillText(s, 1, 2);
+        return glyphCtx.canvas.toDataURL();
+      };
+      if (!tofuSigs) tofuSigs = [sig(""), sig("͸"), sig("￿")];
+      ok = tofuSigs.indexOf(sig(ch)) < 0;
+    } catch (e) { ok = true; }
+    glyphCache[ch] = ok;
+    return ok;
+  }
+
+  // 음+옥타브 → 폰트로 그릴 변형 한자(지원될 때만), 없으면 null
+  function octHanja(base, oct) {
+    const m = OCT_HANJA[String(oct)];
+    const ch = m && m[base];
+    return (ch && canGlyph(ch)) ? ch : null;
+  }
+  // 기호 약어 → 파일명 (짧게 입력). 이음은 이미지 대신 '-' 문자 그대로 사용.
+  const SYM_MARK = { "쉼": "pause_001", "쉼표": "pause_001" };
   const PRE2 = ["배탁", "하배"];   // 두 옥타브 아래
+  const PRE2U = ["중청", "겹청"];  // 두 옥타브 위
   const PRE1U = ["청"];            // 한 옥타브 위
   const PRE1D = ["배", "탁"];      // 한 옥타브 아래
 
@@ -737,8 +800,13 @@
         while (j < a.length && a[j] !== "}") { name += a[j]; j++; }
         if (j < a.length) { out.push({ sym: name }); i = j + 1; continue; }
       }
+      // 기호 약어: -=이음(연음), 쉼/쉼표=쉼표
+      const t2 = a[i] + (a[i + 1] || "");
+      if (SYM_MARK[t2]) { out.push({ sym: SYM_MARK[t2] }); i += 2; continue; }
+      if (SYM_MARK[a[i]]) { out.push({ sym: SYM_MARK[a[i]] }); i += 1; continue; }
       const two = a[i] + (a[i + 1] || "");
       if (PRE2.indexOf(two) >= 0 && BASESET.has(a[i + 2])) { out.push({ base: a[i + 2], oct: -2 }); i += 3; continue; }
+      if (PRE2U.indexOf(two) >= 0 && BASESET.has(a[i + 2])) { out.push({ base: a[i + 2], oct: 2 }); i += 3; continue; }
       const one = a[i];
       if (PRE1U.indexOf(one) >= 0 && BASESET.has(a[i + 1])) { out.push({ base: a[i + 1], oct: 1 }); i += 2; continue; }
       if (PRE1D.indexOf(one) >= 0 && BASESET.has(a[i + 1])) { out.push({ base: a[i + 1], oct: -1 }); i += 2; continue; }
@@ -811,15 +879,16 @@
     return NOTE_DIR + file + ".png";
   }
 
-  // ---------- 율명 이미지 팔레트 ----------
-  // 입력 가능한 옥타브(청/기본/배/배탁)와 멜로디에 넣을 입력 접두어
-  const OCT_INPUT = [
-    { oct: 1, prefix: "청" },
-    { oct: 0, prefix: "" },
-    { oct: -1, prefix: "배" },
-    { oct: -2, prefix: "배탁" }
+  // ---------- 율명 팔레트 (음역 행 × 음계 열 매트릭스) ----------
+  // 행 = 음역(낮은음→높은음), 열 = 12율 음계순
+  const SCALE = ["황", "대", "태", "협", "고", "중", "유", "임", "이", "남", "무", "응"];
+  const OCT_ROWS = [
+    { oct: -2, label: "하배", prefix: "하배" },
+    { oct: -1, label: "배",   prefix: "배" },
+    { oct: 0,  label: "중성", prefix: "" },
+    { oct: 1,  label: "청",   prefix: "청" },
+    { oct: 2,  label: "중청", prefix: "중청" }
   ];
-  const NOTE_ORDER = ["황", "태", "협", "고", "중", "임", "이", "남", "무", "응"];
 
   // 커서 위치에 토큰(율명 텍스트) 삽입
   function insertToken(txt) {
@@ -850,56 +919,88 @@
   }
 
   // 사용 가능한 율명 이미지를 미리보기로 나열(클릭 시 멜로디에 입력)
+  // 팔레트 칩 하나 생성(이미지가 없으면 한자 폰트로 표시)
+  function paletteChip(label, file, insertText, isFirstImg, fallbackChar, dim) {
+    const item = document.createElement("div");
+    item.className = "pi";
+    item.title = "‘" + label + "’ 입력";
+    if (file) {
+      const img = document.createElement("img");
+      img.src = (window.NOTE_DATA && window.NOTE_DATA[file]) ? window.NOTE_DATA[file] : NOTE_DIR + file + ".png";
+      img.alt = label;
+      if (isFirstImg) img.addEventListener("error", showPaletteError);
+      item.appendChild(img);
+    } else {
+      if (dim) item.classList.add("nofile");
+      const ch = document.createElement("span");
+      ch.className = "pch";
+      ch.textContent = fallbackChar || label;
+      item.appendChild(ch);
+    }
+    item.addEventListener("mousedown", function (e) { e.preventDefault(); });
+    item.addEventListener("click", function () { insertToken(insertText); });
+    return item;
+  }
+
   function buildPalette() {
     const wrap = $("notePalette");
     if (!wrap) return;
     wrap.innerHTML = "";
     let probed = false;
-    NOTE_ORDER.forEach(function (base) {
-      OCT_INPUT.forEach(function (oi) {
-        const file = resolveNoteFile(base, oi.oct);
-        if (!file) return;
-        const label = oi.prefix + base;
-        const item = document.createElement("div");
-        item.className = "pi";
-        item.title = "‘" + label + "’ 입력";
-        const img = document.createElement("img");
-        img.src = (window.NOTE_DATA && window.NOTE_DATA[file]) ? window.NOTE_DATA[file] : NOTE_DIR + file + ".png";
-        img.alt = label;
-        if (!probed) { probed = true; img.addEventListener("error", showPaletteError); }
-        const cap = document.createElement("span");
-        cap.textContent = label;
-        item.appendChild(img);
-        item.appendChild(cap);
-        item.addEventListener("mousedown", function (e) { e.preventDefault(); });
-        item.addEventListener("click", function () { insertToken(label); });
-        wrap.appendChild(item);
+
+    // 열 머리글 (음계: 황~응)
+    const head = document.createElement("div");
+    head.className = "prow headrow";
+    const corner = document.createElement("span");
+    corner.className = "plabel";
+    head.appendChild(corner);
+    SCALE.forEach(function (base) {
+      const h = document.createElement("span");
+      h.className = "phead";
+      h.textContent = base;
+      head.appendChild(h);
+    });
+    wrap.appendChild(head);
+
+    // 음역(하배→중청) 행 × 음계(황~응) 열
+    OCT_ROWS.forEach(function (row) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "prow";
+      const lab = document.createElement("span");
+      lab.className = "plabel";
+      lab.textContent = row.label;
+      rowEl.appendChild(lab);
+      SCALE.forEach(function (base) {
+        const fontMode = $("noteMode").value === "font";
+        // 폰트 모드: 이미지 대신 변형 한자로 표시(악보와 동일하게)
+        const file = fontMode ? null : resolveNoteFile(base, row.oct);
+        const label = row.prefix + base;
+        const first = !probed && !!file;
+        if (first) probed = true;
+        // 이미지 없으면: 변형 한자(지원 시) → 기본 한자(흐리게, 악보엔 점 표기)
+        const variant = row.oct ? octHanja(base, row.oct) : null;
+        const fallback = variant || YUL[base] || base;
+        rowEl.appendChild(paletteChip(label, file, label, first, fallback, !variant && row.oct !== 0));
       });
+      wrap.appendChild(rowEl);
     });
 
-    // 쉼표 · 연음 기호 ({파일명} 토큰으로 삽입)
-    const syms = Object.keys(window.NOTE_DATA || {})
-      .filter(function (k) { return /^(pause|conti)/.test(k); }).sort();
-    if (syms.length) {
-      const head = document.createElement("div");
-      head.className = "pmsg"; head.textContent = "쉼표 · 연음";
-      wrap.appendChild(head);
-      let np = 0, nc = 0;
-      syms.forEach(function (k) {
-        const isPause = k.indexOf("pause") === 0;
-        const label = isPause ? ("쉼표" + (++np)) : ("이음" + (++nc));
-        const item = document.createElement("div");
-        item.className = "pi"; item.title = label + " 입력";
-        const img = document.createElement("img");
-        img.src = window.NOTE_DATA[k];
-        const cap = document.createElement("span");
-        cap.textContent = label;
-        item.appendChild(img);
-        item.appendChild(cap);
-        item.addEventListener("mousedown", function (e) { e.preventDefault(); });
-        item.addEventListener("click", function () { insertToken("{" + k + "}"); });
-        wrap.appendChild(item);
+    // 쉼표 · 연음 기호 — 대표 하나씩만 (약어로 삽입)
+    const data = window.NOTE_DATA || {};
+    const symList = [];
+    if (data["pause_001"]) symList.push({ file: "pause_001", label: "쉼표", ins: "쉼" });
+    symList.push({ file: null, label: "이음", ins: "-", fallback: "-" });   // '-' 문자 그대로
+    if (symList.length) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "prow symrow";
+      const lab = document.createElement("span");
+      lab.className = "plabel";
+      lab.textContent = "기호";
+      rowEl.appendChild(lab);
+      symList.forEach(function (s) {
+        rowEl.appendChild(paletteChip(s.label, s.file, s.ins, false, s.fallback, false));
       });
+      wrap.appendChild(rowEl);
     }
   }
 
@@ -936,7 +1037,8 @@
 
         if (file) {
           // 이미지 모드: 옥타브 표기가 그림에 이미 포함 → 점을 따로 그리지 않음.
-          const box = Math.min(gs * 1.32, rowH * 0.96, colW * 0.96);
+          // 박스를 폰트 글자(gs) 높이에 맞춰 두 모드의 크기를 일치시킴.
+          const box = Math.min(gs * 1.06, rowH * 0.96, colW * 0.96);
           const href = noteImageHref(file);
           const im = el("image", {
             x: cx - box / 2, y: cyc - box / 2, width: box, height: box,
@@ -948,13 +1050,15 @@
           continue;
         }
 
-        // 폰트 모드(또는 이미지 없는 음/기호): 한자 + 옥타브 점
+        // 폰트 폴백: ① 옥타브 변형 한자(潢·僙·㣖…, 폰트 지원 시) ② 기본자 + 옥타브 점
+        const variant = (tk.base != null && tk.oct) ? octHanja(tk.base, tk.oct) : null;
         const ch = tk.literal != null ? tk.literal
-                 : (tk.sym != null ? tk.sym : (YUL[tk.base] || tk.base));
+                 : (tk.sym != null ? tk.sym
+                 : (variant || YUL[tk.base] || tk.base));
         const t = el("text", { x: cx, y: cyc + gs * 0.34, "text-anchor": "middle",
-          "font-size": gs, "font-family": CJK, fill: "#111" });
+          "font-size": gs, "font-family": NOTE_FONT, fill: "#111" });
         t.textContent = ch; svg.appendChild(t);
-        if (tk.oct) {   // 옥타브 점 (청=위, 배=아래, 두 옥타브=2개)
+        if (tk.oct && !variant) {   // 변형자가 없을 때만 옥타브 점 (청=위, 배=아래, 두 옥타브=2개)
           const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.26, gs * 0.07);
           for (let d = 0; d < dots; d++) {
             const dy = up ? (cyc - gs * 0.52 - d * r * 3) : (cyc + gs * 0.52 + d * r * 3);
@@ -1290,6 +1394,7 @@
     fr.onload = function () {
       try {
         applyState(JSON.parse(fr.result));
+        buildPalette();
         render();
         syncActiveFromCursor();
         refreshUndoBtn();
@@ -1314,6 +1419,8 @@
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
+  // 표기 모드가 바뀌면 팔레트도 이미지↔한자로 다시 그림
+  $("noteMode").addEventListener("change", buildPalette);
 
   // 보기 확대/축소 (화면만, 출력에는 영향 없음)
   let viewZoom = 1;
@@ -1344,17 +1451,17 @@
 
   // 멜로디 편집창 높이 조절 (위로 드래그 → 커짐 / 아래로 → 작아짐)
   (function () {
-    const rez = $("melodyResizer"), ta = $("melody");
+    const rez = $("melodyResizer"), row = $("melodyRow");
     let startY = 0, startH = 0, dragging = false;
     rez.addEventListener("pointerdown", function (e) {
-      dragging = true; startY = e.clientY; startH = ta.offsetHeight;
+      dragging = true; startY = e.clientY; startH = row.offsetHeight;
       rez.setPointerCapture(e.pointerId); e.preventDefault();
     });
     rez.addEventListener("pointermove", function (e) {
       if (!dragging) return;
       const dy = startY - e.clientY;
-      const h = Math.max(48, Math.min(window.innerHeight * 0.6, startH + dy));
-      ta.style.height = h + "px";
+      const h = Math.max(90, Math.min(window.innerHeight * 0.6, startH + dy));
+      row.style.height = h + "px";
     });
     const stop = function (e) { dragging = false; try { rez.releasePointerCapture(e.pointerId); } catch (_) {} };
     rez.addEventListener("pointerup", stop);
