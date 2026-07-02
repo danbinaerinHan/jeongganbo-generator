@@ -417,6 +417,11 @@
         <div class="hint">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생겨요. 정간마다 한 글자씩 적어요.</div>
       </div>
 
+      <div class="field">
+        <label class="chk"><input type="checkbox" id="wantTempo"> 템포 표시</label>
+        <div class="hint">켜면 맨 처음 각 위에 一分・三十井(1분에 30정간) 식으로 템포를 한자로 표시해요. 값은 재생 설정(⚙)의 템포(BPM)를 그대로 씁니다.</div>
+      </div>
+
       <div class="sec">제목</div>
       <div class="field">
         <label for="title">곡 제목</label>
@@ -1109,6 +1114,21 @@
     const ch = m && m[base];
     return (ch && canGlyph(ch)) ? ch : null;
   }
+  // 숫자 → 한자 숫자 표기(만 단위까지). 자릿수 1은 접두어 생략(十, 百 등).
+  const HANJA_DIGIT = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  function numToHanja(n) {
+    n = Math.round(n);
+    if (n === 0) return "零";
+    const man = Math.floor(n / 10000) % 10000, cheon = Math.floor(n / 1000) % 10,
+          baek = Math.floor(n / 100) % 10, sip = Math.floor(n / 10) % 10, il = n % 10;
+    let s = "";
+    if (man) s += (man > 1 ? numToHanja(man) : "") + "萬";
+    if (cheon) s += (cheon > 1 ? HANJA_DIGIT[cheon] : "") + "千";
+    if (baek) s += (baek > 1 ? HANJA_DIGIT[baek] : "") + "百";
+    if (sip) s += (sip > 1 ? HANJA_DIGIT[sip] : "") + "十";
+    if (il) s += HANJA_DIGIT[il];
+    return s;
+  }
   // 기호 약어 → 파일명 (짧게 입력). 이음은 이미지 대신 '-' 문자 그대로 사용.
   const SYM_MARK = { "쉼": "pause_001", "쉼표": "pause_001" };
 
@@ -1633,6 +1653,8 @@
     document.body.classList.toggle("want-jangdan", wantJangdan);
     const wantLyrics = $("wantLyrics").checked;
     document.body.classList.toggle("want-lyrics", wantLyrics);
+    const wantTempo = $("wantTempo").checked;
+    const tempoStr = "一分・" + numToHanja(Math.max(1, parseInt($("tempoBpm").value) || 60)) + "井";
     const dg = parseDaegang($("daegang").value, beats);
     noteMode = $("noteMode").value;   // "font" | "hangul"
 
@@ -1743,6 +1765,12 @@
       + (wantLyrics ? maxMusicCols * lyExtraFull : 0);
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
 
+    // 템포 표시(一分・XX井) — 맨 처음 각 위, 첫 페이지에만
+    const tempoFont = cell * 0.42;
+    const tempoLineH = tempoFont * 1.12;
+    const tempoGap = tempoFont * 0.45;   // 텍스트와 격자 사이 여백
+    const tempoH = wantTempo ? (Array.from(tempoStr).length * tempoLineH + tempoGap) : 0;
+
     const dgSet = new Set();
     if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
 
@@ -1759,7 +1787,8 @@
       const usedBands = page.bands.length;
       const gridTotalH = usedBands * bandH + (usedBands - 1) * bandGap;
       const gridX = frameX + frameW - INNER_PAD - gridTotalW;
-      const gridY = frameY + (frameH - gridTotalH) / 2;
+      const pageTempoH = (wantTempo && pageIdx === 0) ? tempoH : 0;
+      const gridY = frameY + pageTempoH + (frameH - pageTempoH - gridTotalH) / 2;
       const bandRight = gridX + gridTotalW;
 
       if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, gridY - INNER_PAD,
@@ -1830,6 +1859,15 @@
               });
             })(melIdx, j);
             svg.appendChild(hit);
+          }
+
+          // 템포 표시(一分・XX井) — 첫 페이지 맨 처음 각 위에만
+          if (wantTempo && pageIdx === 0 && melIdx === 0) {
+            const chars = Array.from(tempoStr);
+            const frameTopY = bandTop - INNER_PAD;
+            const startY = frameTopY - tempoGap - (chars.length - 1) * tempoLineH - tempoFont * 0.15;
+            const tt = verticalText(x + cell / 2, startY, tempoStr, tempoFont, 600, "#000", NOTE_FONT);
+            svg.appendChild(tt.g);
           }
 
           // 장단 줄(악곡 맨 처음 자리, 가장 오른쪽) — 켜져 있고, 악곡 맨 처음 각일 때만
@@ -2105,7 +2143,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont",
-    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -2313,7 +2351,11 @@
   });
   $("btnPlay").addEventListener("click", playMelody);
   $("btnStop").addEventListener("click", stopPlayback);
-  ["hwangPitch", "tempoBpm"].forEach(id => { $(id).addEventListener("change", saveState); });
+  $("hwangPitch").addEventListener("change", saveState);
+  // 템포(BPM)는 재생뿐 아니라 템포 표시(악보)에도 쓰이므로 바뀌면 다시 그림
+  $("tempoBpm").addEventListener("change", render);
+  $("wantTempo").addEventListener("change", render);
+  $("wantTempo").addEventListener("input", render);
   // 재생 설정(기준음·템포) 팝오버
   $("playSettingsToggle").addEventListener("click", function (e) {
     e.stopPropagation();
