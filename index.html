@@ -1854,9 +1854,9 @@
         if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
 
         for (let m = 0; m < nMusic; m++) {
-          // 각마다 그 오른쪽에 가사 칸이 붙는 만큼 자리를 비워두고, 첫 각(melIdx===0) 옆 장단 줄만큼은
-          // 그 뒤(m>=1)의 각들이 추가로 왼쪽으로 밀림
-          const x = musicRightEdge - cell - (wantLyrics ? lyExtraFull : 0) - m * slot - (m >= 1 ? bandJdExtra : 0);
+          // 장단은 맨 처음(가장 오른쪽) 자리를 차지하므로, 이 밴드의 모든 각이 그만큼 왼쪽으로 밀림.
+          // 각마다 그 오른쪽에 가사 칸이 붙는 만큼도 함께 비워둠
+          const x = musicRightEdge - cell - (wantLyrics ? lyExtraFull : 0) - m * slot - bandJdExtra;
           const melIdx = gakAccum + m;
           const gakCells = parsed[melIdx];
 
@@ -1895,9 +1895,9 @@
             svg.appendChild(hit);
           }
 
-          // 장단 줄(선율 왼쪽 좁은 칸) — 켜져 있고, 악곡 맨 처음 각일 때만
+          // 장단 줄(악곡 맨 처음 자리, 가장 오른쪽) — 켜져 있고, 악곡 맨 처음 각일 때만
           if (wantJangdan && melIdx === 0) {
-            const jdRight = x - jdGap, jdLeft = jdRight - jdW;
+            const jdRight = musicRightEdge, jdLeft = jdRight - jdW;
             const jdCells = jdParsed && jdParsed[0];
             const jdCount = jdCells ? jdCells.length : 0;
             const jdFilled = jdCount > 0 ? Math.min(beats, jdCount) : 0;
@@ -1905,8 +1905,13 @@
               const content = jdCells[j] ? jdCells[j].text : "";
               if (content) drawJangdanCell(svg, jdLeft, gridTop + j * cell, jdW, cell, content);
             }
-            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THIN));
-            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THIN));
+            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THICK));
+            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THICK));
+            // 다른 정간과 똑같이 박(정간) 구분선을 그림(대강은 굵게)
+            for (let i = 1; i < beats; i++) {
+              svg.appendChild(line(jdLeft, gridTop + i * cell, jdRight, gridTop + i * cell,
+                dgSet.has(i) ? T_DAEGANG : T_THIN));
+            }
           }
 
           // 가사 줄(선율 오른쪽 좁은 칸) — 켜져 있으면 각(정간)마다 매번
