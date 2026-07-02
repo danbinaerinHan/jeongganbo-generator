@@ -288,6 +288,18 @@
              font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
              border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
+  /* 가사 입력 (선율 입력과 같은 구조, 팔레트 없이 자유 텍스트) */
+  #lyricsArea { flex: 0 0 auto; border-top: 1px solid var(--line);
+                background: var(--panel); padding: 10px 14px 14px; display: none; }
+  body.want-lyrics #lyricsArea { display: block; }
+  #lyricsArea.editor-collapsed #lyricsRow { display: none; }
+  #lyricsArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
+  #lyricsRow { display: flex; gap: 12px; height: 100px; align-items: stretch; }
+  #lyricsEditorCol { flex: 1 1 auto; min-width: 0; display: flex; }
+  #lyrics { width: 100%; height: 100%; resize: none; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
   /* 모드 탭 */
   .tabs { display: flex; gap: 2px; margin: 12px 0 16px; border-bottom: 1px solid var(--line); }
   .tab { flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
@@ -342,7 +354,7 @@
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar, #melodyArea, #jangdanArea, #topBar, .side-open { display: none !important; }
+    #sidebar, #melodyArea, #jangdanArea, #lyricsArea, #topBar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
@@ -395,6 +407,11 @@
       <div class="field">
         <label class="chk"><input type="checkbox" id="wantJangdan"> 장단 추가</label>
         <div class="hint">켜면 맨 처음 각 옆에 장구 장단(궁·덩·기덕·덕·다·더러러러) 한 줄이 표시되고, 아래 편집창에 별도 입력창이 생겨요.</div>
+      </div>
+
+      <div class="field">
+        <label class="chk"><input type="checkbox" id="wantLyrics"> 가사 추가</label>
+        <div class="hint">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생겨요. 정간마다 한 글자씩 적어요.</div>
       </div>
 
       <div class="sec">제목</div>
@@ -654,6 +671,35 @@
         </div>
       </div>
     </div>
+    <div id="lyricsArea">
+      <div class="melody-head">
+        <button type="button" id="lyricsToggle" class="mini-toggle" title="접기/펼치기">▾</button>
+        가사 입력
+        <span class="guide-wrap">
+          <button type="button" id="lyricsGuideToggle" title="입력 방법 안내">?</button>
+          <div id="lyricsGuide" class="melody-guide">
+            <div class="mg-sec"><b>입력 방법</b><br>
+              선율처럼 각(세로줄)마다 한 줄, 정간마다 한 글자를 적어요.<br>
+              각 정간의 오른쪽에 그 글자가 표시돼요.
+            </div>
+            <div class="mg-sec"><b>텍스트로 입력할 때</b><br>
+              줄바꿈은 <span class="mono">각</span> 구분<br>
+              <span class="mono">|</span> 는 정간(칸) 구분
+            </div>
+          </div>
+        </span>
+        <span class="mel-actions">
+          <button type="button" id="lyricsUndo" class="mel-btn tip" data-tip="방금 초기화한 가사를 되돌려요">↶ 되돌리기</button>
+          <button type="button" id="lyricsReset" class="mel-btn tip" data-tip="가사 내용을 모두 비워요 (되돌리기로 복구 가능)">초기화</button>
+        </span>
+      </div>
+      <div id="lyricsRow">
+        <div id="lyricsEditorCol">
+          <textarea id="lyrics" spellcheck="false"
+            placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  창 | 밖 | 이 | 어 | 른 | 어"></textarea>
+        </div>
+      </div>
+    </div>
   </main>
 
 <script src="notes-data.js"></script>
@@ -685,6 +731,7 @@
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
   const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
+  const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
 
   function stackFor(beats) {
     if (beats > 12) return 1;
@@ -796,6 +843,27 @@
     if (next !== $("jangdan").value) $("jangdan").value = next;
   }
 
+  // 가사는 매 각(정간)마다 붙으므로, 선율과 같은 구조(각 수·정간 수)로 맞춤(내용 보존).
+  function reconcileLyrics() {
+    if (!$("wantLyrics").checked) return;
+    const { beats, capacity } = formStructure();
+    const parsedMelody = parseMelodyOffsets($("melody").value);
+    const gakAuto = $("gakCountAuto").checked;
+    const target = gakAuto
+      ? Math.max(1, parsedMelody.length)
+      : (!gakUserSet ? capacity
+                     : Math.max(1, Math.min(capacity, parseInt($("gakCount").value) || 1)));
+    const parsed = parseMelodyOffsets($("lyrics").value);
+    const lines = [];
+    for (let g = 0; g < target; g++) {
+      const cells = [];
+      for (let c = 0; c < beats; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
+      lines.push(cells.join(" | "));
+    }
+    const next = lines.join("\n");
+    if (next !== $("lyrics").value) $("lyrics").value = next;
+  }
+
   // 정간 클릭 → 텍스트박스의 해당 칸으로 커서 이동
   function jumpToCell(gi, ci) {
     const ta = $("melody");
@@ -868,6 +936,7 @@
     $("melody").value = "";
     reconcileMelody();
     reconcileJangdan();
+    reconcileLyrics();
     render();
     syncActiveFromCursor();
     refreshUndoBtn();
@@ -899,6 +968,24 @@
   }
   function refreshJangdanUndoBtn() {
     $("jangdanUndo").disabled = jangdanUndoStack.length === 0;
+  }
+
+  // 가사 초기화 / 되돌리기
+  function resetLyrics() {
+    lyricsUndoStack.push($("lyrics").value);
+    $("lyrics").value = "";
+    reconcileLyrics();
+    render();
+    refreshLyricsUndoBtn();
+  }
+  function undoLyrics() {
+    if (!lyricsUndoStack.length) return;
+    $("lyrics").value = lyricsUndoStack.pop();
+    render();
+    refreshLyricsUndoBtn();
+  }
+  function refreshLyricsUndoBtn() {
+    $("lyricsUndo").disabled = lyricsUndoStack.length === 0;
   }
 
   // ---------- 정간 위 인라인 입력 ----------
@@ -1414,6 +1501,21 @@
     });
   }
 
+  // 가사 칸 하나 그리기: 정간 오른쪽 좁은 줄에 글자를 세로로 배치(분박과 동일한 공백 규칙)
+  function drawLyricCell(svg, x, yTop, width, cellH, content) {
+    const rows = content.split(/\s+/).filter(Boolean);
+    if (!rows.length) return;
+    const rowH = cellH / rows.length;
+    rows.forEach(function (str, i) {
+      const cy = yTop + rowH * (i + 0.5);
+      const fs = Math.min(width * 0.86, rowH * 0.7);
+      const t = el("text", { x: x + width / 2, y: cy + fs * 0.36, "text-anchor": "middle",
+        "font-size": fs, "font-family": CJK, "font-weight": 500, fill: "#000" });
+      t.textContent = str;
+      svg.appendChild(t);
+    });
+  }
+
   // 한 칸(정간) 그리기: 공백=줄바꿈(행, 위→아래 / 2분박·3분박…), 붙임=가로 배치(왼→오른쪽)
   function drawCell(svg, x, yTop, cell, content, uniformSmall, gakIdx, cellIdx, pageIdx) {
     const rows = content.split(/\s+/).filter(Boolean);
@@ -1592,6 +1694,8 @@
     const wantFrame = $("frame").checked;
     const wantJangdan = $("wantJangdan").checked;
     document.body.classList.toggle("want-jangdan", wantJangdan);
+    const wantLyrics = $("wantLyrics").checked;
+    document.body.classList.toggle("want-lyrics", wantLyrics);
     const dg = parseDaegang($("daegang").value, beats);
     noteMode = $("noteMode").value;   // "image" | "font" | "hangul"
 
@@ -1628,6 +1732,7 @@
     // 멜로디(내용) 파싱
     const parsed = parseMelodyOffsets($("melody").value);
     const jdParsed = wantJangdan ? parseMelodyOffsets($("jangdan").value) : null;
+    const lyParsed = wantLyrics ? parseMelodyOffsets($("lyrics").value) : null;
     const uniformSmall = parsed.some(function (g) {
       return g && g.some(function (c) { return c.text && /\s/.test(c.text); });
     });
@@ -1661,21 +1766,27 @@
     }
 
     // 모든 페이지 공통 스케일(가장 꽉 찬 페이지 기준) → 페이지끼리 크기 일치
-    let maxCols = 1, maxBands = 1;
+    let maxCols = 1, maxBands = 1, maxMusicCols = 1;
     pages.forEach(function (p) {
       p.bands.forEach(function (m, i) {
         const cols = m + ((i === 0 && p.hasTitle) ? titleGak : 0);
         if (cols > maxCols) maxCols = cols;
+        if (m > maxMusicCols) maxMusicCols = m;
       });
       if (p.bands.length > maxBands) maxBands = p.bands.length;
     });
-    // 장단 줄(선율 옆 좁은 칸) 너비 — 켜져 있으면 맨 처음 각 옆에만 한 번 추가됨
-    const desiredJdGap = wantJangdan ? desiredGap * 0.5 : 0;
-    const desiredJdW = wantJangdan ? desiredCell * 0.34 : 0;
+    // 장단 줄(맨 처음 각 옆에만 한 번 추가) — 일반 정간과 같은 폭으로 그림(음 대신 들어가는 자리처럼)
+    const desiredJdGap = wantJangdan ? desiredGap : 0;
+    const desiredJdW = wantJangdan ? desiredCell : 0;
     const desiredJdExtra = desiredJdGap + desiredJdW;
+    // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨
+    const desiredLyGap = wantLyrics ? desiredGap * 0.5 : 0;
+    const desiredLyW = wantLyrics ? desiredCell * 0.5 : 0;
+    const desiredLyExtra = desiredLyGap + desiredLyW;
 
     const headRatio = wantHeader ? 1.1 : 0;
-    const wNeed = maxCols * desiredCell + (maxCols - 1) * desiredGap + desiredJdExtra;
+    const wNeed = maxCols * desiredCell + (maxCols - 1) * desiredGap + desiredJdExtra
+      + maxMusicCols * desiredLyExtra;
     const hNeed = maxBands * (beats + headRatio) * desiredCell + (maxBands - 1) * desiredBandGap;
     const scale = Math.min(1, availW / wNeed, availH / hNeed);
 
@@ -1685,10 +1796,14 @@
     const jdGap = desiredJdGap * scale;
     const jdW = desiredJdW * scale;
     const jdExtraFull = jdGap + jdW;   // 첫 각 옆 장단 줄이 차지하는 폭(간격 포함)
+    const lyGap = desiredLyGap * scale;
+    const lyW = desiredLyW * scale;
+    const lyExtraFull = lyGap + lyW;   // 각(정간)마다 오른쪽 가사 줄이 차지하는 폭(간격 포함)
     const headH = cell * headRatio;
-    const slot = cell + gap;
+    const slot = cell + gap + (wantLyrics ? lyExtraFull : 0);
     const bandH = headH + beats * cell;
-    const gridTotalW = maxCols * cell + (maxCols - 1) * gap + (wantJangdan ? jdExtraFull : 0);
+    const gridTotalW = maxCols * cell + (maxCols - 1) * gap + (wantJangdan ? jdExtraFull : 0)
+      + (wantLyrics ? maxMusicCols * lyExtraFull : 0);
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
 
     const dgSet = new Set();
@@ -1732,13 +1847,16 @@
         const musicRightEdge = hasTitle ? (panelX - gap) : bandRight;
         // 장단은 전체 악곡의 맨 처음 각(gakAccum===0) 옆에만 붙으므로, 그 밴드만 폭이 그만큼 더 필요함
         const bandJdExtra = (wantJangdan && gakAccum === 0) ? jdExtraFull : 0;
-        const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap) - bandJdExtra;
+        // 가사는 이 밴드의 각(정간)마다 매번 오른쪽에 붙으므로, 각 수만큼 폭이 늘어남
+        const bandLyExtra = wantLyrics ? nMusic * lyExtraFull : 0;
+        const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap) - bandJdExtra - bandLyExtra;
 
         if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
 
         for (let m = 0; m < nMusic; m++) {
-          // 첫 각(melIdx===0) 옆에 장단 줄이 붙는 만큼, 그 뒤(m>=1)의 각들은 전부 왼쪽으로 밀림
-          const x = musicRightEdge - cell - m * slot - (m >= 1 ? bandJdExtra : 0);
+          // 각마다 그 오른쪽에 가사 칸이 붙는 만큼 자리를 비워두고, 첫 각(melIdx===0) 옆 장단 줄만큼은
+          // 그 뒤(m>=1)의 각들이 추가로 왼쪽으로 밀림
+          const x = musicRightEdge - cell - (wantLyrics ? lyExtraFull : 0) - m * slot - (m >= 1 ? bandJdExtra : 0);
           const melIdx = gakAccum + m;
           const gakCells = parsed[melIdx];
 
@@ -1789,6 +1907,20 @@
             }
             svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THIN));
             svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THIN));
+          }
+
+          // 가사 줄(선율 오른쪽 좁은 칸) — 켜져 있으면 각(정간)마다 매번
+          if (wantLyrics) {
+            const lyLeft = x + cell + lyGap, lyRight = lyLeft + lyW;
+            const lyCells = lyParsed && lyParsed[melIdx];
+            const lyCount = lyCells ? lyCells.length : 0;
+            const lyFilled = lyCount > 0 ? Math.min(beats, lyCount) : 0;
+            for (let j = 0; j < lyFilled; j++) {
+              const content = lyCells[j] ? lyCells[j].text : "";
+              if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content);
+            }
+            svg.appendChild(line(lyLeft, gridTop, lyLeft, gridBottom, T_THIN));
+            svg.appendChild(line(lyRight, gridTop, lyRight, gridBottom, T_THIN));
           }
         }
         gakAccum += nMusic;
@@ -2034,7 +2166,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont",
-    "hwangPitch", "tempoBpm", "wantJangdan"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -2044,7 +2176,8 @@
       c[id] = (el.type === "checkbox") ? el.checked : el.value;
     });
     const at = document.querySelector(".tab.active");
-    return { v: 1, controls: c, melody: $("melody").value, jangdan: $("jangdan").value, gakUserSet: gakUserSet,
+    return { v: 1, controls: c, melody: $("melody").value, jangdan: $("jangdan").value,
+             lyrics: $("lyrics").value, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input" };
   }
 
@@ -2058,6 +2191,7 @@
     });
     if (typeof s.melody === "string") $("melody").value = s.melody;
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;
+    if (typeof s.lyrics === "string") $("lyrics").value = s.lyrics;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
     if (s.activeTab) applyActiveTab(s.activeTab);
@@ -2102,13 +2236,13 @@
     fr.readAsText(file);
   }
 
-  function onFormChange() { reconcileMelody(); reconcileJangdan(); render(); }
+  function onFormChange() { reconcileMelody(); reconcileJangdan(); reconcileLyrics(); render(); }
 
   // 구조(칸 수)에 영향을 주는 입력 → 멜로디 재구성 후 렌더
   $("beats").addEventListener("input", () => { fillDaegangPreset(); onFormChange(); });
   // 총 각 수를 직접 입력하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
   $("gakCount").addEventListener("input", function () { gakUserSet = true; });
-  ["gakPerRow", "stackCount", "stackAuto", "title", "gakCount", "gakCountAuto", "wantJangdan"].forEach(id => {
+  ["gakPerRow", "stackCount", "stackAuto", "title", "gakCount", "gakCountAuto", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
   });
@@ -2172,6 +2306,9 @@
   $("jangdanToggle").addEventListener("click", function () {
     $("jangdanArea").classList.toggle("editor-collapsed");
   });
+  $("lyricsToggle").addEventListener("click", function () {
+    $("lyricsArea").classList.toggle("editor-collapsed");
+  });
 
   // 멜로디 편집창 높이 조절 (위로 드래그 → 커짐 / 아래로 → 작아짐)
   (function () {
@@ -2206,6 +2343,12 @@
   $("jangdanReset").addEventListener("click", resetJangdan);
   $("jangdanUndo").addEventListener("click", undoJangdan);
   refreshJangdanUndoBtn();
+
+  // 가사 편집 → 렌더
+  $("lyrics").addEventListener("input", render);
+  $("lyricsReset").addEventListener("click", resetLyrics);
+  $("lyricsUndo").addEventListener("click", undoLyrics);
+  refreshLyricsUndoBtn();
 
   // 시김새 수정 모드 토글 + 조정 패널
   $("ornEditToggle").addEventListener("click", function () {
@@ -2277,6 +2420,19 @@
     }
   });
 
+  // 가사 입력 방법 가이드(?) 팝오버
+  function toggleLyricsGuide(show) {
+    const on = typeof show === "boolean" ? show : !$("lyricsGuide").classList.contains("on");
+    $("lyricsGuide").classList.toggle("on", on);
+    $("lyricsGuideToggle").classList.toggle("on", on);
+  }
+  $("lyricsGuideToggle").addEventListener("click", function (e) { e.stopPropagation(); toggleLyricsGuide(); });
+  document.addEventListener("click", function (e) {
+    if ($("lyricsGuide").classList.contains("on") && !$("lyricsGuide").contains(e.target) && e.target !== $("lyricsGuideToggle")) {
+      toggleLyricsGuide(false);
+    }
+  });
+
   // 이전 작업 복구(localStorage)
   try { const raw = localStorage.getItem(LS_KEY); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
 
@@ -2285,6 +2441,7 @@
   fillDaegangPreset();
   reconcileMelody();
   reconcileJangdan();
+  reconcileLyrics();
   render();
 
   // 처음 방문했을 때만 입력 방법 가이드를 자동으로 한 번 열어줌(이후엔 ? 버튼으로 직접 확인)
