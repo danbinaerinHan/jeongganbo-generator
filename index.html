@@ -162,12 +162,28 @@
   #zoomBar button:hover { background: #eee; }
   #zoomBar .zval { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); }
   #zoomBar .fit { font-size: 12px; padding: 0 8px; }
-  #zoomBar .zbar-sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px; }
   #zoomBar button:disabled { opacity: .35; cursor: default; }
   #zoomBar button:disabled:hover { background: transparent; }
+
+  /* 재생 컨트롤: 줌 바 옆에 별도의 눈에 띄는 그룹으로 */
+  #playBar { position: absolute; top: 12px; left: 168px; z-index: 5;
+             display: flex; align-items: center; gap: 4px;
+             background: rgba(255,255,255,.94); border: 1px solid var(--line);
+             border-radius: 9px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  #playBar button { height: 29px; border-radius: 7px; cursor: pointer; font-family: inherit;
+                     font-size: 13px; font-weight: 700; }
+  #btnPlay { padding: 0 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+  #btnPlay:hover { opacity: .9; }
+  #btnStop { padding: 0 12px; border: 1px solid var(--accent); background: #fff; color: var(--accent); }
+  #btnStop:hover { background: #faf3e7; }
+  #btnPlay:disabled, #btnStop:disabled { opacity: .35; cursor: default; background: #fff; color: var(--muted);
+                                          border-color: var(--line); }
+  #playSettingsToggle { min-width: 27px; height: 29px; border: none; background: transparent;
+                         font-size: 15px; color: var(--ink); }
+  #playSettingsToggle:hover { background: #eee; }
   #playSettingsToggle.on { background: #eee; }
 
-  .play-pop { position: absolute; top: 48px; left: 14px; z-index: 6; display: none;
+  .play-pop { position: absolute; top: 48px; left: 168px; z-index: 6; display: none;
               background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 200px; font-size: 12px; }
   .play-pop.on { display: block; }
@@ -207,6 +223,7 @@
                  font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--ink); }
   .melody-head .mono { color: var(--muted); font-weight: 400;
                        font-family: ui-monospace, Menlo, monospace; }
+  .melody-head .melody-hint { color: var(--muted); font-weight: 400; }
   .melody-head #melodyInfo { color: var(--muted); font-weight: 400; }
   .mel-actions { margin-left: auto; display: flex; gap: 6px; }
   .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: #fff;
@@ -297,7 +314,7 @@
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar, #melodyArea, #zoomBar, .side-open { display: none !important; }
+    #sidebar, #melodyArea, #zoomBar, #playBar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
@@ -487,9 +504,10 @@
         <span class="zval" id="zoomVal">100%</span>
         <button id="zoomIn" title="확대">+</button>
         <button id="zoomFit" class="fit" title="화면 맞춤">맞춤</button>
-        <span class="zbar-sep"></span>
-        <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶</button>
-        <button type="button" id="btnStop" title="정지" disabled>■</button>
+      </div>
+      <div id="playBar">
+        <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
+        <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
         <button type="button" id="playSettingsToggle" title="재생 설정 (기준음·템포)">⚙</button>
       </div>
       <div id="playPop" class="play-pop">
@@ -521,7 +539,7 @@
 
       <div class="melody-head">
         <button type="button" id="editorToggle" class="mini-toggle" title="접기/펼치기">▾</button>
-        멜로디 <span class="mono">| 정간 · ⏎ 줄바꿈 = 각</span>
+        멜로디 <span class="melody-hint">— 세로줄(각)이 바뀔 땐 줄바꿈, 그 안의 칸(정간)은 <span class="mono">|</span> 로 나눠 적어요</span>
         <span id="melodyInfo"></span>
         <span class="mel-actions">
           <button type="button" id="ornEditToggle" class="mel-btn tip" data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있어요">🎚 시김새 수정</button>
@@ -1517,24 +1535,23 @@
           const melIdx = gakAccum + m;
           const gakCells = parsed[melIdx];
 
-          // 이 각에서 그릴 정간 수 = 실제 정간(|로 나뉜 칸) 개수. 비어 있어도 칸이 있으면 그림.
-          // 사용자가 |를 지워 칸이 줄면 그만큼만 그려짐. (각이 아예 없으면 빈 격자 전체 유지)
+          // 이 각에 실제로 채워진 정간(|로 나뉜 칸) 수 — 글자를 그릴 범위(내용이 없으면 0).
+          // 테두리·칸 구분선은 타이핑 중이라 |가 덜 채워져도 끊기지 않게 항상 beats 전체 높이로 그린다.
           const cellCount = gakCells ? gakCells.length : 0;
-          const filled = cellCount > 0 ? Math.min(beats, cellCount) : beats;
-          const gakBottom = gridTop + filled * cell;
+          const filled = cellCount > 0 ? Math.min(beats, cellCount) : 0;
 
           for (let j = 0; j < filled; j++) {
             const content = gakCells && gakCells[j] ? gakCells[j].text : "";
             if (content) drawCell(svg, x, gridTop + j * cell, cell, content, uniformSmall, melIdx, j, pageIdx);
           }
-          // 세로선·정간 가로선(대강은 굵게)·아래 마감 — 그린 높이까지만
-          svg.appendChild(line(x, gridTop, x, gakBottom, T_THICK));
-          svg.appendChild(line(x + cell, gridTop, x + cell, gakBottom, T_THICK));
-          for (let i = 1; i < filled; i++) {
+          // 세로선·정간 가로선(대강은 굵게)·아래 마감 — 항상 전체 높이
+          svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
+          svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
+          for (let i = 1; i < beats; i++) {
             svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell,
               dgSet.has(i) ? T_DAEGANG : T_THIN));
           }
-          svg.appendChild(line(x, gakBottom, x + cell, gakBottom, T_THICK));
+          svg.appendChild(line(x, gridBottom, x + cell, gridBottom, T_THICK));
 
           // 클릭·하이라이트 영역은 숨은 정간 포함 전체 beats (여전히 입력 가능)
           for (let j = 0; j < beats; j++) {
