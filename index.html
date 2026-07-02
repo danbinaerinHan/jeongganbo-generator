@@ -1469,7 +1469,12 @@
       for (let gi = 0; gi < groups.length; gi++) {
         const g = groups[gi];
         const cx = x + colW * (gi + 0.5);
-        if (g.main.sym != null) { symK++; drawAdjSym(svg, g.main, cx, cyc, gs * 1.06, cell, gakIdx, cellIdx, pageIdx, symK); }
+        if (g.main.sym != null) {
+          symK++;
+          // 음길이가 있는(독립 칸을 차지하는) 시김새는 조금 작게 그림
+          const mainBox = gs * 1.06 * (ORN_CAT[g.main.sym] === "with" ? 0.8 : 1);
+          drawAdjSym(svg, g.main, cx, cyc, mainBox, cell, gakIdx, cellIdx, pageIdx, symK);
+        }
         else drawGlyph(svg, g.main, cx, cyc, gs);
         // 붙임 시김새: 주 글자 오른쪽에 작게 (여러 개면 세로로 쌓음)
         if (g.att.length) {
