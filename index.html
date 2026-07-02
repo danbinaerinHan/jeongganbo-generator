@@ -1415,7 +1415,7 @@
       const href = data[name];
       if (!href) return;
       const cy = yTop + rowH * (i + 0.5);
-      const box = Math.min(width * 0.86, rowH * 0.86);
+      const box = Math.min(width * 0.6, rowH * 0.6);
       const im = el("image", { x: x + (width - box) / 2, y: cy - box / 2, width: box, height: box,
         preserveAspectRatio: "xMidYMid meet" });
       im.setAttribute("href", href);
