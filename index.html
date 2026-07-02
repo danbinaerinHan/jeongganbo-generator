@@ -415,6 +415,13 @@
       <div class="field">
         <label class="chk"><input type="checkbox" id="wantLyrics"> 가사 추가</label>
         <div class="hint">켜면 각(세로줄)마다 그 오른쪽에 가사 줄이 표시되고, 아래 편집창에 별도 입력창이 생겨요. 정간마다 한 글자씩 적어요.</div>
+        <select id="lyricsFont">
+          <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+          <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+          <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+          <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+          <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+        </select>
       </div>
 
       <div class="field">
@@ -1454,7 +1461,7 @@
   }
 
   // 가사 칸 하나 그리기: 정간 오른쪽 좁은 줄에 글자를 세로로 배치(분박과 동일한 공백 규칙)
-  function drawLyricCell(svg, x, yTop, width, cellH, content) {
+  function drawLyricCell(svg, x, yTop, width, cellH, content, family) {
     const rows = content.split(/\s+/).filter(Boolean);
     if (!rows.length) return;
     const rowH = cellH / rows.length;
@@ -1462,7 +1469,7 @@
       const cy = yTop + rowH * (i + 0.5);
       const fs = Math.min(width * 0.86, rowH * 0.7);
       const t = el("text", { x: x + width / 2, y: cy + fs * 0.36, "text-anchor": "middle",
-        "font-size": fs, "font-family": CJK, "font-weight": 500, fill: "#000" });
+        "font-size": fs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
       t.textContent = str;
       svg.appendChild(t);
     });
@@ -1668,6 +1675,7 @@
     const desiredSub = Math.max(1, parseFloat($("subSize").value) || 5);
     const desiredSubOff = parseFloat($("subOffset").value) || 0;
     const titleFontFam = $("titleFont").value || CJK;
+    const lyricsFontFam = $("lyricsFont").value || CJK;
 
     const landscape = $("orientation").value === "landscape";
     document.body.classList.toggle("landscape", landscape);
@@ -1889,18 +1897,16 @@
             }
           }
 
-          // 가사 줄(선율 오른쪽 좁은 칸) — 켜져 있으면 각(정간)마다 매번
+          // 가사(선율 오른쪽) — 켜져 있으면 각(정간)마다 매번. 별도 테두리 없이 정간 옆에 글자만 놓음
           if (wantLyrics) {
-            const lyLeft = x + cell + lyGap, lyRight = lyLeft + lyW;
+            const lyLeft = x + cell + lyGap;
             const lyCells = lyParsed && lyParsed[melIdx];
             const lyCount = lyCells ? lyCells.length : 0;
             const lyFilled = lyCount > 0 ? Math.min(beats, lyCount) : 0;
             for (let j = 0; j < lyFilled; j++) {
               const content = lyCells[j] ? lyCells[j].text : "";
-              if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content);
+              if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content, lyricsFontFam);
             }
-            svg.appendChild(line(lyLeft, gridTop, lyLeft, gridBottom, T_THIN));
-            svg.appendChild(line(lyRight, gridTop, lyRight, gridBottom, T_THIN));
           }
         }
         gakAccum += nMusic;
@@ -2143,7 +2149,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont",
-    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -2227,7 +2233,7 @@
   });
   // 모양만 바꾸는 입력 → 렌더만
   ["cellSize", "gakGap", "bandGap", "sizeScale", "daegang", "subtitle", "titleSize", "titleOffset",
-   "subSize", "subOffset", "titleFont", "header", "frame", "noteMode", "orientation"].forEach(id => {
+   "subSize", "subOffset", "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
