@@ -108,7 +108,7 @@
   .palette .pi .pch { display: flex; align-items: center; justify-content: center;
                       font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
                       font-size: 19px; color: #333; white-space: nowrap; }
-  .palette .pi.nofile { opacity: .5; }
+  .palette .pi.nofile .pch { color: #aaa; }
   .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
   .palette .pmsg.err { color: #b23b3b; }
 
@@ -626,8 +626,7 @@
             </div>
             <label class="tool-inline">표기
               <select id="noteMode">
-                <option value="image" selected>이미지</option>
-                <option value="font">폰트 (한자)</option>
+                <option value="font" selected>폰트 (한자)</option>
                 <option value="hangul">폰트 (한글)</option>
               </select>
             </label>
@@ -1123,7 +1122,7 @@
     { s: "between-down", k: "시루표", c: "wo" }, { s: "down-pitched", k: "낮게", c: "wo" },
     { s: "tongue", k: "서침표", c: "wo" }, { s: "nanina", k: "나니나", c: "wo" },
     { s: "naneuna", k: "나느나", c: "wo" }, { s: "nire", k: "니레", c: "wo" },
-    { s: "nina", k: "니나", c: "wo" }, { s: "niro", k: "니로", c: "wo" },
+    { s: "nina", k: "니라", c: "wo" }, { s: "niro", k: "니로", c: "wo" },
     { s: "none", k: "노네", c: "wo" }, { s: "neonye", k: "너녜", c: "wo" },
     { s: "noniro", k: "노니로", c: "wo" }, { s: "norino", k: "노리노", c: "wo" },
     { s: "nerone", k: "네로네", c: "wo" }, { s: "neuneneu", k: "느네느", c: "wo" },
@@ -1146,7 +1145,7 @@
   ];
   const ORN_CAT = {};
   ORN_LIST.forEach(function (o) { ORN_CAT[o.s] = o.c; });
-  // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름 중복(니나)은 먼저 나온 것 우선.
+  // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
 
@@ -1210,68 +1209,9 @@
     return out;
   }
 
-  // ---------- 율명 이미지 매핑 ----------
-  // symbol_samples/notes/ 안에 실제로 존재하는 파일만 등록(gitignore로 커밋 제외).
+  // symbol_samples/notes/ — 쉼표 등 기호 이미지의 로컬 서버 폴백 경로로만 쓰임(gitignore로 커밋 제외).
   const NOTE_DIR = "symbol_samples/notes/";
-  const NOTE_STEM = { 황: "hwang", 태: "tae", 협: "hyeop", 고: "go", 중: "joong",
-                      임: "lim", 이: "ee", 남: "nam", 무: "mu", 응: "eung" };
-  const OCT_SUFFIX = { "-3": "_ddd", "-2": "_dd", "-1": "_d", "0": "", "1": "_u", "2": "_uu" };
-  const NOTE_FILES = new Set([
-    "ee", "ee_d", "ee_dd", "eung", "eung_d", "go", "go_d", "go_u",
-    "hwang", "hwang_d", "hwang_d_ot", "hwang_dd_ot", "hwang_ot", "hwang_u", "hwang_u_ot", "hwang_uu",
-    "hyeop", "hyeop_d", "hyeop_dd", "hyeop_u", "joong", "joong_d", "joong_dd", "joong_u",
-    "lim", "lim_d", "lim_dd", "lim_ddd", "lim_u", "mu", "mu_d", "mu_dd", "mu_u",
-    "nam", "nam_d", "nam_dd", "nam_u", "tae", "tae_d", "tae_dd", "tae_u"
-  ]);
-
-  // base(한글 율명) + oct → 존재하는 파일명(stem) 또는 null(없으면 폰트로 대체)
-  function resolveNoteFile(base, oct) {
-    const stem = NOTE_STEM[base];
-    if (!stem) return null;
-    const suf = OCT_SUFFIX[String(oct)] || "";
-    const cands = [stem + suf, stem + suf + "_ot"];
-    for (const c of cands) if (NOTE_FILES.has(c)) return c;
-    return null;
-  }
-
-  // 이미지 캐시: 로드 성공 시 dataURL 저장(→ SVG 직렬화/PNG에 그대로 포함).
-  // 로컬 서버가 아니면 fetch가 막힐 수 있어, 그때는 상대경로로 화면 표시만 하고 PNG 포함은 생략.
-  let noteMode = "font";
-  const noteImgCache = {};      // file -> dataURL
-  const noteImgTried = {};      // file -> true (중복 요청 방지)
-  let noteImgFailed = false;
-  let reRenderPending = false;
-
-  function scheduleReRender() {
-    if (reRenderPending) return;
-    reRenderPending = true;
-    setTimeout(function () { reRenderPending = false; render(); }, 60);
-  }
-
-  function preloadNoteImage(file) {
-    if (noteImgCache[file] || noteImgTried[file]) return;
-    noteImgTried[file] = true;
-    fetch(NOTE_DIR + file + ".png")
-      .then(function (r) { return r.ok ? r.blob() : Promise.reject(); })
-      .then(function (b) {
-        return new Promise(function (res, rej) {
-          const fr = new FileReader();
-          fr.onload = function () { res(fr.result); };
-          fr.onerror = rej;
-          fr.readAsDataURL(b);
-        });
-      })
-      .then(function (url) { noteImgCache[file] = url; scheduleReRender(); })
-      .catch(function () { noteImgFailed = true; });
-  }
-
-  // 화면 표시용 href: 캐시에 dataURL이 있으면 그것을, 없으면 상대경로(+백그라운드 프리로드)
-  function noteImageHref(file) {
-    if (window.NOTE_DATA && window.NOTE_DATA[file]) return window.NOTE_DATA[file];
-    if (noteImgCache[file]) return noteImgCache[file];
-    preloadNoteImage(file);
-    return NOTE_DIR + file + ".png";
-  }
+  let noteMode = "font";   // "font" | "hangul" (이미지 표기 옵션은 제거됨)
 
   // ---------- 율명 팔레트 (음역 행 × 음계 열 매트릭스) ----------
   // 행 = 음역(낮은음→높은음), 열 = 12율 음계순
@@ -1343,18 +1283,8 @@
     wrap.appendChild(row);
   }
 
-  function showPaletteError() {
-    const wrap = $("notePalette");
-    if (!wrap || wrap.querySelector(".pmsg")) return;
-    const msg = document.createElement("div");
-    msg.className = "pmsg err";
-    msg.textContent = "이미지를 불러올 수 없습니다. 폴더를 로컬 서버로 열어주세요 (iCloud 밖 권장).";
-    wrap.prepend(msg);
-  }
-
-  // 사용 가능한 율명 이미지를 미리보기로 나열(클릭 시 멜로디에 입력)
-  // 팔레트 칩 하나 생성(이미지가 없으면 한자 폰트로 표시)
-  function paletteChip(label, file, insertText, isFirstImg, fallbackChar, dim) {
+  // 팔레트 칩 하나 생성(쉼표 등 기호 이미지가 없으면 한자 폰트로 표시)
+  function paletteChip(label, file, insertText, fallbackChar, dim) {
     const item = document.createElement("div");
     item.className = "pi";
     item.title = "‘" + label + "’ 입력";
@@ -1362,7 +1292,6 @@
       const img = document.createElement("img");
       img.src = (window.NOTE_DATA && window.NOTE_DATA[file]) ? window.NOTE_DATA[file] : NOTE_DIR + file + ".png";
       img.alt = label;
-      if (isFirstImg) img.addEventListener("error", showPaletteError);
       item.appendChild(img);
     } else {
       if (dim) item.classList.add("nofile");
@@ -1418,7 +1347,6 @@
     if (palView === "orn") { buildOrnPalette(wrap); return; }
     wrap.innerHTML = "";
     wrap.classList.remove("orn-view");
-    let probed = false;
 
     // 열 머리글 (음계: 황~응)
     const head = document.createElement("div");
@@ -1444,20 +1372,16 @@
       rowEl.appendChild(lab);
       SCALE.forEach(function (base) {
         const mode = $("noteMode").value;
-        // 이미지 모드가 아니면(한자/한글 폰트) 이미지 대신 글자로 표시(악보와 동일하게)
-        const file = mode === "image" ? resolveNoteFile(base, row.oct) : null;
         const label = row.prefix + base;
-        const first = !probed && !!file;
-        if (first) probed = true;
         let fallback, dim;
         if (mode === "hangul") { fallback = label; dim = false; }
         else {
-          // 이미지 없으면: 변형 한자(지원 시) → 기본 한자(흐리게, 악보엔 점 표기)
+          // 변형 한자(지원 시) → 기본 한자(변형자 없으면 흐리게, 악보엔 점 표기)
           const variant = row.oct ? octHanja(base, row.oct) : null;
           fallback = variant || YUL[base] || base;
           dim = !variant && row.oct !== 0;
         }
-        rowEl.appendChild(paletteChip(label, file, label, first, fallback, dim));
+        rowEl.appendChild(paletteChip(label, null, label, fallback, dim));
       });
       wrap.appendChild(rowEl);
     });
@@ -1475,7 +1399,7 @@
       lab.textContent = "기호";
       rowEl.appendChild(lab);
       symList.forEach(function (s) {
-        rowEl.appendChild(paletteChip(s.label, s.file, s.ins, false, s.fallback, false));
+        rowEl.appendChild(paletteChip(s.label, s.file, s.ins, s.fallback, false));
       });
       wrap.appendChild(rowEl);
     }
@@ -1566,7 +1490,6 @@
   function drawGlyph(svg, tk, cx, cyc, size) {
     let file = null;
     if (tk.sym) file = symURL(tk.sym) ? tk.sym : null;
-    else if (noteMode === "image" && tk.literal == null) file = resolveNoteFile(tk.base, tk.oct);
 
     if (file) {
       drawSymImage(svg, file, cx, cyc, size * 1.06);
@@ -1581,18 +1504,19 @@
       t.textContent = txt; svg.appendChild(t);
       return;
     }
-    // 폰트 폴백: ① 옥타브 변형 한자(폰트 지원 시) ② 기본자 + 옥타브 점
+    // 폰트 폴백: ① 옥타브 변형 한자(폰트 지원 시) ② 기본자 + 옥타브 점(변형자 없는 조합은 옅은 회색으로)
     const variant = (tk.base != null && tk.oct) ? octHanja(tk.base, tk.oct) : null;
+    const noVariant = tk.oct && !variant && tk.base != null;
     const ch = tk.literal != null ? tk.literal
              : (tk.sym != null ? tk.sym : (variant || YUL[tk.base] || tk.base));
     const t = el("text", { x: cx, y: cyc + size * 0.34, "text-anchor": "middle",
-      "font-size": size, "font-family": NOTE_FONT, fill: "#111" });
+      "font-size": size, "font-family": NOTE_FONT, fill: noVariant ? "#aaa" : "#111" });
     t.textContent = ch; svg.appendChild(t);
-    if (tk.oct && !variant && tk.base != null) {
+    if (noVariant) {
       const dots = Math.abs(tk.oct), up = tk.oct > 0, r = Math.max(0.26, size * 0.07);
       for (let d = 0; d < dots; d++) {
         const dy = up ? (cyc - size * 0.52 - d * r * 3) : (cyc + size * 0.52 + d * r * 3);
-        svg.appendChild(el("circle", { cx: cx, cy: dy, r: r, fill: "#111" }));
+        svg.appendChild(el("circle", { cx: cx, cy: dy, r: r, fill: "#aaa" }));
       }
     }
   }
@@ -1696,7 +1620,7 @@
     const wantLyrics = $("wantLyrics").checked;
     document.body.classList.toggle("want-lyrics", wantLyrics);
     const dg = parseDaegang($("daegang").value, beats);
-    noteMode = $("noteMode").value;   // "image" | "font" | "hangul"
+    noteMode = $("noteMode").value;   // "font" | "hangul"
 
     const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
     $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
@@ -2003,9 +1927,6 @@
   function downloadPng() {
     const svgs = $("sheet").querySelectorAll(".page svg");
     if (!svgs.length) return;
-    if (noteMode === "image" && noteImgFailed) {
-      alert("율명 이미지를 PNG에 담으려면 로컬 서버로 열어야 합니다.\n예) 폴더에서  python3 -m http.server  실행 후 http://localhost:8000 접속.\n\n지금은 파일을 직접 연 상태라 이미지가 빠진 채 저장될 수 있어요.");
-    }
     const base = $("title").value.trim() || "정간보";
     const multi = svgs.length > 1;
     svgs.forEach(function (svg, idx) {
@@ -2193,6 +2114,8 @@
       if (el.type === "checkbox") el.checked = !!s.controls[id];
       else el.value = s.controls[id];
     });
+    // 예전에 저장된 "이미지" 표기 옵션은 제거됐으므로 폰트(한자)로 대체
+    if (!$("noteMode").value) $("noteMode").value = "font";
     if (typeof s.melody === "string") $("melody").value = s.melody;
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;
     if (typeof s.lyrics === "string") $("lyrics").value = s.lyrics;
