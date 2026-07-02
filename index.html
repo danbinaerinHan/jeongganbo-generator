@@ -162,6 +162,20 @@
   #zoomBar button:hover { background: #eee; }
   #zoomBar .zval { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); }
   #zoomBar .fit { font-size: 12px; padding: 0 8px; }
+  #zoomBar .zbar-sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px; }
+  #zoomBar button:disabled { opacity: .35; cursor: default; }
+  #zoomBar button:disabled:hover { background: transparent; }
+  #playSettingsToggle.on { background: #eee; }
+
+  .play-pop { position: absolute; top: 48px; left: 14px; z-index: 6; display: none;
+              background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+              padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 200px; font-size: 12px; }
+  .play-pop.on { display: block; }
+  .play-pop .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+  .play-pop select, .play-pop input { width: 96px; padding: 3px 5px; border: 1px solid var(--line);
+                                       border-radius: 5px; font-family: inherit; font-size: 12px; }
+  .play-pop .hint { color: var(--muted); line-height: 1.4; }
+  @media print { .play-pop { display: none !important; } }
 
   /* 시김새 수정 패널 */
   #ornEditToggle.on { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -451,25 +465,6 @@
     <div class="tabpanel" data-tab="out">
       <div class="readout" id="readout"></div>
 
-      <div class="sec">재생 (사인파, 시김새 제외)</div>
-      <div class="field">
-        <label for="hwangPitch">기준음 (황·黃)</label>
-        <select id="hwangPitch">
-          <option value="63" selected>E♭4</option>
-          <option value="60">C4</option>
-        </select>
-        <div class="hint">12율(황~응)은 여기서부터 반음계로 이어집니다.</div>
-      </div>
-      <div class="field">
-        <label for="tempoBpm">템포 (1정간 = 1박)</label>
-        <input type="number" id="tempoBpm" min="20" max="240" value="60">
-        <div class="hint">분박(칸 안 여러 줄)은 박을 등분, 빈 정간·이음(-)은 앞 음을 지속합니다.</div>
-      </div>
-      <div class="btns">
-        <button type="button" id="btnPlay">▶ 재생</button>
-        <button type="button" id="btnStop" class="secondary" disabled>■ 정지</button>
-      </div>
-
       <div class="btns">
         <button id="btnPrint">인쇄 / PDF 저장</button>
         <button id="btnPng" class="secondary">PNG 다운로드</button>
@@ -492,6 +487,22 @@
         <span class="zval" id="zoomVal">100%</span>
         <button id="zoomIn" title="확대">+</button>
         <button id="zoomFit" class="fit" title="화면 맞춤">맞춤</button>
+        <span class="zbar-sep"></span>
+        <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶</button>
+        <button type="button" id="btnStop" title="정지" disabled>■</button>
+        <button type="button" id="playSettingsToggle" title="재생 설정 (기준음·템포)">⚙</button>
+      </div>
+      <div id="playPop" class="play-pop">
+        <div class="pp-row"><span>기준음 (황·黃)</span>
+          <select id="hwangPitch">
+            <option value="63" selected>E♭4</option>
+            <option value="60">C4</option>
+          </select>
+        </div>
+        <div class="pp-row"><span>템포 (BPM)</span>
+          <input type="number" id="tempoBpm" min="20" max="240" value="60">
+        </div>
+        <div class="hint">1정간=1박. 분박은 등분, 빈 정간·이음(-)은 앞 음을 지속, 쉼표만 무음.</div>
       </div>
       <div id="ornPanel" class="orn-panel">
         <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" title="닫기">✕</button></div>
@@ -1957,6 +1968,18 @@
   $("btnPlay").addEventListener("click", playMelody);
   $("btnStop").addEventListener("click", stopPlayback);
   ["hwangPitch", "tempoBpm"].forEach(id => { $(id).addEventListener("change", saveState); });
+  // 재생 설정(기준음·템포) 팝오버
+  $("playSettingsToggle").addEventListener("click", function (e) {
+    e.stopPropagation();
+    $("playPop").classList.toggle("on");
+    $("playSettingsToggle").classList.toggle("on");
+  });
+  document.addEventListener("click", function (e) {
+    if ($("playPop").classList.contains("on") && !$("playPop").contains(e.target) && e.target !== $("playSettingsToggle")) {
+      $("playPop").classList.remove("on");
+      $("playSettingsToggle").classList.remove("on");
+    }
+  });
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => window.print());
   $("btnExport").addEventListener("click", exportFile);
