@@ -153,21 +153,21 @@
   .page { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
   .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
 
-  #zoomBar { position: absolute; top: 12px; left: 14px; z-index: 5;
-             display: flex; align-items: center; gap: 3px;
+  #topBar { position: absolute; top: 12px; left: 14px; z-index: 5;
+            display: flex; align-items: center; gap: 8px; }
+  #zoomBar { display: flex; align-items: center; gap: 3px;
              background: rgba(255,255,255,.94); border: 1px solid var(--line);
              border-radius: 9px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
   #zoomBar button { min-width: 27px; height: 27px; border: none; background: transparent;
                     font-size: 16px; line-height: 1; cursor: pointer; border-radius: 6px; color: var(--ink); }
   #zoomBar button:hover { background: #eee; }
   #zoomBar .zval { font-size: 12px; min-width: 44px; text-align: center; color: var(--muted); }
-  #zoomBar .fit { font-size: 12px; padding: 0 8px; }
+  #zoomBar .fit { font-size: 12px; padding: 0 8px; white-space: nowrap; }
   #zoomBar button:disabled { opacity: .35; cursor: default; }
   #zoomBar button:disabled:hover { background: transparent; }
 
   /* 재생 컨트롤: 줌 바 옆에 별도의 눈에 띄는 그룹으로 */
-  #playBar { position: absolute; top: 12px; left: 168px; z-index: 5;
-             display: flex; align-items: center; gap: 4px;
+  #playBar { position: relative; display: flex; align-items: center; gap: 4px;
              background: rgba(255,255,255,.94); border: 1px solid var(--line);
              border-radius: 9px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
   #playBar button { height: 29px; border-radius: 7px; cursor: pointer; font-family: inherit;
@@ -183,7 +183,7 @@
   #playSettingsToggle:hover { background: #eee; }
   #playSettingsToggle.on { background: #eee; }
 
-  .play-pop { position: absolute; top: 48px; left: 168px; z-index: 6; display: none;
+  .play-pop { position: absolute; top: 40px; left: 0; z-index: 6; display: none;
               background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 200px; font-size: 12px; }
   .play-pop.on { display: block; }
@@ -314,7 +314,7 @@
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar, #melodyArea, #zoomBar, #playBar, .side-open { display: none !important; }
+    #sidebar, #melodyArea, #topBar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
@@ -499,28 +499,31 @@
 
   <main id="main">
     <div id="sheetArea">
-      <div id="zoomBar">
-        <button id="zoomOut" title="축소">−</button>
-        <span class="zval" id="zoomVal">100%</span>
-        <button id="zoomIn" title="확대">+</button>
-        <button id="zoomFit" class="fit" title="화면 맞춤">맞춤</button>
-      </div>
-      <div id="playBar">
-        <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
-        <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
-        <button type="button" id="playSettingsToggle" title="재생 설정 (기준음·템포)">⚙</button>
-      </div>
-      <div id="playPop" class="play-pop">
-        <div class="pp-row"><span>기준음 (황·黃)</span>
-          <select id="hwangPitch">
-            <option value="63" selected>E♭4</option>
-            <option value="60">C4</option>
-          </select>
+      <div id="topBar">
+        <div id="zoomBar">
+          <button id="zoomOut" title="축소">−</button>
+          <span class="zval" id="zoomVal">100%</span>
+          <button id="zoomIn" title="확대">+</button>
+          <button id="zoomFitH" class="fit" title="세로 맞춤 (페이지 높이를 화면에 맞춤)">세로맞춤</button>
+          <button id="zoomFitW" class="fit" title="가로 맞춤 (페이지 너비를 화면에 맞춤)">가로맞춤</button>
         </div>
-        <div class="pp-row"><span>템포 (BPM)</span>
-          <input type="number" id="tempoBpm" min="20" max="240" value="60">
+        <div id="playBar">
+          <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
+          <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
+          <button type="button" id="playSettingsToggle" title="재생 설정 (기준음·템포)">⚙</button>
+          <div id="playPop" class="play-pop">
+            <div class="pp-row"><span>기준음 (황·黃)</span>
+              <select id="hwangPitch">
+                <option value="63" selected>E♭4</option>
+                <option value="60">C4</option>
+              </select>
+            </div>
+            <div class="pp-row"><span>템포 (BPM)</span>
+              <input type="number" id="tempoBpm" min="20" max="240" value="60">
+            </div>
+            <div class="hint">1정간=1박. 분박은 등분, 빈 정간·이음(-)은 앞 음을 지속, 쉼표만 무음.</div>
+          </div>
         </div>
-        <div class="hint">1정간=1박. 분박은 등분, 빈 정간·이음(-)은 앞 음을 지속, 쉼표만 무음.</div>
       </div>
       <div id="ornPanel" class="orn-panel">
         <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" title="닫기">✕</button></div>
@@ -1915,7 +1918,21 @@
   }
   $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(3, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
   $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
-  $("zoomFit").addEventListener("click", () => { viewZoom = 1; applyZoom(); });
+  // 세로/가로 맞춤: 현재 페이지의 원본(100%) 크기 대비, 화면에서 실제로 쓸 수 있는 폭/높이에 맞는 배율을 계산
+  function fitZoom(dim) {
+    const svg = $("sheet").querySelector(".page svg");
+    if (!svg) return;
+    const cs = getComputedStyle(svg);
+    const naturalW = parseFloat(cs.width), naturalH = parseFloat(cs.height);
+    const area = $("sheetArea");
+    const padX = 32, padY = 32;   // #sheetArea padding: 16px 사방
+    const availW = area.clientWidth - padX, availH = area.clientHeight - padY;
+    const ratio = dim === "width" ? availW / naturalW : availH / naturalH;
+    viewZoom = Math.max(0.3, Math.min(3, +ratio.toFixed(2)));
+    applyZoom();
+  }
+  $("zoomFitH").addEventListener("click", () => fitZoom("height"));
+  $("zoomFitW").addEventListener("click", () => fitZoom("width"));
   applyZoom();
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
