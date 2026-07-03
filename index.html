@@ -146,20 +146,26 @@
   .palette .prow.symrow { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 4px; }
   .palette .plabel { flex: 0 0 32px; font-size: 10px; font-weight: 700; color: var(--accent);
                      text-align: center; letter-spacing: .5px; }
+  /* 표 안 글씨체를 전부 하나로 통일(악보 음표 서체 NOTE_FONT와 동일 목록) —
+     헤더(황대태…)만 다른 서체를 쓰면 같은 표 안에서 글씨체가 뒤섞여 보인다. */
+  .palette .phead,
+  .palette .pi .pch,
+  .palette .pi .pch-cap { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif; }
   .palette .phead { flex: 0 0 31px; text-align: center; font-size: 11px; font-weight: 700;
-                    color: var(--muted); font-family: "Batang","AppleMyungjo",serif; }
-  .palette .pi { flex: 0 0 31px; height: 29px; display: flex; align-items: center;
+                    color: var(--muted); line-height: 1; }
+  /* 칸 높이를 글자 내용과 무관하게 고정해야 위아래 행(하배·배·중성·청)의 가로줄이
+     맞는다 — height:auto면 서체 메트릭에 따라 행마다 높이가 미묘하게 달라진다. */
+  .palette .pi { flex: 0 0 31px; height: 40px; display: flex; align-items: center;
                  justify-content: center; border-radius: 5px; cursor: pointer;
                  transition: background .1s ease; }
   .palette .pi:hover { background: #f0ece3; }
   .palette .pi img { width: 24px; height: 24px; object-fit: contain; }
   .palette .pi .pch { display: flex; align-items: center; justify-content: center;
-                      font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
-                      font-size: 19px; color: #333; white-space: nowrap; }
+                      font-size: 19px; line-height: 1; color: #333; white-space: nowrap; }
   .palette .pi.nofile .pch { color: #aaa; }
-  .palette .pi.has-cap { flex-direction: column; height: auto; padding: 3px 0 2px; gap: 0; }
-  .palette .pi .pch-cap { font-size: 8px; color: #aaa; line-height: 1.1; white-space: nowrap;
-                          font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif; }
+  .palette .pi.has-cap { flex-direction: column; justify-content: center; height: 40px;
+                         padding: 0; gap: 2px; }
+  .palette .pi .pch-cap { font-size: 8px; color: #aaa; line-height: 1; white-space: nowrap; }
   .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
   .palette .pmsg.err { color: #b23b3b; }
 
