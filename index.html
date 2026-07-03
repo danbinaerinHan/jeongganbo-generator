@@ -540,13 +540,21 @@
   .ed-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink);
                    background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
   /* 직접 입력 모드 — 텍스트 에디터 대신 오른쪽에 시김새 팔레트를 상시 표시
-     (왼쪽은 율명 팔레트 고정, 율명/시김새 탭은 숨김) */
+     (왼쪽은 율명 팔레트 고정, 율명/시김새 탭은 숨김, 두 컬럼은 딱 50/50) */
   #directOrnWrap { display: none; }
   #melodyArea.mel-direct .ed-hint,
   #melodyArea.mel-direct #melodyHlWrap,
   #melodyArea.mel-direct .ed-pager,
+  #melodyArea.mel-direct #melodySplit,
   #melodyArea.mel-direct .melody-head .pal-views { display: none !important; }
   #melodyArea.mel-direct #directOrnWrap { display: block; flex: 1 1 auto; min-height: 0; overflow: auto; }
+  #melodyArea.mel-direct #paletteCol { flex: 1 1 0; width: auto !important; max-width: none; }
+  #melodyArea.mel-direct #editorCol { flex: 1 1 0; }
+  /* 왼쪽 컬럼 제목 '율명' — 오른쪽 '시김새' 제목과 같은 선상에, 직접 입력 모드에서만 */
+  .pal-col-title { display: none; }
+  #melodyArea.mel-direct .pal-col-title {
+    display: inline-block; padding: 3px 1px 6px; font-size: 13px; font-weight: 700;
+    color: var(--accent); border-bottom: 2px solid var(--accent); white-space: nowrap; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
@@ -972,6 +980,7 @@
         <div id="paletteCol">
           <div class="pal-head">
             <div class="pal-tools">
+              <span class="pal-col-title">율명</span>
               <span class="pal-seg" id="yulModeSeg">
                 <button type="button" class="seg-btn active" data-mode="grid">표</button>
                 <button type="button" class="seg-btn" data-mode="piano">건반</button>
@@ -1947,36 +1956,27 @@
       keepCellEditor = true;
       try { setCellText(gi, ci, inp.value); } finally { keepCellEditor = false; }
     });
-    // 한글 조합(IME) 중에 입력창을 없애면 브라우저가 포커스 이동을 되돌리는 일이 있어,
-    // 조합 중 Enter는 조합이 끝난 뒤(compositionend/keyup)로 이동을 미룬다.
-    let imeComposing = false, pendingNext = false;
-    const commitNext = function () {
-      if (!pendingNext) return;
-      pendingNext = false;
-      if (cellEditInput === inp) commitCellEditor(true);
-    };
-    inp.addEventListener("compositionstart", function () { imeComposing = true; });
-    inp.addEventListener("compositionend", function () {
-      imeComposing = false;
-      setTimeout(commitNext, 0);   // 조합 마무리(input 이벤트) 다음 프레임에 이동
-    });
     inp.addEventListener("keydown", function (e) {
-      // Enter/Tab 판정은 물리 키(e.code) 기준 — IME가 key를 "Process"/keyCode 229로 보내도 잡힌다
-      if (e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter" ||
-          e.code === "Tab" || e.key === "Tab") {
-        e.preventDefault();
-        if (imeComposing || e.isComposing || e.keyCode === 229) { pendingNext = true; return; }
-        commitCellEditor(true); return;
-      }
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
     });
-    // compositionend가 안 오는 IME 대비 — Enter 키가 떨어지는 시점에 한 번 더 시도
-    inp.addEventListener("keyup", function (e) {
-      if ((e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter") && !imeComposing) commitNext();
-    });
     inp.addEventListener("blur", function () { if (cellEditInput === inp) commitCellEditor(false); });
   }
+
+  // Enter/Tab → 다음 정간 이동: 문서 레벨에서 '키를 뗄 때(keyup)' 처리한다.
+  // 한글 IME는 조합 중 Enter를 keydown에서 "Process"/229로 바꾸거나 브라우저마다 순서가 달라
+  // 신뢰할 수 없지만, keyup 시점에는 어떤 IME든 조합이 이미 끝나 있고 값도 확정돼 있다.
+  // 문서 캡처 단계라 조합 확정 과정에서 포커스가 잠깐 흔들려도 놓치지 않는다.
+  function cellEditMoveKey(e) {
+    return e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter" ||
+           e.code === "Tab" || e.key === "Tab";
+  }
+  document.addEventListener("keydown", function (e) {
+    if (cellEditInput && cellEditMoveKey(e)) e.preventDefault();   // 폼 동작·포커스 이동만 막음
+  }, true);
+  document.addEventListener("keyup", function (e) {
+    if (cellEditInput && cellEditMoveKey(e)) { e.preventDefault(); commitCellEditor(true); }
+  }, true);
 
   // 커밋: 값 저장 후 렌더. moveNext면 아래 정간(없으면 다음 각 첫 정간)으로 이동
   function commitCellEditor(moveNext) {
