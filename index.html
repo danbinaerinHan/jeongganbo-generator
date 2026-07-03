@@ -1207,6 +1207,7 @@
   let playHi = [];                          // 페이지별 재생 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
   let cellEditor = null, cellEditInput = null;  // 정간 옆 직접 입력 카드
+  let cellEditGi = -1, cellEditCi = -1;     // 카드가 열려 있는 정간 좌표 (전역 커서와 별개로 기억)
   let keepCellEditor = false;               // true면 render()가 직접 입력 카드를 닫지 않음(실시간 반영용)
   let ornEditMode = false;                  // 시김새 수정 모드
   let ornSel = null;                        // 선택된 시김새 {gak, cell, k}
@@ -1873,6 +1874,7 @@
   function closeCellEditor() {
     if (cellEditor && cellEditor.parentNode) cellEditor.parentNode.removeChild(cellEditor);
     cellEditor = null; cellEditInput = null;
+    cellEditGi = -1; cellEditCi = -1;
   }
 
   // 정간 클릭 → 에디터 커서를 그 정간으로 (focusTa=true면 에디터에 포커스까지)
@@ -1944,6 +1946,7 @@
     card.appendChild(cap); card.appendChild(inp);
     area.appendChild(card);
     cellEditor = card; cellEditInput = inp;
+    cellEditGi = gi; cellEditCi = ci;
     inp.focus(); inp.select();
 
     // 치는 대로 실시간 반영 — 카드가 악보 밖에 있어 render()가 조합(IME)을 깨지 않는다
@@ -1953,8 +1956,12 @@
       try { setCellText(gi, ci, inp.value); } finally { keepCellEditor = false; }
     });
     inp.addEventListener("keydown", function (e) {
-      // Enter는 한글 조합 중이어도 바로 확정하고 다음 정간으로 (조합 글자는 이미 실시간 반영됨)
-      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); commitCellEditor(true); return; }
+      // Enter는 한글 조합 중이어도 바로 확정하고 다음 정간으로 (조합 글자는 이미 실시간 반영됨).
+      // IME에 따라 key가 "Process"/keyCode 229로 오기도 하므로 물리 키(e.code)로 판정한다.
+      if (e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter" ||
+          e.code === "Tab" || e.key === "Tab") {
+        e.preventDefault(); commitCellEditor(true); return;
+      }
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
     });
@@ -1964,8 +1971,10 @@
   // 커밋: 값 저장 후 렌더. moveNext면 아래 정간(없으면 다음 각 첫 정간)으로 이동
   function commitCellEditor(moveNext) {
     if (!cellEditInput) return;
-    const gi = activeGak, ci = activeCellIdx, val = cellEditInput.value;
+    // 전역 커서(activeGak)는 다른 이벤트로 바뀔 수 있으므로, 카드가 기억하는 좌표를 쓴다
+    const gi = cellEditGi, ci = cellEditCi, val = cellEditInput.value;
     closeCellEditor();
+    if (gi < 0) return;
     setCellText(gi, ci, val);
     updateHighlight();
     if (moveNext) {
