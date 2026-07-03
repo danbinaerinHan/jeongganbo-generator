@@ -372,9 +372,11 @@
   #melodySplit::before { content: ""; height: 46px; width: 4px; border-radius: 2px;
                          background: var(--line); transition: background .12s ease; }
   #melodySplit:hover::before { background: var(--accent); }
-  .melody-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
                  white-space: nowrap; }
+  /* 머리줄 그룹 구분선 — 제목·입력 방식·팔레트 탭 사이 시각적 여백 */
+  .head-sep { flex: 0 0 auto; width: 1px; height: 16px; background: var(--line); }
   .melody-head .mono { color: var(--muted); font-weight: 400;
                        font-family: ui-monospace, Menlo, monospace; }
   .mel-actions { margin-left: auto; display: flex; gap: 6px; }
@@ -548,8 +550,9 @@
   #melodyArea.mel-direct #melodySplit,
   #melodyArea.mel-direct .melody-head .pal-views { display: none !important; }
   #melodyArea.mel-direct #directOrnWrap { display: block; flex: 1 1 auto; min-height: 0; overflow: auto; }
-  #melodyArea.mel-direct #paletteCol { flex: 1 1 0; width: auto !important; max-width: none; }
-  #melodyArea.mel-direct #editorCol { flex: 1 1 0; }
+  /* min-width:0 — 건반(고정 폭 ~1200px)이 컬럼을 밀어 늘리지 못하게 하고 안에서 가로 스크롤 */
+  #melodyArea.mel-direct #paletteCol { flex: 1 1 0; width: auto !important; max-width: none; min-width: 0; }
+  #melodyArea.mel-direct #editorCol { flex: 1 1 0; min-width: 0; }
   /* 왼쪽 컬럼 제목 '율명' — 오른쪽 '시김새' 제목과 같은 선상에, 직접 입력 모드에서만 */
   .pal-col-title { display: none; }
   #melodyArea.mel-direct .pal-col-title {
@@ -933,6 +936,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         선율 입력
+        <span class="head-sep"></span>
         <span class="mode-lab">입력 방식</span>
         <span class="pal-seg mode-seg" id="melInputSeg">
           <button type="button" class="seg-btn active tip" data-mode="editor"
@@ -940,6 +944,7 @@
           <button type="button" class="seg-btn tip" data-mode="direct"
             data-tip="악보의 정간을 클릭하면 그 옆에 입력창이 열립니다. 치는 대로 실시간 반영되고, Enter로 다음 정간으로 넘어갑니다.">직접 입력</button>
         </span>
+        <span class="head-sep"></span>
         <div class="pal-views">
           <button type="button" class="pal-view active" data-view="yul">율명</button>
           <button type="button" class="pal-view" data-view="orn">시김새</button>
@@ -1934,10 +1939,21 @@
       "background:#fff;border:1px solid rgba(138,109,59,.45);border-radius:" + (h * 0.13) + "px;" +
       "box-shadow:0 " + (h * 0.09) + "px " + (h * 0.32) + "px rgba(31,26,18,.28);overflow:hidden;";
     const cap = document.createElement("div");
-    cap.textContent = (gi + 1) + "각 · " + (ci + 1) + "정간";
-    cap.style.cssText = "flex:0 0 auto;font-size:" + (h * 0.19) + "px;line-height:1.55;font-weight:600;" +
+    cap.style.cssText = "flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:6px;" +
+      "font-size:" + (h * 0.19) + "px;line-height:1.55;font-weight:600;" +
       "letter-spacing:.04em;color:#8a6d3b;background:#f7f3ea;padding:0 " + (h * 0.16) + "px;" +
       "border-bottom:1px solid rgba(138,109,59,.18);";
+    const capLab = document.createElement("span");
+    capLab.textContent = (gi + 1) + "각 · " + (ci + 1) + "정간";
+    // 키보드 이벤트가 어떤 환경에서든 막혀도 이동할 수 있는 확실한 길 — 다음 버튼
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button"; nextBtn.textContent = "다음 ▶";
+    nextBtn.title = "저장하고 다음 정간으로 (Enter)";
+    nextBtn.style.cssText = "border:none;background:none;color:#8a6d3b;font-weight:700;cursor:pointer;" +
+      "font-size:inherit;font-family:inherit;padding:0 2px;line-height:inherit;";
+    nextBtn.addEventListener("mousedown", function (e) { e.preventDefault(); });   // 포커스 유지
+    nextBtn.addEventListener("click", function () { commitCellEditor(true); });
+    cap.appendChild(capLab); cap.appendChild(nextBtn);
     const inp = document.createElement("input");
     inp.type = "text";
     inp.value = currentCellText(gi, ci);
@@ -1960,6 +1976,15 @@
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
     });
+    // Enter의 표준 입력 경로 — 키 이벤트가 IME에 가려져도 브라우저가 insertLineBreak를 준다.
+    // 이 경로로 이동했으면 곧 따라오는 keyup이 또 이동시키지 않게 잠깐 눌러둔다.
+    inp.addEventListener("beforeinput", function (e) {
+      if (e.inputType === "insertLineBreak") {
+        e.preventDefault();
+        cellEditKeyupHoldUntil = Date.now() + 350;
+        commitCellEditor(true);
+      }
+    });
     inp.addEventListener("blur", function () { if (cellEditInput === inp) commitCellEditor(false); });
   }
 
@@ -1971,11 +1996,15 @@
     return e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter" ||
            e.code === "Tab" || e.key === "Tab";
   }
+  let cellEditKeyupHoldUntil = 0;   // beforeinput 경로로 이미 이동했으면 같은 Enter의 keyup은 무시
   document.addEventListener("keydown", function (e) {
     if (cellEditInput && cellEditMoveKey(e)) e.preventDefault();   // 폼 동작·포커스 이동만 막음
   }, true);
   document.addEventListener("keyup", function (e) {
-    if (cellEditInput && cellEditMoveKey(e)) { e.preventDefault(); commitCellEditor(true); }
+    if (!cellEditInput || !cellEditMoveKey(e)) return;
+    e.preventDefault();
+    if (Date.now() < cellEditKeyupHoldUntil) { cellEditKeyupHoldUntil = 0; return; }
+    commitCellEditor(true);
   }, true);
 
   // 커밋: 값 저장 후 렌더. moveNext면 아래 정간(없으면 다음 각 첫 정간)으로 이동
