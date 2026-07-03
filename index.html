@@ -318,25 +318,16 @@
                background: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
   .orn-reset:hover { background: #f0ece3; }
   @media print { .orn-panel { display: none !important; } }
+  /* 각 번호 '화면에만' 모드 — 인쇄에서는 숨김 (PNG는 저장 시 따로 뺌) */
+  @media print { body.gaknum-screen .gak-num { display: none !important; } }
   /* 자유 텍스트 주석 크기·삭제 패널 — 시김새 패널과 같은 자리에 겹치지 않게 아래로 내림 */
   #textPanel { top: 64px; }
   #textPanel .text-panel-del { color: #b23b3b; border-color: #e3b7b7; }
   #textPanel .text-panel-del:hover { background: #f7ecec; }
-  /* 텍스트 추가 팝오버 */
-  #addTextPop { width: 220px; }
-  #addTextPop .at-row { display: flex; gap: 6px; }
-  #addTextPop input[type="text"] { flex: 1; padding: 5px 7px; border: 1px solid var(--line);
-                                    border-radius: 6px; font-family: inherit; font-size: 12px; }
-  #addTextPop .at-add { padding: 5px 10px; border: 1px solid var(--accent); background: var(--accent);
-                         color: #fff; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
-  #addTextPop .at-add:hover { opacity: .9; }
-  #addTextPop .at-list { margin-top: 6px; max-height: 110px; overflow-y: auto; }
-  #addTextPop .at-item { display: flex; align-items: center; justify-content: space-between; gap: 6px;
-                          padding: 4px 0; border-top: 1px solid var(--line); font-size: 12px; }
-  #addTextPop .at-item:first-child { border-top: none; }
-  #addTextPop .at-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #addTextPop .at-item button { border: none; background: none; color: #b23b3b; cursor: pointer;
-                                 font-size: 15px; line-height: 1; padding: 0 2px; flex: 0 0 auto; }
+  /* 텍스트 탭 '추가' 버튼 */
+  .at-add { padding: 5px 10px; border: 1px solid var(--accent); background: var(--accent);
+            color: #fff; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .at-add:hover { opacity: .9; }
   /* 아래 편집 독 — 왼쪽 세로 탭(선율/장단/가사)으로 편집기 하나씩만 표시 */
   #editorDock { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); }
   .dock-body { display: flex; align-items: stretch; }
@@ -395,7 +386,6 @@
   #ornEditToggle { color: var(--accent); border-color: var(--accent); background: #faf3e7; font-weight: 700; }
   #ornEditToggle:hover { background: #f1e6cf; }
   #ornEditToggle.on { background: var(--accent); color: #fff; }
-  #addTextToggle.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 
   /* 버튼 설명 호버 툴팁 */
   .tip { position: relative; }
@@ -440,7 +430,8 @@
   #editorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   #melody { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
-            border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px;
+            -moz-tab-size: 8; tab-size: 8; }
 
   /* 장단 입력 (선율 입력과 같은 구조, 6개짜리라 팔레트만 간소화)
      — 헤더의 스위치를 꺼두면 입력창·버튼은 숨기고 스위치·안내만 남긴다 */
@@ -486,7 +477,18 @@
   .tx-item input[type="number"] { width: 58px; }
   .tx-item .tx-del { border: none; background: none; color: #b23b3b; cursor: pointer;
                      font-size: 16px; line-height: 1; padding: 2px 6px; }
+  .tx-item input[type="color"] { width: 28px; height: 22px; padding: 1px 2px; border: 1px solid var(--line);
+                                 border-radius: 5px; cursor: pointer; background: #fff; }
   .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+
+  /* 팔레트 표·에디터 글자 크기 조절 (− / + 미니 버튼) */
+  .size-ctl { display: inline-flex; align-items: center; gap: 3px; }
+  .size-ctl button { width: 20px; height: 20px; border: 1px solid var(--line); background: #fff;
+                     border-radius: 5px; cursor: pointer; font-size: 13px; line-height: 1;
+                     color: var(--ink); padding: 0; }
+  .size-ctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .ed-font-ctl { position: absolute; top: 6px; right: 16px; z-index: 2; opacity: .45; }
+  .ed-font-ctl:hover { opacity: 1; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
@@ -494,7 +496,7 @@
                   font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
                   padding: 10px; border: 1px solid transparent; border-radius: 8px;
                   white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
-                  color: transparent; box-sizing: border-box; }
+                  color: transparent; box-sizing: border-box; -moz-tab-size: 8; tab-size: 8; }
   #melodyHlBack mark { background: rgba(224, 73, 73, .3); color: transparent;
                        border-radius: 2px; padding: 0; }
   #melodyHlWrap #melody { position: relative; background: transparent; }
@@ -633,6 +635,17 @@
         <div class="hint">페이지 아래 여백에 쪽 번호를 표시합니다.</div>
       </div>
 
+      <div class="sec">각 번호</div>
+      <div class="field">
+        <label for="gakNumMode">각 번호 표시 <small>각 아래 옅은 회색 숫자</small></label>
+        <select id="gakNumMode">
+          <option value="none" selected>표시 안 함</option>
+          <option value="screen">화면에만 (인쇄·PNG 제외)</option>
+          <option value="all">화면·출력 모두</option>
+        </select>
+        <div class="hint">• 각(마디)의 순서를 각 아래에 작은 회색 숫자로 표시합니다.<br>• '화면에만'을 고르면 인쇄·PNG 저장에서는 빠집니다.</div>
+      </div>
+
     </div>
 
     <!-- ===== 레이아웃 ===== -->
@@ -691,6 +704,12 @@
           <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">0%</span></label>
           <input type="range" id="pageFill" min="0" max="100" step="5" value="0">
           <div class="hint">• 0%면 테두리가 안쪽 정간보에 붙습니다.<br>• 키울수록 테두리가 페이지를 채우고, 100%여도 최소 여백(9mm)은 남깁니다.</div>
+        </div>
+
+        <div class="field slider-field">
+          <label for="noteScale">율명 크기 <small>정간 안 글자</small> — <span id="noteScaleVal">1.0×</span></label>
+          <input type="range" id="noteScale" min="1" max="2" step="0.05" value="1">
+          <div class="hint">• 정간 안 율명(음표 글자)을 기본 크기(1.0×)에서 더 키웁니다.<br>• 붙임 시김새도 글자를 따라 함께 커집니다. 너무 키우면 선과 겹칠 수 있습니다.</div>
         </div>
 
         <details class="adv">
@@ -856,17 +875,6 @@
         <span id="melodyInfo"></span>
         <span class="mel-actions">
           <span class="guide-wrap">
-            <button type="button" id="addTextToggle" class="mel-btn">텍스트 추가</button>
-            <div id="addTextPop" class="melody-guide">
-              <div class="mg-sec at-row">
-                <input type="text" id="addTextInput" placeholder="예: 대여음">
-                <button type="button" id="addTextBtn" class="at-add">추가</button>
-              </div>
-              <div class="mg-sec hint">• 추가하면 세로로 표시됩니다.<br>• 악보 위에서 직접 끌어 위치를 옮길 수 있습니다.<br>• 클릭하면 크기 조절·삭제 패널이 뜹니다.<br>• 글씨체는 '제목 글씨체' 설정을 따릅니다.</div>
-              <div id="addTextList" class="at-list"></div>
-            </div>
-          </span>
-          <span class="guide-wrap">
             <button type="button" id="ornEditToggle" class="mel-btn">시김새 미세조정</button>
             <button type="button" id="ornGuideToggle" class="icon-btn" title="설명 보기">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -907,6 +915,10 @@
               <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
                 <input type="checkbox" id="palSound" checked> 소리
               </label>
+              <span class="tool-inline size-ctl" title="율명 표 크기">
+                <button type="button" id="palSizeDown">−</button>
+                <button type="button" id="palSizeUp">+</button>
+              </span>
               <span class="pal-hint">클릭하면 입력</span>
             </div>
           </div>
@@ -923,6 +935,10 @@
             <div id="melodyHlBack" aria-hidden="true"></div>
             <textarea id="melody" spellcheck="false"
               placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
+            <div class="size-ctl ed-font-ctl" title="에디터 글자 크기">
+              <button type="button" id="edFontDown">−</button>
+              <button type="button" id="edFontUp">+</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1201,11 +1217,56 @@
     if (!r) return fullText;
     return fullText.split("\n").slice(r.start, r.end).join("\n");
   }
+  // ---------- 선율 에디터 그리드 정렬 ----------
+  // 옛 형식(||) 각 구분을 줄바꿈으로 통일 — 에디터·페이지 슬라이스는 '한 줄 = 한 각'을 전제하고,
+  // 그리드 정렬이 빈 정간에도 탭을 넣으면 ||가 남아 있을 수 없으므로 불러올 때 한 번 바꿔둔다.
+  function normalizeGakSeparators(text) {
+    return String(text || "").replace(/\|\|\n?/g, "\n");
+  }
+  // 각 정간 내용 뒤에 탭을 붙여 |가 탭 멈춤(고정 폭 열)에 정렬되게 한다 — 글자 폭이 달라도
+  // 탭 멈춤은 픽셀 고정이라 줄끼리 |가 나란해진다. 탭은 파서(trim)가 무시하므로 데이터에 남아도 무해.
+  function formatMelodyGrid(text) {
+    return text.split("\n").map(function (line) {
+      const cells = line.split("|");
+      return cells.map(function (c, i) {
+        // 탭·앞쪽 공백은 자리만 차지하므로 정리(칸 앞 공백은 파서도 무시).
+        // 뒤쪽 공백은 분박(스페이스) 입력 중일 수 있어 그대로 둔다.
+        c = c.replace(/\t/g, "").replace(/^ +/, "");
+        // 빈 정간도 탭을 넣어 기본 폭 열을 유지 — |끼리 붙어 ||(옛 각 구분)로
+        // 읽히는 일도 함께 막는다. 옛 || 구분은 불러올 때 줄바꿈으로 통일된다.
+        return i < cells.length - 1 ? c + "\t" : c;
+      }).join("|");
+    }).join("\n");
+  }
+  // 탭을 뺀 글자 수로 커서 자리를 기억했다가, 재정렬된 텍스트에서 같은 자리로 되돌린다
+  function melodyCursorLogical(text, pos) {
+    let n = 0;
+    for (let i = 0; i < pos && i < text.length; i++) if (text[i] !== "\t") n++;
+    return n;
+  }
+  function melodyLogicalToPos(text, n) {
+    let i = 0;
+    while (i < text.length && n > 0) { if (text[i] !== "\t") n--; i++; }
+    return i;
+  }
+  let melodyComposing = false;   // 한글 IME 조합 중엔 값을 바꾸면 조합이 깨지므로 정렬을 미룬다
+  function reformatMelodyEditor() {
+    if (melodyComposing) return;
+    const ta = $("melody");
+    const before = ta.value;
+    const after = formatMelodyGrid(before);
+    if (after === before) return;
+    const logical = melodyCursorLogical(before, ta.selectionStart);
+    ta.value = after;
+    const p = melodyLogicalToPos(after, logical);
+    ta.setSelectionRange(p, p);
+  }
+
   // 원본 → 에디터 조각 다시 로드 (구조 변경·페이지 전환·불러오기 때만. 타이핑 중엔 호출하지 않음)
   function refreshEditorSlices() {
     if (edPage >= pageGakRanges.length) edPage = Math.max(0, pageGakRanges.length - 1);
     const r = pageGakRanges[edPage] || null;
-    const mv = sliceLines(melodyFull, r);
+    const mv = formatMelodyGrid(sliceLines(melodyFull, r));
     if ($("melody").value !== mv) $("melody").value = mv;
     edRange = r ? { start: r.start, count: mv.split("\n").length } : null;
     const lv = sliceLines(lyricsFull, r);
@@ -1658,6 +1719,8 @@
   // 붙임표(음표 오른쪽에 붙는 시김새) 확대 — 미는표·흘림표·니레·니라·니로·끊는표·특강표만 원래 크기 유지
   const ATT_EXTRA_SCALE = 1.2;
   const ATT_SCALE_KEEP = new Set(["push", "flow", "nire", "nina", "niro", "staccato", "accent"]);
+  // 특정 붙임표만 따로 더 키움 — 농음표·풀어내림표·잉어질표는 가늘고 길어 2.5배로
+  const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5 };
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
@@ -1726,6 +1789,9 @@
   // symbol_samples/notes/ — 쉼표 등 기호 이미지의 로컬 서버 폴백 경로로만 쓰임(gitignore로 커밋 제외).
   const NOTE_DIR = "symbol_samples/notes/";
   let noteMode = "font";   // "font" | "hangul" (이미지 표기 옵션은 제거됨)
+  let noteScaleCur = 1;    // 율명 크기 배율 (레이아웃 탭 슬라이더, 1 = 기본이자 최소)
+  let palZoom = 1;         // 선율 팔레트(율명 표) 표시 배율
+  let edFontPx = 14;       // 선율 텍스트 에디터 글자 크기(px)
 
   // ---------- 율명 팔레트 (음역 행 × 음계 열 매트릭스) ----------
   // 행 = 음역(낮은음→높은음), 열 = 12율 음계순
@@ -2072,6 +2138,7 @@
     const ROWS_REF = 3;
     let gs = uniformSmall ? (cell * 0.90) / ROWS_REF : cell * 0.60;
     if (maxCols > 1) gs = Math.min(gs, (cell * 0.86) / maxCols);
+    gs *= noteScaleCur;   // 율명 크기 배율(1 = 기본) — 붙임 시김새도 gs를 따라 같이 커진다
 
     const rowH = cell / nRows;
     for (let ri = 0; ri < nRows; ri++) {
@@ -2101,7 +2168,7 @@
           const boxes = g.att.map(function (tk) {
             // 확대는 붙임표(wo류)에만 적용 — 퇴성·추성처럼 붙어오는 것들은 원래 크기 유지
             const scale = (ORN_CAT[tk.sym] === "wo" && !ATT_SCALE_KEEP.has(tk.sym)) ? ATT_EXTRA_SCALE : 1;
-            return saBase * scale;
+            return saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1);
           });
           const sa = Math.max.apply(null, boxes);
           // 커진 크기만큼 글자 쪽 여백을 살짝 더 줌(글자와의 간격 조정)
@@ -2324,25 +2391,7 @@
     syncTextPanel();
   }
 
-  function renderTextList() {
-    const wrap = $("addTextList");
-    if (!wrap) return;
-    wrap.innerHTML = "";
-    customTexts.forEach(function (t) {
-      const row = document.createElement("div");
-      row.className = "at-item";
-      const span = document.createElement("span");
-      span.textContent = t.text;
-      const del = document.createElement("button");
-      del.type = "button"; del.textContent = "×"; del.title = "삭제";
-      // 삭제로 목록이 다시 그려지면 이 버튼이 DOM에서 빠져, 버블된 클릭이 문서의
-      // '팝오버 바깥 클릭 시 닫기'에 바깥 클릭으로 오인된다 → 전파를 여기서 끊음
-      del.addEventListener("click", function (e) { e.stopPropagation(); deleteCustomText(t.id); });
-      row.appendChild(span); row.appendChild(del);
-      wrap.appendChild(row);
-    });
-    renderTextItems();
-  }
+  function renderTextList() { renderTextItems(); }
 
   // 아래 편집 독 '텍스트' 탭 — 텍스트별 내용·방향·크기·자간 조절 목록
   function renderTextItems() {
@@ -2390,11 +2439,17 @@
         if (!isNaN(v)) { t.spacing = Math.max(-3, Math.min(20, v)); render(); }
       });
       spLab.appendChild(sp);
+      const colLab = document.createElement("label");
+      colLab.appendChild(document.createTextNode("색"));
+      const col = document.createElement("input");
+      col.type = "color"; col.value = t.color || "#111111"; col.title = "글자 색";
+      col.addEventListener("input", function () { t.color = col.value; render(); });
+      colLab.appendChild(col);
       const del = document.createElement("button");
       del.type = "button"; del.className = "tx-del"; del.textContent = "×"; del.title = "삭제";
       del.addEventListener("click", function () { deleteCustomText(t.id); });
       row.appendChild(txt); row.appendChild(dirLab); row.appendChild(szLab);
-      row.appendChild(spLab); row.appendChild(del);
+      row.appendChild(spLab); row.appendChild(colLab); row.appendChild(del);
       list.appendChild(row);
     });
   }
@@ -2438,12 +2493,16 @@
     const wantLyrics = $("wantLyrics").checked;
     document.body.classList.toggle("want-lyrics", wantLyrics);
     const wantTempo = $("wantTempo").checked;
+    const gakNumMode = $("gakNumMode").value;   // 각 번호: none | screen(화면에만) | all(출력 포함)
+    document.body.classList.toggle("gaknum-screen", gakNumMode === "screen");
     const tempoStr = "一分・" + numToHanja(Math.max(1, parseInt($("tempoBpm").value) || 60)) + "井";
     const dg = parseDaegang($("daegang").value, beats);
     noteMode = $("noteMode").value;   // "font" | "hangul"
 
     const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
     $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
+    noteScaleCur = Math.max(1, parseFloat($("noteScale").value) || 1);
+    $("noteScaleVal").textContent = noteScaleCur.toFixed(2).replace(/0$/, "") + "×";
     const desiredCell = Math.max(2, parseFloat($("cellSize").value) || 11) * sizeScale;
     // 가사를 켜면 각 오른쪽에 가사 칸이 붙어 이미 사이가 벌어지므로, 원래 각 간격은 0.7배로 줄인다
     const desiredGap = Math.max(0, parseFloat($("gakGap").value) || 0) * sizeScale
@@ -2706,6 +2765,15 @@
             if (!dgSet.has(i)) svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
           }
 
+          // 각 번호(보조) — 각 아래 옅은 회색 작은 숫자 (문서 탭 옵션, '화면에만'이면 출력에서 제외)
+          if (gakNumMode !== "none") {
+            const gnFont = cell * 0.26;
+            const gn = el("text", { x: x + cell / 2, y: gridBottom + gnFont * 1.25,
+              "text-anchor": "middle", "font-size": gnFont, fill: "#b3b3b3", "class": "gak-num" });
+            gn.textContent = String(melIdx + 1);
+            svg.appendChild(gn);
+          }
+
           // 클릭·하이라이트 영역은 숨은 정간 포함 전체 beats (여전히 입력 가능)
           for (let j = 0; j < beats; j++) {
             const cyTop = gridTop + j * cell;
@@ -2841,7 +2909,7 @@
           const holder = el("g", {});
           const cx = t.xf * PW, topY = t.yf * PH;
           const drawFn = t.orient === "h" ? horizontalText : verticalText;
-          const vt = drawFn(cx, topY, t.text, t.size, 700, "#111", textFontFam, t.spacing || 0);
+          const vt = drawFn(cx, topY, t.text, t.size, 700, t.color || "#111", textFontFam, t.spacing || 0);
           holder.appendChild(vt.g);
           svg.appendChild(holder);   // getBBox엔 DOM에 붙어 있어야 함
           const bb = vt.g.getBBox();
@@ -2925,7 +2993,13 @@
     svgs.forEach(function (svg, idx) {
       const vb = (svg.getAttribute("viewBox") || "0 0 210 297").split(/\s+/).map(Number);
       const pw = vb[2] || 210, ph = vb[3] || 297;
-      const xml = new XMLSerializer().serializeToString(svg);
+      // 각 번호가 '화면에만' 모드면 저장본에서는 뺀다
+      let node = svg;
+      if ($("gakNumMode").value === "screen") {
+        node = svg.cloneNode(true);
+        node.querySelectorAll(".gak-num").forEach(function (n) { n.remove(); });
+      }
+      const xml = new XMLSerializer().serializeToString(node);
       const svg64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
       const img = new Image();
       img.onload = function () {
@@ -3122,9 +3196,9 @@
 
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
-    "daegang", "noteMode", "sizeScale", "pageFill", "cellSize", "gakGap", "bandGap", "header", "frame",
+    "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont", "titleLayout",
-    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "pageNumPos"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "pageNumPos", "gakNumMode"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -3137,7 +3211,7 @@
     return { v: 1, controls: c, melody: melodyFull, jangdan: $("jangdan").value,
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
-             customTexts: customTexts };
+             customTexts: customTexts, palZoom: palZoom, edFontPx: edFontPx };
   }
 
   function applyState(s) {
@@ -3150,9 +3224,9 @@
     });
     // 예전에 저장된 "이미지" 표기 옵션은 제거됐으므로 폰트(한자)로 대체
     if (!$("noteMode").value) $("noteMode").value = "font";
-    if (typeof s.melody === "string") melodyFull = s.melody;
+    if (typeof s.melody === "string") melodyFull = normalizeGakSeparators(s.melody);
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;
-    if (typeof s.lyrics === "string") lyricsFull = s.lyrics;
+    if (typeof s.lyrics === "string") lyricsFull = normalizeGakSeparators(s.lyrics);
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
@@ -3160,6 +3234,9 @@
     customTexts = Array.isArray(s.customTexts) ? s.customTexts : [];
     nextTextId = customTexts.reduce(function (m, t) { return Math.max(m, (t.id || 0) + 1); }, 1);
     textSel = null;
+    palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
+    edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
+    applyPalZoom(); applyEdFont();
   }
 
   function applyActiveTab(name) {
@@ -3221,8 +3298,8 @@
     $(id).addEventListener("change", onFormChange);
   });
   // 모양만 바꾸는 입력 → 렌더만
-  ["cellSize", "gakGap", "bandGap", "sizeScale", "pageFill", "daegang", "subtitle", "titleSize", "titleOffset",
-   "subSize", "subOffset", "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos"].forEach(id => {
+  ["cellSize", "gakGap", "bandGap", "sizeScale", "pageFill", "noteScale", "daegang", "subtitle", "titleSize", "titleOffset",
+   "subSize", "subOffset", "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
@@ -3243,7 +3320,7 @@
     $("sheet").style.transform = "scale(" + viewZoom + ")";
     $("zoomVal").textContent = Math.round(viewZoom * 100) + "%";
   }
-  $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(3, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
+  $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(6, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
   $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
   // 세로/가로 맞춤: 현재 페이지의 원본(100%) 크기 대비, 화면에서 실제로 쓸 수 있는 폭/높이에 맞는 배율을 계산
   function fitZoom(dim) {
@@ -3255,7 +3332,7 @@
     const padX = 32, padY = 32;   // #sheetArea padding: 16px 사방
     const availW = area.clientWidth - padX, availH = area.clientHeight - padY;
     const ratio = dim === "width" ? availW / naturalW : availH / naturalH;
-    viewZoom = Math.max(0.3, Math.min(3, +ratio.toFixed(2)));
+    viewZoom = Math.max(0.3, Math.min(6, +ratio.toFixed(2)));
     applyZoom();
   }
   $("zoomFitH").addEventListener("click", () => { fitZoom("height"); });
@@ -3357,8 +3434,43 @@
     split.addEventListener("pointercancel", stop);
   })();
 
-  // 멜로디 편집 → 렌더 + 현재 정간 하이라이트 갱신
-  $("melody").addEventListener("input", function () { syncFullFromEditor(); render(); syncActiveFromCursor(); updateMelodyHl(); });
+  // 율명 표(팔레트)·에디터 글자 크기 조절 — 값은 저장 상태에 함께 보관
+  function applyPalZoom() { $("notePalette").style.zoom = palZoom; }
+  function applyEdFont() {
+    $("melody").style.fontSize = edFontPx + "px";
+    $("melodyHlBack").style.fontSize = edFontPx + "px";
+    updateMelodyHl();
+  }
+  $("palSizeDown").addEventListener("click", function () { palZoom = Math.max(0.6, +(palZoom - 0.1).toFixed(2)); applyPalZoom(); saveState(); });
+  $("palSizeUp").addEventListener("click", function () { palZoom = Math.min(2, +(palZoom + 0.1).toFixed(2)); applyPalZoom(); saveState(); });
+  $("edFontDown").addEventListener("click", function () { edFontPx = Math.max(10, edFontPx - 1); applyEdFont(); saveState(); });
+  $("edFontUp").addEventListener("click", function () { edFontPx = Math.min(26, edFontPx + 1); applyEdFont(); saveState(); });
+
+  // 멜로디 편집 → 그리드 재정렬 + 렌더 + 현재 정간 하이라이트 갱신
+  $("melody").addEventListener("input", function () {
+    reformatMelodyEditor();
+    syncFullFromEditor(); render(); syncActiveFromCursor(); updateMelodyHl();
+  });
+  $("melody").addEventListener("compositionstart", function () { melodyComposing = true; });
+  $("melody").addEventListener("compositionend", function () {
+    melodyComposing = false;
+    reformatMelodyEditor();
+    syncFullFromEditor(); render(); syncActiveFromCursor(); updateMelodyHl();
+  });
+  // → 키: 다음 정간(다음 | 또는 줄바꿈 뒤)으로 점프. 정간 안 분박(스페이스) 입력은 그대로.
+  $("melody").addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key !== "ArrowRight" || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+    const v = this.value;
+    let p = -1;
+    for (let i = this.selectionEnd; i < v.length; i++) {
+      if (v[i] === "|" || v[i] === "\n") { p = i + 1; break; }
+    }
+    if (p < 0) return;   // 마지막 정간이면 기본 동작
+    e.preventDefault();
+    this.setSelectionRange(p, p);
+    syncActiveFromCursor();
+  });
   $("melody").addEventListener("scroll", function () {
     $("melodyHlBack").scrollTop = this.scrollTop;
     $("melodyHlBack").scrollLeft = this.scrollLeft;
@@ -3404,36 +3516,13 @@
   });
 
   // 크기·간격을 처음 값으로 초기화 (제목·선율 등 내용과 문서 구조는 그대로)
-  const LAYOUT_DEFAULTS = { sizeScale: 1, pageFill: 0, cellSize: 11, gakGap: 7, bandGap: 10 };
+  const LAYOUT_DEFAULTS = { sizeScale: 1, pageFill: 0, noteScale: 1, cellSize: 11, gakGap: 7, bandGap: 10 };
   $("layoutReset").addEventListener("click", function () {
     Object.keys(LAYOUT_DEFAULTS).forEach(function (id) { $(id).value = LAYOUT_DEFAULTS[id]; });
     render();
   });
 
   // 텍스트 추가 팝오버 + 크기·삭제 패널
-  function toggleAddTextPop(show) {
-    const on = typeof show === "boolean" ? show : !$("addTextPop").classList.contains("on");
-    $("addTextPop").classList.toggle("on", on);
-    $("addTextToggle").classList.toggle("on", on);
-    if (on) { renderTextList(); $("addTextInput").focus(); }
-  }
-  $("addTextToggle").addEventListener("click", function (e) { e.stopPropagation(); toggleAddTextPop(); });
-  document.addEventListener("click", function (e) {
-    if ($("addTextPop").classList.contains("on") && !$("addTextPop").contains(e.target) && e.target !== $("addTextToggle")) {
-      toggleAddTextPop(false);
-    }
-  });
-  $("addTextBtn").addEventListener("click", function () {
-    addCustomText($("addTextInput").value);
-    $("addTextInput").value = "";
-    $("addTextInput").focus();
-  });
-  $("addTextInput").addEventListener("keydown", function (e) {
-    // 한글 입력기(IME) 조합 중의 Enter는 무시 — 안 그러면 조합 확정 + 추가가 겹쳐
-    // 마지막 글자 하나짜리 텍스트가 한 번 더 추가된다
-    if (e.isComposing || e.keyCode === 229) return;
-    if (e.key === "Enter") { e.preventDefault(); $("addTextBtn").click(); }
-  });
   // 아래 편집 독 '텍스트' 탭의 추가 입력줄
   $("textAddBtn").addEventListener("click", function () {
     addCustomText($("textAddInput").value);
