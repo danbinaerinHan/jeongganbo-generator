@@ -1931,7 +1931,17 @@
         const bandLyExtra = wantLyrics ? nMusic * lyExtraFull : 0;
         const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap) - bandJdExtra - bandLyExtra;
 
-        if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandRight, bandTop, T_THICK));
+        // 제목이 없는 밴드는 이 밴드의 맨 처음(가장 오른쪽) 각에 실제 가사가 있을 때만
+        // 그 가사 자리까지 선을 늘린다 — 안 그러면 가사를 안 채운 빈 자리에도 선이
+        // bandRight까지 삐져나와 튀어나온 것처럼 보인다.
+        let bandCapRight = bandRight;
+        if (!hasTitle && wantLyrics) {
+          const firstLy = lyParsed && lyParsed[gakAccum];
+          const firstLyHasContent = firstLy && firstLy.some(function (c) { return c && c.text; });
+          if (!firstLyHasContent) bandCapRight = bandRight - lyExtraFull;
+        }
+
+        if (wantHeader) svg.appendChild(line(musicLeft, bandTop, bandCapRight, bandTop, T_THICK));
 
         for (let m = 0; m < nMusic; m++) {
           // 장단은 맨 처음(가장 오른쪽) 자리를 차지하므로, 이 밴드의 모든 각이 그만큼 왼쪽으로 밀림.
@@ -2018,8 +2028,8 @@
         gakAccum += nMusic;
 
         // 밴드 위/아래 통줄 (전체 폭 — 각 사이 간격까지 끊기지 않게 한 줄로)
-        svg.appendChild(line(musicLeft, gridTop, bandRight, gridTop, T_THICK));
-        svg.appendChild(line(musicLeft, gridBottom, bandRight, gridBottom, T_THICK));
+        svg.appendChild(line(musicLeft, gridTop, bandCapRight, gridTop, T_THICK));
+        svg.appendChild(line(musicLeft, gridBottom, bandCapRight, gridBottom, T_THICK));
 
         if (hasTitle) {
           svg.appendChild(line(panelX, gridTop, panelX, gridBottom, T_THICK));
