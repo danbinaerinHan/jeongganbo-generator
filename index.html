@@ -1986,12 +1986,13 @@
       if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
     });
     // Enter의 표준 입력 경로 — 키 이벤트가 IME에 가려져도 브라우저가 insertLineBreak를 준다.
-    // 이 경로로 이동했으면 곧 따라오는 keyup이 또 이동시키지 않게 잠깐 눌러둔다.
+    // keyup 경로와 어느 쪽이 먼저 올지 IME·글자 수에 따라 순서가 달라(한 글자만 입력하고
+    // Enter를 치면 조합 확정 타이밍 때문에 keyup이 먼저 오기도 한다) claimCellEditMove()로
+    // 먼저 온 쪽이 선점하게 해서 두 경로가 같은 Enter를 두 번 처리하지 않게 막는다.
     inp.addEventListener("beforeinput", function (e) {
       if (e.inputType === "insertLineBreak") {
         e.preventDefault();
-        cellEditKeyupHoldUntil = Date.now() + 350;
-        commitCellEditor(true);
+        if (claimCellEditMove()) commitCellEditor(true);
       }
     });
     inp.addEventListener("blur", function () { if (cellEditInput === inp) commitCellEditor(false); });
@@ -2005,14 +2006,21 @@
     return e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter" ||
            e.code === "Tab" || e.key === "Tab";
   }
-  let cellEditKeyupHoldUntil = 0;   // beforeinput 경로로 이미 이동했으면 같은 Enter의 keyup은 무시
+  // beforeinput(insertLineBreak)·keyup 두 경로 중 같은 Enter를 먼저 처리하는 쪽이 선점하고
+  // (시간 순서가 IME·글자 수에 따라 뒤바뀔 수 있어 양방향으로 막아야 한다) 나머지는 무시한다.
+  let cellEditMoveClaimedUntil = 0;
+  function claimCellEditMove() {
+    if (Date.now() < cellEditMoveClaimedUntil) return false;
+    cellEditMoveClaimedUntil = Date.now() + 350;
+    return true;
+  }
   document.addEventListener("keydown", function (e) {
     if (cellEditInput && cellEditMoveKey(e)) e.preventDefault();   // 폼 동작·포커스 이동만 막음
   }, true);
   document.addEventListener("keyup", function (e) {
     if (!cellEditInput || !cellEditMoveKey(e)) return;
     e.preventDefault();
-    if (Date.now() < cellEditKeyupHoldUntil) { cellEditKeyupHoldUntil = 0; return; }
+    if (!claimCellEditMove()) return;
     commitCellEditor(true);
   }, true);
 
