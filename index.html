@@ -1416,9 +1416,10 @@
     while (i < a.length) {
       const ch = a[i];
       if (ch === "|" || ch === "-" || ch === "<" || /\s/.test(ch)) { i += 1; continue; }
-      if (ch === "{") {   // {시김새 이름} — 이름을 모르면 괄호째 표시, 짝이 없으면 { 만 표시
+      const ornClose = ORN_BRACKET_CLOSE[ch];
+      if (ornClose) {   // {..}·[..]·(..) 시김새 이름 — 이름을 모르면 괄호째 표시, 짝이 없으면 여는 괄호만 표시
         let j = i + 1, name = "";
-        while (j < a.length && a[j] !== "}") { name += a[j]; j += 1; }
+        while (j < a.length && a[j] !== ornClose) { name += a[j]; j += 1; }
         if (j >= a.length) { bad[i] = true; i += 1; continue; }
         const at = name.indexOf("@");
         let sym = at >= 0 ? name.slice(0, at) : name;
@@ -2108,6 +2109,10 @@
   // 기호 약어 → 파일명 (짧게 입력). 이음은 이미지 대신 '-' 문자 그대로 사용.
   const SYM_MARK = { "쉼": "pause_001", "쉼표": "pause_001" };
 
+  // 시김새 토큰 괄호 — {}·[]·() 셋 다 같은 뜻으로 허용(취향껏 섞어 써도 됨).
+  // 여는 괄호로 짝 닫는 괄호를 찾는다.
+  const ORN_BRACKET_CLOSE = { "{": "}", "[": "]", "(": ")" };
+
   // ---------- 시김새(장식음) 매핑 ----------
   // c: "wo"=음길이 없음(음표 오른쪽에 작게 붙임) / "with"=음길이 있음(독립 칸) / "both"=둘 다
   const ORN_LIST = [
@@ -2184,9 +2189,10 @@
     const a = Array.from(str), out = [];
     let i = 0;
     while (i < a.length) {
-      if (a[i] === "{") {   // {파일명} 또는 {파일명@크기,좌우,상하} = 기호 이미지(+개별 조정)
+      const ornClose = ORN_BRACKET_CLOSE[a[i]];
+      if (ornClose) {   // {파일명}·[파일명]·(파일명) 또는 …@크기,좌우,상하 = 기호 이미지(+개별 조정)
         let j = i + 1, name = "";
-        while (j < a.length && a[j] !== "}") { name += a[j]; j++; }
+        while (j < a.length && a[j] !== ornClose) { name += a[j]; j++; }
         if (j < a.length) {
           let sym = name, adj = null;
           const at = name.indexOf("@");
@@ -2711,14 +2717,14 @@
   }
 
   // ---------- 시김새 수정 모드 ----------
-  // 선택된 시김새의 원본 토큰 {stem@sz,dx,dy} 정보를 찾는다
+  // 선택된 시김새의 원본 토큰 {stem@sz,dx,dy}·[stem@sz,dx,dy]·(stem@sz,dx,dy) 정보를 찾는다
   function getOrnToken(sel) {
     if (!sel) return null;
     const parsed = parseMelodyOffsets(melodyFull);
     const c = parsed[sel.gak] && parsed[sel.gak][sel.cell];
     if (!c) return null;
     const raw = melodyFull.slice(c.start, c.end);
-    const re = /\{[^}]*\}/g; let m, cnt = 0;
+    const re = /\{[^}]*\}|\[[^\]]*\]|\([^)]*\)/g; let m, cnt = 0;
     while ((m = re.exec(raw))) {
       if (cnt === sel.k) {
         let inner = m[0].slice(1, -1), stem = inner, sz = 100, dx = 0, dy = 0;
