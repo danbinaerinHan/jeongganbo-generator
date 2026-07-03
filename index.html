@@ -187,8 +187,10 @@
   .pkey-b .pk-west { color: #bbb; font-size: 7px; bottom: 2px; }
 
   /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
-  .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+             flex: 0 0 auto; }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
+                      white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
                       transition: background .12s ease, color .12s ease; }
   .pal-seg .seg-btn + .seg-btn { border-left: 1px solid var(--line); }
@@ -240,7 +242,7 @@
           position: relative; }
   #sheetArea { flex: 1 1 auto; min-height: 0; display: flex;
                align-items: flex-start; justify-content: center; padding: 16px; overflow: auto;
-               background: #e8e5de; }
+               background: #e8e5de; position: relative; }
   #sheet { transform-origin: top center; transition: transform .08s ease;
            display: flex; flex-direction: column; align-items: center; gap: 16px; }
   .page { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
@@ -370,8 +372,9 @@
   #melodySplit::before { content: ""; height: 46px; width: 4px; border-radius: 2px;
                          background: var(--line); transition: background .12s ease; }
   #melodySplit:hover::before { background: var(--accent); }
-  .melody-head { display: flex; align-items: center; gap: 6px;
-                 font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+  .melody-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+                 font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
+                 white-space: nowrap; }
   .melody-head .mono { color: var(--muted); font-weight: 400;
                        font-family: ui-monospace, Menlo, monospace; }
   .mel-actions { margin-left: auto; display: flex; gap: 6px; }
@@ -381,7 +384,8 @@
                          min-width: 74px; text-align: center; }
   .ed-pager button:disabled { opacity: .35; cursor: default; }
   .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: #fff;
-             border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; color: var(--ink); }
+             border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; color: var(--ink);
+             white-space: nowrap; }
   .mel-btn:hover { background: #f0ece3; }
   .mel-btn:disabled { opacity: .45; cursor: default; }
   #melodyReset { color: #b23b3b; border-color: #e3b7b7; }
@@ -408,20 +412,22 @@
   }
   .tip:hover::after, .tip:hover::before { opacity: 1; visibility: visible; }
   /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
-  #melodyRow { display: flex; gap: 12px; height: 296px; align-items: stretch; }
+  #melodyRow { display: flex; gap: 16px; height: 330px; align-items: stretch; }
   /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */
   #paletteCol { flex: 0 0 auto; width: 450px; max-width: 60%; display: flex; flex-direction: column;
                 min-height: 0; }
-  /* 팔레트 머리: 위 줄(율명/시김새 탭 + 크기 ±) / 아래 줄(표·건반, 표기, 소리) 두 줄로 정리 */
+  /* 팔레트 머리: 한 줄(표·건반, 조, 표기, 소리 + 크기 ±) — 율명/시김새 탭은 위 선율 입력 머리로 이동 */
   .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-  .pal-top { display: flex; align-items: center; justify-content: space-between;
-             gap: 10px; margin-bottom: 6px; }
-  .pal-views { display: inline-flex; gap: 14px; }
+  .pal-views { display: inline-flex; gap: 12px; }
   .pal-view { padding: 3px 1px 6px; border: none; border-bottom: 2px solid transparent; background: none;
-              cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--muted); }
+              cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--muted);
+              white-space: nowrap; }
   .pal-view:hover { color: var(--ink); }
   .pal-view.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .melody-head .pal-views { margin-left: 6px; }
+  .melody-head .pal-view { padding: 2px 1px 3px; }
+  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 28px; }
+  .pal-tools .size-ctl { margin-left: auto; }
   /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
   #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
   /* 시김새 칩 (이미지 + 한글 이름) */
@@ -509,14 +515,41 @@
   .ed-font-ctl { position: absolute; top: 6px; right: 16px; z-index: 2; opacity: .45; }
   .ed-font-ctl:hover { opacity: 1; }
 
-  /* 에디터 위 도구줄 — 율명 크기 슬라이더 */
-  .ed-tools { display: flex; align-items: center; gap: 8px; font-size: 12px;
-              font-weight: 600; color: var(--muted); }
-  .ed-tools input[type="range"] { flex: 0 1 200px; min-width: 90px; margin: 0; }
+  /* 에디터 머리 — 팔레트 머리(.pal-head)와 같은 한 줄·밑줄 구조로 좌우 컬럼을 나란히 맞춤 */
+  .ed-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .ed-top { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
+  .ed-title { padding: 3px 1px 6px; font-size: 13px; font-weight: 700; color: var(--accent);
+              border-bottom: 2px solid var(--accent); white-space: nowrap; }
+  .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+  /* 율명 크기 슬라이더 (머리 한 줄 안 인라인) */
+  .ed-tools { display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
+              font-weight: 600; color: var(--muted); flex: 0 1 auto; min-width: 0; }
+  .ed-tools label { white-space: nowrap; }
+  .ed-tools input[type="range"] { flex: 0 1 160px; min-width: 70px; margin: 0; }
   .ed-tools #noteScaleVal { font-weight: 400; min-width: 34px; }
-  .ed-gak-btns { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+  .ed-gak-btns { display: inline-flex; align-items: center; gap: 6px; }
   .ed-gak-btns input[type="number"] { width: 44px; padding: 3px 4px; border: 1px solid var(--line);
                                       border-radius: 5px; font-family: inherit; font-size: 11px; }
+  /* 텍스트 입력 규칙 안내 — 에디터 바로 위에 항상 보이게 */
+  .ed-hint { font-size: 11px; line-height: 1.6; color: var(--muted);
+             background: #faf6ec; border: 1px solid #eadfc8; border-radius: 7px; padding: 5px 9px; }
+  .ed-hint b { color: var(--accent); }
+  .ed-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink);
+                   background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  /* 직접 입력 모드 — 텍스트 에디터 대신 안내 카드 표시 */
+  .direct-info { display: none; }
+  #melodyArea.mel-direct .ed-hint,
+  #melodyArea.mel-direct #melodyHlWrap,
+  #melodyArea.mel-direct .ed-pager { display: none !important; }
+  #melodyArea.mel-direct .direct-info {
+    display: flex; flex-direction: column; justify-content: center; gap: 7px;
+    flex: 1 1 auto; min-height: 0; overflow: auto;
+    border: 1.5px dashed #d8cdb8; border-radius: 10px; padding: 14px 18px; background: #fbfaf5; }
+  .direct-info .di-title { font-size: 13px; font-weight: 700; color: var(--accent); }
+  .direct-info .di-body { font-size: 12px; line-height: 1.9; color: var(--muted); }
+  .direct-info .di-body b { color: var(--ink); }
+  .direct-info .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink);
+                       background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
@@ -582,6 +615,8 @@
     .page:last-child { page-break-after: auto; }
     .page svg { width: 210mm; height: 297mm; }
     body.landscape .page svg { width: 297mm; height: 210mm; }
+    /* 편집·재생 하이라이트는 화면 확인용이라 인쇄에는 나오지 않아야 한다 */
+    .no-print { display: none !important; }
   }
 </style>
 <style id="pageStyle">@page { size: A4 portrait; margin: 0; }</style>
@@ -626,8 +661,12 @@
         <div class="mini">
           <span>크기</span>
           <span class="num-unit"><input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"><span class="unit">mm</span></span>
-          <span>위치</span>
+          <span title="양수 = 아래로, 음수 = 위로">상하</span>
           <span class="num-unit"><input type="number" id="titleOffset" step="1" value="3"><span class="unit">mm</span></span>
+          <span title="양수 = 오른쪽으로, 음수 = 왼쪽으로">좌우</span>
+          <span class="num-unit"><input type="number" id="titleOffsetX" step="1" value="0"><span class="unit">mm</span></span>
+          <span>자간</span>
+          <span class="num-unit"><input type="number" id="titleSpacing" min="-5" max="30" step="0.5" value="0"><span class="unit">mm</span></span>
         </div>
       </div>
       <div class="field">
@@ -636,8 +675,12 @@
         <div class="mini">
           <span>크기</span>
           <span class="num-unit"><input type="number" id="subSize" min="1" max="20" step="0.5" value="5"><span class="unit">mm</span></span>
-          <span>위치</span>
+          <span title="양수 = 아래로, 음수 = 위로">상하</span>
           <span class="num-unit"><input type="number" id="subOffset" step="1" value="0"><span class="unit">mm</span></span>
+          <span title="양수 = 오른쪽으로, 음수 = 왼쪽으로">좌우</span>
+          <span class="num-unit"><input type="number" id="subOffsetX" step="1" value="0"><span class="unit">mm</span></span>
+          <span>자간</span>
+          <span class="num-unit"><input type="number" id="subSpacing" min="-5" max="30" step="0.5" value="0"><span class="unit">mm</span></span>
         </div>
       </div>
       <div class="field">
@@ -689,7 +732,7 @@
       <div class="field">
         <label for="gakPerRow">한 줄에 놓을 각 수 (가로)</label>
         <input type="number" id="gakPerRow" min="1" max="40" value="10">
-        <div class="hint">한 줄에 오른쪽→왼쪽으로 나란히 놓을 각의 개수입니다 (기본 10).</div>
+        <div class="hint">• 한 줄에 오른쪽→왼쪽으로 나란히 놓을 각의 개수입니다 (기본 10).<br>• 제목을 '세로 칸'으로 표기하면 첫 페이지에서 제목이 각 2개 자리(6칸 이상일 때, 미만이면 1개)를 차지해 그만큼 내용 각 수가 줄어듭니다.</div>
       </div>
 
       <div class="field">
@@ -707,7 +750,7 @@
           <input type="number" id="gakCount" min="1" max="480" value="18" style="flex:1;">
           <label class="chk"><input type="checkbox" id="gakCountAuto"> 자동</label>
         </div>
-        <div class="hint">• 실제로 그릴 각(마디)의 총 개수입니다.<br>• 직접 넣기 전까지는 위 설정대로 <b>한 페이지를 꽉 채우고</b>, 넘치면 다음 페이지로 이어집니다.<br>• 자동 체크 시 선율의 각(‖) 개수만큼만 그립니다.</div>
+        <div class="hint">총 각(마디)의 개수입니다.</div>
       </div>
 
       <div class="field">
@@ -722,13 +765,13 @@
         <div class="field slider-field">
           <label for="sizeScale">전체 배율 <small>정간·간격 한번에</small> — <span id="sizeScaleVal">1.0×</span></label>
           <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
-          <div class="hint">• 격자 전체를 한번에 키우거나 줄입니다. A4를 넘으면 자동으로 맞춥니다.<br>• 화면만 크게 보려면 왼쪽 위 <b>확대</b> 버튼을 쓰세요.</div>
+          <div class="hint">격자 전체를 한번에 키우거나 줄입니다.</div>
         </div>
 
         <div class="field slider-field">
           <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">0%</span></label>
           <input type="range" id="pageFill" min="0" max="100" step="5" value="0">
-          <div class="hint">• 0%면 테두리가 안쪽 정간보에 붙습니다.<br>• 키울수록 테두리가 페이지를 채우고, 100%여도 최소 여백(9mm)은 남깁니다.</div>
+          <div class="hint">페이지에 맞게 한번에 키우거나 줄입니다.</div>
         </div>
 
         <details class="adv">
@@ -779,6 +822,7 @@
         <button id="btnPrint">인쇄 / PDF 저장</button>
         <button id="btnPng" class="secondary">PNG 다운로드</button>
       </div>
+      <div class="hint" style="margin-top:2px;">• 페이지가 여러 장이면 PNG는 한 장씩 각각의 파일로 나뉘어 저장됩니다 (예: 제목-1.png, 제목-2.png…).</div>
       <div class="btns">
         <button id="btnExport" class="secondary">파일로 저장</button>
         <button id="btnImport" class="secondary">불러오기</button>
@@ -889,6 +933,10 @@
           <button type="button" class="seg-btn active" data-mode="editor">에디터</button>
           <button type="button" class="seg-btn" data-mode="direct">직접 입력</button>
         </span>
+        <div class="pal-views">
+          <button type="button" class="pal-view active" data-view="yul">율명</button>
+          <button type="button" class="pal-view" data-view="orn">시김새</button>
+        </div>
         <span class="guide-wrap">
           <button type="button" id="melodyGuideToggle" class="icon-btn" title="입력 방법 안내">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -896,12 +944,10 @@
           <div id="melodyGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
               ① 악보의 정간을 클릭해서 바로 입력<br>
-              ② 아래 텍스트창에 직접 입력<br>
+              ② 아래 텍스트 에디터에 한글로 직접 입력 (규칙은 에디터 위 안내 참고)<br>
               ③ 왼쪽 팔레트(율명·시김새)를 클릭하면 커서 자리에 입력
             </div>
-            <div class="mg-sec"><b>텍스트로 입력할 때</b><br>
-              • 음은 한글 율명(황·태·협…)으로 적습니다.<br>
-              • 줄바꿈은 각(세로줄) 구분, <span class="mono">|</span> 는 정간(칸) 구분입니다.<br>
+            <div class="mg-sec"><b>세부 규칙</b><br>
               • 한 정간 안에서 <span class="mono">스페이스</span> 없이 이어 쓰면 한 줄에, 띄어 쓰면 그 칸 안에서 줄이 나뉩니다(분박).<br>
               • 음 뒤에 공백 없이 <span class="mono">&lt;</span> 를 붙이면 그 정간 오른쪽-아래에 숨표가 표시됩니다.
             </div>
@@ -925,16 +971,6 @@
       <div id="melodyRow">
         <div id="paletteCol">
           <div class="pal-head">
-            <div class="pal-top">
-              <div class="pal-views">
-                <button type="button" class="pal-view active" data-view="yul">율명</button>
-                <button type="button" class="pal-view" data-view="orn">시김새</button>
-              </div>
-              <span class="tool-inline size-ctl" title="팔레트 표 크기">
-                <button type="button" id="palSizeDown">−</button>
-                <button type="button" id="palSizeUp">+</button>
-              </span>
-            </div>
             <div class="pal-tools">
               <span class="pal-seg" id="yulModeSeg">
                 <button type="button" class="seg-btn active" data-mode="grid">표</button>
@@ -966,28 +1002,53 @@
               <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
                 <input type="checkbox" id="palSound" checked> 소리
               </label>
+              <span class="tool-inline size-ctl" title="팔레트 표 크기">
+                <button type="button" id="palSizeDown">−</button>
+                <button type="button" id="palSizeUp">+</button>
+              </span>
             </div>
           </div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
         </div>
         <div id="melodySplit" title="좌우로 드래그하여 팔레트·편집창 너비 조절"></div>
         <div id="editorCol">
-          <div class="ed-pager" style="display:none;">
-            <button type="button" class="ed-prev mel-btn" title="이전 페이지 편집">◀</button>
-            <span class="ed-plabel">1 / 1 페이지</span>
-            <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
+          <div class="ed-head">
+            <div class="ed-top">
+              <span class="ed-title">텍스트 에디터</span>
+              <span class="ed-tools">
+                <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 붙임 시김새도 함께 커집니다">율명 크기</label>
+                <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
+                <span id="noteScaleVal">1.0×</span>
+              </span>
+              <div class="ed-right">
+                <div class="ed-pager" style="display:none;">
+                  <button type="button" class="ed-prev mel-btn" title="이전 페이지 편집">◀</button>
+                  <span class="ed-plabel">1 / 1 페이지</span>
+                  <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
+                </div>
+                <span class="ed-gak-btns">
+                  <button type="button" id="gakInsertBtn" class="mel-btn tip"
+                    data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">⊕ 각 추가</button>
+                  <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가할 각 수">
+                  <button type="button" id="gakDeleteBtn" class="mel-btn tip"
+                    data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">⊖ 각 삭제</button>
+                </span>
+              </div>
+            </div>
           </div>
-          <div class="ed-tools">
-            <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 붙임 시김새도 함께 커집니다">율명 크기</label>
-            <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
-            <span id="noteScaleVal">1.0×</span>
-            <span class="ed-gak-btns">
-              <button type="button" id="gakInsertBtn" class="mel-btn tip"
-                data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">⊕ 각 추가</button>
-              <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가할 각 수">
-              <button type="button" id="gakDeleteBtn" class="mel-btn tip"
-                data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">⊖ 각 삭제</button>
-            </span>
+          <div class="ed-hint">
+            <b>텍스트로 입력할 때</b> — 음은 한글 율명(황·태·협…)으로 적습니다 ·
+            줄바꿈 = <b>각</b> 구분 · <span class="mono">|</span> = <b>정간</b> 구분 ·
+            스페이스 = 한 정간 안 <b>분박</b> · 음 뒤 <span class="mono">&lt;</span> = 숨표
+          </div>
+          <div id="directInfo" class="direct-info">
+            <div class="di-title">직접 입력 모드</div>
+            <div class="di-body">
+              악보에서 입력할 <b>정간을 클릭</b>하면 그 옆에 입력창이 열립니다.<br>
+              • 치는 내용은 <b>실시간으로 악보에 반영</b>됩니다.<br>
+              • <span class="mono">Enter</span> = 다음 정간으로 이동 · <span class="mono">Esc</span> = 닫기<br>
+              • 왼쪽 팔레트(율명·시김새)를 클릭해도 입력창에 들어갑니다.
+            </div>
           </div>
           <div id="melodyHlWrap">
             <div id="melodyHlBack" aria-hidden="true"></div>
@@ -1145,7 +1206,8 @@
   let pageHi = [];                          // 페이지별 하이라이트 사각형
   let playHi = [];                          // 페이지별 재생 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
-  let cellEditor = null, cellEditInput = null;  // 정간 위 인라인 입력
+  let cellEditor = null, cellEditInput = null;  // 정간 옆 직접 입력 카드
+  let keepCellEditor = false;               // true면 render()가 직접 입력 카드를 닫지 않음(실시간 반영용)
   let ornEditMode = false;                  // 시김새 수정 모드
   let ornSel = null;                        // 선택된 시김새 {gak, cell, k}
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
@@ -1669,6 +1731,50 @@
     activeGak = -1; activeCellIdx = -1; activeRow = -1; updateHighlight();
   }
 
+  // 장단·가사 에디터용 그리드 보호 — 선율 에디터와 같은 알고리즘으로,
+  // Backspace/Delete가 정간 구분선(|)과 정렬 탭을 지우지 못하게 건너뛰고,
+  // →는 다음 정간(다음 | 또는 줄바꿈 뒤)으로 점프시킨다.
+  function attachGakGridGuard(id, syncFn) {
+    $(id).addEventListener("keydown", function (e) {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+      const v = this.value;
+      if (e.key === "ArrowRight") {
+        let p = -1;
+        for (let i = this.selectionEnd; i < v.length; i++) {
+          if (v[i] === "|" || v[i] === "\n") { p = i + 1; break; }
+        }
+        if (p < 0) return;
+        e.preventDefault();
+        this.setSelectionRange(p, p);
+        syncFn();
+        return;
+      }
+      if (e.key === "Backspace" && this.selectionStart === this.selectionEnd) {
+        let p = this.selectionStart;
+        if (p > 0 && (v[p - 1] === "|" || v[p - 1] === "\t")) {
+          e.preventDefault();
+          if (v[p - 1] === "|") p--;
+          while (p > 0 && v[p - 1] === "\t") p--;
+          this.setSelectionRange(p, p);
+          syncFn();
+          return;
+        }
+      }
+      if (e.key === "Delete" && this.selectionStart === this.selectionEnd) {
+        let p = this.selectionEnd;
+        if (p < v.length && (v[p] === "|" || v[p] === "\t")) {
+          e.preventDefault();
+          while (p < v.length && v[p] === "\t") p++;
+          if (v[p] === "|") p++;
+          this.setSelectionRange(p, p);
+          syncFn();
+          return;
+        }
+      }
+    });
+  }
+
   // 정간 내부 문자열에서 커서(rel)가 몇 번째 행(공백 구분)인지
   function subCellInfo(raw, rel) {
     const starts = []; const re = /\S+/g; let m;
@@ -1805,24 +1911,30 @@
     // 에디터 커서도 같은 정간으로 — 각 추가·삭제가 늘 클릭한 각 기준으로 동작하게
     setEditorCursorToCell(gi, ci, false);
 
-    // 직접 입력 창 — 정간을 가리지 않게 옆(왼쪽 우선)에 카드형으로 띄운다
+    // 직접 입력 카드 — 악보(#sheet)는 입력 때마다 다시 그려지므로 카드가 지워지지 않게
+    // 스크롤 컨테이너(#sheetArea)에 픽셀 좌표로 띄운다. 렌더가 카드를 건드리지 않아
+    // 포커스·한글 조합이 그대로 유지되고, 치는 대로 실시간 반영이 가능하다.
+    const area = $("sheetArea");
+    const sr = svg.getBoundingClientRect(), ar = area.getBoundingClientRect();
     const vb = svg.viewBox.baseVal;
-    const w = cg.w * 3.8, h = Math.max(cg.h * 1.8, 13);
-    let px = cg.x - w - cg.w * 0.3;
-    if (px < 2) px = Math.min(cg.x + cg.w + cg.w * 0.3, vb.width - w - 2);
-    const py = Math.max(2, Math.min(vb.height - h - 2, cg.y + cg.h / 2 - h / 2));
-    const fo = document.createElementNS(NS, "foreignObject");
-    fo.setAttribute("x", px); fo.setAttribute("y", py);
-    fo.setAttribute("width", w); fo.setAttribute("height", h);
+    const kx = sr.width / vb.width, ky = sr.height / vb.height;
+    const toX = function (v) { return sr.left - ar.left + area.scrollLeft + v * kx; };
+    const toY = function (v) { return sr.top - ar.top + area.scrollTop + v * ky; };
+    const cellPx = cg.h * ky;
+    const h = Math.max(cellPx * 1.8, 52), w = Math.max(cellPx * 3.8, 132);
+    let px = toX(cg.x) - w - cellPx * 0.3;
+    if (px < toX(0) + 2) px = Math.min(toX(cg.x + cg.w) + cellPx * 0.3, toX(vb.width) - w - 2);
+    const py = Math.max(toY(0) + 2, Math.min(toY(vb.height) - h - 2, toY(cg.y + cg.h / 2) - h / 2));
     const card = document.createElement("div");
-    card.style.cssText = "width:100%;height:100%;box-sizing:border-box;display:flex;flex-direction:column;" +
-      "background:#fff;border:" + (h * 0.014) + "px solid rgba(138,109,59,.45);border-radius:" + (h * 0.13) + "px;" +
+    card.style.cssText = "position:absolute;left:" + px + "px;top:" + py + "px;" +
+      "width:" + w + "px;height:" + h + "px;box-sizing:border-box;display:flex;flex-direction:column;z-index:6;" +
+      "background:#fff;border:1px solid rgba(138,109,59,.45);border-radius:" + (h * 0.13) + "px;" +
       "box-shadow:0 " + (h * 0.09) + "px " + (h * 0.32) + "px rgba(31,26,18,.28);overflow:hidden;";
     const cap = document.createElement("div");
     cap.textContent = (gi + 1) + "각 · " + (ci + 1) + "정간";
     cap.style.cssText = "flex:0 0 auto;font-size:" + (h * 0.19) + "px;line-height:1.55;font-weight:600;" +
       "letter-spacing:.04em;color:#8a6d3b;background:#f7f3ea;padding:0 " + (h * 0.16) + "px;" +
-      "border-bottom:" + (h * 0.012) + "px solid rgba(138,109,59,.18);";
+      "border-bottom:1px solid rgba(138,109,59,.18);";
     const inp = document.createElement("input");
     inp.type = "text";
     inp.value = currentCellText(gi, ci);
@@ -1830,15 +1942,21 @@
       "text-align:center;padding:0 " + (h * 0.12) + "px;background:#fff;color:#1f1a12;" +
       "font-family:inherit;line-height:1;font-size:" + (h * 0.42) + "px;";
     card.appendChild(cap); card.appendChild(inp);
-    fo.appendChild(card);
-    svg.appendChild(fo);
-    cellEditor = fo; cellEditInput = inp;
+    area.appendChild(card);
+    cellEditor = card; cellEditInput = inp;
     inp.focus(); inp.select();
 
+    // 치는 대로 실시간 반영 — 카드가 악보 밖에 있어 render()가 조합(IME)을 깨지 않는다
+    inp.addEventListener("input", function () {
+      if (cellEditInput !== inp) return;
+      keepCellEditor = true;
+      try { setCellText(gi, ci, inp.value); } finally { keepCellEditor = false; }
+    });
     inp.addEventListener("keydown", function (e) {
-      if (e.isComposing || e.keyCode === 229) return;   // IME 조합 중 Enter는 무시(끝글자 중복 방지)
-      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); commitCellEditor(true); }
-      else if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
+      // Enter는 한글 조합 중이어도 바로 확정하고 다음 정간으로 (조합 글자는 이미 실시간 반영됨)
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); commitCellEditor(true); return; }
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
     });
     inp.addEventListener("blur", function () { if (cellEditInput === inp) commitCellEditor(false); });
   }
@@ -2071,6 +2189,7 @@
       const pos = s + txt.length;
       inp.setSelectionRange(pos, pos);
       inp.focus();
+      inp.dispatchEvent(new Event("input"));   // 실시간 반영
       return;
     }
     const ta = $("melody");
@@ -2771,8 +2890,12 @@
     const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0) * sizeScale;
     const desiredTitle = Math.max(1, parseFloat($("titleSize").value) || 10);
     const desiredTitleOff = parseFloat($("titleOffset").value) || 0;
+    const desiredTitleOffX = parseFloat($("titleOffsetX").value) || 0;
+    const desiredTitleSpacing = parseFloat($("titleSpacing").value) || 0;
     const desiredSub = Math.max(1, parseFloat($("subSize").value) || 5);
     const desiredSubOff = parseFloat($("subOffset").value) || 0;
+    const desiredSubOffX = parseFloat($("subOffsetX").value) || 0;
+    const desiredSubSpacing = parseFloat($("subSpacing").value) || 0;
     const titleFontFam = $("titleFont").value || CJK;
     const lyricsFontFam = $("lyricsFont").value || CJK;
 
@@ -2916,7 +3039,10 @@
     if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
 
     stopPlayback();
-    cellGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = []; cellEditor = null; cellEditInput = null;
+    cellGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = [];
+    // 직접 입력 카드는 #sheet 밖(#sheetArea)에 있어 다시 그려도 살아남는다 —
+    // 실시간 반영 중(keepCellEditor)이 아니면 구조가 바뀌는 것이므로 닫는다
+    if (!keepCellEditor) closeCellEditor();
     const sheet = $("sheet"); sheet.innerHTML = "";
     let gakAccum = 0;
 
@@ -2949,11 +3075,11 @@
       if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, boxTop,
         gridTotalW + 2 * INNER_PAD, boxBottom - boxTop, T_FRAME));
 
-      // 편집 하이라이트 자리(내용 아래 레이어)
-      const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none" });
+      // 편집 하이라이트 자리(내용 아래 레이어) — 인쇄·PNG 저장에는 나오지 않아야 하므로 no-print 표시
+      const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none", class: "no-print" });
       hi.style.display = "none"; svg.appendChild(hi); pageHi.push(hi); pageSvgs.push(svg);
       // 재생 하이라이트 자리(내용 아래 레이어)
-      const ph = rect(0, 0, 0, 0, 0, { fill: "#60a5fa", "fill-opacity": "0.5", stroke: "none" });
+      const ph = rect(0, 0, 0, 0, 0, { fill: "#60a5fa", "fill-opacity": "0.5", stroke: "none", class: "no-print" });
       ph.style.display = "none"; svg.appendChild(ph); playHi.push(ph);
 
       for (let b = 0; b < usedBands; b++) {
@@ -3137,13 +3263,13 @@
         const cx = (panelX + panelRight) / 2;
         const titleFont = Math.min(desiredTitle * scale, (panelRight - panelX) * 0.78);
         const startY = gridY + headH + titleFont * 1.05 + desiredTitleOff * scale;
-        const tt = verticalText(cx, startY, titleTxt, titleFont, 700, "#000", titleFontFam);
+        const tt = verticalText(cx + desiredTitleOffX * scale, startY, titleTxt, titleFont, 700, "#000", titleFontFam, desiredTitleSpacing * scale);
         svg.appendChild(tt.g);
         if (subTxt) {
           const subFont = Math.min(desiredSub * scale, (panelRight - panelX) * 0.72);
           const subStart = tt.endY + titleFont * 0.5 + subFont + desiredSubOff * scale;
           if (subStart < pBottom) {
-            const st = verticalText(cx, subStart, subTxt, subFont, 400, "#333", titleFontFam);
+            const st = verticalText(cx + desiredSubOffX * scale, subStart, subTxt, subFont, 400, "#333", titleFontFam, desiredSubSpacing * scale);
             svg.appendChild(st.g);
           }
         }
@@ -3155,14 +3281,16 @@
         const baseBottom = gridY - INNER_PAD - pageTempoH;
         const titleBase = baseBottom - (subTxt ? titleTopSubFont * 1.5 : 0)
           - titleTopFont * 0.3 + desiredTitleOff * scale;
-        const t = el("text", { x: cx, y: titleBase, "text-anchor": "middle",
-          "font-size": titleTopFont, "font-family": titleFontFam, "font-weight": 700, fill: "#000" });
+        const t = el("text", { x: cx + desiredTitleOffX * scale, y: titleBase, "text-anchor": "middle",
+          "font-size": titleTopFont, "font-family": titleFontFam, "font-weight": 700, fill: "#000",
+          "letter-spacing": desiredTitleSpacing * scale });
         t.textContent = titleTxt;
         svg.appendChild(t);
         if (subTxt) {
-          const st = el("text", { x: cx, y: titleBase + titleTopSubFont * 1.45 + desiredSubOff * scale,
+          const st = el("text", { x: cx + desiredSubOffX * scale,
+            y: titleBase + titleTopSubFont * 1.45 + desiredSubOff * scale,
             "text-anchor": "middle", "font-size": titleTopSubFont, "font-family": titleFontFam,
-            "font-weight": 400, fill: "#333" });
+            "font-weight": 400, fill: "#333", "letter-spacing": desiredSubSpacing * scale });
           st.textContent = subTxt;
           svg.appendChild(st);
         }
@@ -3258,10 +3386,10 @@
     svgs.forEach(function (svg, idx) {
       const vb = (svg.getAttribute("viewBox") || "0 0 210 297").split(/\s+/).map(Number);
       const pw = vb[2] || 210, ph = vb[3] || 297;
-      // 각 번호가 '화면에만' 모드면 저장본에서는 뺀다
-      let node = svg;
+      // 화면 확인용 요소(편집·재생 하이라이트, '화면에만' 각 번호)는 저장본에서 뺀다
+      const node = svg.cloneNode(true);
+      node.querySelectorAll(".no-print").forEach(function (n) { n.remove(); });
       if ($("gakNumMode").value === "screen") {
-        node = svg.cloneNode(true);
         node.querySelectorAll(".gak-num").forEach(function (n) { n.remove(); });
       }
       const xml = new XMLSerializer().serializeToString(node);
@@ -3462,7 +3590,8 @@
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "cellSize", "gakGap", "bandGap", "header", "frame",
-    "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont", "titleLayout",
+    "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
+    "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout",
     "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode"];
   const LS_KEY = "jgb_state_v1";
 
@@ -3689,8 +3818,10 @@
     $(id).addEventListener("change", onFormChange);
   });
   // 모양만 바꾸는 입력 → 렌더만
-  ["cellSize", "gakGap", "bandGap", "sizeScale", "pageFill", "noteScale", "daegang", "subtitle", "titleSize", "titleOffset",
-   "subSize", "subOffset", "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
+  ["cellSize", "gakGap", "bandGap", "sizeScale", "pageFill", "noteScale", "daegang", "subtitle",
+   "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
+   "subSize", "subOffset", "subOffsetX", "subSpacing",
+   "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
@@ -3707,8 +3838,8 @@
     });
   });
 
-  // 보기 확대/축소 (화면만, 출력에는 영향 없음) — 시작 배율은 230%
-  let viewZoom = 2.3;
+  // 보기 확대/축소 (화면만, 출력에는 영향 없음) — 시작 배율은 150%
+  let viewZoom = 1.5;
   function applyZoom() {
     $("sheet").style.transform = "scale(" + viewZoom + ")";
     $("zoomVal").textContent = Math.round(viewZoom * 100) + "%";
@@ -3932,6 +4063,7 @@
   ["keyup", "click", "select", "focus"].forEach(function (ev) {
     $("jangdan").addEventListener(ev, syncJangdanFromCursor);
   });
+  attachGakGridGuard("jangdan", syncJangdanFromCursor);
   $("jangdanReset").addEventListener("click", resetJangdan);
   $("jangdanUndo").addEventListener("click", undoJangdan);
   refreshJangdanUndoBtn();
@@ -3941,6 +4073,7 @@
   ["keyup", "click", "select", "focus"].forEach(function (ev) {
     $("lyrics").addEventListener(ev, syncLyricsFromCursor);
   });
+  attachGakGridGuard("lyrics", syncLyricsFromCursor);
   $("lyricsReset").addEventListener("click", resetLyrics);
   $("lyricsUndo").addEventListener("click", undoLyrics);
   refreshLyricsUndoBtn();
@@ -4006,11 +4139,16 @@
   // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
   $("palInsert").addEventListener("change", saveState);
-  // 선율 입력 모드 전환 (에디터 / 직접 입력)
+  // 선율 입력 모드 전환 (에디터 / 직접 입력) — 직접 입력이면 텍스트 에디터 대신 안내 카드를 보여준다
   function applyMelInputSeg() {
     document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-mode") === melInput);
     });
+    const direct = melInput === "direct";
+    $("melodyArea").classList.toggle("mel-direct", direct);
+    const t = document.querySelector("#melodyArea .ed-title");
+    if (t) t.textContent = direct ? "직접 입력" : "텍스트 에디터";
+    if (!direct && cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () {
