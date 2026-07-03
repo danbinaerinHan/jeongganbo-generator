@@ -195,12 +195,19 @@
   /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
   .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
              flex: 0 0 auto; }
-  /* 입력 방식(에디터/직접 입력) 선택 — 모드 선택임이 눈에 띄게 강조 */
+  /* 입력 방식(에디터/직접 입력) 선택 — 고른 쪽이 포스트잇처럼 살짝 위로 튀어나와
+     한눈에 띄게 함. 이어붙은 세그먼트 대신 칩을 따로 떼어 각자 테두리를 둬야
+     선택된 쪽만 들뜬 느낌이 난다(overflow:visible로 pal-seg의 클리핑도 풀어줌). */
   .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
-  .mode-seg { border: 1.5px solid var(--accent); border-radius: 7px; }
-  .mode-seg .seg-btn { font-weight: 700; padding: 5px 12px; color: var(--muted); }
-  .mode-seg .seg-btn + .seg-btn { border-left: 1px solid rgba(138,109,59,.35); }
-  .mode-seg .seg-btn.active { background: var(--accent); color: #fff; }
+  .mode-seg { border: none; background: none; overflow: visible; gap: 5px; padding-top: 4px; }
+  .mode-seg .seg-btn { font-weight: 700; padding: 5px 12px; color: var(--muted);
+                       background: #fff; border: 1.5px solid var(--line); border-radius: 7px;
+                       transform: translateY(0); box-shadow: 0 1px 2px rgba(31,26,18,.08);
+                       transition: transform .14s ease, box-shadow .14s ease, background .12s ease; }
+  .mode-seg .seg-btn + .seg-btn { border-left: 1.5px solid var(--line); }
+  .mode-seg .seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent);
+                              transform: translateY(-3px);
+                              box-shadow: 0 4px 9px rgba(138,109,59,.4); }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
                       white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
