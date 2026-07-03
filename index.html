@@ -195,13 +195,11 @@
   .pal-seg .seg-btn.active { background: var(--accent); color: #fff; }
   #paletteCol.orn-active .pal-seg { display: none; }
 
-  /* 팔레트 헤더 도구: 표기(한자/한글)는 표 보기, 황 위치(E♭/C)는 건반 보기 전용 */
-  #paletteCol .tool-inline.piano-only { display: none; }
-  #paletteCol.piano-active .tool-inline { display: none; }
-  #paletteCol.piano-active .tool-inline.piano-only { display: flex; }
-  /* 소리 미리듣기 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
-  .pal-tools .sound-tool { font-weight: 600; }
-  #paletteCol.orn-active .sound-tool { display: none; }
+  /* 팔레트 헤더 도구: 표기(한자/한글)는 표 보기 전용, 황 음고(E♭/C)·크기 ±는 표·건반 공통 */
+  #paletteCol.piano-active .tool-inline:not(.size-ctl):not(.pitch-tool) { display: none; }
+  /* 입력·소리 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
+  .pal-tools .sound-tool, .pal-tools .insert-tool { font-weight: 600; }
+  #paletteCol.orn-active .sound-tool, #paletteCol.orn-active .insert-tool { display: none; }
 
   /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
   .sizebox { border: 1px solid var(--line); border-radius: 10px;
@@ -251,7 +249,7 @@
   .float-bar { position: absolute; top: 12px; z-index: 5;
                display: flex; align-items: center; gap: 6px; }
   #zoomBarWrap { left: 14px; }
-  #playBarWrap { left: 280px; }
+  #playBarWrap { right: 14px; }   /* 처음엔 화면 오른쪽 위 — 끌면 left 기준으로 바뀜 */
   /* 바 왼쪽 이동 손잡이 — 끌어서 바 위치를 옮김 */
   .bar-grip { display: flex; align-items: center; justify-content: center; width: 16px;
               align-self: stretch;
@@ -408,18 +406,18 @@
   /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */
   #paletteCol { flex: 0 0 auto; width: 450px; max-width: 60%; display: flex; flex-direction: column;
                 min-height: 0; }
-  .pal-head { display: flex; align-items: flex-end; justify-content: space-between;
-              gap: 10px; flex-wrap: wrap; margin-bottom: 8px; padding-bottom: 6px;
-              border-bottom: 1px solid var(--line); }
+  /* 팔레트 머리: 위 줄(율명/시김새 탭 + 크기 ±) / 아래 줄(표·건반, 표기, 소리) 두 줄로 정리 */
+  .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .pal-top { display: flex; align-items: center; justify-content: space-between;
+             gap: 10px; margin-bottom: 6px; }
   .pal-views { display: inline-flex; gap: 14px; }
   .pal-view { padding: 3px 1px 6px; border: none; border-bottom: 2px solid transparent; background: none;
               cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--muted); }
   .pal-view:hover { color: var(--ink); }
   .pal-view.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .pal-tools { display: flex; align-items: center; gap: 10px; padding-bottom: 3px; }
-  /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 */
-  #paletteCol.orn-active .tool-inline { display: none; }
-  #paletteCol .pal-hint { font-weight: 400; font-size: 11px; color: var(--muted); }
+  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
+  #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
   /* 시김새 칩 (이미지 + 한글 이름) */
   .palette .ornrow { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
   .palette .ornchip { flex: 0 0 auto; width: auto; height: auto; min-width: 36px;
@@ -623,27 +621,24 @@
         </select>
       </div>
 
-      <div class="sec">쪽 번호</div>
+      <div class="sec">번호 표시</div>
       <div class="field">
-        <label for="pageNumPos">쪽 번호 표시</label>
+        <label for="pageNumPos">쪽 번호 <small>페이지 아래 여백</small></label>
         <select id="pageNumPos">
           <option value="none" selected>표시 안 함</option>
           <option value="left">아래 왼쪽</option>
           <option value="center">아래 가운데</option>
           <option value="right">아래 오른쪽</option>
         </select>
-        <div class="hint">페이지 아래 여백에 쪽 번호를 표시합니다.</div>
       </div>
-
-      <div class="sec">각 번호</div>
       <div class="field">
-        <label for="gakNumMode">각 번호 표시 <small>각 아래 옅은 회색 숫자</small></label>
+        <label for="gakNumMode">각 번호 <small>각 아래 옅은 회색 숫자</small></label>
         <select id="gakNumMode">
           <option value="none" selected>표시 안 함</option>
           <option value="screen">화면에만 (인쇄·PNG 제외)</option>
           <option value="all">화면·출력 모두</option>
         </select>
-        <div class="hint">• 각(마디)의 순서를 각 아래에 작은 회색 숫자로 표시합니다.<br>• '화면에만'을 고르면 인쇄·PNG 저장에서는 빠집니다.</div>
+        <div class="hint">• 각(마디)의 순서를 각 아래에 작은 회색 숫자로 표시합니다.<br>• '화면에만'을 고르면 화면에서만 보이고 인쇄·PNG 저장에서는 빠집니다.</div>
       </div>
 
     </div>
@@ -800,7 +795,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
           <div id="playPop" class="play-pop">
-            <div class="pp-row"><span>기준음 (황·黃)</span>
+            <div class="pp-row"><span>황 음고 (기준음)</span>
               <select id="hwangPitch">
                 <option value="63" selected>E♭4</option>
                 <option value="60">C4</option>
@@ -862,7 +857,8 @@
           <div id="melodyGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
               ① 악보의 정간을 클릭해서 바로 입력<br>
-              ② 아래 텍스트창에 직접 입력
+              ② 아래 텍스트창에 직접 입력<br>
+              ③ 왼쪽 팔레트(율명·시김새)를 클릭하면 커서 자리에 입력
             </div>
             <div class="mg-sec"><b>텍스트로 입력할 때</b><br>
               • 음은 한글 율명(황·태·협…)으로 적습니다.<br>
@@ -891,9 +887,15 @@
       <div id="melodyRow">
         <div id="paletteCol">
           <div class="pal-head">
-            <div class="pal-views">
-              <button type="button" class="pal-view active" data-view="yul">율명</button>
-              <button type="button" class="pal-view" data-view="orn">시김새</button>
+            <div class="pal-top">
+              <div class="pal-views">
+                <button type="button" class="pal-view active" data-view="yul">율명</button>
+                <button type="button" class="pal-view" data-view="orn">시김새</button>
+              </div>
+              <span class="tool-inline size-ctl" title="팔레트 표 크기">
+                <button type="button" id="palSizeDown">−</button>
+                <button type="button" id="palSizeUp">+</button>
+              </span>
             </div>
             <div class="pal-tools">
               <span class="pal-seg" id="yulModeSeg">
@@ -906,20 +908,18 @@
                   <option value="hangul">한글</option>
                 </select>
               </label>
-              <label class="tool-inline piano-only">황 위치
+              <label class="tool-inline pitch-tool" title="율명 클릭 소리와 건반, 악보 재생에 함께 적용됩니다">황 음고
                 <select id="pianoBase">
                   <option value="63">E♭4</option>
                   <option value="60">C4</option>
                 </select>
               </label>
+              <label class="chk insert-tool" title="끄면 율명을 눌러도 입력되지 않고 소리만 들려줍니다">
+                <input type="checkbox" id="palInsert" checked> 입력
+              </label>
               <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
                 <input type="checkbox" id="palSound" checked> 소리
               </label>
-              <span class="tool-inline size-ctl" title="율명 표 크기">
-                <button type="button" id="palSizeDown">−</button>
-                <button type="button" id="palSizeUp">+</button>
-              </span>
-              <span class="pal-hint">클릭하면 입력</span>
             </div>
           </div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
@@ -1896,7 +1896,7 @@
     }
     item.addEventListener("mousedown", function (e) { e.preventDefault(); });
     item.addEventListener("click", function () {
-      insertToken(insertText);
+      if ($("palInsert").checked) insertToken(insertText);   // 입력 토글을 끄면 소리만
       if (semis != null) previewNote((parseInt($("hwangPitch").value) || 63) + semis);
     });
     return item;
@@ -1994,7 +1994,10 @@
         key.title = "‘" + label + "’ 입력 (" + westName(midi) + ")";
         (function (txt, m) {
           key.addEventListener("mousedown", function (e) { e.preventDefault(); });
-          key.addEventListener("click", function () { insertToken(txt); previewNote(m); });
+          key.addEventListener("click", function () {
+            if ($("palInsert").checked) insertToken(txt);   // 입력 토글을 끄면 소리만
+            previewNote(m);
+          });
         })(label, midi);
         if (semis === 0) hwangKey = key;
       }
@@ -2812,8 +2815,9 @@
               const content = jdCells[j] ? jdCells[j].text : "";
               if (content) drawJangdanCell(svg, jdLeft, gridTop + j * cell, jdW, cell, content);
             }
-            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THICK));
-            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THICK));
+            // 장단 각은 선율 각과 구분되게 세로줄을 아주 조금 더 굵게
+            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THICK * 1.35));
+            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THICK * 1.35));
             // 다른 정간과 똑같이 박(정간) 구분선을 그림(대강은 굵게)
             for (let i = 1; i < beats; i++) {
               svg.appendChild(line(jdLeft, gridTop + i * cell, jdRight, gridTop + i * cell,
@@ -3198,7 +3202,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont", "titleLayout",
-    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "pageNumPos", "gakNumMode"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "pageNumPos", "gakNumMode"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -3237,6 +3241,7 @@
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
     applyPalZoom(); applyEdFont();
+    $("pianoBase").value = $("hwangPitch").value;   // 황 음고 셀렉트는 기준음과 한 값
   }
 
   function applyActiveTab(name) {
@@ -3356,6 +3361,7 @@
       const mr = main.getBoundingClientRect(), br = bar.getBoundingClientRect();
       const nx = Math.max(4, Math.min(mr.width - br.width - 4, ox + e.clientX - sx));
       const ny = Math.max(4, Math.min(mr.height - br.height - 4, oy + e.clientY - sy));
+      bar.style.right = "auto";   // 처음에 right 기준으로 놓인 바(재생 바)도 끌면 left 기준으로
       bar.style.left = nx + "px";
       bar.style.top = ny + "px";
     });
@@ -3546,13 +3552,15 @@
   $("btnPlay").addEventListener("click", playMelody);
   $("btnPause").addEventListener("click", togglePause);
   $("btnStop").addEventListener("click", stopPlayback);
-  // 기준음(황) 변경 → 저장 + 피아노 건반 라벨 위치도 따라감
+  // 기준음(황 음고) 변경 → 저장 + 팔레트의 황 음고 셀렉트·피아노 건반 라벨도 따라감
   $("hwangPitch").addEventListener("change", function () {
+    $("pianoBase").value = $("hwangPitch").value;
     saveState();
     if (palView === "yul" && yulMode === "piano") buildPalette();
   });
-  // 소리 미리듣기 토글 상태 저장
+  // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
+  $("palInsert").addEventListener("change", saveState);
   // 율명 입력 방식 전환 (표 / 건반)
   document.querySelectorAll("#yulModeSeg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () {
