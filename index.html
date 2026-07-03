@@ -164,14 +164,15 @@
   .palette .pmsg.err { color: #b23b3b; }
 
   /* 피아노 팔레트 — 건반 위에 율명 표기, 팔레트 폭 안에서 옆으로 스크롤 */
-  .piano-kb { position: relative; display: flex; align-items: flex-start; }
-  .pkey-w { position: relative; width: 34px; height: 190px; flex: 0 0 34px;
+  /* 건반 높이는 JS(fitPianoHeight)가 팔레트 영역에 맞춰 갱신 — 위아래 스크롤 없이 채움 */
+  .piano-kb { position: relative; display: flex; align-items: flex-start; height: 190px; }
+  .pkey-w { position: relative; width: 34px; height: 100%; flex: 0 0 34px;
             border: 1px solid #8f8d88; border-radius: 0 0 4px 4px; background: #fff;
             cursor: pointer; transition: background .1s ease; }
   .pkey-w:hover { background: #f0ece3; }
   .pkey-w:active { background: #e6dfd0; }
   .pkey-w.pk-ghost { background: #f3f1ec; cursor: default; pointer-events: none; }
-  .pkey-b { position: absolute; top: 0; width: 21px; height: 118px; z-index: 2;
+  .pkey-b { position: absolute; top: 0; width: 21px; height: 62%; z-index: 2;
             background: #2f2c28; border: 1px solid #1c1b19; border-radius: 0 0 3px 3px;
             cursor: pointer; transition: background .1s ease; }
   .pkey-b:hover { background: #4d463c; }
@@ -2007,6 +2008,7 @@
     }
     kb.style.width = (wCount * KW) + "px";
     wrap.appendChild(kb);
+    fitPianoHeight();   // 팔레트 영역 높이에 맞춰 건반 높이 조정 (위아래 스크롤 없음)
     // 기본 스크롤: 중성 황 부근이 보이도록
     const pw = $("paletteWrap");
     if (hwangKey && pw) pw.scrollLeft = Math.max(0, hwangKey.offsetLeft - pw.clientWidth * 0.35);
@@ -3440,8 +3442,18 @@
     split.addEventListener("pointercancel", stop);
   })();
 
+  // 건반 높이를 팔레트 영역에 맞춤 — 위아래 스크롤 없이, 편집창 크기를 조절하면 따라 커지고 작아진다
+  function fitPianoHeight() {
+    const kb = document.querySelector("#notePalette .piano-kb");
+    if (!kb) return;
+    // notePalette에 zoom이 걸려 있으므로 zoom으로 나눠 계산. 18 = .palette 패딩(8×2)+테두리(1×2)
+    const h = Math.max(80, $("paletteWrap").clientHeight / palZoom - 18);
+    kb.style.height = h + "px";
+  }
+  new ResizeObserver(fitPianoHeight).observe(document.getElementById("paletteWrap"));
+
   // 율명 표(팔레트)·에디터 글자 크기 조절 — 값은 저장 상태에 함께 보관
-  function applyPalZoom() { $("notePalette").style.zoom = palZoom; }
+  function applyPalZoom() { $("notePalette").style.zoom = palZoom; fitPianoHeight(); }
   function applyEdFont() {
     $("melody").style.fontSize = edFontPx + "px";
     $("melodyHlBack").style.fontSize = edFontPx + "px";
