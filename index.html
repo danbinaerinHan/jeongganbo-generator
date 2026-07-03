@@ -3259,8 +3259,74 @@
   }
 
   function saveState() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(collectState())); } catch (e) {}
+    try {
+      const json = JSON.stringify(collectState());
+      localStorage.setItem(LS_KEY, json);
+      pushUndo(json);
+    } catch (e) {}
   }
+
+  // ---------- 전역 되돌리기 (Cmd/Ctrl+Z · Shift+Cmd/Ctrl+Z) ----------
+  // 문서 전체 스냅샷(collectState)을 스택에 쌓는다. 스택 맨 위 = 현재 상태.
+  // 브라우저 내장 undo는 값을 코드로 갈아끼우는 순간 무효가 되므로 앱이 직접 관리한다.
+  const UNDO_MAX = 100;
+  let undoStack = [], redoStack = [];
+  let undoPending = null, undoTimer = null, undoApplying = false;
+
+  function pushUndo(json) {
+    if (undoApplying) return;   // undo/redo로 복원하는 중의 저장은 새 단계가 아님
+    if (undoStack.length && undoStack[undoStack.length - 1] === json && undoPending == null) return;
+    // 타이핑 같은 연속 변경은 600ms 묶어서 한 단계로
+    undoPending = json;
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(commitUndoSnapshot, 600);
+  }
+  function commitUndoSnapshot() {
+    clearTimeout(undoTimer); undoTimer = null;
+    if (undoPending == null) return;
+    if (undoStack[undoStack.length - 1] !== undoPending) {
+      undoStack.push(undoPending);
+      if (undoStack.length > UNDO_MAX) undoStack.shift();
+      redoStack.length = 0;   // 새 변경이 확정되면 다시하기 갈래는 사라짐
+    }
+    undoPending = null;
+  }
+  // 스냅샷을 화면 전체에 복원 (불러오기와 같은 절차)
+  function restoreFromState(s) {
+    applyState(s);
+    buildPalette();
+    render();
+    refreshEditorSlices();
+    syncActiveFromCursor();
+    refreshUndoBtn();
+    renderTextList();
+    hideTextPanel();
+  }
+  function undoGlobal() {
+    if (cellEditInput) commitCellEditor(false);   // 정간 인라인 편집 중이면 먼저 확정
+    commitUndoSnapshot();                          // 묶는 중이던 변경을 한 단계로 확정
+    if (undoStack.length < 2) return;
+    redoStack.push(undoStack.pop());
+    const json = undoStack[undoStack.length - 1];
+    undoApplying = true;
+    try { restoreFromState(JSON.parse(json)); } finally { undoApplying = false; }
+  }
+  function redoGlobal() {
+    if (cellEditInput) commitCellEditor(false);
+    commitUndoSnapshot();
+    if (!redoStack.length) return;
+    const json = redoStack.pop();
+    undoStack.push(json);
+    undoApplying = true;
+    try { restoreFromState(JSON.parse(json)); } finally { undoApplying = false; }
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "z") { e.preventDefault(); if (e.shiftKey) redoGlobal(); else undoGlobal(); }
+    else if (k === "y") { e.preventDefault(); redoGlobal(); }
+  });
 
   function exportFile() {
     const blob = new Blob([JSON.stringify(collectState(), null, 2)], { type: "application/json" });
@@ -3275,14 +3341,7 @@
     const fr = new FileReader();
     fr.onload = function () {
       try {
-        applyState(JSON.parse(fr.result));
-        buildPalette();
-        render();
-        refreshEditorSlices();
-        syncActiveFromCursor();
-        refreshUndoBtn();
-        renderTextList();
-        hideTextPanel();
+        restoreFromState(JSON.parse(fr.result));   // 불러오기도 한 단계로 쌓여 되돌릴 수 있음
       } catch (e) { alert("불러오기 실패: 올바른 정간보 파일이 아닙니다."); }
     };
     fr.readAsText(file);
