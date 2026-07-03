@@ -426,6 +426,9 @@
   .pal-view.active { color: var(--accent); border-bottom-color: var(--accent); }
   .melody-head .pal-views { margin-left: 6px; }
   .melody-head .pal-view { padding: 2px 1px 3px; }
+  /* 직접 입력 모드에서 율명 크기·각 추가/삭제를 머리(맨 위)로 올려 담는 자리 */
+  #melHeadTools { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+  #melHeadTools:empty { display: none; }
   .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 28px; }
   .pal-tools .size-ctl { margin-left: auto; }
   /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
@@ -933,6 +936,7 @@
           <button type="button" class="pal-view active" data-view="yul">율명</button>
           <button type="button" class="pal-view" data-view="orn">시김새</button>
         </div>
+        <span id="melHeadTools"></span>
         <span class="guide-wrap">
           <button type="button" id="melodyGuideToggle" class="icon-btn" title="입력 방법 안내">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -1943,15 +1947,33 @@
       keepCellEditor = true;
       try { setCellText(gi, ci, inp.value); } finally { keepCellEditor = false; }
     });
+    // 한글 조합(IME) 중에 입력창을 없애면 브라우저가 포커스 이동을 되돌리는 일이 있어,
+    // 조합 중 Enter는 조합이 끝난 뒤(compositionend/keyup)로 이동을 미룬다.
+    let imeComposing = false, pendingNext = false;
+    const commitNext = function () {
+      if (!pendingNext) return;
+      pendingNext = false;
+      if (cellEditInput === inp) commitCellEditor(true);
+    };
+    inp.addEventListener("compositionstart", function () { imeComposing = true; });
+    inp.addEventListener("compositionend", function () {
+      imeComposing = false;
+      setTimeout(commitNext, 0);   // 조합 마무리(input 이벤트) 다음 프레임에 이동
+    });
     inp.addEventListener("keydown", function (e) {
-      // Enter는 한글 조합 중이어도 바로 확정하고 다음 정간으로 (조합 글자는 이미 실시간 반영됨).
-      // IME에 따라 key가 "Process"/keyCode 229로 오기도 하므로 물리 키(e.code)로 판정한다.
+      // Enter/Tab 판정은 물리 키(e.code) 기준 — IME가 key를 "Process"/keyCode 229로 보내도 잡힌다
       if (e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter" ||
           e.code === "Tab" || e.key === "Tab") {
-        e.preventDefault(); commitCellEditor(true); return;
+        e.preventDefault();
+        if (imeComposing || e.isComposing || e.keyCode === 229) { pendingNext = true; return; }
+        commitCellEditor(true); return;
       }
       if (e.isComposing || e.keyCode === 229) return;
       if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
+    });
+    // compositionend가 안 오는 IME 대비 — Enter 키가 떨어지는 시점에 한 번 더 시도
+    inp.addEventListener("keyup", function (e) {
+      if ((e.code === "Enter" || e.code === "NumpadEnter" || e.key === "Enter") && !imeComposing) commitNext();
     });
     inp.addEventListener("blur", function () { if (cellEditInput === inp) commitCellEditor(false); });
   }
@@ -3967,7 +3989,11 @@
   new ResizeObserver(fitPianoHeight).observe(document.getElementById("paletteWrap"));
 
   // 율명 표(팔레트)·에디터 글자 크기 조절 — 값은 저장 상태에 함께 보관
-  function applyPalZoom() { $("notePalette").style.zoom = palZoom; fitPianoHeight(); }
+  function applyPalZoom() {
+    $("notePalette").style.zoom = palZoom;
+    $("directOrnPalette").style.zoom = palZoom;   // 직접 입력의 시김새 팔레트도 함께 확대/축소
+    fitPianoHeight();
+  }
   function applyEdFont() {
     $("melody").style.fontSize = edFontPx + "px";
     $("melodyHlBack").style.fontSize = edFontPx + "px";
@@ -4146,7 +4172,12 @@
     $("melodyArea").classList.toggle("mel-direct", direct);
     const t = document.querySelector("#melodyArea .ed-title");
     if (t) t.textContent = direct ? "시김새" : "텍스트 에디터";
+    // 율명 크기 슬라이더·각 추가/삭제는 직접 입력 모드에선 맨 위 머리줄로 올려 잘 보이게
+    const tools = document.querySelector("#melodyArea .ed-tools");
+    const gaks = document.querySelector("#melodyArea .ed-gak-btns");
     if (direct) {
+      $("melHeadTools").appendChild(tools);
+      $("melHeadTools").appendChild(gaks);
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
         palView = "yul";
         document.querySelectorAll(".pal-view").forEach(function (x) {
@@ -4155,7 +4186,14 @@
         buildPalette();
       }
       buildOrnPalette($("directOrnPalette"));
-    } else if (cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
+      applyPalZoom();
+    } else {
+      const edTop = document.querySelector("#melodyArea .ed-top");
+      const edRight = document.querySelector("#melodyArea .ed-right");
+      edTop.insertBefore(tools, edRight);
+      edRight.appendChild(gaks);
+      if (cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
+    }
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () {
