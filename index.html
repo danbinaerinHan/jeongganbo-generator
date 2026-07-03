@@ -189,6 +189,12 @@
   /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
   .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
              flex: 0 0 auto; }
+  /* 입력 방식(에디터/직접 입력) 선택 — 모드 선택임이 눈에 띄게 강조 */
+  .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
+  .mode-seg { border: 1.5px solid var(--accent); border-radius: 7px; }
+  .mode-seg .seg-btn { font-weight: 700; padding: 5px 12px; color: var(--muted); }
+  .mode-seg .seg-btn + .seg-btn { border-left: 1px solid rgba(138,109,59,.35); }
+  .mode-seg .seg-btn.active { background: var(--accent); color: #fff; }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
                       white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
@@ -253,12 +259,6 @@
                display: flex; align-items: center; gap: 6px; }
   #zoomBarWrap { left: 14px; }
   #playBarWrap { right: 14px; }   /* 처음엔 화면 오른쪽 위 — 끌면 left 기준으로 바뀜 */
-  /* 문서 오른쪽 위 입력 안내 문구 (재생 바 아래) */
-  #sheetHint { position: absolute; top: 58px; right: 14px; z-index: 4; pointer-events: none;
-               background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 8px;
-               padding: 5px 10px; font-size: 11px; color: var(--muted);
-               box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-  #sheetHint b { color: var(--accent); font-weight: 600; }
   /* 바 왼쪽 이동 손잡이 — 끌어서 바 위치를 옮김 */
   .bar-grip { display: flex; align-items: center; justify-content: center; width: 16px;
               align-self: stretch;
@@ -536,20 +536,14 @@
   .ed-hint b { color: var(--accent); }
   .ed-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink);
                    background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
-  /* 직접 입력 모드 — 텍스트 에디터 대신 안내 카드 표시 */
-  .direct-info { display: none; }
+  /* 직접 입력 모드 — 텍스트 에디터 대신 오른쪽에 시김새 팔레트를 상시 표시
+     (왼쪽은 율명 팔레트 고정, 율명/시김새 탭은 숨김) */
+  #directOrnWrap { display: none; }
   #melodyArea.mel-direct .ed-hint,
   #melodyArea.mel-direct #melodyHlWrap,
-  #melodyArea.mel-direct .ed-pager { display: none !important; }
-  #melodyArea.mel-direct .direct-info {
-    display: flex; flex-direction: column; justify-content: center; gap: 7px;
-    flex: 1 1 auto; min-height: 0; overflow: auto;
-    border: 1.5px dashed #d8cdb8; border-radius: 10px; padding: 14px 18px; background: #fbfaf5; }
-  .direct-info .di-title { font-size: 13px; font-weight: 700; color: var(--accent); }
-  .direct-info .di-body { font-size: 12px; line-height: 1.9; color: var(--muted); }
-  .direct-info .di-body b { color: var(--ink); }
-  .direct-info .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink);
-                       background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  #melodyArea.mel-direct .ed-pager,
+  #melodyArea.mel-direct .melody-head .pal-views { display: none !important; }
+  #melodyArea.mel-direct #directOrnWrap { display: block; flex: 1 1 auto; min-height: 0; overflow: auto; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
@@ -608,7 +602,7 @@
 
   @media print {
     body { display: block; height: auto; overflow: visible; }
-    #sidebar, #editorDock, .float-bar, .side-open, #sheetHint { display: none !important; }
+    #sidebar, #editorDock, .float-bar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
@@ -861,7 +855,6 @@
             <button id="zoomFitW" class="fit" title="가로 맞춤 (페이지 너비를 화면에 맞춤)">가로맞춤</button>
           </div>
         </div>
-        <div id="sheetHint">정간 안 줄바꿈(분박)은 <b>스페이스</b>로 나뉩니다 · <b>Enter</b>는 다음 정간(직접 입력)</div>
         <div id="playBarWrap" class="float-bar">
           <div class="bar-grip" title="끌어서 이동">
             <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
@@ -929,9 +922,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         선율 입력
-        <span class="pal-seg" id="melInputSeg" title="정간을 클릭했을 때의 동작 — 에디터: 아래 텍스트로 커서 이동 / 직접 입력: 정간 옆에 입력창">
-          <button type="button" class="seg-btn active" data-mode="editor">에디터</button>
-          <button type="button" class="seg-btn" data-mode="direct">직접 입력</button>
+        <span class="mode-lab">입력 방식</span>
+        <span class="pal-seg mode-seg" id="melInputSeg">
+          <button type="button" class="seg-btn active tip" data-mode="editor"
+            data-tip="아래 텍스트 에디터에 한글 율명으로 입력합니다. 악보의 정간을 클릭하면 에디터 커서가 그 칸으로 이동합니다.">에디터</button>
+          <button type="button" class="seg-btn tip" data-mode="direct"
+            data-tip="악보의 정간을 클릭하면 그 옆에 입력창이 열립니다. 치는 대로 실시간 반영되고, Enter로 다음 정간으로 넘어갑니다.">직접 입력</button>
         </span>
         <div class="pal-views">
           <button type="button" class="pal-view active" data-view="yul">율명</button>
@@ -1041,15 +1037,7 @@
             줄바꿈 = <b>각</b> 구분 · <span class="mono">|</span> = <b>정간</b> 구분 ·
             스페이스 = 한 정간 안 <b>분박</b> · 음 뒤 <span class="mono">&lt;</span> = 숨표
           </div>
-          <div id="directInfo" class="direct-info">
-            <div class="di-title">직접 입력 모드</div>
-            <div class="di-body">
-              악보에서 입력할 <b>정간을 클릭</b>하면 그 옆에 입력창이 열립니다.<br>
-              • 치는 내용은 <b>실시간으로 악보에 반영</b>됩니다.<br>
-              • <span class="mono">Enter</span> = 다음 정간으로 이동 · <span class="mono">Esc</span> = 닫기<br>
-              • 왼쪽 팔레트(율명·시김새)를 클릭해도 입력창에 들어갑니다.
-            </div>
-          </div>
+          <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
           <div id="melodyHlWrap">
             <div id="melodyHlBack" aria-hidden="true"></div>
             <textarea id="melody" spellcheck="false"
@@ -4148,7 +4136,8 @@
   // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
   $("palInsert").addEventListener("change", saveState);
-  // 선율 입력 모드 전환 (에디터 / 직접 입력) — 직접 입력이면 텍스트 에디터 대신 안내 카드를 보여준다
+  // 선율 입력 모드 전환 (에디터 / 직접 입력)
+  // 직접 입력: 왼쪽 율명 팔레트 고정 + 오른쪽에 시김새 팔레트 상시 표시 (텍스트 에디터 대신)
   function applyMelInputSeg() {
     document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-mode") === melInput);
@@ -4156,8 +4145,17 @@
     const direct = melInput === "direct";
     $("melodyArea").classList.toggle("mel-direct", direct);
     const t = document.querySelector("#melodyArea .ed-title");
-    if (t) t.textContent = direct ? "직접 입력" : "텍스트 에디터";
-    if (!direct && cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
+    if (t) t.textContent = direct ? "시김새" : "텍스트 에디터";
+    if (direct) {
+      if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
+        palView = "yul";
+        document.querySelectorAll(".pal-view").forEach(function (x) {
+          x.classList.toggle("active", x.getAttribute("data-view") === "yul");
+        });
+        buildPalette();
+      }
+      buildOrnPalette($("directOrnPalette"));
+    } else if (cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () {
