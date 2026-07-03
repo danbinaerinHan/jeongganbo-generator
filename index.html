@@ -305,7 +305,8 @@
   .tip:hover::after, .tip:hover::before { opacity: 1; visibility: visible; }
   /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
   #melodyRow { display: flex; gap: 12px; height: 296px; align-items: stretch; }
-  #paletteCol { flex: 0 0 auto; max-width: 60%; display: flex; flex-direction: column;
+  /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */
+  #paletteCol { flex: 0 0 auto; width: 450px; max-width: 60%; display: flex; flex-direction: column;
                 min-height: 0; }
   .pal-head { display: flex; align-items: flex-end; justify-content: space-between;
               gap: 10px; flex-wrap: wrap; margin-bottom: 8px; padding-bottom: 6px;
@@ -542,16 +543,16 @@
       <div class="field">
         <label for="gakPerRow">한 줄에 놓을 각 수 (가로)</label>
         <input type="number" id="gakPerRow" min="1" max="40" value="10">
-        <div class="hint">한 밴드(가로 한 줄)에 오른쪽→왼쪽으로 나란히 놓을 각의 개수 (기본 10).</div>
+        <div class="hint">한 줄에 오른쪽→왼쪽으로 나란히 놓을 각의 개수 (기본 10).</div>
       </div>
 
       <div class="field">
-        <label for="stackCount">세로로 쌓을 밴드 수 (최대)</label>
+        <label for="stackCount">한 페이지에 쌓을 줄 수 (최대)</label>
         <div class="row">
           <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
           <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
         </div>
-        <div class="hint">한 페이지에 세로로 <b>최대</b> 몇 줄(밴드)까지 쌓을지. 자동: 정간 수에 따라 (&gt;12→1, 6~12→2, ≤5→3).</div>
+        <div class="hint">한 페이지에 세로로 최대 몇 줄까지 쌓을지 정한다.</div>
       </div>
 
       <div class="field">
@@ -710,7 +711,7 @@
         <span id="melodyInfo"></span>
         <span class="mel-actions">
           <span class="guide-wrap">
-            <button type="button" id="ornEditToggle" class="mel-btn">시김새 조정하기</button>
+            <button type="button" id="ornEditToggle" class="mel-btn">시김새 미세조정</button>
             <button type="button" id="ornGuideToggle" class="icon-btn" title="설명 보기">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </button>
