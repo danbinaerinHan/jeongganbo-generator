@@ -504,6 +504,12 @@
   .ed-font-ctl { position: absolute; top: 6px; right: 16px; z-index: 2; opacity: .45; }
   .ed-font-ctl:hover { opacity: 1; }
 
+  /* 에디터 위 도구줄 — 율명 크기 슬라이더 */
+  .ed-tools { display: flex; align-items: center; gap: 8px; font-size: 12px;
+              font-weight: 600; color: var(--muted); }
+  .ed-tools input[type="range"] { flex: 0 1 200px; min-width: 90px; margin: 0; }
+  .ed-tools #noteScaleVal { font-weight: 400; min-width: 34px; }
+
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
   #melodyHlBack { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
@@ -715,12 +721,6 @@
           <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">0%</span></label>
           <input type="range" id="pageFill" min="0" max="100" step="5" value="0">
           <div class="hint">• 0%면 테두리가 안쪽 정간보에 붙습니다.<br>• 키울수록 테두리가 페이지를 채우고, 100%여도 최소 여백(9mm)은 남깁니다.</div>
-        </div>
-
-        <div class="field slider-field">
-          <label for="noteScale">율명 크기 <small>정간 안 글자</small> — <span id="noteScaleVal">1.0×</span></label>
-          <input type="range" id="noteScale" min="1" max="2" step="0.05" value="1">
-          <div class="hint">• 정간 안 율명(음표 글자)을 기본 크기(1.0×)에서 더 키웁니다.<br>• 붙임 시김새도 글자를 따라 함께 커집니다. 너무 키우면 선과 겹칠 수 있습니다.</div>
         </div>
 
         <details class="adv">
@@ -965,6 +965,11 @@
             <span class="ed-plabel">1 / 1 페이지</span>
             <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
           </div>
+          <div class="ed-tools" title="정간 안 율명(음표 글자) 크기 — 붙임 시김새도 함께 커집니다">
+            <label for="noteScale">율명 크기</label>
+            <input type="range" id="noteScale" min="1" max="2" step="0.05" value="1">
+            <span id="noteScaleVal">1.0×</span>
+          </div>
           <div id="melodyHlWrap">
             <div id="melodyHlBack" aria-hidden="true"></div>
             <textarea id="melody" spellcheck="false"
@@ -1113,7 +1118,10 @@
   let gakUserSet = false;   // 사용자가 '총 각 수'를 직접 입력했는지(아니면 페이지를 꽉 채움)
   let activeGak = -1, activeCellIdx = -1;   // 현재 편집 중인 정간
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
+  let activeArea = "mel";                    // 하이라이트 대상: mel(선율) / jd(장단) / ly(가사)
   let cellGeom = {};                        // 렌더 시 정간 좌표 저장(하이라이트용, page 포함)
+  let jdGeom = {};                          // 렌더 시 장단 칸 좌표 저장(하이라이트용)
+  let hiLyGap = 0, hiLyW = 0, hiLyricsOn = false;   // 가사 줄 하이라이트용 치수(렌더 시 갱신)
   let pageHi = [];                          // 페이지별 하이라이트 사각형
   let playHi = [];                          // 페이지별 재생 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
@@ -1451,19 +1459,37 @@
     const cell = parsed[local] && parsed[local][ci];
     ta.focus();
     if (cell) ta.setSelectionRange(cell.start, cell.end);
+    activeArea = "mel";
     activeGak = gi; activeCellIdx = ci;
     activeRow = -1; activeRows = 1;   // 정간 클릭 = 정간 전체
     updateHighlight();
   }
 
-  // 현재 편집 중인 정간을 밝은 색으로 표시
+  // 현재 편집 중인 칸을 밝은 색으로 표시 — 선율 정간 / 장단 칸 / 가사 줄 공용
   function updateHighlight() {
     for (let i = 0; i < pageHi.length; i++) pageHi[i].style.display = "none";
+    if (activeArea === "jd") {   // 장단 칸 (악곡 맨 처음 각 옆 한 줄)
+      const jg = jdGeom[activeCellIdx];
+      if (!jg) return;
+      const hi = pageHi[jg.page];
+      if (!hi) return;
+      hi.setAttribute("x", jg.x); hi.setAttribute("y", jg.y);
+      hi.setAttribute("width", jg.w); hi.setAttribute("height", jg.h);
+      hi.style.display = "";
+      return;
+    }
     const g = cellGeom[activeGak];
     const cg = g && g[activeCellIdx];
     if (!cg) return;
     const hi = pageHi[cg.page];
     if (!hi) return;
+    if (activeArea === "ly") {   // 가사 줄 (해당 정간 오른쪽 좁은 칸)
+      if (!hiLyricsOn) return;
+      hi.setAttribute("x", cg.x + cg.w + hiLyGap); hi.setAttribute("y", cg.y);
+      hi.setAttribute("width", hiLyW); hi.setAttribute("height", cg.h);
+      hi.style.display = "";
+      return;
+    }
     let y = cg.y, h = cg.h;
     if (activeRow >= 0 && activeRows > 1) { h = cg.h / activeRows; y = cg.y + activeRow * h; }
     hi.setAttribute("x", cg.x);
@@ -1483,6 +1509,7 @@
       for (let c = 0; c < cells.length; c++) {
         const cell = cells[c];
         if (pos >= cell.start && pos <= cell.end) {
+          activeArea = "mel";
           activeGak = g + (edRange ? edRange.start : 0);   // 에디터 조각 → 전체 각 번호
           activeCellIdx = c;
           const whole = (pos <= cell.start && end >= cell.end && end > pos);   // 정간 전체 선택
@@ -1493,6 +1520,41 @@
             if (info.nRows > 1) { activeRow = info.row; activeRows = info.nRows; }
             else { activeRow = -1; activeRows = 1; }
           }
+          updateHighlight(); return;
+        }
+      }
+    }
+    activeGak = -1; activeCellIdx = -1; activeRow = -1; updateHighlight();
+  }
+
+  // 장단 에디터 커서 → 악보의 장단 칸 하이라이트 (장단은 맨 처음 각 옆 한 줄뿐)
+  function syncJangdanFromCursor() {
+    const ta = $("jangdan");
+    const pos = ta.selectionStart;
+    const cells = parseMelodyOffsets(ta.value)[0] || [];
+    for (let c = 0; c < cells.length; c++) {
+      if (pos >= cells[c].start && pos <= cells[c].end) {
+        activeArea = "jd"; activeGak = 0; activeCellIdx = c;
+        activeRow = -1; activeRows = 1;
+        updateHighlight(); return;
+      }
+    }
+    activeGak = -1; activeCellIdx = -1; activeRow = -1; updateHighlight();
+  }
+
+  // 가사 에디터 커서 → 해당 정간 오른쪽 가사 줄 하이라이트
+  function syncLyricsFromCursor() {
+    const ta = $("lyrics");
+    const pos = ta.selectionStart;
+    const parsed = parseMelodyOffsets(ta.value);
+    for (let g = 0; g < parsed.length; g++) {
+      const cells = parsed[g];
+      for (let c = 0; c < cells.length; c++) {
+        if (pos >= cells[c].start && pos <= cells[c].end) {
+          activeArea = "ly";
+          activeGak = g + (edLyRange ? edLyRange.start : 0);   // 에디터 조각 → 전체 각 번호
+          activeCellIdx = c;
+          activeRow = -1; activeRows = 1;
           updateHighlight(); return;
         }
       }
@@ -1605,6 +1667,7 @@
     const g = cellGeom[gi]; const cg = g && g[ci];
     if (!cg) return;
     const svg = pageSvgs[cg.page]; if (!svg) return;
+    activeArea = "mel";
     activeGak = gi; activeCellIdx = ci; activeRow = -1; activeRows = 1;
     updateHighlight();
 
@@ -2693,6 +2756,7 @@
     const lyGap = desiredLyGap * scale;
     const lyW = desiredLyW * scale;
     const lyExtraFull = lyGap + lyW;   // 각(정간)마다 오른쪽 가사 줄이 차지하는 폭(간격 포함)
+    hiLyGap = lyGap; hiLyW = lyW; hiLyricsOn = wantLyrics;   // 가사 줄 하이라이트용 치수
     const headH = cell * headRatio;
     const slot = cell + gap + (wantLyrics ? lyExtraFull : 0);
     const bandH = headH + beats * cell;
@@ -2705,7 +2769,7 @@
     if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
 
     stopPlayback();
-    cellGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = []; cellEditor = null; cellEditInput = null;
+    cellGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = []; cellEditor = null; cellEditInput = null;
     const sheet = $("sheet"); sheet.innerHTML = "";
     let gakAccum = 0;
 
@@ -2853,6 +2917,10 @@
           if (wantJangdan && melIdx === 0) {
             // 가사가 켜져 있으면 각들의 선 끝(가사 자리만큼 안쪽)에 맞춰 장단 칸도 같이 당김
             const jdRight = musicRightEdge - (wantLyrics ? lyExtraFull : 0), jdLeft = jdRight - jdW;
+            // 장단 에디터 커서 하이라이트용 칸 좌표 (내용 유무와 무관하게 전체 박)
+            for (let j = 0; j < beats; j++) {
+              jdGeom[j] = { page: pageIdx, x: jdLeft, y: gridTop + j * cell, w: jdW, h: cell };
+            }
             const jdCells = jdParsed && jdParsed[0];
             const jdCount = jdCells ? jdCells.length : 0;
             const jdFilled = jdCount > 0 ? Math.min(beats, jdCount) : 0;
@@ -3643,19 +3711,46 @@
     reformatMelodyEditor();
     syncFullFromEditor(); render(); syncActiveFromCursor(); updateMelodyHl();
   });
-  // → 키: 다음 정간(다음 | 또는 줄바꿈 뒤)으로 점프. 정간 안 분박(스페이스) 입력은 그대로.
+  // 그리드처럼 동작하는 키들 —
+  // →: 다음 정간(다음 | 또는 줄바꿈 뒤)으로 점프. 정간 안 분박(스페이스) 입력은 그대로.
+  // Backspace/Delete: 정간 구분선(|)과 정렬 탭은 지우지 않고 건너뛴다(칸 구조 유지).
   $("melody").addEventListener("keydown", function (e) {
     if (e.isComposing || e.keyCode === 229) return;
-    if (e.key !== "ArrowRight" || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
     const v = this.value;
-    let p = -1;
-    for (let i = this.selectionEnd; i < v.length; i++) {
-      if (v[i] === "|" || v[i] === "\n") { p = i + 1; break; }
+    if (e.key === "ArrowRight") {
+      let p = -1;
+      for (let i = this.selectionEnd; i < v.length; i++) {
+        if (v[i] === "|" || v[i] === "\n") { p = i + 1; break; }
+      }
+      if (p < 0) return;   // 마지막 정간이면 기본 동작
+      e.preventDefault();
+      this.setSelectionRange(p, p);
+      syncActiveFromCursor();
+      return;
     }
-    if (p < 0) return;   // 마지막 정간이면 기본 동작
-    e.preventDefault();
-    this.setSelectionRange(p, p);
-    syncActiveFromCursor();
+    if (e.key === "Backspace" && this.selectionStart === this.selectionEnd) {
+      let p = this.selectionStart;
+      if (p > 0 && (v[p - 1] === "|" || v[p - 1] === "\t")) {
+        e.preventDefault();
+        if (v[p - 1] === "|") p--;                       // | 하나만 건너뛰고
+        while (p > 0 && v[p - 1] === "\t") p--;          // 그 앞 정렬 탭도 함께
+        this.setSelectionRange(p, p);
+        syncActiveFromCursor();
+        return;
+      }
+    }
+    if (e.key === "Delete" && this.selectionStart === this.selectionEnd) {
+      let p = this.selectionEnd;
+      if (p < v.length && (v[p] === "|" || v[p] === "\t")) {
+        e.preventDefault();
+        while (p < v.length && v[p] === "\t") p++;
+        if (v[p] === "|") p++;
+        this.setSelectionRange(p, p);
+        syncActiveFromCursor();
+        return;
+      }
+    }
   });
   $("melody").addEventListener("scroll", function () {
     $("melodyHlBack").scrollTop = this.scrollTop;
@@ -3668,14 +3763,20 @@
   $("melodyUndo").addEventListener("click", undoMelody);
   refreshUndoBtn();
 
-  // 장단 편집 → 렌더
-  $("jangdan").addEventListener("input", render);
+  // 장단 편집 → 렌더 + 장단 칸 하이라이트 갱신
+  $("jangdan").addEventListener("input", function () { render(); syncJangdanFromCursor(); });
+  ["keyup", "click", "select", "focus"].forEach(function (ev) {
+    $("jangdan").addEventListener(ev, syncJangdanFromCursor);
+  });
   $("jangdanReset").addEventListener("click", resetJangdan);
   $("jangdanUndo").addEventListener("click", undoJangdan);
   refreshJangdanUndoBtn();
 
-  // 가사 편집 → 렌더
-  $("lyrics").addEventListener("input", function () { syncLyricsFromEditor(); render(); });
+  // 가사 편집 → 렌더 + 가사 줄 하이라이트 갱신
+  $("lyrics").addEventListener("input", function () { syncLyricsFromEditor(); render(); syncLyricsFromCursor(); });
+  ["keyup", "click", "select", "focus"].forEach(function (ev) {
+    $("lyrics").addEventListener(ev, syncLyricsFromCursor);
+  });
   $("lyricsReset").addEventListener("click", resetLyrics);
   $("lyricsUndo").addEventListener("click", undoLyrics);
   refreshLyricsUndoBtn();
