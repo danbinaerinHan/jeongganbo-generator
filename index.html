@@ -903,6 +903,14 @@
                 <button type="button" class="seg-btn active" data-mode="grid">표</button>
                 <button type="button" class="seg-btn" data-mode="piano">건반</button>
               </span>
+              <label class="tool-inline" title="조를 고르면 그 조의 구성음만 모아서 보여줍니다">조
+                <select id="joPreset">
+                  <option value="all" selected>12율 전체</option>
+                  <option value="hwang-pyeong">황종 평조</option>
+                  <option value="hwang-gyemyeon">황종 계면조</option>
+                  <option value="jung-pyeong">중려 평조</option>
+                </select>
+              </label>
               <label class="tool-inline">표기
                 <select id="noteMode">
                   <option value="font" selected>한자</option>
@@ -1808,6 +1816,12 @@
     const row = OCT_ROWS.find(function (r) { return r.oct === oct; });
     return row ? row.prefix : "";
   }
+  // 조(악조) 프리셋 — 고르면 표 팔레트가 그 조의 구성음만 적힌 순서대로 모아 보여준다
+  const JO_PRESETS = {
+    "hwang-pyeong":   { label: "황종 평조",   notes: ["황", "태", "중", "임", "남"] },
+    "hwang-gyemyeon": { label: "황종 계면조", notes: ["황", "협", "중", "임", "무"] },
+    "jung-pyeong":    { label: "중려 평조",   notes: ["중", "임", "무", "황", "태"] }
+  };
 
   // 커서 위치에 토큰(율명 텍스트) 삽입
   function insertToken(txt) {
@@ -2027,13 +2041,17 @@
     if (pianoOn) { buildPianoPalette(wrap); return; }
     wrap.innerHTML = "";
 
-    // 열 머리글 (음계: 황~응)
+    // 조 프리셋을 고르면 그 조의 구성음만 적힌 순서대로, 아니면 12율 전체
+    const jo = JO_PRESETS[$("joPreset").value];
+    const cols = jo ? jo.notes : SCALE;
+
+    // 열 머리글 (음계: 황~응 또는 조 구성음)
     const head = document.createElement("div");
     head.className = "prow headrow";
     const corner = document.createElement("span");
     corner.className = "plabel";
     head.appendChild(corner);
-    SCALE.forEach(function (base) {
+    cols.forEach(function (base) {
       const h = document.createElement("span");
       h.className = "phead";
       h.textContent = base;
@@ -2041,7 +2059,7 @@
     });
     wrap.appendChild(head);
 
-    // 음역(하배→중청) 행 × 음계(황~응) 열
+    // 음역(하배→중청) 행 × 음계 열
     OCT_ROWS.forEach(function (row) {
       const rowEl = document.createElement("div");
       rowEl.className = "prow";
@@ -2049,7 +2067,7 @@
       lab.className = "plabel";
       lab.textContent = row.label;
       rowEl.appendChild(lab);
-      SCALE.forEach(function (base) {
+      cols.forEach(function (base) {
         const mode = $("noteMode").value;
         const label = row.prefix + base;
         // 변형 한자(지원 시) → 기본 한자(변형자 없으면 흐리게, 악보엔 점 표기)
@@ -3204,7 +3222,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "subtitle", "subSize", "subOffset", "titleFont", "titleLayout",
-    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "pageNumPos", "gakNumMode"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -3371,6 +3389,8 @@
   });
   // 표기 모드가 바뀌면 팔레트도 이미지↔한자로 다시 그림
   $("noteMode").addEventListener("change", buildPalette);
+  // 조(악조) 선택 → 표 팔레트를 그 조의 구성음만으로 다시 그림
+  $("joPreset").addEventListener("change", function () { buildPalette(); saveState(); });
   // 팔레트 보기 전환 (율명 / 시김새)
   document.querySelectorAll(".pal-view").forEach(function (b) {
     b.addEventListener("click", function () {
