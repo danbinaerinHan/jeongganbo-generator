@@ -2126,20 +2126,26 @@
     const gaks = parseMelodyOffsets($("melody").value);
 
     const events = [];
+    // marks: 오디오 이벤트와 별개로, 지속(빈 정간·이음)이어도 매 정간마다 하나씩 남겨서
+    // 재생 하이라이트가 시간이 지나면 그 정간으로 계속 이동하도록 함
+    const marks = [];
     let t = 0;
     let lastEvent = null;   // 지속(빈 정간/이음) 대상이 되는 마지막 유음 이벤트
 
     function extend(dur, gakIdx, cellIdx) {
+      marks.push({ t: t, gak: gakIdx, cell: cellIdx });
       if (lastEvent) lastEvent.dur += dur;
       else events.push({ t: t, dur: dur, freq: null, gak: gakIdx, cell: cellIdx });
       t += dur;
     }
     function rest(dur, gakIdx, cellIdx) {
+      marks.push({ t: t, gak: gakIdx, cell: cellIdx });
       events.push({ t: t, dur: dur, freq: null, gak: gakIdx, cell: cellIdx });
       lastEvent = null;
       t += dur;
     }
     function note(freq, dur, gakIdx, cellIdx) {
+      marks.push({ t: t, gak: gakIdx, cell: cellIdx });
       const ev = { t: t, dur: dur, freq: freq, gak: gakIdx, cell: cellIdx };
       events.push(ev);
       lastEvent = ev;
@@ -2173,7 +2179,7 @@
         }
       }
     }
-    return events.filter(function (e) { return e.dur > 0; });
+    return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks };
   }
 
   let audioCtx = null, playTimer = null, playing = false, paused = false, playState = null;
@@ -2214,9 +2220,9 @@
     if (!playing || paused || !playState) return;
     const now = audioCtx.currentTime - playState.startAt;
     if (now >= playState.total) { stopPlayback(); return; }
-    const events = playState.events;
-    for (let i = events.length - 1; i >= 0; i--) {
-      if (now >= events[i].t) { highlightPlay(events[i].gak, events[i].cell); break; }
+    const marks = playState.marks;
+    for (let i = marks.length - 1; i >= 0; i--) {
+      if (now >= marks[i].t) { highlightPlay(marks[i].gak, marks[i].cell); break; }
     }
     playTimer = setTimeout(tick, 60);
   }
@@ -2243,7 +2249,8 @@
 
   function playMelody() {
     if (playing) return;
-    const events = buildAudioEvents();
+    const built = buildAudioEvents();
+    const events = built.events, marks = built.marks;
     if (!events.length) return;
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx = ctx;
@@ -2271,7 +2278,7 @@
 
     playing = true; paused = false;
     const total = events[events.length - 1].t + events[events.length - 1].dur;
-    playState = { startAt: startAt, total: total, events: events };
+    playState = { startAt: startAt, total: total, marks: marks };
     updatePlayButtons();
     tick();
   }
