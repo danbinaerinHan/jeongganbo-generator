@@ -271,7 +271,7 @@
                            background: var(--line); transition: background .12s ease; }
   #melodyResizer:hover::before { background: var(--accent); }
   .melody-head { display: flex; align-items: center; gap: 6px;
-                 font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--ink); }
+                 font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
   .melody-head .mono { color: var(--muted); font-weight: 400;
                        font-family: ui-monospace, Menlo, monospace; }
   .melody-head #melodyInfo { color: var(--muted); font-weight: 400; }
@@ -307,13 +307,17 @@
   #melodyRow { display: flex; gap: 12px; height: 296px; align-items: stretch; }
   #paletteCol { flex: 0 0 auto; max-width: 60%; display: flex; flex-direction: column;
                 min-height: 0; }
-  .pal-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
-  /* 상단 문서/레이아웃/출력 탭과 같은 부품(밑줄 방식)을 축소해 재사용 */
-  .pal-views { display: inline-flex; gap: 10px; border-bottom: 1px solid var(--line); }
+  .pal-head { display: flex; align-items: flex-end; justify-content: space-between;
+              gap: 10px; flex-wrap: wrap; margin-bottom: 8px; padding-bottom: 6px;
+              border-bottom: 1px solid var(--line); }
+  .pal-views { display: inline-flex; gap: 14px; }
   .pal-view { padding: 3px 1px 6px; border: none; border-bottom: 2px solid transparent; background: none;
               cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--muted); }
   .pal-view:hover { color: var(--ink); }
   .pal-view.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .pal-tools { display: flex; align-items: center; gap: 10px; padding-bottom: 3px; }
+  /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 */
+  #paletteCol.orn-active .tool-inline { display: none; }
   #paletteCol .pal-hint { font-weight: 400; font-size: 11px; color: var(--muted); }
   /* 시김새 칩 (이미지 + 한글 이름) */
   .palette .ornrow { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
@@ -726,13 +730,15 @@
               <button type="button" class="pal-view active" data-view="yul">율명</button>
               <button type="button" class="pal-view" data-view="orn">시김새</button>
             </div>
-            <label class="tool-inline">표기
-              <select id="noteMode">
-                <option value="font" selected>한자</option>
-                <option value="hangul">한글</option>
-              </select>
-            </label>
-            <span class="pal-hint">클릭하면 입력</span>
+            <div class="pal-tools">
+              <label class="tool-inline">표기
+                <select id="noteMode">
+                  <option value="font" selected>한자</option>
+                  <option value="hangul">한글</option>
+                </select>
+              </label>
+              <span class="pal-hint">클릭하면 입력</span>
+            </div>
           </div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
         </div>
@@ -1477,6 +1483,7 @@
   function buildPalette() {
     const wrap = $("notePalette");
     if (!wrap) return;
+    if ($("paletteCol")) $("paletteCol").classList.toggle("orn-active", palView === "orn");
     if (palView === "orn") { buildOrnPalette(wrap); return; }
     wrap.innerHTML = "";
     wrap.classList.remove("orn-view");
