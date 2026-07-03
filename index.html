@@ -480,6 +480,21 @@
                                  border-radius: 5px; cursor: pointer; background: #fff; }
   .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
 
+  /* 임시 저장(이 컴퓨터) 슬롯 목록 */
+  #snapList { margin-top: 8px; }
+  .snap-item { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+               border-top: 1px solid var(--line); font-size: 12px; }
+  .snap-item:first-child { border-top: none; }
+  .snap-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; font-weight: 600; }
+  .snap-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .snap-item .snap-load { border: 1px solid var(--line); background: #fff; border-radius: 6px;
+                          padding: 3px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .snap-item .snap-load:hover { border-color: var(--accent); color: var(--accent); }
+  .snap-item .snap-del { border: none; background: none; color: #b23b3b; cursor: pointer;
+                         font-size: 14px; line-height: 1; padding: 2px 4px; }
+  .snap-empty { font-size: 12px; color: var(--muted); padding: 6px 0; }
+
   /* 팔레트 표·에디터 글자 크기 조절 (− / + 미니 버튼) */
   .size-ctl { display: inline-flex; align-items: center; gap: 3px; }
   .size-ctl button { width: 20px; height: 20px; border: 1px solid var(--line); background: #fff;
@@ -762,6 +777,16 @@
         <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
       </div>
       <div class="hint" style="margin-top:6px;">• 작업은 자동 저장되어 새로고침해도 유지됩니다.<br>• ‘파일로 저장’으로 곡을 따로 보관/공유할 수 있습니다.</div>
+
+      <div class="sec">임시 저장 (이 컴퓨터)</div>
+      <div class="field">
+        <div class="row">
+          <input type="text" id="snapName" placeholder="이름 (비우면 제목·시간)" style="flex:1; min-width:0;">
+          <button type="button" id="snapSaveBtn" class="at-add">임시저장</button>
+        </div>
+        <div id="snapList"></div>
+        <div class="hint">• 지금 상태를 이 브라우저(컴퓨터)에 저장해두고 언제든 되불러옵니다.<br>• 불러오기는 되돌리기(Cmd/Ctrl+Z)로 취소할 수 있습니다.<br>• 다른 컴퓨터로 옮기려면 ‘파일로 저장’을 쓰세요.</div>
+      </div>
     </div>
   </aside>
 
@@ -3364,6 +3389,70 @@
     };
     fr.readAsText(file);
   }
+
+  // ---------- 임시 저장 (이 컴퓨터 localStorage 슬롯) ----------
+  const SNAP_KEY = "jgb_snapshots_v1";
+  const SNAP_MAX = 30;
+  function loadSnaps() {
+    try { const a = JSON.parse(localStorage.getItem(SNAP_KEY)); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function saveSnaps(list) {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(list)); return true; }
+    catch (e) { alert("임시저장 실패: 브라우저 저장 공간이 가득 찼습니다. 오래된 임시저장을 지워주세요."); return false; }
+  }
+  function fmtSnapTime(iso) {
+    const d = new Date(iso), p = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "." + p(d.getMonth() + 1) + "." + p(d.getDate())
+      + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function snapSave() {
+    const list = loadSnaps();
+    const now = new Date().toISOString();
+    const name = $("snapName").value.trim()
+      || (($("title").value.trim() || "제목 없음") + " — " + fmtSnapTime(now));
+    list.unshift({ id: Date.now(), name: name, time: now, state: collectState() });
+    while (list.length > SNAP_MAX) list.pop();
+    if (saveSnaps(list)) { $("snapName").value = ""; renderSnapList(); }
+  }
+  function renderSnapList() {
+    const wrap = $("snapList");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    const list = loadSnaps();
+    if (!list.length) {
+      const d = document.createElement("div");
+      d.className = "snap-empty";
+      d.textContent = "아직 임시저장이 없습니다.";
+      wrap.appendChild(d);
+      return;
+    }
+    list.forEach(function (s) {
+      const row = document.createElement("div"); row.className = "snap-item";
+      const nm = document.createElement("span"); nm.className = "snap-name";
+      nm.textContent = s.name; nm.title = s.name;
+      const tm = document.createElement("span"); tm.className = "snap-time";
+      tm.textContent = fmtSnapTime(s.time);
+      const load = document.createElement("button");
+      load.type = "button"; load.className = "snap-load"; load.textContent = "불러오기";
+      load.addEventListener("click", function () { restoreFromState(s.state); });
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "snap-del"; del.textContent = "×"; del.title = "삭제";
+      del.addEventListener("click", function () {
+        if (!confirm("‘" + s.name + "’ 임시저장을 삭제할까요?")) return;
+        saveSnaps(loadSnaps().filter(function (x) { return x.id !== s.id; }));
+        renderSnapList();
+      });
+      row.appendChild(nm); row.appendChild(tm); row.appendChild(load); row.appendChild(del);
+      wrap.appendChild(row);
+    });
+  }
+  $("snapSaveBtn").addEventListener("click", snapSave);
+  $("snapName").addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;   // 한글 IME 조합 중 Enter 무시
+    if (e.key === "Enter") { e.preventDefault(); snapSave(); }
+  });
+  renderSnapList();
 
   function onFormChange() {
     syncFullFromEditor();     // 에디터에 타이핑 중이던 내용을 먼저 원본에 반영
