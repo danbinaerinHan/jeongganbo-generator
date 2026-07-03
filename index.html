@@ -2469,9 +2469,11 @@
           // 통줄도 장단 칸 오른쪽 선에서 끝나야 튀어나오지 않는다
           capBase = musicRightEdge - (wantLyrics ? lyExtraFull : 0);
         } else if (wantLyrics) {
+          // 가로(맨 위) 제목이면 오른쪽에 제목 칸이 없으므로, 맨 오른쪽 가사 열을
+          // 상자로 감싸지 않고 열어 둔다(통줄도 각의 오른쪽 선까지만).
           const firstLy = lyParsed && lyParsed[gakAccum];
           const firstLyHasContent = firstLy && firstLy.some(function (c) { return c && c.text; });
-          if (!firstLyHasContent) capBase = musicRightEdge - lyExtraFull;
+          if (!firstLyHasContent || titleTopMode) capBase = musicRightEdge - lyExtraFull;
           else closeLyricCol = true;
         }
         const capRight = page.hasTitle ? (bandRight - titleWidth) : capBase;
@@ -3021,16 +3023,14 @@
     });
   });
 
-  // 보기 확대/축소 (화면만, 출력에는 영향 없음)
-  let viewZoom = 1;
+  // 보기 확대/축소 (화면만, 출력에는 영향 없음) — 시작 배율은 230%
+  let viewZoom = 2.3;
   function applyZoom() {
     $("sheet").style.transform = "scale(" + viewZoom + ")";
     $("zoomVal").textContent = Math.round(viewZoom * 100) + "%";
   }
-  // 사용자가 줌을 직접 만졌는지 — 만지기 전까지는 창 크기가 바뀔 때 가로 맞춤을 유지해준다
-  let zoomTouched = false;
-  $("zoomIn").addEventListener("click", () => { zoomTouched = true; viewZoom = Math.min(3, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
-  $("zoomOut").addEventListener("click", () => { zoomTouched = true; viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
+  $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(3, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
+  $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
   // 세로/가로 맞춤: 현재 페이지의 원본(100%) 크기 대비, 화면에서 실제로 쓸 수 있는 폭/높이에 맞는 배율을 계산
   function fitZoom(dim) {
     const svg = $("sheet").querySelector(".page svg");
@@ -3044,11 +3044,9 @@
     viewZoom = Math.max(0.3, Math.min(3, +ratio.toFixed(2)));
     applyZoom();
   }
-  $("zoomFitH").addEventListener("click", () => { zoomTouched = true; fitZoom("height"); });
-  $("zoomFitW").addEventListener("click", () => { zoomTouched = true; fitZoom("width"); });
+  $("zoomFitH").addEventListener("click", () => { fitZoom("height"); });
+  $("zoomFitW").addEventListener("click", () => { fitZoom("width"); });
   applyZoom();
-  // 시작 화면은 가로 맞춤. 창 크기가 바뀌어도 사용자가 줌을 직접 만지기 전까지는 가로 맞춤 유지
-  window.addEventListener("resize", function () { if (!zoomTouched) fitZoom("width"); });
 
   // 떠 있는 바(문서 크기/재생) 이동 손잡이 — 각각 따로 끌어서 원하는 위치에 놓기 (#main 안에서만)
   function attachBarDrag(bar) {
@@ -3323,9 +3321,6 @@
   render();
   refreshEditorSlices();
   renderTextList();
-  // 시작 화면은 가로 맞춤(페이지 너비를 화면에 맞춤)으로 — 레이아웃이 잡힌 뒤 계산.
-  // requestAnimationFrame은 탭이 백그라운드면 실행이 밀릴 수 있어 setTimeout을 쓴다.
-  setTimeout(function () { fitZoom("width"); }, 0);
 
   // 처음 방문했을 때만 입력 방법 가이드를 자동으로 한 번 열어줌(이후엔 ? 버튼으로 직접 확인)
   const GUIDE_LS_KEY = "jgb_guide_seen_v1";
