@@ -1878,9 +1878,14 @@
   }
 
   function closeCellEditor() {
-    if (cellEditor && cellEditor.parentNode) cellEditor.parentNode.removeChild(cellEditor);
+    // 상태를 먼저 비운 뒤 DOM에서 뗀다 — removeChild가 포커스된 입력을 지우면 blur가
+    // '동기적으로' 발생하는데, 그때 cellEditInput이 아직 이전 값이면 blur 핸들러가
+    // commitCellEditor를 다시 불러(재진입) 이 함수가 두 번 실행되고, 두 번째 removeChild가
+    // "이미 떼어진 노드"라 던지는 예외로 바깥쪽 commitCellEditor(Enter 이동)가 중간에 끊겼다.
+    const el = cellEditor;
     cellEditor = null; cellEditInput = null;
     cellEditGi = -1; cellEditCi = -1;
+    if (el && el.parentNode) el.parentNode.removeChild(el);
   }
 
   // 정간 클릭 → 에디터 커서를 그 정간으로 (focusTa=true면 에디터에 포커스까지)
