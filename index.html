@@ -441,12 +441,15 @@
   .pal-tools .size-ctl { margin-left: auto; }
   /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
   #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
-  /* 시김새 칩 (이미지 + 한글 이름) */
-  .palette .ornrow { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
-  .palette .ornchip { flex: 0 0 auto; width: auto; height: auto; min-width: 36px;
-                      flex-direction: column; gap: 1px; padding: 3px 4px; }
-  .palette .ornchip img { width: 22px; height: 22px; object-fit: contain; }
-  .palette .ornchip .ocap { font-size: 9px; color: var(--muted); white-space: nowrap; }
+  /* 시김새 칩 (이미지 + 한글 이름) — 칸 크기를 고정해 표처럼 가지런히 줄지어 놓이게 하고,
+     이미지 자체 크기는 JS에서 실제 악보에 그려지는 상대 크기(붙임표/독립기호 배율)를
+     반영해 정함(ornIconPx) — 칸은 균일해도 아이콘 비중은 실제 악보와 비슷하게 보인다. */
+  .palette .ornrow { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .palette .ornchip { flex: 0 0 54px; width: 54px; height: 54px; box-sizing: border-box;
+                      flex-direction: column; gap: 2px; padding: 3px 4px; }
+  .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
+  .palette .ornchip .ocap { font-size: 9px; color: var(--muted); white-space: normal;
+                            text-align: center; line-height: 1.15; word-break: keep-all; }
   #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
   #editorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   #melody { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
@@ -2166,6 +2169,25 @@
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
 
+  // 시김새 팔레트 아이콘 크기 — 실제 악보(drawCell)가 쓰는 것과 같은 상대 배율 공식으로
+  // 계산해서, 팔레트에서도 실제로 그려질 때와 비슷한 비중으로 보이게 한다(칸은 균일해도
+  // 아이콘 크기만 종류별로 차이가 남 — 뒤죽박죽이 아니라 의도된 크기 차이가 되게).
+  function ornRelSize(o) {
+    if (o.c === "wo") {
+      const scale = ATT_SCALE_KEEP.has(o.s) ? 1 : ATT_EXTRA_SCALE;
+      return 0.55 * scale * (ATT_SYM_SCALE[o.s] || 1);
+    }
+    return 0.848 * (SYM_EXTRA_SCALE[o.s] || 1);   // "with"·"both"
+  }
+  const ORN_REL_VALS = ORN_LIST.map(ornRelSize);
+  const ORN_REL_MIN = Math.min.apply(null, ORN_REL_VALS);
+  const ORN_REL_MAX = Math.max.apply(null, ORN_REL_VALS);
+  function ornIconPx(o) {
+    const span = ORN_REL_MAX - ORN_REL_MIN || 1;
+    const t = (ornRelSize(o) - ORN_REL_MIN) / span;
+    return Math.round(16 + t * (28 - 16));   // 16~28px
+  }
+
   // 한 행의 토큰을 [주 글자(음표/독립기호) + 붙임 시김새] 그룹으로 묶는다. 렌더(drawCell)와
   // 재생(buildAudioEvents)이 같은 규칙을 공유해야 화면과 소리가 어긋나지 않는다.
   function groupRowTokens(toks) {
@@ -2370,7 +2392,13 @@
         const item = document.createElement("div");
         item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
         const url = symURL(o.s);
-        if (url) { const img = document.createElement("img"); img.src = url; img.alt = o.k; item.appendChild(img); }
+        if (url) {
+          const img = document.createElement("img");
+          img.src = url; img.alt = o.k;
+          const px = ornIconPx(o);
+          img.style.width = px + "px"; img.style.height = px + "px";
+          item.appendChild(img);
+        }
         const cap = document.createElement("span");
         cap.className = "ocap"; cap.textContent = o.k;
         item.appendChild(cap);
