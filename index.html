@@ -470,6 +470,35 @@
             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
+  /* 텍스트(자유 텍스트 주석) 탭 — 추가 입력줄 + 텍스트별 조절 목록 */
+  #textRow { height: 140px; overflow-y: auto; }
+  .tx-add { display: flex; gap: 6px; max-width: 340px; margin-bottom: 4px; }
+  .tx-add input { flex: 1; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+                  font-family: inherit; font-size: 13px; }
+  .tx-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+             padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .tx-item input[type="text"] { width: 150px; padding: 5px 7px; border: 1px solid var(--line);
+                                border-radius: 6px; font-family: inherit; font-size: 13px; }
+  .tx-item label { display: flex; align-items: center; gap: 5px;
+                   font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .tx-item select, .tx-item input[type="number"] { padding: 4px 6px; border: 1px solid var(--line);
+                   border-radius: 6px; font-family: inherit; font-size: 12px; background: #fff; }
+  .tx-item input[type="number"] { width: 58px; }
+  .tx-item .tx-del { border: none; background: none; color: #b23b3b; cursor: pointer;
+                     font-size: 16px; line-height: 1; padding: 2px 6px; }
+  .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+
+  /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
+  #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+  #melodyHlBack { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+                  font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+                  padding: 10px; border: 1px solid transparent; border-radius: 8px;
+                  white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+                  color: transparent; box-sizing: border-box; }
+  #melodyHlBack mark { background: rgba(224, 73, 73, .3); color: transparent;
+                       border-radius: 2px; padding: 0; }
+  #melodyHlWrap #melody { position: relative; background: transparent; }
+
   /* 모드 탭 */
   .tabs { display: flex; gap: 2px; margin: 12px 0 16px; border-bottom: 1px solid var(--line); }
   .tab { flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
@@ -797,6 +826,7 @@
           <button type="button" class="rail-btn active" data-panel="melodyArea">선율</button>
           <button type="button" class="rail-btn" data-panel="jangdanArea">장단</button>
           <button type="button" class="rail-btn" data-panel="lyricsArea">가사</button>
+          <button type="button" class="rail-btn" data-panel="textArea">텍스트</button>
         </nav>
         <div class="dock-panels">
     <div id="melodyArea" class="dock-panel active">
@@ -889,8 +919,11 @@
             <span class="ed-plabel">1 / 1 페이지</span>
             <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
           </div>
-          <textarea id="melody" spellcheck="false"
-            placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
+          <div id="melodyHlWrap">
+            <div id="melodyHlBack" aria-hidden="true"></div>
+            <textarea id="melody" spellcheck="false"
+              placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
+          </div>
         </div>
       </div>
     </div>
@@ -979,6 +1012,30 @@
         </div>
       </div>
     </div>
+    <div id="textArea" class="dock-panel">
+      <div class="melody-head">
+        텍스트
+        <span class="guide-wrap">
+          <button type="button" id="textGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <div id="textGuide" class="melody-guide">
+            <div class="mg-sec"><b>자유 텍스트</b><br>
+              • 악보 위에 얹는 자유 텍스트입니다 (대여음 등).<br>
+              • 악보 위에서 직접 끌어 위치를 옮길 수 있습니다.<br>
+              • 글씨체는 '제목 글씨체' 설정을 따릅니다.
+            </div>
+          </div>
+        </span>
+      </div>
+      <div id="textRow">
+        <div class="tx-add">
+          <input type="text" id="textAddInput" placeholder="예: 대여음">
+          <button type="button" id="textAddBtn" class="at-add">추가</button>
+        </div>
+        <div id="textItemList"></div>
+      </div>
+    </div>
         </div>
       </div>
     </div>
@@ -1054,9 +1111,9 @@
   function line(x1, y1, x2, y2, sw) {
     return el("line", { x1, y1, x2, y2, stroke: "#000", "stroke-width": sw, "stroke-linecap": "square" });
   }
-  function verticalText(cx, startY, str, font, weight, color, family) {
+  function verticalText(cx, startY, str, font, weight, color, family, spacing) {
     const g = el("g", {});
-    const lineH = font * 1.12;
+    const lineH = font * 1.12 + (spacing || 0);
     let y = startY;
     for (const ch of Array.from(str)) {
       if (ch === " ") { y += lineH * 0.55; continue; }
@@ -1066,6 +1123,17 @@
       g.appendChild(t);
       y += lineH;
     }
+    return { g, endY: y };
+  }
+
+  // 가로쓰기 자유 텍스트 — verticalText와 같은 꼴로 {g} 반환 (cx가 가로 중심)
+  function horizontalText(cx, y, str, font, weight, color, family, spacing) {
+    const g = el("g", {});
+    const t = el("text", { x: cx, y: y, "text-anchor": "middle",
+      "font-size": font, "font-family": family || CJK, "font-weight": weight, fill: color });
+    if (spacing) t.setAttribute("letter-spacing", spacing);
+    t.textContent = str;
+    g.appendChild(t);
     return { g, endY: y };
   }
 
@@ -1144,6 +1212,62 @@
     if ($("lyrics").value !== lv) $("lyrics").value = lv;
     edLyRange = r ? { start: r.start, count: lv.split("\n").length } : null;
     updateEdPagers();
+    updateMelodyHl();
+  }
+
+  // ---------- 선율 에디터 문법 검사(빨간 표시) ----------
+  // tokenizeNotes와 같은 규칙으로 걷되, 해석되지 않아 악보에 못 옮기는 글자 위치를 모은다.
+  function melodyBadFlags(text) {
+    const a = Array.from(text);
+    const bad = new Array(a.length).fill(false);
+    let i = 0;
+    while (i < a.length) {
+      const ch = a[i];
+      if (ch === "|" || ch === "-" || ch === "<" || /\s/.test(ch)) { i += 1; continue; }
+      if (ch === "{") {   // {시김새 이름} — 이름을 모르면 괄호째 표시, 짝이 없으면 { 만 표시
+        let j = i + 1, name = "";
+        while (j < a.length && a[j] !== "}") { name += a[j]; j += 1; }
+        if (j >= a.length) { bad[i] = true; i += 1; continue; }
+        const at = name.indexOf("@");
+        let sym = at >= 0 ? name.slice(0, at) : name;
+        sym = ORN_KO[sym] || sym;
+        if (!(sym in ORN_CAT) && !symURL(sym)) for (let k = i; k <= j; k++) bad[k] = true;
+        i = j + 1; continue;
+      }
+      const t2 = ch + (a[i + 1] || "");
+      if (SYM_MARK[t2]) { i += 2; continue; }
+      if (SYM_MARK[ch]) { i += 1; continue; }
+      if (PRE2.indexOf(t2) >= 0 && BASESET.has(a[i + 2])) { i += 3; continue; }
+      if (PRE2U.indexOf(t2) >= 0 && BASESET.has(a[i + 2])) { i += 3; continue; }
+      if (PRE1U.indexOf(ch) >= 0 && BASESET.has(a[i + 1])) { i += 2; continue; }
+      if (PRE1D.indexOf(ch) >= 0 && BASESET.has(a[i + 1])) { i += 2; continue; }
+      if (BASESET.has(ch)) { i += 1; continue; }
+      bad[i] = true; i += 1;
+    }
+    return { a: a, bad: bad };
+  }
+
+  // 에디터 뒤 배경 레이어에 같은 글을 깔고, 잘못된 글자에만 빨간 배경을 입힌다
+  function updateMelodyHl() {
+    const back = $("melodyHlBack"), ta = $("melody");
+    if (!back || !ta) return;
+    const fb = melodyBadFlags(ta.value);
+    let html = "", run = "", runBad = false;
+    const flush = function () {
+      if (!run) return;
+      const esc = run.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      html += runBad ? "<mark>" + esc + "</mark>" : esc;
+      run = "";
+    };
+    for (let i = 0; i < fb.a.length; i++) {
+      if (fb.bad[i] !== runBad) { flush(); runBad = fb.bad[i]; }
+      run += fb.a[i];
+    }
+    flush();
+    back.innerHTML = html + "\n";
+    // 세로 스크롤바가 생겨도 줄바꿈 폭이 텍스트영역과 같도록 오른쪽을 스크롤바만큼 비운다
+    back.style.right = Math.max(0, ta.offsetWidth - ta.clientWidth - 2) + "px";
+    back.scrollTop = ta.scrollTop;
   }
   function updateEdPagers() {
     const n = Math.max(1, pageGakRanges.length);
@@ -2217,6 +2341,62 @@
       row.appendChild(span); row.appendChild(del);
       wrap.appendChild(row);
     });
+    renderTextItems();
+  }
+
+  // 아래 편집 독 '텍스트' 탭 — 텍스트별 내용·방향·크기·자간 조절 목록
+  function renderTextItems() {
+    const list = $("textItemList");
+    if (!list) return;
+    list.innerHTML = "";
+    if (!customTexts.length) {
+      const empty = document.createElement("div");
+      empty.className = "tx-empty";
+      empty.textContent = "아직 추가한 텍스트가 없습니다. 위 칸에 내용을 적고 '추가'를 누르세요.";
+      list.appendChild(empty);
+      return;
+    }
+    customTexts.forEach(function (t) {
+      const row = document.createElement("div");
+      row.className = "tx-item";
+      const txt = document.createElement("input");
+      txt.type = "text"; txt.value = t.text; txt.title = "내용";
+      txt.addEventListener("input", function () { t.text = txt.value; render(); });
+      const dirLab = document.createElement("label");
+      dirLab.appendChild(document.createTextNode("방향"));
+      const dir = document.createElement("select");
+      [["v", "세로"], ["h", "가로"]].forEach(function (o) {
+        const op = document.createElement("option");
+        op.value = o[0]; op.textContent = o[1]; dir.appendChild(op);
+      });
+      dir.value = t.orient === "h" ? "h" : "v";
+      dir.addEventListener("change", function () { t.orient = dir.value; render(); });
+      dirLab.appendChild(dir);
+      const szLab = document.createElement("label");
+      szLab.appendChild(document.createTextNode("크기(mm)"));
+      const sz = document.createElement("input");
+      sz.type = "number"; sz.min = "2"; sz.max = "30"; sz.step = "0.5"; sz.value = t.size;
+      sz.addEventListener("input", function () {
+        const v = parseFloat(sz.value);
+        if (!isNaN(v)) { t.size = Math.max(2, Math.min(30, v)); render(); }
+      });
+      szLab.appendChild(sz);
+      const spLab = document.createElement("label");
+      spLab.appendChild(document.createTextNode("자간(mm)"));
+      const sp = document.createElement("input");
+      sp.type = "number"; sp.min = "-3"; sp.max = "20"; sp.step = "0.5"; sp.value = t.spacing || 0;
+      sp.addEventListener("input", function () {
+        const v = parseFloat(sp.value);
+        if (!isNaN(v)) { t.spacing = Math.max(-3, Math.min(20, v)); render(); }
+      });
+      spLab.appendChild(sp);
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "tx-del"; del.textContent = "×"; del.title = "삭제";
+      del.addEventListener("click", function () { deleteCustomText(t.id); });
+      row.appendChild(txt); row.appendChild(dirLab); row.appendChild(szLab);
+      row.appendChild(spLab); row.appendChild(del);
+      list.appendChild(row);
+    });
   }
 
   function hideTextPanel() { $("textPanel").classList.remove("on"); }
@@ -2660,7 +2840,8 @@
         customTexts.forEach(function (t) {
           const holder = el("g", {});
           const cx = t.xf * PW, topY = t.yf * PH;
-          const vt = verticalText(cx, topY, t.text, t.size, 700, "#111", textFontFam);
+          const drawFn = t.orient === "h" ? horizontalText : verticalText;
+          const vt = drawFn(cx, topY, t.text, t.size, 700, "#111", textFontFam, t.spacing || 0);
           holder.appendChild(vt.g);
           svg.appendChild(holder);   // getBBox엔 DOM에 붙어 있어야 함
           const bb = vt.g.getBBox();
@@ -3177,7 +3358,11 @@
   })();
 
   // 멜로디 편집 → 렌더 + 현재 정간 하이라이트 갱신
-  $("melody").addEventListener("input", function () { syncFullFromEditor(); render(); syncActiveFromCursor(); });
+  $("melody").addEventListener("input", function () { syncFullFromEditor(); render(); syncActiveFromCursor(); updateMelodyHl(); });
+  $("melody").addEventListener("scroll", function () {
+    $("melodyHlBack").scrollTop = this.scrollTop;
+    $("melodyHlBack").scrollLeft = this.scrollLeft;
+  });
   ["keyup", "click", "select", "focus"].forEach(function (ev) {
     $("melody").addEventListener(ev, syncActiveFromCursor);
   });
@@ -3248,6 +3433,16 @@
     // 마지막 글자 하나짜리 텍스트가 한 번 더 추가된다
     if (e.isComposing || e.keyCode === 229) return;
     if (e.key === "Enter") { e.preventDefault(); $("addTextBtn").click(); }
+  });
+  // 아래 편집 독 '텍스트' 탭의 추가 입력줄
+  $("textAddBtn").addEventListener("click", function () {
+    addCustomText($("textAddInput").value);
+    $("textAddInput").value = "";
+    $("textAddInput").focus();
+  });
+  $("textAddInput").addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === "Enter") { e.preventDefault(); $("textAddBtn").click(); }
   });
   $("textPanelClose").addEventListener("click", function () { textSel = null; hideTextPanel(); render(); });
   $("textPanelDelete").addEventListener("click", function () { if (textSel != null) deleteCustomText(textSel); });
@@ -3346,6 +3541,19 @@
   document.addEventListener("click", function (e) {
     if ($("lyricsGuide").classList.contains("on") && !$("lyricsGuide").contains(e.target) && e.target !== $("lyricsGuideToggle")) {
       toggleLyricsGuide(false);
+    }
+  });
+
+  // 텍스트 탭 안내(?) 팝오버
+  function toggleTextGuide(show) {
+    const on = typeof show === "boolean" ? show : !$("textGuide").classList.contains("on");
+    $("textGuide").classList.toggle("on", on);
+    $("textGuideToggle").classList.toggle("on", on);
+  }
+  $("textGuideToggle").addEventListener("click", function (e) { e.stopPropagation(); toggleTextGuide(); });
+  document.addEventListener("click", function (e) {
+    if ($("textGuide").classList.contains("on") && !$("textGuide").contains(e.target) && e.target !== $("textGuideToggle")) {
+      toggleTextGuide(false);
     }
   });
 
