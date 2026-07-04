@@ -3658,9 +3658,10 @@
   makeGuideToggle("textGuide", "textGuideToggle");
   makeGuideToggle("shortcutsGuide", "shortcutsGuideToggle");
 
-  // 리본 버튼 호버 설명 — 기본 CSS 말풍선(.tip::after)은 리본의 overflow-x:auto 때문에
-  // (CSS 규칙상 overflow-y도 auto가 되어) 리본 박스 밖으로 나가는 순간 잘려 안 보인다.
-  // 리본 버튼에 한해 body 바로 아래 뜬 공유 말풍선(#ribbonTipFloat)을 JS로 직접 위치시켜 띄운다.
+  // 리본·도구창 버튼 호버 설명 — 기본 CSS 말풍선(.tip::after)은 리본의 overflow-x:auto
+  // 때문에(CSS 규칙상 overflow-y도 auto가 되어), 도구창(.direct-win)은 overflow:auto라서
+  // 각각 박스 밖으로 나가는 순간 잘려 안 보인다. 이 버튼들에 한해 body 바로 아래 뜬
+  // 공유 말풍선(#ribbonTipFloat)을 JS로 직접 위치시켜 띄운다.
   (function () {
     const float = $("ribbonTipFloat");
     if (!float) return;
@@ -3687,7 +3688,7 @@
       float.style.top = top + "px";
     }
     function hide() { float.classList.remove("on"); }
-    document.querySelectorAll(".ribbon .tip").forEach(function (btn) {
+    document.querySelectorAll(".ribbon .tip, .direct-win .tip").forEach(function (btn) {
       btn.addEventListener("mouseenter", function () { showFor(btn); });
       btn.addEventListener("mouseleave", function () { hideTimer = setTimeout(hide, 30); });
       btn.addEventListener("mousedown", hide);

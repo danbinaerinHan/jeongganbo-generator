@@ -558,6 +558,10 @@
   body.orn-add-on .ornchip .orn-key-badge { display: inline-flex; }
   .ornchip.orn-armed { background: #f4e2c2; outline: 1.5px solid var(--accent); border-radius: 6px; }
 
+  /* 시김새 창 안의 모드 버튼(미세조정/추가 모드) — 전역 도구바가 아니라 이 팔레트 설정임을
+     보여주려고 시김새 창 안에 둔다. */
+  .orn-win-modes { display: flex; gap: 6px; margin-bottom: 8px; }
+
   /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
                       border: 1px solid var(--line); border-radius: 8px; background: #faf8f3; }
@@ -589,7 +593,8 @@
   /* 리본 버튼은 .ribbon의 overflow-x:auto 때문에(CSS 규칙상 overflow-y도 auto가 되어)
      기본 말풍선(::after/::before)이 리본 박스 밖으로 나가면 잘려 안 보인다 — 아예 꺼두고
      JS가 띄우는 #ribbonTipFloat(리본 밖·body 바로 아래)로 대신한다. */
-  .ribbon .tip::after, .ribbon .tip::before { display: none; }
+  .ribbon .tip::after, .ribbon .tip::before,
+  .direct-win .tip::after, .direct-win .tip::before { display: none; }
   .ribbon-tip-float {
     position: fixed; z-index: 9999; background: #2b2b2b; color: #fff; font-size: 11px;
     font-weight: 400; line-height: 1.4; padding: 6px 9px; border-radius: 7px;
@@ -743,16 +748,9 @@
     color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
 
   /* 직접 입력 모드 — 장단·가사도 선율과 마찬가지로 악보의 정간을 클릭해 입력한다.
-     텍스트 에디터(칸)는 헷갈리지 않게 숨기고, 그 자리에 안내 문구만 보여준다.
-     (장단 팔레트는 선율의 율명 팔레트처럼 그대로 둬서 열린 정간 카드에 클릭 입력 가능) */
-  .direct-hint { display: none; margin: auto; padding: 14px; max-width: 80%;
-                 font-size: 12px; line-height: 1.6; color: var(--muted); text-align: center;
-                 border: 1px dashed var(--line); border-radius: 8px; background: #faf8f3; }
-  body.input-direct #jangdanEditorCol textarea,
-  body.input-direct #lyricsEditorCol textarea { display: none; }
+     텍스트 에디터(칸)는 통째로 필요 없으므로 숨긴다(팔레트가 남는 폭을 채움). */
   body.input-direct #jangdanEditorCol,
-  body.input-direct #lyricsEditorCol { display: flex; }
-  body.input-direct .direct-hint { display: block; }
+  body.input-direct #lyricsEditorCol { display: none; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
