@@ -497,8 +497,12 @@
   .mel-btn:disabled { opacity: .45; cursor: default; }
   #melodyReset { color: #b23b3b; border-color: #e3b7b7; }
   #melodyReset:hover { background: #f7ecec; }
-  /* 시김새 수정 버튼 강조 */
-  #ornEditToggle { color: var(--accent); border-color: var(--accent); background: #faf3e7; font-weight: 700; }
+  /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
+     아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
+  #ornEditToggle { flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
+                   font-size: 15px; color: var(--accent); border-color: var(--accent);
+                   background: #faf3e7; font-weight: 700; }
+  #ornEditToggle span { font-size: 11px; font-weight: 700; }
   #ornEditToggle:hover { background: #f1e6cf; }
   #ornEditToggle.on { background: var(--accent); color: #fff; }
 
@@ -639,16 +643,9 @@
   .ed-title { padding: 3px 1px 6px; font-size: 15px; font-weight: 700; color: var(--accent);
               border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
   .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
-  /* 텍스트 입력 규칙 안내 — 에디터 바로 위에 항상 보이게 */
-  .ed-hint { font-size: 11px; line-height: 1.6; color: var(--muted);
-             background: #faf6ec; border: 1px solid #eadfc8; border-radius: 7px; padding: 5px 9px; }
-  .ed-hint b { color: var(--accent); }
-  .ed-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink);
-                   background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
   /* 직접 입력 모드 — 텍스트 에디터 대신 오른쪽에 시김새 팔레트를 상시 표시
      (왼쪽은 율명 팔레트 고정, 율명/시김새 탭은 숨김, 두 컬럼은 딱 50/50) */
   #directOrnWrap { display: none; }
-  #melodyArea.mel-direct .ed-hint,
   #melodyArea.mel-direct #melodyHlWrap,
   #melodyArea.mel-direct .ed-pager,
   #melodyArea.mel-direct #melodySplit,
@@ -1094,7 +1091,7 @@
         <div class="ribbon-sep"></div>
         <div class="ribbon-group">
           <button type="button" id="ornEditToggle" class="ribbon-btn tip"
-            data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있습니다. 율명/시김새 팔레트 중 뭘 보고 있어도 항상 켤 수 있습니다.">⌖<span>미세조정</span></button>
+            data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있습니다. 율명/시김새 팔레트 중 뭘 보고 있어도 항상 켤 수 있습니다.">⌖<span>시김새 미세조정하기</span></button>
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group ribbon-slider-group">
@@ -1122,12 +1119,19 @@
           <div id="melodyGuide" class="melody-guide">
             <div class="mg-sec"><b>입력 방법</b><br>
               ① 악보의 정간을 클릭해서 바로 입력<br>
-              ② 아래 텍스트 에디터에 한글로 직접 입력 (규칙은 에디터 위 안내 참고)<br>
+              ② 아래 텍스트 에디터에 한글로 직접 입력 (규칙은 에디터 위 ? 아이콘 참고)<br>
               ③ 왼쪽 팔레트(율명·시김새)를 클릭하면 커서 자리에 입력
             </div>
             <div class="mg-sec"><b>세부 규칙</b><br>
               • 한 정간 안에서 <span class="mono">스페이스</span> 없이 이어 쓰면 한 줄에, 띄어 쓰면 그 칸 안에서 줄이 나뉩니다(분박).<br>
               • 음 뒤에 공백 없이 <span class="mono">&lt;</span> 를 붙이면 그 정간 오른쪽-아래에 숨표가 표시됩니다.
+            </div>
+            <div class="mg-sec"><b>시김새 넣는 법</b><br>
+              • 에디터 모드: 왼쪽 팔레트에서 '시김새' 탭을 클릭해 고르면 커서 자리에 들어갑니다.<br>
+              • 직접 입력 모드: 오른쪽에 시김새 팔레트가 항상 떠 있어 클릭하면 지금 열려 있는 칸에 바로 들어갑니다.<br>
+              • 두 모드 다 글자로 직접 쓸 수도 있습니다 — 음 뒤에 <span class="mono">{이름}</span>·
+              <span class="mono">[이름]</span>·<span class="mono">(이름)</span> 중 아무 괄호로나 감쌉니다
+              (예: <span class="mono">황{미는표}</span>).
             </div>
           </div>
         </span>
@@ -1192,6 +1196,9 @@
           <div class="ed-head">
             <div class="ed-top">
               <span class="ed-title">텍스트 에디터</span>
+              <button type="button" class="icon-btn tip" data-tip="텍스트로 입력할 때 — 음은 한글 율명(황·태·협…)으로 적습니다. 줄바꿈=각 구분, |=정간 구분, 스페이스=한 정간 안 분박, 음 뒤 <=숨표. 시김새는 이름을 {}·[]·() 중 아무 괄호로나 감싸 씁니다(예: 황{미는표}).">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </button>
               <div class="ed-right">
                 <div class="ed-pager" style="display:none;">
                   <button type="button" class="ed-prev mel-btn" title="이전 페이지 편집">◀</button>
@@ -1200,11 +1207,6 @@
                 </div>
               </div>
             </div>
-          </div>
-          <div class="ed-hint">
-            <b>텍스트로 입력할 때</b> — 음은 한글 율명(황·태·협…)으로 적습니다 ·
-            줄바꿈 = <b>각</b> 구분 · <span class="mono">|</span> = <b>정간</b> 구분 ·
-            스페이스 = 한 정간 안 <b>분박</b> · 음 뒤 <span class="mono">&lt;</span> = 숨표
           </div>
           <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
           <div id="melodyHlWrap">
