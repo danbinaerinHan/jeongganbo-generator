@@ -215,12 +215,11 @@
     padding: 5px 14px; z-index: 3; transform: translateY(-3px);
     box-shadow: 0 3px 7px rgba(31,26,18,.28);
   }
-  /* 선율 입력 방식(에디터/직접 입력) — 사이드바 '선율' 탭 바로 밑 서브메뉴.
-     선율 탭이 활성일 때만 보이고, 고른 쪽 아래에 한 줄 설명(mode-hint)이 따라온다. */
-  #dockRail .mode-seg { display: none; flex-direction: column; gap: 3px;
-                        margin: 2px 4px 2px 14px; }
-  #dockRail .rail-btn.active[data-panel="melodyArea"] + .mode-seg,
-  #dockRail .rail-btn.active[data-panel="melodyArea"] + .mode-seg + .mode-hint { display: flex; }
+  /* 입력 방식(에디터/직접 입력) — 사이드바 맨 위, 선율·장단·가사 전역 공통이라 어느
+     탭이든 늘 보인다. 고른 쪽 아래에 한 줄 설명(mode-hint)이 항상 따라오고, 호버하면
+     각 방식의 장단점을 설명하는 말풍선(.tip)이 더 자세히 뜬다. */
+  #dockRail .mode-lab { margin: 0 4px 3px 4px; }
+  #dockRail .mode-seg { display: flex; flex-direction: column; gap: 3px; margin: 0 4px; }
   #dockRail .mode-seg .seg-btn {
     border: 1px solid var(--line); border-radius: 6px; background: #fff;
     color: var(--muted); font-size: 11px; font-weight: 600; padding: 4px 9px;
@@ -231,8 +230,14 @@
   #dockRail .mode-seg .seg-btn.active {
     background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700;
   }
-  #dockRail .mode-hint { display: none; margin: 0 4px 6px 14px; font-size: 10px;
+  #dockRail .mode-hint { margin: 4px 4px 8px; font-size: 10px;
                          line-height: 1.35; color: var(--muted); max-width: 92px; }
+  #dockRail .rail-sep { height: 1px; background: var(--line); margin: 2px 4px 8px; }
+  /* 사이드바는 좁아서 말풍선이 아래로 뜨면 잘리니, 오른쪽으로 뜨게 뒤집는다 */
+  #dockRail .tip::after, #dockRail .tip::before { bottom: auto; }
+  #dockRail .tip::after { top: 0; left: calc(100% + 9px); transform: none; text-align: left; }
+  #dockRail .tip::before { top: 10px; left: calc(100% + 2px); transform: none;
+                           border-top-color: transparent; border-right-color: #2b2b2b; }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
                       white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
@@ -958,15 +963,19 @@
       <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
       <div class="dock-body">
         <nav id="dockRail">
-          <button type="button" class="rail-btn active" data-panel="melodyArea">선율</button>
-          <!-- 선율 입력 방식(에디터/직접 입력) — 장단·가사와 달리 선율만 두 입력 방식이 있어서
-               헤더 줄에 묻히지 않게 '선율' 탭 바로 아래 서브메뉴로 둔다. 고른 쪽 밑에 그
-               방식이 뭔지 한 줄 설명이 따라와서 처음 봐도 바로 감이 온다. -->
+          <!-- 입력 방식(에디터/직접 입력) — 선율·장단·가사 전역 공통이라 어느 탭을 보고
+               있든 늘 위에 떠 있다. 호버하면 각 방식이 뭔지 설명이 뜨고, 고른 쪽 밑에는
+               한 줄 요약이 항상 붙어 있어 처음 봐도 바로 감이 온다. -->
+          <div class="mode-lab">입력 방식</div>
           <div class="mode-seg" id="melInputSeg">
-            <button type="button" class="seg-btn active" data-mode="editor">에디터</button>
-            <button type="button" class="seg-btn" data-mode="direct">직접 입력</button>
+            <button type="button" class="seg-btn active tip" data-mode="editor"
+              data-tip="선율·장단·가사 모두 아래 텍스트 에디터에 이어서 입력합니다. 여러 칸을 빠르게 입력할 때 편합니다.">에디터</button>
+            <button type="button" class="seg-btn tip" data-mode="direct"
+              data-tip="선율·장단·가사 모두 악보의 정간을 클릭하면 그 자리에 작은 입력창이 열립니다. 한 칸씩 확인하며 입력할 때 편합니다.">직접 입력</button>
           </div>
-          <div class="mode-hint" id="melInputHint">아래 에디터에 율명을 타이핑</div>
+          <div class="mode-hint" id="melInputHint">각 탭 아래 텍스트 에디터에 이어서 입력</div>
+          <div class="rail-sep"></div>
+          <button type="button" class="rail-btn active" data-panel="melodyArea">선율</button>
           <button type="button" class="rail-btn" data-panel="jangdanArea">장단</button>
           <button type="button" class="rail-btn" data-panel="lyricsArea">가사</button>
           <button type="button" class="rail-btn" data-panel="textArea">텍스트</button>
@@ -1237,7 +1246,7 @@
   let daegangAuto = "";
   let palView = "yul";       // 팔레트 보기: 율명 / 시김새(orn)
   let yulMode = "grid";      // 율명 입력 방식: 표(grid) / 피아노 건반(piano)
-  let melInput = "editor";   // 정간 클릭 동작: editor(에디터로 커서 이동) / direct(옆 입력창)
+  let inputMode = "editor";   // 정간 클릭 동작(선율·장단·가사 공통): editor(에디터로 커서 이동) / direct(옆 입력창)
   let gakUserSet = false;   // 사용자가 '총 각 수'를 직접 입력했는지(아니면 페이지를 꽉 채움)
   let activeGak = -1, activeCellIdx = -1;   // 현재 편집 중인 정간
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
@@ -1249,6 +1258,7 @@
   let playHi = [];                          // 페이지별 재생 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
   let cellEditor = null, cellEditInput = null;  // 정간 옆 직접 입력 카드
+  let cellEditDomain = null;                // 카드가 선율/장단/가사 중 어디서 열렸는지("mel"/"jd"/"ly")
   let cellEditGi = -1, cellEditCi = -1;     // 카드가 열려 있는 정간 좌표 (전역 커서와 별개로 기억)
   let keepCellEditor = false;               // true면 render()가 직접 입력 카드를 닫지 않음(실시간 반영용)
   let ornEditMode = false;                  // 시김새 수정 모드
@@ -1892,7 +1902,7 @@
     $("lyricsUndo").disabled = lyricsUndoStack.length === 0;
   }
 
-  // ---------- 정간 위 인라인 입력 ----------
+  // ---------- 정간 위 인라인 입력(선율) ----------
   function currentCellText(gi, ci) {
     const p = parseMelodyOffsets(melodyFull);
     return (p[gi] && p[gi][ci]) ? p[gi][ci].text : "";
@@ -1912,17 +1922,6 @@
     melodyFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
     render();
     refreshEditorSlices();
-  }
-
-  function closeCellEditor() {
-    // 상태를 먼저 비운 뒤 DOM에서 뗀다 — removeChild가 포커스된 입력을 지우면 blur가
-    // '동기적으로' 발생하는데, 그때 cellEditInput이 아직 이전 값이면 blur 핸들러가
-    // commitCellEditor를 다시 불러(재진입) 이 함수가 두 번 실행되고, 두 번째 removeChild가
-    // "이미 떼어진 노드"라 던지는 예외로 바깥쪽 commitCellEditor(Enter 이동)가 중간에 끊겼다.
-    const el = cellEditor;
-    cellEditor = null; cellEditInput = null;
-    cellEditGi = -1; cellEditCi = -1;
-    if (el && el.parentNode) el.parentNode.removeChild(el);
   }
 
   // 정간 클릭 → 에디터 커서를 그 정간으로 (focusTa=true면 에디터에 포커스까지)
@@ -1950,16 +1949,140 @@
     if (c) ta.setSelectionRange(c.start, c.start + c.text.length);   // 내용 선택 → 바로 덮어쓰기
     else ta.setSelectionRange(ta.value.length, ta.value.length);
   }
-  // 에디터 모드: 정간 클릭 → 에디터로 포커스 이동
-  function focusEditorCell(gi, ci) { setEditorCursorToCell(gi, ci, true); }
 
-  function openCellEditor(gi, ci) {
+  // ---------- 정간 위 인라인 입력(장단) — 장단은 맨 처음 각 옆 한 줄뿐이라 gi는 늘 0 ----------
+  function currentJangdanText(gi, ci) {
+    const p = parseMelodyOffsets($("jangdan").value)[0] || [];
+    return p[ci] ? p[ci].text : "";
+  }
+  function setJangdanText(gi, ci, val) {
+    val = String(val).replace(/[|\n]+/g, " ").replace(/\s+/g, " ").trim();
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const cells = parseMelodyOffsets($("jangdan").value)[0] || [];
+    const arr = cells.map(function (c) { return c.text; });
+    while (arr.length <= ci) arr.push("");
+    arr[ci] = val;
+    while (arr.length < beats) arr.push("");
+    $("jangdan").value = arr.join(" | ");
+    render();
+  }
+  function setJangdanCursor(gi, ci, focusTa) {
+    activeArea = "jd"; activeGak = 0; activeCellIdx = ci; activeRow = -1; activeRows = 1;
+    updateHighlight();
+    const ta = $("jangdan");
+    if (focusTa) {
+      const railBtn = document.querySelector('#dockRail .rail-btn[data-panel="jangdanArea"]');
+      if (railBtn && !railBtn.classList.contains("active")) railBtn.click();
+      ta.focus();
+    }
+    const cells = parseMelodyOffsets(ta.value)[0] || [];
+    const c = cells[Math.min(ci, Math.max(0, cells.length - 1))];
+    if (c) ta.setSelectionRange(c.start, c.start + c.text.length);
+    else ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  // ---------- 정간 위 인라인 입력(가사) ----------
+  function currentLyricText(gi, ci) {
+    const p = parseMelodyOffsets(lyricsFull);
+    return (p[gi] && p[gi][ci]) ? p[gi][ci].text : "";
+  }
+  function setLyricText(gi, ci, val) {
+    val = String(val).replace(/[|\n]+/g, " ").replace(/\s+/g, " ").trim();
+    const rows = parseMelodyOffsets(lyricsFull).map(function (g) {
+      return g.map(function (c) { return c.text; });
+    });
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    while (rows.length <= gi) rows.push([]);
+    while (rows[gi].length <= ci) rows[gi].push("");
+    rows[gi][ci] = val;
+    while (rows[gi].length < beats) rows[gi].push("");
+    lyricsFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
+    render();
+    refreshEditorSlices();
+  }
+  function setLyricCursor(gi, ci, focusTa) {
+    activeArea = "ly"; activeGak = gi; activeCellIdx = ci; activeRow = -1; activeRows = 1;
+    updateHighlight();
+    let p = edPage;
+    for (let i = 0; i < pageGakRanges.length; i++) {
+      if (gi >= pageGakRanges[i].start && gi < pageGakRanges[i].end) { p = i; break; }
+    }
+    if (p !== edPage) setEdPage(p, { noScroll: true });
+    const ta = $("lyrics");
+    if (focusTa) {
+      const railBtn = document.querySelector('#dockRail .rail-btn[data-panel="lyricsArea"]');
+      if (railBtn && !railBtn.classList.contains("active")) railBtn.click();
+      ta.focus();
+    }
+    const local = gi - (edLyRange ? edLyRange.start : 0);
+    const cells = parseMelodyOffsets(ta.value)[local] || [];
+    const c = cells[Math.min(ci, Math.max(0, cells.length - 1))];
+    if (c) ta.setSelectionRange(c.start, c.start + c.text.length);
+    else ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  // ---------- 도메인별 정간 입력 어댑터 ----------
+  // 직접 입력 카드가 선율/장단/가사 어디서 열렸는지에 따라 좌표·읽기·쓰기·에디터 커서
+  // 이동 방식이 다르므로 한 군데(CELL_EDIT)에 모아두고, 카드 자체(위치 계산·DOM·키보드
+  // 처리)는 아래 openCellEditor/commitCellEditor 하나로 공유한다.
+  const CELL_EDIT = {
+    mel: {
+      geom: function (gi, ci) { const g = cellGeom[gi]; return g && g[ci]; },
+      getText: currentCellText, setText: setCellText, setCursor: setEditorCursorToCell,
+      label: function (gi, ci) { return (gi + 1) + "각 · " + (ci + 1) + "정간"; },
+      next: function (gi, ci) {
+        const beats = Math.max(1, parseInt($("beats").value) || 1);
+        let ng = gi, ni = ci + 1;
+        if (ni >= beats) { ni = 0; ng = gi + 1; }
+        return this.geom(ng, ni) ? { gi: ng, ci: ni } : null;
+      }
+    },
+    jd: {
+      geom: function (gi, ci) { return jdGeom[ci] || null; },
+      getText: currentJangdanText, setText: setJangdanText, setCursor: setJangdanCursor,
+      label: function (gi, ci) { return (ci + 1) + "정간 · 장단"; },
+      next: function (gi, ci) {
+        const beats = Math.max(1, parseInt($("beats").value) || 1);
+        const ni = ci + 1;
+        return (ni < beats && jdGeom[ni]) ? { gi: 0, ci: ni } : null;   // 장단은 한 줄뿐 — 다음 각으로 안 넘어감
+      }
+    },
+    ly: {
+      geom: function (gi, ci) {
+        const g = cellGeom[gi]; const cg = g && g[ci];
+        if (!cg || !hiLyricsOn) return null;
+        return { page: cg.page, x: cg.x + cg.w + hiLyGap, y: cg.y, w: hiLyW, h: cg.h };
+      },
+      getText: currentLyricText, setText: setLyricText, setCursor: setLyricCursor,
+      label: function (gi, ci) { return (gi + 1) + "각 · " + (ci + 1) + "정간 가사"; },
+      next: function (gi, ci) {
+        const beats = Math.max(1, parseInt($("beats").value) || 1);
+        let ng = gi, ni = ci + 1;
+        if (ni >= beats) { ni = 0; ng = gi + 1; }
+        return this.geom(ng, ni) ? { gi: ng, ci: ni } : null;
+      }
+    }
+  };
+
+  function closeCellEditor() {
+    // 상태를 먼저 비운 뒤 DOM에서 뗀다 — removeChild가 포커스된 입력을 지우면 blur가
+    // '동기적으로' 발생하는데, 그때 cellEditInput이 아직 이전 값이면 blur 핸들러가
+    // commitCellEditor를 다시 불러(재진입) 이 함수가 두 번 실행되고, 두 번째 removeChild가
+    // "이미 떼어진 노드"라 던지는 예외로 바깥쪽 commitCellEditor(Enter 이동)가 중간에 끊겼다.
+    const el = cellEditor;
+    cellEditor = null; cellEditInput = null; cellEditDomain = null;
+    cellEditGi = -1; cellEditCi = -1;
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  function openCellEditor(domain, gi, ci) {
     closeCellEditor();
-    const g = cellGeom[gi]; const cg = g && g[ci];
+    const dom = CELL_EDIT[domain];
+    const cg = dom.geom(gi, ci);
     if (!cg) return;
     const svg = pageSvgs[cg.page]; if (!svg) return;
     // 에디터 커서도 같은 정간으로 — 각 추가·삭제가 늘 클릭한 각 기준으로 동작하게
-    setEditorCursorToCell(gi, ci, false);
+    dom.setCursor(gi, ci, false);
 
     // 직접 입력 카드 — 악보(#sheet)는 입력 때마다 다시 그려지므로 카드가 지워지지 않게
     // 스크롤 컨테이너(#sheetArea)에 픽셀 좌표로 띄운다. 렌더가 카드를 건드리지 않아
@@ -1990,7 +2113,7 @@
       "letter-spacing:.04em;color:#8a6d3b;background:#f7f3ea;padding:0 " + (h * 0.16) + "px;" +
       "border-bottom:1px solid rgba(138,109,59,.18);";
     const capLab = document.createElement("span");
-    capLab.textContent = (gi + 1) + "각 · " + (ci + 1) + "정간";
+    capLab.textContent = dom.label(gi, ci);
     // 키보드 이벤트가 어떤 환경에서든 막혀도 이동할 수 있는 확실한 길 — 다음 버튼
     const nextBtn = document.createElement("button");
     nextBtn.type = "button"; nextBtn.textContent = "다음 ▶";
@@ -2002,13 +2125,13 @@
     cap.appendChild(capLab); cap.appendChild(nextBtn);
     const inp = document.createElement("input");
     inp.type = "text";
-    inp.value = currentCellText(gi, ci);
+    inp.value = dom.getText(gi, ci);
     inp.style.cssText = "flex:1 1 auto;min-height:0;width:100%;box-sizing:border-box;border:none;outline:none;" +
       "text-align:center;padding:0 " + (h * 0.12) + "px;background:#fff;color:#1f1a12;" +
       "font-family:inherit;line-height:1;font-size:" + (h * 0.36) + "px;";
     card.appendChild(cap); card.appendChild(inp);
     area.appendChild(card);
-    cellEditor = card; cellEditInput = inp;
+    cellEditor = card; cellEditInput = inp; cellEditDomain = domain;
     cellEditGi = gi; cellEditCi = ci;
     inp.focus(); inp.select();
 
@@ -2016,7 +2139,7 @@
     inp.addEventListener("input", function () {
       if (cellEditInput !== inp) return;
       keepCellEditor = true;
-      try { setCellText(gi, ci, inp.value); } finally { keepCellEditor = false; }
+      try { dom.setText(gi, ci, inp.value); } finally { keepCellEditor = false; }
     });
     inp.addEventListener("keydown", function (e) {
       if (e.isComposing || e.keyCode === 229) return;
@@ -2061,20 +2184,19 @@
     commitCellEditor(true);
   }, true);
 
-  // 커밋: 값 저장 후 렌더. moveNext면 아래 정간(없으면 다음 각 첫 정간)으로 이동
+  // 커밋: 값 저장 후 렌더. moveNext면 다음 정간으로 이동(도메인별 next()가 판단)
   function commitCellEditor(moveNext) {
     if (!cellEditInput) return;
     // 전역 커서(activeGak)는 다른 이벤트로 바뀔 수 있으므로, 카드가 기억하는 좌표를 쓴다
-    const gi = cellEditGi, ci = cellEditCi, val = cellEditInput.value;
+    const domain = cellEditDomain, gi = cellEditGi, ci = cellEditCi, val = cellEditInput.value;
     closeCellEditor();
-    if (gi < 0) return;
-    setCellText(gi, ci, val);
+    if (!domain || gi < 0) return;
+    const dom = CELL_EDIT[domain];
+    dom.setText(gi, ci, val);
     updateHighlight();
     if (moveNext) {
-      const beats = Math.max(1, parseInt($("beats").value) || 1);
-      let ng = gi, ni = ci + 1;
-      if (ni >= beats) { ni = 0; ng = gi + 1; }
-      if (cellGeom[ng] && cellGeom[ng][ni]) openCellEditor(ng, ni);
+      const nextPos = dom.next(gi, ci);
+      if (nextPos) openCellEditor(domain, nextPos.gi, nextPos.ci);
     }
   }
 
@@ -3304,8 +3426,8 @@
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
                 if (cellEditInput) commitCellEditor(false);
                 // 입력 모드에 따라: 에디터 → 아래 텍스트로 커서 이동 / 직접 입력 → 옆 입력창
-                if (melInput === "editor") focusEditorCell(gi, ci);
-                else openCellEditor(gi, ci);
+                if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
+                else openCellEditor("mel", gi, ci);
               });
             })(melIdx, j);
             svg.appendChild(hit);
@@ -3335,6 +3457,22 @@
               const content = jdCells[j] ? jdCells[j].text : "";
               if (content) drawJangdanCell(svg, jdLeft, gridTop + j * cell, jdW, cell, content);
             }
+            // 클릭 영역 — 글자 그림(image) 위로 올려야(뒤에 appendChild) 그 위를 클릭해도 먹힌다
+            for (let j = 0; j < beats; j++) {
+              const jdHit = rect(jdLeft, gridTop + j * cell, jdW, cell, 0,
+                { fill: "transparent", stroke: "none", "pointer-events": "all" });
+              jdHit.style.cursor = "text";
+              (function (ci) {
+                jdHit.addEventListener("mousedown", function (e) {
+                  e.preventDefault();
+                  if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
+                  if (cellEditInput) commitCellEditor(false);
+                  if (inputMode === "editor") CELL_EDIT.jd.setCursor(0, ci, true);
+                  else openCellEditor("jd", 0, ci);
+                });
+              })(j);
+              svg.appendChild(jdHit);
+            }
             // 장단 각은 선율 각과 구분되게 세로줄을 아주 조금 더 굵게
             svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THICK * 1.35));
             svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THICK * 1.35));
@@ -3354,6 +3492,22 @@
             for (let j = 0; j < lyFilled; j++) {
               const content = lyCells[j] ? lyCells[j].text : "";
               if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content, lyricsFontFam);
+            }
+            // 클릭 영역 — 숨은 정간 포함 전체 beats, 글자 위로 올려야 그 위를 클릭해도 먹힌다
+            for (let j = 0; j < beats; j++) {
+              const lyHit = rect(lyLeft, gridTop + j * cell, lyW, cell, 0,
+                { fill: "transparent", stroke: "none", "pointer-events": "all" });
+              lyHit.style.cursor = "text";
+              (function (gi, ci) {
+                lyHit.addEventListener("mousedown", function (e) {
+                  e.preventDefault();
+                  if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
+                  if (cellEditInput) commitCellEditor(false);
+                  if (inputMode === "editor") CELL_EDIT.ly.setCursor(gi, ci, true);
+                  else openCellEditor("ly", gi, ci);
+                });
+              })(melIdx, j);
+              svg.appendChild(lyHit);
             }
           }
         }
@@ -3737,7 +3891,7 @@
     return { v: 1, controls: c, melody: melodyFull, jangdan: $("jangdan").value,
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
-             customTexts: customTexts, palZoom: palZoom, edFontPx: edFontPx, melInput: melInput };
+             customTexts: customTexts, palZoom: palZoom, edFontPx: edFontPx, melInput: inputMode };
   }
 
   function applyState(s) {
@@ -3763,8 +3917,8 @@
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
     applyPalZoom(); applyEdFont();
-    melInput = s.melInput === "direct" ? "direct" : "editor";
-    applyMelInputSeg();
+    inputMode = s.melInput === "direct" ? "direct" : "editor";
+    applyInputMode();
     $("pianoBase").value = $("hwangPitch").value;   // 황 음고 셀렉트는 기준음과 한 값
   }
 
@@ -4275,18 +4429,20 @@
   // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
   $("palInsert").addEventListener("change", saveState);
-  // 선율 입력 모드 전환 (에디터 / 직접 입력)
-  // 직접 입력: 왼쪽 율명 팔레트 고정 + 오른쪽에 시김새 팔레트 상시 표시 (텍스트 에디터 대신)
-  const MEL_INPUT_HINT = {
-    editor: "아래 에디터에 율명을 타이핑, 정간 클릭 시 커서 이동",
-    direct: "정간 클릭 → 옆 입력창에 바로 타이핑"
+  // 입력 모드 전환 (에디터 / 직접 입력) — 선율·장단·가사 전역 공통.
+  // 직접 입력이면 선율만 추가로: 왼쪽 율명 팔레트 고정 + 오른쪽에 시김새 팔레트 상시 표시
+  // (텍스트 에디터 대신) — 장단·가사는 팔레트 배치가 원래도 간단해 레이아웃을 바꿀 게 없다.
+  const INPUT_MODE_HINT = {
+    editor: "각 탭 아래 텍스트 에디터에 이어서 입력",
+    direct: "악보의 정간을 클릭하면 바로 입력창이 열림"
   };
-  function applyMelInputSeg() {
+  function applyInputMode() {
     document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
-      b.classList.toggle("active", b.getAttribute("data-mode") === melInput);
+      b.classList.toggle("active", b.getAttribute("data-mode") === inputMode);
     });
-    if ($("melInputHint")) $("melInputHint").textContent = MEL_INPUT_HINT[melInput] || "";
-    const direct = melInput === "direct";
+    if ($("melInputHint")) $("melInputHint").textContent = INPUT_MODE_HINT[inputMode] || "";
+    const direct = inputMode === "direct";
+    if (!direct && cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
     $("melodyArea").classList.toggle("mel-direct", direct);
     const t = document.querySelector("#melodyArea .ed-title");
     if (t) t.textContent = direct ? "시김새" : "텍스트 에디터";
@@ -4310,13 +4466,12 @@
       const edRight = document.querySelector("#melodyArea .ed-right");
       edTop.insertBefore(tools, edRight);
       edRight.appendChild(gaks);
-      if (cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
     }
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () {
-      melInput = b.getAttribute("data-mode");
-      applyMelInputSeg();
+      inputMode = b.getAttribute("data-mode");
+      applyInputMode();
       saveState();
     });
   });
@@ -4384,8 +4539,10 @@
   makeGuideToggle("textGuide", "textGuideToggle");
   makeGuideToggle("ornGuide", "ornGuideToggle");
 
-  // 이전 작업 복구(localStorage)
-  try { const raw = localStorage.getItem(LS_KEY); if (raw) applyState(JSON.parse(raw)); } catch (e) {}
+  // 이전 작업 복구(localStorage) — 저장된 게 없어도(첫 방문) 입력 모드 힌트 문구는 채워야 한다
+  let restored = false;
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) { applyState(JSON.parse(raw)); restored = true; } } catch (e) {}
+  if (!restored) applyInputMode();
 
   buildPalette();
   buildJangdanPalette();
