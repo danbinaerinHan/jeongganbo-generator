@@ -195,19 +195,27 @@
   /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
   .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
              flex: 0 0 auto; }
-  /* 입력 방식(에디터/직접 입력) 선택 — 고른 쪽이 포스트잇처럼 살짝 위로 튀어나와
-     한눈에 띄게 함. 이어붙은 세그먼트 대신 칩을 따로 떼어 각자 테두리를 둬야
-     선택된 쪽만 들뜬 느낌이 난다(overflow:visible로 pal-seg의 클리핑도 풀어줌). */
+  /* 입력 방식(에디터/직접 입력)·팔레트 보기(율명/시김새) — 책에 라벨(북마크 탭)을
+     붙인 것처럼: 고르지 않은 건 작고 옅게 뒤로 겹쳐 있고, 고른 것만 크고 진하게
+     앞으로 튀어나와 있어 뭘 고를 수 있는지·뭘 골랐는지 한눈에 보이게 한다.
+     (overflow:visible로 pal-seg의 클리핑을 풀어줘야 튀어나온 부분이 안 잘린다) */
   .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
-  .mode-seg { border: none; background: none; overflow: visible; gap: 5px; padding-top: 4px; }
-  .mode-seg .seg-btn { font-weight: 700; padding: 5px 12px; color: var(--muted);
-                       background: #fff; border: 1.5px solid var(--line); border-radius: 7px;
-                       transform: translateY(0); box-shadow: 0 1px 2px rgba(31,26,18,.08);
-                       transition: transform .14s ease, box-shadow .14s ease, background .12s ease; }
-  .mode-seg .seg-btn + .seg-btn { border-left: 1.5px solid var(--line); }
-  .mode-seg .seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent);
-                              transform: translateY(-3px);
-                              box-shadow: 0 4px 9px rgba(138,109,59,.4); }
+  .mode-seg, .pal-views { display: inline-flex; align-items: flex-end; overflow: visible;
+                          border: none; background: none; gap: 0; }
+  .mode-seg .seg-btn, .pal-view {
+    position: relative; border: 1px solid var(--line); border-bottom: none;
+    border-radius: 6px 6px 0 0; background: #efe8da; color: var(--muted);
+    font-size: 11px; font-weight: 600; padding: 3px 10px; margin-right: -7px;
+    z-index: 1; cursor: pointer; font-family: inherit; white-space: nowrap;
+    transition: all .15s ease;
+  }
+  .mode-seg .seg-btn:last-child, .pal-view:last-child { margin-right: 0; }
+  .mode-seg .seg-btn:hover, .pal-view:hover { color: var(--ink); background: #f3ede0; }
+  .mode-seg .seg-btn.active, .pal-view.active {
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
+    padding: 5px 14px; z-index: 3; transform: translateY(-3px);
+    box-shadow: 0 3px 7px rgba(31,26,18,.28);
+  }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
                       white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
@@ -433,14 +441,8 @@
                 min-height: 0; }
   /* 팔레트 머리: 한 줄(표·건반, 조, 표기, 소리 + 크기 ±) — 율명/시김새 탭은 위 선율 입력 머리로 이동 */
   .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-  .pal-views { display: inline-flex; gap: 12px; }
-  .pal-view { padding: 3px 1px 6px; border: none; border-bottom: 2px solid transparent; background: none;
-              cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; color: var(--muted);
-              white-space: nowrap; }
-  .pal-view:hover { color: var(--ink); }
-  .pal-view.active { color: var(--accent); border-bottom-color: var(--accent); }
+  /* .pal-views·.pal-view 자체 모양은 위 mode-seg 옆에서 .mode-seg .seg-btn, .pal-view로 함께 정의 */
   .melody-head .pal-views { margin-left: 6px; }
-  .melody-head .pal-view { padding: 2px 1px 3px; }
   /* 직접 입력 모드에서 율명 크기·각 추가/삭제를 머리(맨 위)로 올려 담는 자리 */
   #melHeadTools { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
   #melHeadTools:empty { display: none; }
@@ -961,6 +963,7 @@
             data-tip="악보의 정간을 클릭하면 그 옆에 입력창이 열립니다. 치는 대로 실시간 반영되고, Enter로 다음 정간으로 넘어갑니다.">직접 입력</button>
         </span>
         <span class="head-sep"></span>
+        <span class="mode-lab">팔레트</span>
         <div class="pal-views">
           <button type="button" class="pal-view active" data-view="yul">율명</button>
           <button type="button" class="pal-view" data-view="orn">시김새</button>
