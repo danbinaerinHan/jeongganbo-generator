@@ -1286,7 +1286,8 @@
   const NOTE_DIR = "symbol_samples/notes/";
   let noteMode = "font";   // "font" | "hangul" (이미지 표기 옵션은 제거됨)
   let noteScaleCur = 1;    // 율명 크기 배율 (레이아웃 탭 슬라이더, 1 = 기본이자 최소)
-  let palZoom = 1;         // 선율 팔레트(율명 표) 표시 배율
+  let palZoom = 1;         // 율명 팔레트(표·건반) 표시 배율
+  let ornPalZoom = 1;      // 시김새 팔레트 표시 배율 — 율명과 따로 조절됨
   let edFontPx = 14;       // 선율 텍스트 에디터 글자 크기(px)
 
   // ---------- 율명 팔레트 (음역 행 × 음계 열 매트릭스) ----------
@@ -1723,8 +1724,17 @@
     gs *= noteScaleCur;   // 율명 크기 배율 — 이제 음표 글자(drawGlyph)에만 적용됨
 
     const rowH = cell / nRows;
+    // 분박이 정확히 둘일 때는 두 음 사이 간격(자간)이 다른 경우보다 헐렁해 보여서
+    // 정간 중심을 기준으로 살짝 좁혀 그린다(3개 이상일 때는 그대로 균등 분할).
+    const TWO_ROW_GAP_SCALE = 0.8;
     for (let ri = 0; ri < nRows; ri++) {
-      const cyc = yTop + rowH * (ri + 0.5);        // 행 세로 중심 (ri=0 위)
+      let cyc;
+      if (nRows === 2) {
+        const halfGap = (rowH / 2) * TWO_ROW_GAP_SCALE;
+        cyc = (ri === 0) ? (yTop + cell / 2 - halfGap) : (yTop + cell / 2 + halfGap);
+      } else {
+        cyc = yTop + rowH * (ri + 0.5);        // 행 세로 중심 (ri=0 위)
+      }
       const toks = rowToks[ri];
 
       // 토큰을 [주 글자(음표/독립기호) + 붙임 시김새] 그룹으로 묶는다
@@ -2925,8 +2935,8 @@
     return { v: 1, controls: c, melody: melodyFull, jangdan: $("jangdan").value,
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
-             customTexts: customTexts, palZoom: palZoom, edFontPx: edFontPx, melInput: inputMode,
-             ornAddMap: ornAddMap };
+             customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
+             melInput: inputMode, ornAddMap: ornAddMap };
   }
 
   function applyState(s) {
@@ -2950,8 +2960,9 @@
     nextTextId = customTexts.reduce(function (m, t) { return Math.max(m, (t.id || 0) + 1); }, 1);
     textSel = null;
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
+    ornPalZoom = typeof s.ornPalZoom === "number" ? Math.max(0.6, Math.min(2, s.ornPalZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
-    applyPalZoom(); applyEdFont();
+    applyPalZoom(); applyOrnPalZoom(); applyEdFont();
     if (Array.isArray(s.ornAddMap) && s.ornAddMap.length === ORN_ADD_KEYS.length) {
       const validStems = new Set(ORN_ADD_ALL.map(function (o) { return o.s; }));
       ornAddMap = s.ornAddMap.map(function (stem) { return (stem && validStems.has(stem)) ? stem : null; });
@@ -3323,8 +3334,11 @@
   // 율명 표(팔레트)·에디터 글자 크기 조절 — 값은 저장 상태에 함께 보관
   function applyPalZoom() {
     $("notePalette").style.zoom = palZoom;
-    $("directOrnPalette").style.zoom = palZoom;   // 직접 입력의 시김새 팔레트도 함께 확대/축소
     fitPianoHeight();
+  }
+  // 시김새 팔레트(직접 입력 도구창) 크기 — 율명과 따로 조절됨
+  function applyOrnPalZoom() {
+    $("directOrnPalette").style.zoom = ornPalZoom;
   }
   function applyEdFont() {
     $("melody").style.fontSize = edFontPx + "px";
@@ -3333,6 +3347,8 @@
   }
   $("palSizeDown").addEventListener("click", function () { palZoom = Math.max(0.6, +(palZoom - 0.1).toFixed(2)); applyPalZoom(); saveState(); });
   $("palSizeUp").addEventListener("click", function () { palZoom = Math.min(2, +(palZoom + 0.1).toFixed(2)); applyPalZoom(); saveState(); });
+  $("ornPalSizeDown").addEventListener("click", function () { ornPalZoom = Math.max(0.6, +(ornPalZoom - 0.1).toFixed(2)); applyOrnPalZoom(); saveState(); });
+  $("ornPalSizeUp").addEventListener("click", function () { ornPalZoom = Math.min(2, +(ornPalZoom + 0.1).toFixed(2)); applyOrnPalZoom(); saveState(); });
   $("edFontDown").addEventListener("click", function () { edFontPx = Math.max(10, edFontPx - 1); applyEdFont(); saveState(); });
   $("edFontUp").addEventListener("click", function () { edFontPx = Math.min(26, edFontPx + 1); applyEdFont(); saveState(); });
 
@@ -3576,6 +3592,7 @@
       buildOrnPalette($("directOrnPalette"));
       buildOrnAddMapBar();
       applyPalZoom();
+      applyOrnPalZoom();
       // 직접 입력에 새로 들어올 때마다 도구창 상태를 초기화 — 율명만 기본으로 열어두고
       // 나머지(시김새/장단/가사/텍스트)는 필요할 때 리본에서 직접 열게 한다.
       document.querySelectorAll(".win-toggle").forEach(function (b) {
