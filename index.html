@@ -204,15 +204,15 @@
   .pal-view {
     position: relative; border: 1px solid var(--line); border-bottom: none;
     border-radius: 6px 6px 0 0; background: #efe8da; color: var(--muted);
-    font-size: 11px; font-weight: 600; padding: 3px 10px; margin-right: -7px;
+    font-size: 12px; font-weight: 600; padding: 4px 11px; margin-right: -7px;
     z-index: 1; cursor: pointer; font-family: inherit; white-space: nowrap;
     transition: all .15s ease;
   }
   .pal-view:last-child { margin-right: 0; }
   .pal-view:hover { color: var(--ink); background: #f3ede0; }
   .pal-view.active {
-    background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
-    padding: 5px 14px; z-index: 3; transform: translateY(-3px);
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 15px;
+    padding: 6px 16px; z-index: 3; transform: translateY(-3px);
     box-shadow: 0 3px 7px rgba(31,26,18,.28);
   }
   /* 입력 방식(에디터/직접 입력) — 사이드바 맨 위, 선율·장단·가사 전역 공통이라 어느
@@ -252,6 +252,14 @@
   /* 입력·소리 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
   .pal-tools .sound-tool, .pal-tools .insert-tool { font-weight: 600; }
   #paletteCol.orn-active .sound-tool, #paletteCol.orn-active .insert-tool { display: none; }
+  /* 율명 전용 설정 묶음(표·건반/조/표기/황음고/입력/소리) — 옅은 상자로 한 덩어리임을 표시.
+     크기 ±는 율명·시김새 팔레트 공통이라 이 묶음 밖(오른쪽)에 따로 둔다. */
+  .yul-tools { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
+               padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px;
+               background: #faf8f3; }
+  #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
+  .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
+                        white-space: nowrap; margin-right: 2px; }
 
   /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
   .sizebox { border: 1px solid var(--line); border-radius: 10px;
@@ -563,8 +571,9 @@
   /* 에디터 머리 — 팔레트 머리(.pal-head)와 같은 한 줄·밑줄 구조로 좌우 컬럼을 나란히 맞춤 */
   .ed-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
   .ed-top { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
-  .ed-title { padding: 3px 1px 6px; font-size: 13px; font-weight: 700; color: var(--accent);
-              border-bottom: 2px solid var(--accent); white-space: nowrap; }
+  /* 컬럼 제목(텍스트 에디터/시김새) — 주변 도구 글씨(11~12px)보다 확실히 크게 해 섹션이 눈에 띄게 */
+  .ed-title { padding: 3px 1px 6px; font-size: 15px; font-weight: 700; color: var(--accent);
+              border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
   .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
   /* 율명 크기 슬라이더 (머리 한 줄 안 인라인) */
   .ed-tools { display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
@@ -596,8 +605,8 @@
   /* 왼쪽 컬럼 제목 '율명' — 오른쪽 '시김새' 제목과 같은 선상에, 직접 입력 모드에서만 */
   .pal-col-title { display: none; }
   #melodyArea.mel-direct .pal-col-title {
-    display: inline-block; padding: 3px 1px 6px; font-size: 13px; font-weight: 700;
-    color: var(--accent); border-bottom: 2px solid var(--accent); white-space: nowrap; }
+    display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
+    color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
@@ -969,11 +978,11 @@
           <div class="mode-lab">입력 방식</div>
           <div class="mode-seg" id="melInputSeg">
             <button type="button" class="seg-btn active tip" data-mode="editor"
-              data-tip="선율·장단·가사 모두 아래 텍스트 에디터에 이어서 입력합니다. 여러 칸을 빠르게 입력할 때 편합니다.">에디터</button>
+              data-tip="곡 전체를 텍스트로 한눈에 보며 편집합니다. 반복 구절 복사·붙여넣기, 분박(한 칸에 여러 음)·기호 문법 등 복잡한 편집과 대량 수정에 강합니다. 선율·장단·가사 공통.">에디터</button>
             <button type="button" class="seg-btn tip" data-mode="direct"
-              data-tip="선율·장단·가사 모두 악보의 정간을 클릭하면 그 자리에 작은 입력창이 열립니다. 한 칸씩 확인하며 입력할 때 편합니다.">직접 입력</button>
+              data-tip="악보의 정간을 클릭하면 그 자리에 입력창이 열리고, Enter로 다음 정간으로 넘어갑니다. 문법을 몰라도 보이는 그대로 채울 수 있어 직관적입니다. 선율·장단·가사 공통.">직접 입력</button>
           </div>
-          <div class="mode-hint" id="melInputHint">각 탭 아래 텍스트 에디터에 이어서 입력</div>
+          <div class="mode-hint" id="melInputHint">곡 전체를 텍스트로 보며 편집</div>
           <div class="rail-sep"></div>
           <button type="button" class="rail-btn active" data-panel="melodyArea">선율</button>
           <button type="button" class="rail-btn" data-panel="jangdanArea">장단</button>
@@ -1031,37 +1040,42 @@
           <div class="pal-head">
             <div class="pal-tools">
               <span class="pal-col-title">율명</span>
-              <span class="pal-seg" id="yulModeSeg">
-                <button type="button" class="seg-btn active" data-mode="grid">표</button>
-                <button type="button" class="seg-btn" data-mode="piano">건반</button>
+              <!-- 율명 전용 설정 묶음 — 시김새 탭에서는 통째로 숨는다. 크기 ±만 밖에 —
+                   율명·시김새 팔레트 모두에 적용되는 공통 컨트롤이라 묶음 밖 오른쪽에 둔다. -->
+              <span class="yul-tools" title="율명 팔레트 설정">
+                <span class="pal-seg" id="yulModeSeg">
+                  <button type="button" class="seg-btn active" data-mode="grid">표</button>
+                  <button type="button" class="seg-btn" data-mode="piano">건반</button>
+                </span>
+                <label class="tool-inline" title="조를 고르면 그 조의 구성음만 모아서 보여줍니다">조
+                  <select id="joPreset">
+                    <option value="all" selected>12율 전체</option>
+                    <option value="hwang-pyeong">황종 평조</option>
+                    <option value="hwang-gyemyeon">황종 계면조</option>
+                    <option value="jung-pyeong">중려 평조</option>
+                  </select>
+                </label>
+                <label class="tool-inline">표기
+                  <select id="noteMode">
+                    <option value="font" selected>한자</option>
+                    <option value="hangul">한글</option>
+                  </select>
+                </label>
+                <label class="tool-inline pitch-tool" title="율명 클릭 소리와 건반, 악보 재생에 함께 적용됩니다">황 음고
+                  <select id="pianoBase">
+                    <option value="63">E♭4</option>
+                    <option value="60">C4</option>
+                  </select>
+                </label>
+                <label class="chk insert-tool" title="끄면 율명을 눌러도 입력되지 않고 소리만 들려줍니다">
+                  <input type="checkbox" id="palInsert" checked> 입력
+                </label>
+                <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
+                  <input type="checkbox" id="palSound" checked> 소리
+                </label>
               </span>
-              <label class="tool-inline" title="조를 고르면 그 조의 구성음만 모아서 보여줍니다">조
-                <select id="joPreset">
-                  <option value="all" selected>12율 전체</option>
-                  <option value="hwang-pyeong">황종 평조</option>
-                  <option value="hwang-gyemyeon">황종 계면조</option>
-                  <option value="jung-pyeong">중려 평조</option>
-                </select>
-              </label>
-              <label class="tool-inline">표기
-                <select id="noteMode">
-                  <option value="font" selected>한자</option>
-                  <option value="hangul">한글</option>
-                </select>
-              </label>
-              <label class="tool-inline pitch-tool" title="율명 클릭 소리와 건반, 악보 재생에 함께 적용됩니다">황 음고
-                <select id="pianoBase">
-                  <option value="63">E♭4</option>
-                  <option value="60">C4</option>
-                </select>
-              </label>
-              <label class="chk insert-tool" title="끄면 율명을 눌러도 입력되지 않고 소리만 들려줍니다">
-                <input type="checkbox" id="palInsert" checked> 입력
-              </label>
-              <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
-                <input type="checkbox" id="palSound" checked> 소리
-              </label>
-              <span class="tool-inline size-ctl" title="팔레트 표 크기">
+              <span class="tool-inline size-ctl" title="팔레트 크기 — 율명·시김새 모두 적용">
+                <span class="size-lab">율명·시김새 크기</span>
                 <button type="button" id="palSizeDown">−</button>
                 <button type="button" id="palSizeUp">+</button>
               </span>
@@ -4433,8 +4447,8 @@
   // 직접 입력이면 선율만 추가로: 왼쪽 율명 팔레트 고정 + 오른쪽에 시김새 팔레트 상시 표시
   // (텍스트 에디터 대신) — 장단·가사는 팔레트 배치가 원래도 간단해 레이아웃을 바꿀 게 없다.
   const INPUT_MODE_HINT = {
-    editor: "각 탭 아래 텍스트 에디터에 이어서 입력",
-    direct: "악보의 정간을 클릭하면 바로 입력창이 열림"
+    editor: "곡 전체를 텍스트로 보며 편집",
+    direct: "정간 클릭 → 그 자리에서 바로 입력"
   };
   function applyInputMode() {
     document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
