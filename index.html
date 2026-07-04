@@ -476,19 +476,37 @@
   /* 직접 입력 모드에서 율명 크기·각 추가/삭제를 머리(맨 위)로 올려 담는 자리 */
   #melHeadTools { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
   #melHeadTools:empty { display: none; }
-  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 28px; }
-  .pal-tools .size-ctl { margin-left: auto; }
+  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 28px;
+               padding-right: 84px; }   /* 오른쪽 위 크기 ± 자리 확보 — 도구가 그 밑으로 겹치지 않게 */
+  /* 크기 ±(율명·시김새 공통) — 헤더 오른쪽 위에 고정. flex 줄바꿈에 끼지 않아
+     도구가 아무리 줄바꿈돼도 세로 높이를 새로 차지하지 않는다. */
+  .pal-head { position: relative; }
+  .pal-tools .size-ctl { position: absolute; top: 3px; right: 2px; margin-left: 0; }
   /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
   #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
-  /* 시김새 칩 (이미지 + 한글 이름) — 칸 크기를 고정해 표처럼 가지런히 줄지어 놓이게 하고,
-     이미지 자체 크기는 JS에서 실제 악보에 그려지는 상대 크기(붙임표/독립기호 배율)를
-     반영해 정함(ornIconPx) — 칸은 균일해도 아이콘 비중은 실제 악보와 비슷하게 보인다. */
-  .palette .ornrow { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
-  .palette .ornchip { flex: 0 0 54px; width: 54px; height: 54px; box-sizing: border-box;
-                      flex-direction: column; gap: 2px; padding: 3px 4px; }
+  /* 시김새 칩 (이미지 + 한글 이름) — 컨테이너 폭에 맞춰 칸 수가 자동으로 변하는 격자
+     (auto-fill): 좁으면 줄어들고 넓으면 빽빽하게 채운다. 칸 높이는 고정해 표처럼
+     가지런히. 이미지 자체 크기는 JS에서 실제 악보에 그려지는 상대 크기(붙임표/독립
+     기호 배율)를 반영해 정함(ornIconPx). */
+  .palette .ornrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+                     gap: 3px; margin-bottom: 8px; }
+  /* 장단 팔레트(칩 6개)는 폭이 내용에 맞춰지는(max-content) 상자라 auto-fill 격자가
+     1열로 계산돼 세로로 무너진다 — 원래대로 가로 flex 나열 유지 */
+  #jangdanPalette .ornrow { display: flex; flex-wrap: wrap; gap: 4px; }
+  #jangdanPalette .ornchip { flex: 0 0 54px; width: 54px; }
+  .palette .ornchip { flex: none; width: auto; height: 50px; box-sizing: border-box;
+                      flex-direction: column; gap: 2px; padding: 2px; }
   .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
-  .palette .ornchip .ocap { font-size: 9px; color: var(--muted); white-space: normal;
-                            text-align: center; line-height: 1.15; word-break: keep-all; }
+  .palette .ornchip .ocap { font-size: 8px; color: var(--muted); white-space: normal;
+                            text-align: center; line-height: 1.1; word-break: keep-all; }
+  /* 시김새 그룹 제목(붙임표/독립 기호) — 악보 서체로 크게, 오른쪽으로 가는 괘선과 함께 */
+  .palette .orn-sec { display: flex; align-items: baseline; gap: 8px; margin: 12px 2px 7px; }
+  .palette .orn-sec:first-child { margin-top: 2px; }
+  .palette .orn-sec b { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif;
+                        font-size: 16px; font-weight: 700; color: var(--accent);
+                        letter-spacing: 2px; white-space: nowrap; }
+  .palette .orn-sec span { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .palette .orn-sec::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--line); }
   #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
   #editorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   #melody { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
@@ -1075,7 +1093,7 @@
                 </label>
               </span>
               <span class="tool-inline size-ctl" title="팔레트 크기 — 율명·시김새 모두 적용">
-                <span class="size-lab">율명·시김새 크기</span>
+                <span class="size-lab">크기</span>
                 <button type="button" id="palSizeDown">−</button>
                 <button type="button" id="palSizeUp">+</button>
               </span>
@@ -2540,18 +2558,21 @@
   function buildOrnPalette(wrap) {
     wrap.innerHTML = "";
     wrap.classList.add("orn-view");
+    // 퇴성·추성(both)은 음표에 붙여 쓰는 게 기본이라 붙임표 그룹에 함께 담는다
     const groups = [
-      { title: "붙임표 — 음표 오른쪽에 작게", cat: "wo" },
-      { title: "독립 기호 — 한 칸 차지", cat: "with" },
-      { title: "퇴성 · 추성", cat: "both" }
+      { title: "붙임표", sub: "음표 오른쪽에 작게 · 퇴성·추성 포함", cats: ["wo", "both"] },
+      { title: "독립 기호", sub: "한 칸 차지", cats: ["with"] }
     ];
     groups.forEach(function (grp) {
       const head = document.createElement("div");
-      head.className = "pmsg"; head.textContent = grp.title;
+      head.className = "orn-sec";
+      const tb = document.createElement("b"); tb.textContent = grp.title;
+      const ts = document.createElement("span"); ts.textContent = grp.sub;
+      head.appendChild(tb); head.appendChild(ts);
       wrap.appendChild(head);
       const g = document.createElement("div");
       g.className = "ornrow";
-      ORN_LIST.filter(function (o) { return o.c === grp.cat; }).forEach(function (o) {
+      ORN_LIST.filter(function (o) { return grp.cats.indexOf(o.c) >= 0; }).forEach(function (o) {
         const item = document.createElement("div");
         item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
         const url = symURL(o.s);
