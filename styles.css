@@ -467,42 +467,53 @@
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
                                 background-color: #fff; cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
-  /* 직접 입력 모드 — 도킹된 탭(dockRail의 선율/장단/가사/텍스트)은 숨기고, 대신 활성
-     패널(.dock-panel.active) 전체가 리본+팔레트+안내문을 다 담은 채로 악보 위에 끌어서
-     옮길 수 있는 뜬 도구창이 된다(전역 입력 방식이라 body 클래스 하나로 넷 다 같이 처리).
-     DOM은 그대로 두고 CSS로만 position을 바꿔서(가장 가까운 position 조상인 #main 기준으로
-     튀어 오름) attachBarDrag가 페이지 로드 때 한 번씩 걸어둔 채로 계속 같은 요소에서 작동한다.
-     텍스트 에디터(textarea)는 이 모드에서 필요 없으므로 각 도메인 CSS가 이미 숨겨준다. */
+  /* 직접 입력 모드(피날레 팔레트 스타일) — dockRail의 탭은 숨기고, #melodyRibbon이 늘 떠
+     있는 기본 도구바가 된다. 그 안의 .win-toggle 버튼 5개(율명/시김새/장단/가사/텍스트)로
+     각 도구창(.direct-win)을 독립적으로 열고 닫는다 — 여러 개를 동시에 띄울 수 있고, 각자
+     따로 끌 수 있다. DOM은 그대로 두고 CSS로만 position을 바꿔서(가장 가까운 position
+     조상인 #main 기준으로 튀어 오름) attachBarDrag가 계속 같은 요소에서 작동한다. */
   body.input-direct #dockRail #railTabSep,
   body.input-direct #dockRail .rail-btn { display: none; }
   body.input-direct #melodyResizer { display: none; }
-  body.input-direct .dock-panel.active {
-    position: absolute; top: 96px; left: 14px; z-index: 5;
-    max-width: min(640px, calc(100% - 28px)); max-height: 60vh; overflow: auto;
-    background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.18);
-  }
-  body.input-direct .ribbon .bar-grip { display: flex; }
-  /* 텍스트 탭엔 리본이 없어 그립을 패널에 직접 둠(다른 탭은 리본 안 그립을 그대로 재사용) */
-  .dock-panel-grip { display: none; margin-bottom: 6px; }
-  body.input-direct .dock-panel-grip { display: flex; }
 
-  /* 직접 입력 모드 전용 도메인 탭(#directDomainTabs) — 뜬 패널 위쪽에서 선율/장단/가사/텍스트를
-     고른다. dockRail의 탭과 같은 자리(.domain-tab)를 눌러도 서로 활성 표시가 함께 갱신된다. */
-  .direct-domain-tabs { display: none; }
-  body.input-direct .direct-domain-tabs {
-    display: flex; align-items: center; gap: 4px;
-    position: absolute; top: 54px; left: 14px; z-index: 6;
-    background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 10px;
-    padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  /* 기본 도구바(리본) — 늘 뜸. #melodyArea는 이제 도구창이 아니라 도구바+두 팔레트를
+     담는 투명한 그릇일 뿐이라 시각적 흔적을 없앤다(에디터 모드 탭 로직은 안 건드림). */
+  body.input-direct #melodyArea {
+    display: block; position: static; background: none; border: none;
+    box-shadow: none; padding: 0; margin: 0;
   }
-  .direct-domain-tabs .bar-grip { display: flex; margin-right: 2px; }
-  .domain-tab-btn { padding: 6px 12px; border: none; background: none; border-radius: 7px;
-                     cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700;
-                     color: var(--muted); white-space: nowrap;
-                     transition: background .12s ease, color .12s ease; }
-  .domain-tab-btn:hover { background: #f0ece3; color: var(--ink); }
-  .domain-tab-btn.active { background: var(--accent); color: #fff; }
+  body.input-direct #melodyRibbon {
+    position: absolute; top: 12px; left: 14px; z-index: 5;
+    background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 0;
+  }
+  body.input-direct .win-toggle-group, body.input-direct .win-toggle-sep { display: flex; }
+  .win-toggle-group, .win-toggle-sep { display: none; }
+  .win-toggle.on { background: var(--accent); color: #fff; }
+  .win-toggle.on span { color: #fff; }
+
+  body.input-direct .ribbon .bar-grip,
+  body.input-direct .dock-panel-grip { display: flex; }
+  /* 텍스트 탭엔 리본이 없어 그립을 패널에 직접 둠(다른 탭은 리본/팔레트 안 그립을 그대로 재사용) */
+  .dock-panel-grip { display: none; margin-bottom: 6px; }
+
+  /* 도구창 5개(율명/시김새/장단/가사/텍스트) 공통 — 열렸을 때(.win-open)만 악보 위에 뜬다.
+     top/left 기본값을 명시해야 한다 — 안 주면 position:absolute가 원래 문서 흐름상의
+     위치(정간 편집 독 훨씬 아래)를 그대로 써서 화면 밖으로 나가버린다. 다 같은 기본
+     자리에서 시작하지만 각자 따로 끌 수 있어(attachBarDrag) 필요하면 떼어놓으면 된다.
+     #paletteCol은 자기 ID 규칙(width:450px 등)이 있어 명시적으로 함께 걸어 덮는다. */
+  body.input-direct .direct-win:not(.win-open) { display: none !important; }
+  body.input-direct .direct-win.win-open,
+  body.input-direct #paletteCol.win-open {
+    display: flex; flex-direction: column; position: absolute; top: 54px; left: 14px; z-index: 6;
+    max-width: min(420px, calc(100% - 28px)); max-height: 60vh; overflow: auto;
+    background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
+  }
+  /* 여러 개를 한꺼번에 처음 열어도 서로 완전히 겹치지 않도록 기본 위치를 살짝씩 어긋나게 */
+  body.input-direct #ornWinWrap.win-open { top: 54px; left: 448px; }
+  body.input-direct #jangdanArea.win-open { top: 84px; left: 44px; }
+  body.input-direct #lyricsArea.win-open { top: 114px; left: 74px; }
+  body.input-direct #textArea.win-open { top: 144px; left: 104px; }
 
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
@@ -714,18 +725,18 @@
   .ed-title { padding: 3px 1px 6px; font-size: 15px; font-weight: 700; color: var(--accent);
               border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
   .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
-  /* 직접 입력 모드 — 텍스트 에디터 대신 오른쪽에 시김새 팔레트를 상시 표시
-     (왼쪽은 율명 팔레트 고정, 율명/시김새 탭은 숨김, 두 컬럼은 딱 50/50) */
+  /* 직접 입력 모드 — 텍스트 에디터(칸)는 필요 없으므로 통째로 숨기고, 율명·시김새는
+     각자 독립된 도구창(#paletteCol, #ornWinWrap)이 되어 .direct-win 공통 규칙을 따른다. */
   #directOrnWrap { display: none; }
-  #melodyArea.mel-direct #melodyHlWrap,
-  #melodyArea.mel-direct .ed-pager,
+  #melodyArea.mel-direct #editorCol,
   #melodyArea.mel-direct #melodySplit,
-  #melodyArea.mel-direct .melody-head .pal-views { display: none !important; }
-  #melodyArea.mel-direct #directOrnWrap { display: block; flex: 1 1 auto; min-height: 0; overflow: auto; }
-  /* min-width:0 — 건반(고정 폭 ~1200px)이 컬럼을 밀어 늘리지 못하게 하고 안에서 가로 스크롤 */
-  #melodyArea.mel-direct #paletteCol { flex: 1 1 0; width: auto !important; max-width: none; min-width: 0; }
-  #melodyArea.mel-direct #editorCol { flex: 1 1 0; min-width: 0; }
-  /* 왼쪽 컬럼 제목 '율명' — 오른쪽 '시김새' 제목과 같은 선상에, 직접 입력 모드에서만 */
+  #melodyArea.mel-direct .melody-head { display: none !important; }
+  #melodyArea.mel-direct #directOrnWrap { display: block; }
+  /* #melodyRow의 고정 height(330px)는 자식(팔레트)이 도킹돼 있던 시절 것 — 이제 자식들이
+     전부 position:absolute라 이 박스가 빈 채로 330px를 그대로 차지해 사이드바 전체가
+     안 줄어드는 문제가 있었다. 높이를 없애 빈 상자가 자리만 차지하지 않게 한다. */
+  #melodyArea.mel-direct #melodyRow { height: 0; }
+  /* 도구창 제목('율명'/'시김새') — 직접 입력 모드에서만 */
   .pal-col-title { display: none; }
   #melodyArea.mel-direct .pal-col-title {
     display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;

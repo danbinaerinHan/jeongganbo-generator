@@ -334,9 +334,9 @@
               data-tip="악보의 정간을 클릭하면 그 자리에 입력창이 열리고, Enter로 다음 정간으로 넘어갑니다. 문법을 몰라도 보이는 그대로 채울 수 있어 직관적입니다. 선율·장단·가사 공통.">직접 입력</button>
           </div>
           <div class="mode-hint" id="melInputHint">곡 전체를 텍스트로 보며 편집</div>
-          <!-- 선율/장단/가사/텍스트 탭 — 에디터 모드에선 여기(레일)에서, 직접 입력 모드에선
-               악보 위에 뜨는 도구창(#directDomainTabs)에서 고른다. 두 세트 다 공용 클래스
-               .domain-tab로 묶어 같은 클릭 핸들러를 공유하고 .active 표시도 함께 갱신된다. -->
+          <!-- 선율/장단/가사/텍스트 탭 — 에디터 모드에서만 쓴다(하나만 골라 하단에 도킹).
+               직접 입력 모드에선 이 탭 대신 리본의 도구창 열기 버튼(.win-toggle)들을 쓴다 —
+               여러 도구창을 동시에 띄울 수 있어야 해서 '탭(하나만 활성)' 방식이 안 맞는다. -->
           <div class="rail-sep" id="railTabSep"></div>
           <button type="button" class="rail-btn domain-tab active" data-panel="melodyArea">선율</button>
           <button type="button" class="rail-btn domain-tab" data-panel="jangdanArea">장단</button>
@@ -366,17 +366,6 @@
             </div>
           </span>
         </nav>
-        <!-- 직접 입력 모드 전용 도구창 — 뜬 패널(.dock-panel) 위에서 선율/장단/가사/텍스트를 고른다.
-             dockRail의 탭과 같은 .domain-tab 클래스를 공유해 클릭 핸들러·활성 표시를 함께 쓴다. -->
-        <div id="directDomainTabs" class="direct-domain-tabs">
-          <div class="bar-grip" title="끌어서 이동">
-            <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
-          </div>
-          <button type="button" class="domain-tab-btn domain-tab active" data-panel="melodyArea">선율</button>
-          <button type="button" class="domain-tab-btn domain-tab" data-panel="jangdanArea">장단</button>
-          <button type="button" class="domain-tab-btn domain-tab" data-panel="lyricsArea">가사</button>
-          <button type="button" class="domain-tab-btn domain-tab" data-panel="textArea">텍스트</button>
-        </div>
         <div class="dock-panels">
     <div id="melodyArea" class="dock-panel active">
 
@@ -389,6 +378,22 @@
         <div class="bar-grip" title="끌어서 이동">
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
         </div>
+        <!-- 직접 입력 모드 전용 — 이 리본이 늘 떠 있는 기본 도구바가 되고, 여기 버튼들로
+             도구창(율명/시김새/장단/가사/텍스트)을 하나씩 독립적으로 열고 닫는다(피날레
+             팔레트처럼 여러 개를 동시에 띄울 수 있음). 에디터 모드에선 숨김(CSS 참고). -->
+        <div class="ribbon-group win-toggle-group">
+          <button type="button" id="winToggleYul" class="ribbon-btn win-toggle" data-target="paletteCol"
+            data-tip="율명 팔레트를 열고 닫습니다">律<span>율명</span></button>
+          <button type="button" id="winToggleOrn" class="ribbon-btn win-toggle" data-target="ornWinWrap"
+            data-tip="시김새 팔레트를 열고 닫습니다">飾<span>시김새</span></button>
+          <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle" data-target="jangdanArea"
+            data-tip="장단 도구창을 열고 닫습니다">拍<span>장단</span></button>
+          <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle" data-target="lyricsArea"
+            data-tip="가사 도구창을 열고 닫습니다">詞<span>가사</span></button>
+          <button type="button" id="winToggleText" class="ribbon-btn win-toggle" data-target="textArea"
+            data-tip="텍스트 도구창을 열고 닫습니다">Ａ<span>텍스트</span></button>
+        </div>
+        <div class="ribbon-sep win-toggle-sep"></div>
         <div class="ribbon-group">
           <button type="button" id="melodyUndo" class="ribbon-btn tip" data-tip="방금 초기화한 선율을 되돌립니다">↶<span>되돌리기</span></button>
           <button type="button" id="melodyReset" class="ribbon-btn tip" data-tip="선율 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲<span>초기화</span></button>
@@ -457,7 +462,11 @@
       </div>
 
       <div id="melodyRow">
-        <div id="paletteCol">
+        <div id="paletteCol" class="direct-win">
+          <!-- 직접 입력 모드 전용 그립 — 이 팔레트를 독립적으로 끌어서 옮길 때만 보임 -->
+          <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+            <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+          </div>
           <div class="pal-head">
             <!-- 첫 줄: 제목(직접 입력 모드에서만) + 오른쪽에 입력·소리 토글과 크기 ± —
                  입력·소리·크기는 팔레트 전체(표·건반·시김새)에 걸치는 컨트롤이라 설정
@@ -527,10 +536,6 @@
               </div>
             </div>
           </div>
-          <!-- 시김새 추가 모드 전용 — 숫자키(1~0)에 어떤 붙임표 시김새를 배정할지 고르는 줄.
-               시김새 팔레트 바로 위에 둬서 배지 숫자와 항상 맞대어 보이게 한다. -->
-          <div id="ornAddMapBar" class="orn-add-map-bar"></div>
-          <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
           <div id="melodyHlWrap">
             <div id="melodyHlBack" aria-hidden="true"></div>
             <textarea id="melody" spellcheck="false"
@@ -542,8 +547,18 @@
           </div>
         </div>
       </div>
+      <!-- 시김새 팔레트 — 직접 입력 모드에서 율명과 별개로 독립적으로 열고 끌 수 있는 도구창.
+           숫자키 배정 줄(ornAddMapBar)은 팔레트 바로 위에 둬서 배지 숫자와 맞대어 보이게 한다. -->
+      <div id="ornWinWrap" class="direct-win">
+        <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+          <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+        </div>
+        <span class="pal-col-title">시김새</span>
+        <div id="ornAddMapBar" class="orn-add-map-bar"></div>
+        <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
+      </div>
     </div>
-    <div id="jangdanArea" class="dock-panel">
+    <div id="jangdanArea" class="dock-panel direct-win">
       <div class="ribbon" id="jangdanRibbon">
         <div class="bar-grip" title="끌어서 이동">
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
@@ -586,7 +601,7 @@
         </div>
       </div>
     </div>
-    <div id="lyricsArea" class="dock-panel">
+    <div id="lyricsArea" class="dock-panel direct-win">
       <div class="ribbon" id="lyricsRibbon">
         <div class="bar-grip" title="끌어서 이동">
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
@@ -644,7 +659,7 @@
         </div>
       </div>
     </div>
-    <div id="textArea" class="dock-panel">
+    <div id="textArea" class="dock-panel direct-win">
       <!-- 텍스트 탭엔 리본이 없어 뜬 패널을 끌 손잡이가 따로 필요함(다른 탭은 리본의 그립을 재사용) -->
       <div class="bar-grip dock-panel-grip" title="끌어서 이동">
         <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>

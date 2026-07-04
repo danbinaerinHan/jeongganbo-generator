@@ -3218,13 +3218,14 @@
   }
   attachBarDrag($("zoomBarWrap"));
   attachBarDrag($("playBarWrap"));
-  // 네 도메인 패널 다 직접 입력 모드에서만 뜬 도구창이 되어(그립이 그때만 보임) 끌 수 있음 —
-  // 그립은 각자 안(리본 안, 텍스트 탭은 패널 바로 안)에 있고 옮겨지는 건 패널 자체.
-  attachBarDrag($("melodyArea"));
+  // 직접 입력 모드의 도구창 6개(기본 도구바 + 5개 팔레트) 다 각자 독립적으로 뜨고
+  // (그립이 그때만 보임) 따로 끌 수 있음 — 피날레 팔레트처럼.
+  attachBarDrag($("melodyRibbon"));
+  attachBarDrag($("paletteCol"));
+  attachBarDrag($("ornWinWrap"));
   attachBarDrag($("jangdanArea"));
   attachBarDrag($("lyricsArea"));
   attachBarDrag($("textArea"));
-  attachBarDrag($("directDomainTabs"));
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -3245,9 +3246,8 @@
     b.addEventListener("click", function () { setEdPage(edPage + 1); });
   });
 
-  // 선율/장단/가사/텍스트 탭 — 편집기 하나씩만 표시. 에디터 모드에선 dockRail의 탭에서,
-  // 직접 입력 모드에선 뜬 도구창(#directDomainTabs)에서 고른다 — 둘 다 .domain-tab 공용
-  // 클래스라 어느 쪽을 눌러도 두 세트의 .active 표시가 함께 갱신된다.
+  // 선율/장단/가사/텍스트 탭(dockRail) — 에디터 모드 전용, 편집기 하나씩만 표시.
+  // 직접 입력 모드에선 이 탭이 숨고 대신 아래 .win-toggle로 여러 도구창을 동시에 연다.
   document.querySelectorAll(".domain-tab").forEach(function (b) {
     b.addEventListener("click", function () {
       const panelId = b.getAttribute("data-panel");
@@ -3257,6 +3257,17 @@
       document.querySelectorAll(".dock-panel").forEach(function (p) {
         p.classList.toggle("active", p.id === panelId);
       });
+    });
+  });
+
+  // 직접 입력 모드 도구창 열고 닫기(피날레 팔레트 스타일) — 기본 도구바(리본)의 버튼마다
+  // data-target으로 지정한 도구창을 독립적으로 토글한다. 여러 개를 동시에 열어둘 수 있다.
+  document.querySelectorAll(".win-toggle").forEach(function (b) {
+    b.addEventListener("click", function () {
+      const target = $(b.getAttribute("data-target"));
+      if (!target) return;
+      const open = target.classList.toggle("win-open");
+      b.classList.toggle("on", open);
     });
   });
 
@@ -3565,6 +3576,14 @@
       buildOrnPalette($("directOrnPalette"));
       buildOrnAddMapBar();
       applyPalZoom();
+      // 직접 입력에 새로 들어올 때마다 도구창 상태를 초기화 — 율명만 기본으로 열어두고
+      // 나머지(시김새/장단/가사/텍스트)는 필요할 때 리본에서 직접 열게 한다.
+      document.querySelectorAll(".win-toggle").forEach(function (b) {
+        const target = $(b.getAttribute("data-target"));
+        const open = b.getAttribute("data-target") === "paletteCol";
+        if (target) target.classList.toggle("win-open", open);
+        b.classList.toggle("on", open);
+      });
     }
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
