@@ -467,16 +467,42 @@
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
                                 background-color: #fff; cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
-  /* 직접 입력 모드 — 선율·장단·가사 리본 셋 다 악보 위에 끌어서 옮길 수 있는 뜬 바로
-     바뀐다(전역 입력 방식이라 body 클래스 하나로 셋 다 같이 처리). DOM은 그대로 두고
-     CSS로만 position을 바꿔서(가장 가까운 position 조상인 #main 기준으로 튀어 오름)
-     attachBarDrag가 페이지 로드 때 한 번씩 걸어둔 채로 계속 같은 요소에서 작동한다.
-     탭마다 하나만 active라 실제로는 그 탭의 리본만 보인다. */
-  body.input-direct .ribbon {
-    position: absolute; top: 54px; left: 14px; z-index: 5; max-width: calc(100% - 28px);
-    background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 0;
+  /* 직접 입력 모드 — 도킹된 탭(dockRail의 선율/장단/가사/텍스트)은 숨기고, 대신 활성
+     패널(.dock-panel.active) 전체가 리본+팔레트+안내문을 다 담은 채로 악보 위에 끌어서
+     옮길 수 있는 뜬 도구창이 된다(전역 입력 방식이라 body 클래스 하나로 넷 다 같이 처리).
+     DOM은 그대로 두고 CSS로만 position을 바꿔서(가장 가까운 position 조상인 #main 기준으로
+     튀어 오름) attachBarDrag가 페이지 로드 때 한 번씩 걸어둔 채로 계속 같은 요소에서 작동한다.
+     텍스트 에디터(textarea)는 이 모드에서 필요 없으므로 각 도메인 CSS가 이미 숨겨준다. */
+  body.input-direct #dockRail #railTabSep,
+  body.input-direct #dockRail .rail-btn { display: none; }
+  body.input-direct #melodyResizer { display: none; }
+  body.input-direct .dock-panel.active {
+    position: absolute; top: 96px; left: 14px; z-index: 5;
+    max-width: min(640px, calc(100% - 28px)); max-height: 60vh; overflow: auto;
+    background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
   }
   body.input-direct .ribbon .bar-grip { display: flex; }
+  /* 텍스트 탭엔 리본이 없어 그립을 패널에 직접 둠(다른 탭은 리본 안 그립을 그대로 재사용) */
+  .dock-panel-grip { display: none; margin-bottom: 6px; }
+  body.input-direct .dock-panel-grip { display: flex; }
+
+  /* 직접 입력 모드 전용 도메인 탭(#directDomainTabs) — 뜬 패널 위쪽에서 선율/장단/가사/텍스트를
+     고른다. dockRail의 탭과 같은 자리(.domain-tab)를 눌러도 서로 활성 표시가 함께 갱신된다. */
+  .direct-domain-tabs { display: none; }
+  body.input-direct .direct-domain-tabs {
+    display: flex; align-items: center; gap: 4px;
+    position: absolute; top: 54px; left: 14px; z-index: 6;
+    background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 10px;
+    padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  }
+  .direct-domain-tabs .bar-grip { display: flex; margin-right: 2px; }
+  .domain-tab-btn { padding: 6px 12px; border: none; background: none; border-radius: 7px;
+                     cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700;
+                     color: var(--muted); white-space: nowrap;
+                     transition: background .12s ease, color .12s ease; }
+  .domain-tab-btn:hover { background: #f0ece3; color: var(--ink); }
+  .domain-tab-btn.active { background: var(--accent); color: #fff; }
 
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);

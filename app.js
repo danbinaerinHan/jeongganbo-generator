@@ -3218,10 +3218,13 @@
   }
   attachBarDrag($("zoomBarWrap"));
   attachBarDrag($("playBarWrap"));
-  // 세 리본 다 직접 입력 모드에서만 뜬 바가 되어(grip이 그때만 보임) 끌 수 있음
-  attachBarDrag($("melodyRibbon"));
-  attachBarDrag($("jangdanRibbon"));
-  attachBarDrag($("lyricsRibbon"));
+  // 네 도메인 패널 다 직접 입력 모드에서만 뜬 도구창이 되어(그립이 그때만 보임) 끌 수 있음 —
+  // 그립은 각자 안(리본 안, 텍스트 탭은 패널 바로 안)에 있고 옮겨지는 건 패널 자체.
+  attachBarDrag($("melodyArea"));
+  attachBarDrag($("jangdanArea"));
+  attachBarDrag($("lyricsArea"));
+  attachBarDrag($("textArea"));
+  attachBarDrag($("directDomainTabs"));
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -3242,12 +3245,17 @@
     b.addEventListener("click", function () { setEdPage(edPage + 1); });
   });
 
-  // 아래 편집 독 — 왼쪽 세로 탭(선율/장단/가사)으로 편집기 하나씩만 표시
-  document.querySelectorAll("#dockRail .rail-btn").forEach(function (b) {
+  // 선율/장단/가사/텍스트 탭 — 편집기 하나씩만 표시. 에디터 모드에선 dockRail의 탭에서,
+  // 직접 입력 모드에선 뜬 도구창(#directDomainTabs)에서 고른다 — 둘 다 .domain-tab 공용
+  // 클래스라 어느 쪽을 눌러도 두 세트의 .active 표시가 함께 갱신된다.
+  document.querySelectorAll(".domain-tab").forEach(function (b) {
     b.addEventListener("click", function () {
-      document.querySelectorAll("#dockRail .rail-btn").forEach(function (x) { x.classList.toggle("active", x === b); });
+      const panelId = b.getAttribute("data-panel");
+      document.querySelectorAll(".domain-tab").forEach(function (x) {
+        x.classList.toggle("active", x.getAttribute("data-panel") === panelId);
+      });
       document.querySelectorAll(".dock-panel").forEach(function (p) {
-        p.classList.toggle("active", p.id === b.getAttribute("data-panel"));
+        p.classList.toggle("active", p.id === panelId);
       });
     });
   });
