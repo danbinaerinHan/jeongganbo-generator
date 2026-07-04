@@ -250,12 +250,13 @@
   /* 팔레트 헤더 도구: 표기(한자/한글)는 표 보기 전용, 황 음고(E♭/C)·크기 ±는 표·건반 공통 */
   #paletteCol.piano-active .tool-inline:not(.size-ctl):not(.pitch-tool) { display: none; }
   /* 입력·소리 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
-  .pal-tools .sound-tool, .pal-tools .insert-tool { font-weight: 600; }
+  .pal-head .sound-tool, .pal-head .insert-tool { font-weight: 600; }
   #paletteCol.orn-active .sound-tool, #paletteCol.orn-active .insert-tool { display: none; }
-  /* 율명 전용 설정 묶음(표·건반/조/표기/황음고/입력/소리) — 옅은 상자로 한 덩어리임을 표시.
-     크기 ±는 율명·시김새 팔레트 공통이라 이 묶음 밖(오른쪽)에 따로 둔다. */
-  .yul-tools { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
-               padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px;
+  /* 율명 전용 설정 묶음(표·건반/조/표기/황음고) — 옅은 상자로 한 덩어리임을 표시.
+     입력·소리·크기 ±는 팔레트 공통이라 이 묶음 밖(첫 줄 오른쪽)에 따로 둔다.
+     간격·패딩은 기본 폭(≈395px)에서 네 컨트롤이 한 줄에 들어가게 빠듯하게. */
+  .yul-tools { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap;
+               padding: 4px 7px; border: 1px solid var(--line); border-radius: 8px;
                background: #faf8f3; }
   #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
   .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
@@ -476,12 +477,13 @@
   /* 직접 입력 모드에서 율명 크기·각 추가/삭제를 머리(맨 위)로 올려 담는 자리 */
   #melHeadTools { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
   #melHeadTools:empty { display: none; }
-  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 28px;
-               padding-right: 84px; }   /* 오른쪽 위 크기 ± 자리 확보 — 도구가 그 밑으로 겹치지 않게 */
-  /* 크기 ±(율명·시김새 공통) — 헤더 오른쪽 위에 고정. flex 줄바꿈에 끼지 않아
-     도구가 아무리 줄바꿈돼도 세로 높이를 새로 차지하지 않는다. */
-  .pal-head { position: relative; }
-  .pal-tools .size-ctl { position: absolute; top: 3px; right: 2px; margin-left: 0; }
+  /* 팔레트 머리 두 줄 — 첫 줄(.pal-top): 제목 + 오른쪽 입력·소리·크기(팔레트 전체 공통),
+     둘째 줄(.pal-tools): 율명 전용 설정 묶음. 시김새 탭에선 둘째 줄이 통째로 숨어
+     첫 줄 하나만 남는다(세로 최소화). */
+  .pal-top { display: flex; align-items: center; gap: 12px; min-height: 24px; }
+  .pal-top-right { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
+  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 5px; }
+  #paletteCol.orn-active .pal-tools { display: none; }
   /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
   #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
   /* 시김새 칩 (이미지 + 한글 이름) — 컨테이너 폭에 맞춰 칸 수가 자동으로 변하는 격자
@@ -1056,10 +1058,27 @@
       <div id="melodyRow">
         <div id="paletteCol">
           <div class="pal-head">
-            <div class="pal-tools">
+            <!-- 첫 줄: 제목(직접 입력 모드에서만) + 오른쪽에 입력·소리 토글과 크기 ± —
+                 입력·소리·크기는 팔레트 전체(표·건반·시김새)에 걸치는 컨트롤이라 설정
+                 묶음 밖 첫 줄 오른쪽에 둔다 -->
+            <div class="pal-top">
               <span class="pal-col-title">율명</span>
-              <!-- 율명 전용 설정 묶음 — 시김새 탭에서는 통째로 숨는다. 크기 ±만 밖에 —
-                   율명·시김새 팔레트 모두에 적용되는 공통 컨트롤이라 묶음 밖 오른쪽에 둔다. -->
+              <span class="pal-top-right">
+                <label class="chk insert-tool" title="끄면 율명을 눌러도 입력되지 않고 소리만 들려줍니다">
+                  <input type="checkbox" id="palInsert" checked> 입력
+                </label>
+                <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
+                  <input type="checkbox" id="palSound" checked> 소리
+                </label>
+                <span class="tool-inline size-ctl" title="팔레트 크기 — 율명·시김새 모두 적용">
+                  <span class="size-lab">크기</span>
+                  <button type="button" id="palSizeDown">−</button>
+                  <button type="button" id="palSizeUp">+</button>
+                </span>
+              </span>
+            </div>
+            <!-- 둘째 줄: 율명 전용 설정 묶음 — 시김새 탭에서는 줄째로 숨는다 -->
+            <div class="pal-tools">
               <span class="yul-tools" title="율명 팔레트 설정">
                 <span class="pal-seg" id="yulModeSeg">
                   <button type="button" class="seg-btn active" data-mode="grid">표</button>
@@ -1085,17 +1104,6 @@
                     <option value="60">C4</option>
                   </select>
                 </label>
-                <label class="chk insert-tool" title="끄면 율명을 눌러도 입력되지 않고 소리만 들려줍니다">
-                  <input type="checkbox" id="palInsert" checked> 입력
-                </label>
-                <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
-                  <input type="checkbox" id="palSound" checked> 소리
-                </label>
-              </span>
-              <span class="tool-inline size-ctl" title="팔레트 크기 — 율명·시김새 모두 적용">
-                <span class="size-lab">크기</span>
-                <button type="button" id="palSizeDown">−</button>
-                <button type="button" id="palSizeUp">+</button>
               </span>
             </div>
           </div>
