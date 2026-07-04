@@ -546,6 +546,9 @@
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
   #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span { color: #fff; }
   #ornAddToggle:disabled, #rangeClearToggle:disabled { opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+  /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
+  #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
+  #lyricsToTextBtn span { font-size: 10px; font-weight: 600; }
 
   /* 시김새 추가 모드 — 붙임표 칩 위에 숫자 배지(피날레의 붙임표 단축키처럼) */
   .palette .pi.ornchip { position: relative; }
@@ -555,7 +558,7 @@
     background: var(--accent); color: #fff; border-radius: 4px;
     font-size: 8px; font-weight: 700; line-height: 1;
   }
-  body.orn-add-on .ornchip .orn-key-badge { display: inline-flex; }
+  body.orn-add-on .ornchip:not(.orn-no-key) .orn-key-badge { display: inline-flex; }
   .ornchip.orn-armed { background: #f4e2c2; outline: 1.5px solid var(--accent); border-radius: 6px; }
 
   /* 시김새 창 안의 모드 버튼(미세조정/추가 모드) — 전역 도구바가 아니라 이 팔레트 설정임을
@@ -748,9 +751,13 @@
     color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
 
   /* 직접 입력 모드 — 장단·가사도 선율과 마찬가지로 악보의 정간을 클릭해 입력한다.
-     텍스트 에디터(칸)는 통째로 필요 없으므로 숨긴다(팔레트가 남는 폭을 채움). */
+     텍스트 에디터(칸)는 통째로 필요 없으므로 숨긴다. #jangdanPaletteWrap은 원래
+     max-width:45%로 옆의 에디터 칸과 자리를 나눠 쓰던 값이라, 그 칸이 없어진 지금은
+     명시적으로 폭을 꽉 채우게(flex:1 1 auto) 다시 잡아줘야 한다(안 그러면 반만
+     쓰고 나머지는 빈 자리로 남아 팔레트가 잘려 보인다). */
   body.input-direct #jangdanEditorCol,
   body.input-direct #lyricsEditorCol { display: none; }
+  body.input-direct #jangdanPaletteWrap { flex: 1 1 auto; max-width: none; }
 
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }

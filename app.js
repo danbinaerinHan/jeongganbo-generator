@@ -1439,12 +1439,11 @@
         const item = document.createElement("div");
         item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
         item.dataset.stem = o.s;
-        const key = ORN_ADD_KEY_BY_STEM[o.s];
-        if (key) {
-          const badge = document.createElement("span");
-          badge.className = "orn-key-badge"; badge.textContent = key;
-          item.appendChild(badge);
-        }
+        // 배지는 늘 만들어두고(숫자 배정이 바뀌어도 새로 만들 필요 없이) 내용/보임만
+        // refreshOrnAddBadges()가 그때그때 최신 배정으로 갱신한다.
+        const badge = document.createElement("span");
+        badge.className = "orn-key-badge";
+        item.appendChild(badge);
         const url = symURL(o.s);
         if (url) {
           const img = document.createElement("img");
@@ -1458,7 +1457,9 @@
         item.appendChild(cap);
         item.addEventListener("mousedown", function (e) { e.preventDefault(); });
         item.addEventListener("click", function () {
-          if (key && ornAddMode) { armOrnAdd(o.s); return; }   // 추가 모드에선 칩 클릭도 숫자키처럼 골라두기만
+          // 추가 모드에선(지금 이 시김새에 숫자가 배정돼 있으면) 칩 클릭도 숫자키처럼 골라두기만
+          // 함 — ORN_ADD_KEY_BY_STEM을 매번 다시 조회해야 배정을 바꾼 뒤에도 안 어긋난다.
+          if (ornAddMode && ORN_ADD_KEY_BY_STEM[o.s]) { armOrnAdd(o.s); return; }
           insertToken("{" + o.k + "}");
         });
         g.appendChild(item);
@@ -1478,7 +1479,12 @@
   function refreshOrnAddBadges() {
     document.body.classList.toggle("orn-add-on", ornAddMode);
     document.querySelectorAll(".ornchip").forEach(function (el) {
-      el.classList.toggle("orn-armed", ornAddMode && !!ornAddArmed && el.dataset.stem === ornAddArmed);
+      const stem = el.dataset.stem;
+      const key = ORN_ADD_KEY_BY_STEM[stem];
+      const badge = el.querySelector(".orn-key-badge");
+      if (badge) badge.textContent = key || "";
+      el.classList.toggle("orn-no-key", !key);   // 숫자 배정이 없으면 배지 자리를 숨김
+      el.classList.toggle("orn-armed", ornAddMode && !!ornAddArmed && stem === ornAddArmed);
     });
   }
   document.addEventListener("keydown", function (e) {
@@ -1724,13 +1730,14 @@
     gs *= noteScaleCur;   // 율명 크기 배율 — 이제 음표 글자(drawGlyph)에만 적용됨
 
     const rowH = cell / nRows;
-    // 분박이 정확히 둘일 때는 두 음 사이 간격(자간)이 다른 경우보다 헐렁해 보여서
-    // 정간 중심을 기준으로 살짝 좁혀 그린다(3개 이상일 때는 그대로 균등 분할).
-    const TWO_ROW_GAP_SCALE = 0.8;
+    // 정간 안에 음이 정확히 둘일 때는(세로 두 줄=분박이든, 가로 두 글자든) 간격(자간)이
+    // 다른 경우보다 헐렁해 보여서 정간 중심을 기준으로 살짝 좁혀 그린다
+    // (셋 이상일 때는 그대로 균등 분할).
+    const PAIR_GAP_SCALE = 0.8;
     for (let ri = 0; ri < nRows; ri++) {
       let cyc;
       if (nRows === 2) {
-        const halfGap = (rowH / 2) * TWO_ROW_GAP_SCALE;
+        const halfGap = (rowH / 2) * PAIR_GAP_SCALE;
         cyc = (ri === 0) ? (yTop + cell / 2 - halfGap) : (yTop + cell / 2 + halfGap);
       } else {
         cyc = yTop + rowH * (ri + 0.5);        // 행 세로 중심 (ri=0 위)
@@ -1742,9 +1749,14 @@
 
       const n = groups.length || 1;
       const colW = cell / n;
+      // 가로로 정확히 두 글자가 나란히 올 때도(분박 세로 두 줄과 같은 이유로) 간격을
+      // 20% 좁힌다 — 정간 가로 중심을 기준으로 두 중심을 그만큼만 벌린다.
+      const twoColHalfGap = (n === 2) ? (colW / 2) * PAIR_GAP_SCALE : null;
       for (let gi = 0; gi < groups.length; gi++) {
         const g = groups[gi];
-        const cx = x + colW * (gi + 0.5);
+        const cx = twoColHalfGap != null
+          ? (x + cell / 2 + (gi === 0 ? -twoColHalfGap : twoColHalfGap))
+          : x + colW * (gi + 0.5);
         if (g.main.sym != null) {
           symK++;
           // 음길이가 있는(독립 칸을 차지하는) 시김새는 조금 작게 그림 — 시김새(ORN_CAT에 있는 것)는
@@ -3448,6 +3460,22 @@
   $("lyricsReset").addEventListener("click", resetLyrics);
   $("lyricsUndo").addEventListener("click", undoLyrics);
   refreshLyricsUndoBtn();
+
+  // 지금까지 입력한 가사 전체를(구조용 |·줄바꿈 없이 이어붙여) 텍스트 항목으로 담기 —
+  // 정간마다 나뉜 가사와 별개로, 악보 위 아무 데나 놓는 캡션 형태의 전체 가사가 필요할 때.
+  $("lyricsToTextBtn").addEventListener("click", function () {
+    const plain = lyricsFull.replace(/\|/g, "").replace(/\s+/g, "").trim();
+    if (!plain) return;
+    addCustomText(plain);
+    // 결과를 바로 볼 수 있게 텍스트 쪽을 열어준다(직접 입력은 도구창, 에디터는 탭)
+    if (inputMode === "direct") {
+      $("textArea").classList.add("win-open");
+      $("winToggleText").classList.add("on");
+    } else {
+      const railBtn = document.querySelector('#dockRail .rail-btn[data-panel="textArea"]');
+      if (railBtn) railBtn.click();
+    }
+  });
 
   // 시김새 수정 모드 토글 + 조정 패널
   $("ornEditToggle").addEventListener("click", function () {
