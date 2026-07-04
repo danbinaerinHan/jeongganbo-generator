@@ -1,0 +1,760 @@
+  :root {
+    --bg: #f4f4f2;
+    --panel: #ffffff;
+    --line: #d9d6cf;
+    --ink: #1c1b19;
+    --accent: #8a6d3b;
+    --muted: #6b6a66;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  button, select, input, textarea { transition: border-color .12s ease, background .12s ease; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(138,109,59,.15);
+  }
+
+  /* 체크박스 = 토글 스위치 하나로 통일 (기본 브라우저 체크박스 대체) */
+  input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
+    width: 30px; height: 18px; border-radius: 999px;
+    background: #e4e0d6; border: 1px solid var(--line); position: relative; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  input[type="checkbox"]::after {
+    content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.28);
+    transition: transform .15s ease;
+  }
+  input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  input[type="checkbox"]:checked::after { transform: translateX(12px); }
+
+  /* 셀렉트 = 화살표 아이콘 통일 (기본 브라우저 화살표 대체) */
+  select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6a66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; background-size: 12px;
+  }
+
+  /* 아이콘 버튼 하나로 통일(⚙ · ? · ✕ · ▾ 등 텍스트 이모지 대신 같은 획 굵기의 SVG) */
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; padding: 0; border: none; background: transparent;
+    border-radius: 6px; color: var(--muted); cursor: pointer; flex: 0 0 auto;
+    transition: background .12s ease, color .12s ease, transform .12s ease;
+  }
+  .icon-btn svg { width: 15px; height: 15px; stroke-width: 2; }
+  .icon-btn:hover { background: #f0ece3; color: var(--ink); }
+  .icon-btn.on { background: var(--accent); color: #fff; }
+  .icon-btn.collapsed svg.chev { transform: rotate(-90deg); }
+
+  /* 숫자 입력 + 단위 접미(mm) 한 부품으로 */
+  .num-unit { position: relative; display: inline-flex; }
+  .num-unit input[type="number"] { padding-right: 22px; }
+  .num-unit .unit { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 9px; color: var(--muted); pointer-events: none; user-select: none; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ---------- 사이드바 ---------- */
+  #sidebar {
+    width: 330px;
+    flex: 0 0 330px;
+    order: 2;                       /* 오른쪽 배치 */
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  #sidebar h1 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .field input[type="number"],
+  .field input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .field input:disabled { background: #f2f0ec; color: var(--muted); }
+  .field input[type="range"] { width: 100%; padding: 0; accent-color: var(--accent); cursor: pointer; }
+  .field select {
+    width: 100%; padding: 8px 26px 8px 10px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 14px; font-family: inherit; background-color: #fff; cursor: pointer;
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .two { display: flex; gap: 10px; }
+  .two .field { flex: 1; margin-bottom: 16px; }
+  .chk { display: flex; gap: 7px; align-items: center; font-size: 12px; font-weight: 400;
+         white-space: nowrap; margin: 0; cursor: pointer; }
+  /* 관련 옵션(장단/가사/템포)은 바짝 붙이고, 다음 그룹과는 확실히 띄움 */
+  .chk-cluster { margin-bottom: 26px; }
+  .chk-cluster .field { margin-bottom: 2px; padding: 6px 0; }
+  .chk-cluster .field + .field { border-top: 1px solid var(--line); }
+  .chk-cluster .field select { margin: 6px 0 2px 37px; width: calc(100% - 37px); }
+  .chk-row { display: flex; align-items: center; gap: 6px; }
+  .mini { display: flex; align-items: center; gap: 6px; margin-top: 7px;
+          font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+  .mini input[type="number"] { width: 60px; padding: 4px 6px; font-size: 12px;
+                border: 1px solid var(--line); border-radius: 5px; font-family: inherit; }
+  .mini .num-unit input[type="number"] { width: 62px; padding-right: 22px; }
+  .mini .num-unit .unit { font-size: 9px; }
+
+  .sec { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent);
+         text-transform: uppercase; margin: 6px 0 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  details.adv { margin: 4px 0 18px; }
+  details.adv > summary {
+    cursor: pointer; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: #f4efe6; border: 1px solid var(--accent); border-radius: 8px;
+    padding: 11px 13px; margin-bottom: 14px; transition: background .15s ease;
+  }
+  details.adv > summary:hover { background: #ece2d0; }
+  details.adv > summary::-webkit-details-marker { display: none; }
+  details.adv > summary .lbl { display: flex; align-items: baseline; gap: 8px;
+    font-size: 13px; font-weight: 700; color: var(--accent); }
+  details.adv > summary .lbl small { font-weight: 400; font-size: 11px; color: var(--muted); }
+  details.adv > summary .chev { font-size: 11px; color: var(--accent); transition: transform .15s ease; }
+  details.adv[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 12px; }
+  details.adv[open] > summary .chev { transform: rotate(180deg); }
+
+  /* 율명 팔레트 — 음역(행) × 음계(열) 매트릭스 */
+  .palette { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+             width: max-content; min-width: 100%; }
+  /* 시김새 뷰: 폭을 컬럼에 맞춰 줄바꿈 → 세로(위아래) 스크롤 */
+  .palette.orn-view { width: auto; min-width: 0; }
+  .palette .prow { display: flex; align-items: center; gap: 1px; margin-bottom: 3px; }
+  .palette .prow:last-child { margin-bottom: 0; }
+  .palette .prow.headrow { margin-bottom: 4px; }
+  .palette .prow.symrow { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 4px; }
+  .palette .plabel { flex: 0 0 32px; font-size: 10px; font-weight: 700; color: var(--accent);
+                     text-align: center; letter-spacing: .5px; }
+  /* 표 안 글씨체를 전부 하나로 통일(악보 음표 서체 NOTE_FONT와 동일 목록) —
+     헤더(황대태…)만 다른 서체를 쓰면 같은 표 안에서 글씨체가 뒤섞여 보인다. */
+  .palette .phead,
+  .palette .pi .pch,
+  .palette .pi .pch-cap { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif; }
+  .palette .phead { flex: 0 0 31px; text-align: center; font-size: 11px; font-weight: 700;
+                    color: var(--muted); line-height: 1; }
+  /* 칸 높이를 글자 내용과 무관하게 고정해야 위아래 행(하배·배·중성·청)의 가로줄이
+     맞는다 — height:auto면 서체 메트릭에 따라 행마다 높이가 미묘하게 달라진다. */
+  .palette .pi { flex: 0 0 31px; height: 40px; display: flex; align-items: center;
+                 justify-content: center; border-radius: 5px; cursor: pointer;
+                 transition: background .1s ease; }
+  .palette .pi:hover { background: #f0ece3; }
+  .palette .pi img { width: 24px; height: 24px; object-fit: contain; }
+  .palette .pi .pch { display: flex; align-items: center; justify-content: center;
+                      font-size: 19px; line-height: 1; color: #333; white-space: nowrap; }
+  .palette .pi.nofile .pch { color: #aaa; }
+  .palette .pi.has-cap { flex-direction: column; justify-content: center; height: 40px;
+                         padding: 0; gap: 2px; }
+  .palette .pi .pch-cap { font-size: 8px; color: #aaa; line-height: 1; white-space: nowrap; }
+  .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
+  .palette .pmsg.err { color: #b23b3b; }
+
+  /* 피아노 팔레트 — 건반 위에 율명 표기, 팔레트 폭 안에서 옆으로 스크롤 */
+  /* 건반 높이는 JS(fitPianoHeight)가 팔레트 영역에 맞춰 갱신 — 위아래 스크롤 없이 채움 */
+  .piano-kb { position: relative; display: flex; align-items: flex-start; height: 190px; }
+  .pkey-w { position: relative; width: 34px; height: 100%; flex: 0 0 34px;
+            border: 1px solid #8f8d88; border-radius: 0 0 4px 4px; background: #fff;
+            cursor: pointer; transition: background .1s ease; }
+  .pkey-w:hover { background: #f0ece3; }
+  .pkey-w:active { background: #e6dfd0; }
+  .pkey-w.pk-ghost { background: #f3f1ec; cursor: default; pointer-events: none; }
+  .pkey-b { position: absolute; top: 0; width: 21px; height: 62%; z-index: 2;
+            background: #2f2c28; border: 1px solid #1c1b19; border-radius: 0 0 3px 3px;
+            cursor: pointer; transition: background .1s ease; }
+  .pkey-b:hover { background: #4d463c; }
+  .pkey-b:active { background: #5c5346; }
+  .pk-yul { position: absolute; left: 50%; transform: translateX(-50%); bottom: 16px;
+            writing-mode: vertical-rl; text-orientation: upright;
+            font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
+            color: #333; pointer-events: none; white-space: nowrap; line-height: 1; }
+  .pkey-b .pk-yul { color: #fff; bottom: 12px; }
+  .pk-west { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center;
+             font-size: 8px; color: #999; pointer-events: none; }
+  .pkey-b .pk-west { color: #bbb; font-size: 7px; bottom: 2px; }
+
+  /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
+  .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+             flex: 0 0 auto; }
+  /* 팔레트 보기(율명/시김새) — 책에 라벨(북마크 탭)을 붙인 것처럼: 고르지 않은 건
+     작고 옅게 뒤로 겹쳐 있고, 고른 것만 크고 진하게 앞으로 튀어나와 있어 뭘 고를
+     수 있는지·뭘 골랐는지 한눈에 보이게 한다. */
+  .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
+  .pal-views { display: inline-flex; align-items: flex-end; overflow: visible;
+               border: none; background: none; gap: 0; }
+  .pal-view {
+    position: relative; border: 1px solid var(--line); border-bottom: none;
+    border-radius: 6px 6px 0 0; background: #efe8da; color: var(--muted);
+    font-size: 12px; font-weight: 600; padding: 4px 11px; margin-right: -7px;
+    z-index: 1; cursor: pointer; font-family: inherit; white-space: nowrap;
+    transition: all .15s ease;
+  }
+  .pal-view:last-child { margin-right: 0; }
+  .pal-view:hover { color: var(--ink); background: #f3ede0; }
+  .pal-view.active {
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 15px;
+    padding: 6px 16px; z-index: 3; transform: translateY(-3px);
+    box-shadow: 0 3px 7px rgba(31,26,18,.28);
+  }
+  /* 입력 방식(에디터/직접 입력) — 사이드바 맨 위, 선율·장단·가사 전역 공통이라 어느
+     탭이든 늘 보인다. 고른 쪽 아래에 한 줄 설명(mode-hint)이 항상 따라오고, 호버하면
+     각 방식의 장단점을 설명하는 말풍선(.tip)이 더 자세히 뜬다. */
+  #dockRail .mode-lab { margin: 0 4px 3px 4px; }
+  /* 입력 방식 옆 안내(?) — 좁은 사이드바라 기본(왼쪽 정렬·아래로 펼침) 그대로 두면
+     화면 밖으로 잘리니, 셋 다(팔레트 view 없는 patternError처럼) 오른쪽으로 펼친다 */
+  .mode-lab-row { display: flex; align-items: center; gap: 2px; margin: 0 4px 3px 4px; }
+  .mode-lab-row .mode-lab { margin: 0; }
+  .mode-lab-row .icon-btn { width: 18px; height: 18px; }
+  .mode-lab-row .icon-btn svg { width: 12px; height: 12px; }
+  #dockRail .melody-guide { top: 0; left: calc(100% + 8px); }
+  #dockRail .mode-seg { display: flex; flex-direction: column; gap: 3px; margin: 0 4px; }
+  #dockRail .mode-seg .seg-btn {
+    border: 1px solid var(--line); border-radius: 6px; background: #fff;
+    color: var(--muted); font-size: 11px; font-weight: 600; padding: 4px 9px;
+    text-align: left; cursor: pointer; font-family: inherit;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  #dockRail .mode-seg .seg-btn:hover { color: var(--ink); background: #f0ece3; }
+  #dockRail .mode-seg .seg-btn.active {
+    background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700;
+  }
+  #dockRail .mode-hint { margin: 4px 4px 8px; font-size: 10px;
+                         line-height: 1.35; color: var(--muted); max-width: 92px; }
+  #dockRail .rail-sep { height: 1px; background: var(--line); margin: 2px 4px 8px; }
+  /* 사이드바는 좁아서 말풍선이 아래로 뜨면 잘리니, 오른쪽으로 뜨게 뒤집는다 */
+  #dockRail .tip::after, #dockRail .tip::before { bottom: auto; }
+  #dockRail .tip::after { top: 0; left: calc(100% + 9px); transform: none; text-align: left; }
+  #dockRail .tip::before { top: 10px; left: calc(100% + 2px); transform: none;
+                           border-top-color: transparent; border-right-color: #2b2b2b; }
+  .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
+                      white-space: nowrap;
+                      font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
+                      transition: background .12s ease, color .12s ease; }
+  .pal-seg .seg-btn + .seg-btn { border-left: 1px solid var(--line); }
+  .pal-seg .seg-btn:hover { color: var(--ink); }
+  .pal-seg .seg-btn.active { background: var(--accent); color: #fff; }
+  #paletteCol.orn-active .pal-seg { display: none; }
+
+  /* 팔레트 헤더 도구: 표기(한자/한글)는 표 보기 전용, 황 음고(E♭/C)·크기 ±는 표·건반 공통 */
+  #paletteCol.piano-active .tool-inline:not(.size-ctl):not(.pitch-tool) { display: none; }
+  /* 입력·소리 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
+  .pal-head .sound-tool, .pal-head .insert-tool { font-weight: 600; }
+  #paletteCol.orn-active .sound-tool, #paletteCol.orn-active .insert-tool { display: none; }
+  /* 율명 전용 설정 묶음(표·건반/조/표기/황음고) — 옅은 상자로 한 덩어리임을 표시.
+     입력·소리·크기 ±는 팔레트 공통이라 이 묶음 밖(첫 줄 오른쪽)에 따로 둔다.
+     간격·패딩은 기본 폭(≈395px)에서 네 컨트롤이 한 줄에 들어가게 빠듯하게. */
+  .yul-tools { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap;
+               padding: 4px 7px; border: 1px solid var(--line); border-radius: 8px;
+               background: #faf8f3; }
+  #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
+  .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
+                        white-space: nowrap; margin-right: 2px; }
+
+  /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
+  .sizebox { border: 1px solid var(--line); border-radius: 10px;
+             background: #faf8f3; padding: 14px 14px 6px; margin-bottom: 18px; }
+  .sizebox .slider-field { margin-bottom: 12px; }
+  .sizebox label small { font-weight: 400; font-size: 11px; color: var(--muted); }
+  .sizebox details.adv { margin: 0; }
+  .sizebox details.adv > summary { margin-bottom: 0; }
+  .sizebox details.adv[open] > summary { margin-bottom: 12px; }
+
+  .readout {
+    background: #f7f5f0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .readout b { color: var(--ink); }
+  .warn { color: #b23b3b; font-size: 11px; margin-top: 6px; }
+  /* 선율↔장단·가사 각/정간 수 어긋남 경고 — 타이핑 중엔 조용히 안 맞다가 다음 구조
+     변경 때 넘치는 내용이 말없이 잘리는 걸 막기 위해, 해당 탭 바로 위에서 바로 알려준다 */
+  .gak-warn { display: none; font-size: 11px; line-height: 1.5; color: #8a2f2f;
+              background: #fbeaea; border: 1px solid #eecccc; border-radius: 7px;
+              padding: 6px 10px; margin-bottom: 8px; }
+  .gak-warn.on { display: block; }
+
+  .btns { display: flex; gap: 8px; margin-top: 8px; }
+  .btns button {
+    flex: 1; padding: 10px;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btns button.secondary { background: #fff; color: var(--accent); }
+  .btns button:hover { opacity: .9; }
+
+  /* ---------- 미리보기 + 멜로디 에디터 ---------- */
+  /* 떠 있는 바(.float-bar)·패널들의 기준점을 스크롤되는 #sheetArea가 아니라 #main으로 둬서
+     악보를 스크롤해도 그 자리에 그대로 떠 있게 한다 */
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+          position: relative; }
+  #sheetArea { flex: 1 1 auto; min-height: 0; display: flex;
+               align-items: flex-start; justify-content: center; padding: 16px; overflow: auto;
+               background: #e8e5de; position: relative; }
+  #sheet { transform-origin: top center; transition: transform .08s ease;
+           display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .page { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+  .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
+
+  /* 떠 있는 바(문서 크기 / 재생) — 각각 따로 끌어서 옮길 수 있음 */
+  .float-bar { position: absolute; top: 12px; z-index: 5;
+               display: flex; align-items: center; gap: 6px; }
+  #zoomBarWrap { left: 14px; }
+  #playBarWrap { right: 14px; }   /* 처음엔 화면 오른쪽 위 — 끌면 left 기준으로 바뀜 */
+  /* 바 왼쪽 이동 손잡이 — 끌어서 바 위치를 옮김 */
+  .bar-grip { display: flex; align-items: center; justify-content: center; width: 16px;
+              align-self: stretch;
+              background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 8px;
+              box-shadow: 0 2px 8px rgba(0,0,0,.1); color: var(--muted); cursor: grab;
+              touch-action: none; user-select: none; }
+  .bar-grip:hover { color: var(--ink); background: #f0ece3; }
+  .bar-grip:active { cursor: grabbing; }
+  .bar-grip svg { width: 10px; height: 16px; }
+  /* 문서 크기 바 — 재생 바와 같은 틀(패딩·모서리·버튼 높이)로 맞춤 */
+  #zoomBar { display: flex; align-items: center; gap: 2px;
+             background: rgba(255,255,255,.94); border: 1px solid var(--line);
+             border-radius: 10px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  #zoomBar button { min-width: 26px; height: 26px; border: none; background: transparent;
+                    font-size: 13px; line-height: 1; cursor: pointer; border-radius: 7px;
+                    color: var(--muted); font-family: inherit; }
+  #zoomBar button:hover { background: #eee; color: var(--ink); }
+  #zoomBar .zval { font-size: 12px; min-width: 40px; text-align: center; color: var(--muted); }
+  #zoomBar .fit { font-size: 12px; padding: 0 8px; white-space: nowrap; }
+  #zoomBar button:disabled { opacity: .35; cursor: default; }
+  #zoomBar button:disabled:hover { background: transparent; }
+
+  /* 재생 컨트롤 — 문서 크기 바와 같은 틀. 재생 버튼만 색으로 강조 */
+  #playBar { position: relative; display: flex; align-items: center; gap: 4px;
+             background: rgba(255,255,255,.94); border: 1px solid var(--line);
+             border-radius: 10px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  #playBar button { border-radius: 7px; cursor: pointer; font-family: inherit; }
+  #btnPlay { height: 26px; padding: 0 12px; border: none; background: var(--accent); color: #fff;
+             font-size: 13px; font-weight: 700; letter-spacing: .2px; }
+  #btnPlay:hover { opacity: .92; }
+  #btnPause, #btnStop { height: 26px; padding: 0 9px; border: none; background: transparent;
+             color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  #btnPause:hover, #btnStop:hover { background: #eee; color: var(--ink); }
+  #btnPlay:disabled, #btnPause:disabled, #btnStop:disabled { opacity: .35; cursor: default; background: transparent; color: var(--muted);
+                                          box-shadow: none; }
+  #btnPlay:disabled { background: var(--accent); color: #fff; }
+  #playSettingsToggle { width: 26px; height: 26px; }
+
+  .play-pop { position: absolute; top: 42px; left: 0; z-index: 6; display: none;
+              background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+              padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 224px; font-size: 12px; }
+  .play-pop.on { display: block; }
+  .play-pop .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+  .play-pop select, .play-pop input { width: 96px; padding: 3px 5px; border: 1px solid var(--line);
+                                       border-radius: 5px; font-family: inherit; font-size: 12px; }
+  .play-pop select { padding-right: 20px; background-position: right 6px center; background-size: 10px; }
+  .play-pop .hint { color: var(--muted); line-height: 1.4; }
+  @media print { .play-pop { display: none !important; } }
+
+  /* 시김새 수정 패널 */
+  .orn-panel { position: absolute; top: 12px; right: 14px; z-index: 6; display: none;
+               background: rgba(255,255,255,.97); border: 1px solid var(--accent); border-radius: 10px;
+               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 156px; font-size: 12px; }
+  .orn-panel.on { display: block; }
+  .orn-title { display: flex; justify-content: space-between; align-items: center;
+               font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .orn-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+  .orn-row span { flex: 0 0 34px; color: var(--muted); }
+  .orn-row button { flex: 1; padding: 4px 0; border: 1px solid var(--line); background: #fff;
+                    border-radius: 5px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .orn-row button:hover { background: #f0ece3; }
+  .orn-reset { width: 100%; margin-top: 4px; padding: 5px; border: 1px solid var(--line);
+               background: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .orn-reset:hover { background: #f0ece3; }
+  @media print { .orn-panel { display: none !important; } }
+  /* 각 번호 '화면에만' 모드 — 인쇄에서는 숨김 (PNG는 저장 시 따로 뺌) */
+  @media print { body.gaknum-screen .gak-num { display: none !important; } }
+  /* 자유 텍스트 주석 크기·삭제 패널 — 시김새 패널과 같은 자리에 겹치지 않게 아래로 내림 */
+  #textPanel { top: 64px; }
+  #textPanel .text-panel-del { color: #b23b3b; border-color: #e3b7b7; }
+  #textPanel .text-panel-del:hover { background: #f7ecec; }
+  /* 텍스트 탭 '추가' 버튼 */
+  .at-add { padding: 5px 10px; border: 1px solid var(--accent); background: var(--accent);
+            color: #fff; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .at-add:hover { opacity: .9; }
+  /* 아래 편집 독 — 왼쪽 세로 탭(선율/장단/가사)으로 편집기 하나씩만 표시 */
+  #editorDock { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); }
+  .dock-body { display: flex; align-items: stretch; }
+  #dockRail { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px;
+              padding: 12px 8px; border-right: 1px solid var(--line); background: #faf8f3; }
+  .rail-btn { padding: 9px 16px; border: none; background: none; border-radius: 8px;
+              cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700;
+              color: var(--muted); text-align: left; position: relative;
+              transition: background .12s ease, color .12s ease; }
+  .rail-btn:hover { background: #f0ece3; color: var(--ink); }
+  .rail-btn.active { background: var(--accent); color: #fff; }
+  /* 레이어가 켜져 있으면 탭에 점 표시 */
+  .rail-btn::after { content: ""; position: absolute; right: 6px; top: 50%;
+                     transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%;
+                     background: transparent; }
+  body.want-jangdan .rail-btn[data-panel="jangdanArea"]::after,
+  body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after { background: #3f9d63; }
+  body.want-jangdan .rail-btn.active[data-panel="jangdanArea"]::after,
+  body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after { background: #fff; }
+  /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
+  .rail-shortcuts-wrap { display: block; }
+  .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;
+                        padding: 6px 10px; border: none; background: none; border-radius: 8px;
+                        cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 600;
+                        color: var(--muted); transition: background .12s ease, color .12s ease; }
+  .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: #f0ece3; color: var(--ink); }
+  .rail-shortcuts-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
+  /* 단축키 버튼이 사이드바 맨 아래라 안내 패널이 기본값(아래로 펼침)대로 뜨면
+     화면 아래로 넘어가 잘려 보인다 — 버튼 위로 펼치게 뒤집는다 */
+  #shortcutsGuide { top: auto; bottom: calc(100% + 6px); }
+  .dock-panels { flex: 1 1 auto; min-width: 0; }
+  .dock-panel { display: none; padding: 8px 14px 14px; }
+  .dock-panel.active { display: block; }
+  /* 탭이 접기/펼치기를 대신하므로 섹션별 접기 화살표는 숨김 */
+  .mini-toggle { display: none !important; }
+
+  #melodyResizer { height: 12px; margin: -6px 0 -2px; cursor: ns-resize;
+                   display: flex; align-items: center; justify-content: center;
+                   touch-action: none; }
+  #melodyResizer::before { content: ""; width: 46px; height: 4px; border-radius: 2px;
+                           background: var(--line); transition: background .12s ease; }
+  #melodyResizer:hover::before { background: var(--accent); }
+  /* 선율 팔레트 ↔ 텍스트 에디터 사이 좌우 나눔 손잡이 */
+  #melodySplit { flex: 0 0 12px; margin: 0 -8px; cursor: ew-resize; align-self: stretch;
+                 display: flex; align-items: center; justify-content: center; touch-action: none; }
+  #melodySplit::before { content: ""; height: 46px; width: 4px; border-radius: 2px;
+                         background: var(--line); transition: background .12s ease; }
+  #melodySplit:hover::before { background: var(--accent); }
+  /* 리본 툴바(피날레·시벨리우스 참고) — 되돌리기·초기화·각 추가/삭제·율명 크기처럼
+     내용과 무관하게 늘 같은 자리에 있어야 하는 '문서 편집' 동작을 한데 모아
+     맨 위에 고정 배치. 아이콘 위·설명 아래 두 줄 버튼을 그룹으로 묶고 구분선으로 나눈다. */
+  .ribbon { display: flex; align-items: stretch; gap: 2px; padding: 5px 8px; margin-bottom: 10px;
+            background: #faf8f3; border: 1px solid var(--line); border-radius: 8px;
+            overflow-x: auto; }
+  .ribbon-group { display: flex; align-items: center; gap: 3px; padding: 0 4px; flex: 0 0 auto; }
+  .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
+  .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; width: 52px; padding: 5px 2px 4px; border: 1px solid transparent;
+                border-radius: 6px; background: none; cursor: pointer; font-family: inherit;
+                color: var(--ink); font-size: 17px; line-height: 1; flex: 0 0 auto; }
+  .ribbon-btn span { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-btn:hover { background: #f0ece3; border-color: var(--line); }
+  .ribbon-btn:disabled { opacity: .4; cursor: default; background: none; }
+  .ribbon-num { width: 34px; padding: 3px 2px; border: 1px solid var(--line); border-radius: 5px;
+                font-family: inherit; font-size: 11px; text-align: center; align-self: center; }
+  .ribbon-slider-group { display: flex; align-items: center; gap: 7px; font-size: 11px;
+                         font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-slider-group input[type="range"] { width: 120px; margin: 0; }
+  .ribbon-slider-group #noteScaleVal { font-weight: 400; min-width: 32px; }
+  .ribbon-select-group { display: flex; align-items: center; gap: 6px; font-size: 11px;
+                        font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-select-group select { padding: 4px 20px 4px 7px; border: 1px solid var(--line);
+                                border-radius: 5px; font-family: inherit; font-size: 11px;
+                                background-color: #fff; cursor: pointer; }
+  .ribbon .bar-grip { display: none; margin-right: 2px; }
+  /* 직접 입력 모드 — 선율·장단·가사 리본 셋 다 악보 위에 끌어서 옮길 수 있는 뜬 바로
+     바뀐다(전역 입력 방식이라 body 클래스 하나로 셋 다 같이 처리). DOM은 그대로 두고
+     CSS로만 position을 바꿔서(가장 가까운 position 조상인 #main 기준으로 튀어 오름)
+     attachBarDrag가 페이지 로드 때 한 번씩 걸어둔 채로 계속 같은 요소에서 작동한다.
+     탭마다 하나만 active라 실제로는 그 탭의 리본만 보인다. */
+  body.input-direct .ribbon {
+    position: absolute; top: 54px; left: 14px; z-index: 5; max-width: calc(100% - 28px);
+    background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 0;
+  }
+  body.input-direct .ribbon .bar-grip { display: flex; }
+
+  .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+                 font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
+                 white-space: nowrap; }
+  /* 머리줄 그룹 구분선 — 제목·입력 방식·팔레트 탭 사이 시각적 여백 */
+  .head-sep { flex: 0 0 auto; width: 1px; height: 16px; background: var(--line); }
+  .melody-head .mono { color: var(--muted); font-weight: 400;
+                       font-family: ui-monospace, Menlo, monospace; }
+  /* 텍스트 에디터 페이지 넘김 — 에디터(텍스트창) 바로 위, 여러 페이지일 때만 표시 */
+  .ed-pager { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+  .ed-pager .ed-plabel { font-size: 12px; font-weight: 600; color: var(--accent);
+                         min-width: 74px; text-align: center; }
+  .ed-pager button:disabled { opacity: .35; cursor: default; }
+  .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: #fff;
+             border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; color: var(--ink);
+             white-space: nowrap; }
+  .mel-btn:hover { background: #f0ece3; }
+  .mel-btn:disabled { opacity: .45; cursor: default; }
+  #melodyReset { color: #b23b3b; border-color: #e3b7b7; }
+  #melodyReset:hover { background: #f7ecec; }
+  /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
+     아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
+  #ornEditToggle, #ornAddToggle { flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
+                   font-size: 15px; color: var(--accent); border-color: var(--accent);
+                   background: #faf3e7; font-weight: 700; }
+  #ornEditToggle span, #ornAddToggle span { font-size: 11px; font-weight: 700; }
+  #ornEditToggle:hover, #ornAddToggle:hover { background: #f1e6cf; }
+  #ornEditToggle.on, #ornAddToggle.on { background: var(--accent); color: #fff; }
+  #ornAddToggle:disabled { opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+
+  /* 시김새 추가 모드 — 붙임표 칩 위에 숫자 배지(피날레의 붙임표 단축키처럼) */
+  .palette .pi.ornchip { position: relative; }
+  .ornchip .orn-key-badge {
+    position: absolute; top: 1px; left: 2px; min-width: 12px; height: 12px; padding: 0 2px;
+    display: none; align-items: center; justify-content: center;
+    background: var(--accent); color: #fff; border-radius: 4px;
+    font-size: 8px; font-weight: 700; line-height: 1;
+  }
+  body.orn-add-on .ornchip .orn-key-badge { display: inline-flex; }
+  .ornchip.orn-armed { background: #f4e2c2; outline: 1.5px solid var(--accent); border-radius: 6px; }
+
+  /* 버튼 설명 호버 툴팁 */
+  .tip { position: relative; }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+    background: #2b2b2b; color: #fff; font-size: 11px; font-weight: 400; line-height: 1.4;
+    padding: 6px 9px; border-radius: 7px; width: max-content; max-width: 220px;
+    white-space: normal; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    opacity: 0; visibility: hidden; transition: opacity .12s ease; z-index: 40; pointer-events: none;
+  }
+  .tip::before {
+    content: ""; position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent; border-top-color: #2b2b2b;
+    opacity: 0; visibility: hidden; transition: opacity .12s ease; z-index: 40; pointer-events: none;
+  }
+  .tip:hover::after, .tip:hover::before { opacity: 1; visibility: visible; }
+  /* 리본 버튼은 .ribbon의 overflow-x:auto 때문에(CSS 규칙상 overflow-y도 auto가 되어)
+     기본 말풍선(::after/::before)이 리본 박스 밖으로 나가면 잘려 안 보인다 — 아예 꺼두고
+     JS가 띄우는 #ribbonTipFloat(리본 밖·body 바로 아래)로 대신한다. */
+  .ribbon .tip::after, .ribbon .tip::before { display: none; }
+  .ribbon-tip-float {
+    position: fixed; z-index: 9999; background: #2b2b2b; color: #fff; font-size: 11px;
+    font-weight: 400; line-height: 1.4; padding: 6px 9px; border-radius: 7px;
+    width: max-content; max-width: 220px; white-space: normal; text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25); opacity: 0; visibility: hidden;
+    transition: opacity .12s ease; pointer-events: none;
+  }
+  .ribbon-tip-float.on { opacity: 1; visibility: visible; }
+  .ribbon-tip-float::after {
+    content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent;
+  }
+  .ribbon-tip-float.dir-up::after { top: 100%; border-top-color: #2b2b2b; }
+  .ribbon-tip-float.dir-down::after { bottom: 100%; border-bottom-color: #2b2b2b; }
+  /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
+  #melodyRow { display: flex; gap: 16px; height: 330px; align-items: stretch; }
+  /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */
+  #paletteCol { flex: 0 0 auto; width: 450px; max-width: 60%; display: flex; flex-direction: column;
+                min-height: 0; }
+  /* 팔레트 머리: 한 줄(표·건반, 조, 표기, 소리 + 크기 ±) — 율명/시김새 탭은 위 선율 입력 머리로 이동 */
+  .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  /* .pal-views·.pal-view 자체 모양은 위 mode-seg 옆에서 .mode-seg .seg-btn, .pal-view로 함께 정의 */
+  .melody-head .pal-views { margin-left: 6px; }
+  /* 팔레트 머리 두 줄 — 첫 줄(.pal-top): 제목 + 오른쪽 입력·소리·크기(팔레트 전체 공통),
+     둘째 줄(.pal-tools): 율명 전용 설정 묶음. 시김새 탭에선 둘째 줄이 통째로 숨어
+     첫 줄 하나만 남는다(세로 최소화). */
+  .pal-top { display: flex; align-items: center; gap: 12px; min-height: 24px; }
+  .pal-top-right { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
+  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 5px; }
+  #paletteCol.orn-active .pal-tools { display: none; }
+  /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
+  #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
+  /* 시김새 칩 (이미지 + 한글 이름) — 컨테이너 폭에 맞춰 칸 수가 자동으로 변하는 격자
+     (auto-fill): 좁으면 줄어들고 넓으면 빽빽하게 채운다. 칸 높이는 고정해 표처럼
+     가지런히. 이미지 자체 크기는 JS에서 실제 악보에 그려지는 상대 크기(붙임표/독립
+     기호 배율)를 반영해 정함(ornIconPx). */
+  .palette .ornrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+                     gap: 3px; margin-bottom: 8px; }
+  /* 장단 팔레트(칩 6개)는 폭이 내용에 맞춰지는(max-content) 상자라 auto-fill 격자가
+     1열로 계산돼 세로로 무너진다 — 원래대로 가로 flex 나열 유지 */
+  #jangdanPalette .ornrow { display: flex; flex-wrap: wrap; gap: 4px; }
+  #jangdanPalette .ornchip { flex: 0 0 54px; width: 54px; }
+  .palette .ornchip { flex: none; width: auto; height: 50px; box-sizing: border-box;
+                      flex-direction: column; gap: 2px; padding: 2px; }
+  .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
+  .palette .ornchip .ocap { font-size: 8px; color: var(--muted); white-space: normal;
+                            text-align: center; line-height: 1.1; word-break: keep-all; }
+  /* 시김새 그룹 제목(붙임표/독립 기호) — 악보 서체로 크게, 오른쪽으로 가는 괘선과 함께 */
+  .palette .orn-sec { display: flex; align-items: baseline; gap: 8px; margin: 12px 2px 7px; }
+  .palette .orn-sec:first-child { margin-top: 2px; }
+  .palette .orn-sec b { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif;
+                        font-size: 16px; font-weight: 700; color: var(--accent);
+                        letter-spacing: 2px; white-space: nowrap; }
+  .palette .orn-sec span { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .palette .orn-sec::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--line); }
+  #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  #editorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  #melody { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px;
+            -moz-tab-size: 8; tab-size: 8; }
+
+  /* 장단 입력 (선율 입력과 같은 구조, 6개짜리라 팔레트만 간소화)
+     — 헤더의 스위치를 꺼두면 입력창·버튼은 숨기고 스위치·안내만 남긴다 */
+  body:not(.want-jangdan) #jangdanArea #jangdanRow,
+  body:not(.want-jangdan) #jangdanArea #jangdanRibbon { display: none; }
+  #jangdanRow { display: flex; gap: 12px; height: 140px; align-items: stretch; }
+  #jangdanPaletteWrap { flex: 0 0 auto; max-width: 45%; overflow: auto; }
+  #jangdanPalette.palette { height: 100%; align-content: flex-start; }
+  #jangdanEditorCol { flex: 1 1 auto; min-width: 0; display: flex; }
+  #jangdan { width: 100%; height: 100%; resize: none; box-sizing: border-box;
+             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+  /* 가사 입력 (선율 입력과 같은 구조, 팔레트 없이 자유 텍스트)
+     — 헤더의 스위치를 꺼두면 입력창·버튼은 숨기고 스위치·안내만 남긴다 */
+  body:not(.want-lyrics) #lyricsArea #lyricsRow,
+  body:not(.want-lyrics) #lyricsArea #lyricsRibbon { display: none; }
+  #lyricsRow { display: flex; gap: 12px; height: 140px; align-items: stretch; }
+  #lyricsEditorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  #lyrics { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+  /* 텍스트(자유 텍스트 주석) 탭 — 추가 입력줄 + 텍스트별 조절 목록 */
+  #textRow { height: 140px; overflow-y: auto; }
+  .tx-add { display: flex; gap: 6px; max-width: 340px; margin-bottom: 4px; }
+  .tx-add input { flex: 1; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+                  font-family: inherit; font-size: 13px; }
+  .tx-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+             padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .tx-item input[type="text"] { width: 150px; padding: 5px 7px; border: 1px solid var(--line);
+                                border-radius: 6px; font-family: inherit; font-size: 13px; }
+  .tx-item label { display: flex; align-items: center; gap: 5px;
+                   font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .tx-item select, .tx-item input[type="number"] { padding: 4px 6px; border: 1px solid var(--line);
+                   border-radius: 6px; font-family: inherit; font-size: 12px; background: #fff; }
+  .tx-item input[type="number"] { width: 58px; }
+  .tx-item .tx-del { border: none; background: none; color: #b23b3b; cursor: pointer;
+                     font-size: 16px; line-height: 1; padding: 2px 6px; }
+  .tx-item input[type="color"] { width: 28px; height: 22px; padding: 1px 2px; border: 1px solid var(--line);
+                                 border-radius: 5px; cursor: pointer; background: #fff; }
+  .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+
+  /* 임시 저장(이 컴퓨터) 슬롯 목록 */
+  #snapList { margin-top: 8px; }
+  .snap-item { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+               border-top: 1px solid var(--line); font-size: 12px; }
+  .snap-item:first-child { border-top: none; }
+  .snap-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; font-weight: 600; }
+  .snap-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .snap-item .snap-load { border: 1px solid var(--line); background: #fff; border-radius: 6px;
+                          padding: 3px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .snap-item .snap-load:hover { border-color: var(--accent); color: var(--accent); }
+  .snap-item .snap-del { border: none; background: none; color: #b23b3b; cursor: pointer;
+                         font-size: 14px; line-height: 1; padding: 2px 4px; }
+  .snap-empty { font-size: 12px; color: var(--muted); padding: 6px 0; }
+
+  /* 팔레트 표·에디터 글자 크기 조절 (− / + 미니 버튼) */
+  .size-ctl { display: inline-flex; align-items: center; gap: 3px; }
+  .size-ctl button { width: 20px; height: 20px; border: 1px solid var(--line); background: #fff;
+                     border-radius: 5px; cursor: pointer; font-size: 13px; line-height: 1;
+                     color: var(--ink); padding: 0; }
+  .size-ctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .ed-font-ctl { position: absolute; top: 6px; right: 16px; z-index: 2; opacity: .45; }
+  .ed-font-ctl:hover { opacity: 1; }
+
+  /* 에디터 머리 — 팔레트 머리(.pal-head)와 같은 한 줄·밑줄 구조로 좌우 컬럼을 나란히 맞춤 */
+  .ed-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .ed-top { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
+  /* 컬럼 제목(텍스트 에디터/시김새) — 주변 도구 글씨(11~12px)보다 확실히 크게 해 섹션이 눈에 띄게 */
+  .ed-title { padding: 3px 1px 6px; font-size: 15px; font-weight: 700; color: var(--accent);
+              border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
+  .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+  /* 직접 입력 모드 — 텍스트 에디터 대신 오른쪽에 시김새 팔레트를 상시 표시
+     (왼쪽은 율명 팔레트 고정, 율명/시김새 탭은 숨김, 두 컬럼은 딱 50/50) */
+  #directOrnWrap { display: none; }
+  #melodyArea.mel-direct #melodyHlWrap,
+  #melodyArea.mel-direct .ed-pager,
+  #melodyArea.mel-direct #melodySplit,
+  #melodyArea.mel-direct .melody-head .pal-views { display: none !important; }
+  #melodyArea.mel-direct #directOrnWrap { display: block; flex: 1 1 auto; min-height: 0; overflow: auto; }
+  /* min-width:0 — 건반(고정 폭 ~1200px)이 컬럼을 밀어 늘리지 못하게 하고 안에서 가로 스크롤 */
+  #melodyArea.mel-direct #paletteCol { flex: 1 1 0; width: auto !important; max-width: none; min-width: 0; }
+  #melodyArea.mel-direct #editorCol { flex: 1 1 0; min-width: 0; }
+  /* 왼쪽 컬럼 제목 '율명' — 오른쪽 '시김새' 제목과 같은 선상에, 직접 입력 모드에서만 */
+  .pal-col-title { display: none; }
+  #melodyArea.mel-direct .pal-col-title {
+    display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
+    color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
+
+  /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
+  #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+  #melodyHlBack { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+                  font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+                  padding: 10px; border: 1px solid transparent; border-radius: 8px;
+                  white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+                  color: transparent; box-sizing: border-box; -moz-tab-size: 8; tab-size: 8; }
+  #melodyHlBack mark { background: rgba(224, 73, 73, .3); color: transparent;
+                       border-radius: 2px; padding: 0; }
+  #melodyHlWrap #melody { position: relative; background: transparent; }
+
+  /* 모드 탭 */
+  .tabs { display: flex; gap: 2px; margin: 12px 0 16px; border-bottom: 1px solid var(--line); }
+  .tab { flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
+         font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+         border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
+  .tabpanel .sec:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  /* 사이드바 접기/펼치기 */
+  .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .side-open { display: none; position: fixed; top: 12px; right: 12px; z-index: 30;
+               align-items: center; gap: 6px;
+               padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent);
+               color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+               font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+  .side-open svg { width: 15px; height: 15px; stroke-width: 2; }
+  body.sidebar-collapsed #sidebar { display: none; }
+  body.sidebar-collapsed .side-open { display: inline-flex; }
+
+  /* 율명 표기 셀렉트 */
+  .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+  .tool-inline select { padding: 5px 24px 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+                        font-size: 12px; font-family: inherit; background-color: #fff; cursor: pointer;
+                        background-position: right 7px center; background-size: 10px; }
+
+  /* 편집창 접기 */
+  .mini-toggle { margin-right: 2px; transition: transform .12s ease; }
+  #melodyArea.editor-collapsed #melodyRow { display: none; }
+  #melodyArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
+
+  /* 입력 방법 가이드 (?) 토글 — 다른 아이콘 버튼과 같은 부품(.icon-btn) 사용 */
+  .guide-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+  .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
+                  background: rgba(255,255,255,.98); border: 1px solid var(--accent); border-radius: 10px;
+                  padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
+                  font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6;
+                  white-space: normal; }   /* .melody-head의 nowrap을 되돌림 — 안 그러면 문장이 박스 밖으로 넘침 */
+  .melody-guide.on { display: block; }
+  .melody-guide b { color: var(--accent); font-size: 11px; letter-spacing: .5px; }
+  .melody-guide .mg-sec { margin-top: 8px; }
+  .melody-guide .mg-sec:first-child { margin-top: 0; }
+
+  @media print {
+    body { display: block; height: auto; overflow: visible; }
+    #sidebar, #editorDock, .float-bar, .side-open { display: none !important; }
+    #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
+    #sheet { transform: none !important; display: block; gap: 0; }
+    .page { box-shadow: none; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .page svg { width: 210mm; height: 297mm; }
+    body.landscape .page svg { width: 297mm; height: 210mm; }
+    /* 편집·재생 하이라이트는 화면 확인용이라 인쇄에는 나오지 않아야 한다 */
+    .no-print { display: none !important; }
+  }
