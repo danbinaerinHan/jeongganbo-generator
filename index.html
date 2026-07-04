@@ -8,6 +8,39 @@
 <style id="pageStyle">@page { size: A4 portrait; margin: 0; }</style>
 </head>
 <body>
+  <!-- 입력 방식(에디터/직접 입력) — 선율·장단·가사 전역에 걸쳐 가장 먼저 정해야 하는
+       선택이라 화면 맨 위, 사이드바·악보 어느 쪽에도 속하지 않는 공용 자리에 크게 둔다.
+       고른 쪽 옆에 한 줄 요약(mode-hint)이 늘 붙어 있고, 안내(?)에는 두 방식의 차이를
+       자세히 풀어둔다 — 선율 입력 자체에 대한 규칙·시김새 넣는 법은 선율 입력 옆
+       ?에 따로 있다. -->
+  <div id="topBar">
+    <span class="mode-lab">입력 방식</span>
+    <div class="mode-seg" id="melInputSeg">
+      <button type="button" class="seg-btn active tip" data-mode="editor"
+        data-tip="곡 전체를 텍스트로 한눈에 보며 편집합니다. 반복 구절 복사·붙여넣기, 분박(한 칸에 여러 음)·기호 문법 등 복잡한 편집과 대량 수정에 강합니다. 선율·장단·가사 공통.">에디터</button>
+      <button type="button" class="seg-btn tip" data-mode="direct"
+        data-tip="악보의 정간을 클릭하면 그 자리에 입력창이 열리고, Enter로 다음 정간으로 넘어갑니다. 문법을 몰라도 보이는 그대로 채울 수 있어 직관적입니다. 선율·장단·가사 공통.">직접 입력</button>
+    </div>
+    <span class="mode-hint" id="melInputHint">곡 전체를 텍스트로 보며 편집</span>
+    <span class="guide-wrap">
+      <button type="button" id="inputModeGuideToggle" class="icon-btn" title="입력 방식 안내">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </button>
+      <div id="inputModeGuide" class="melody-guide">
+        <div class="mg-sec"><b>에디터</b><br>
+          곡 전체를 텍스트로 쭉 보며 편집합니다. 줄바꿈=각 구분, <span class="mono">|</span>=정간 구분,
+          스페이스=분박 같은 문법을 알아야 하지만, 반복 구절 복사·붙여넣기나 한꺼번에 고치는
+          대량 편집에 강합니다.
+        </div>
+        <div class="mg-sec"><b>직접 입력</b><br>
+          악보의 정간을 클릭하면 그 자리에 입력창이 열리고, 왼쪽 팔레트를 눌러도 지금 열린
+          칸에 바로 들어갑니다. 문법을 몰라도 보이는 대로 채울 수 있어 직관적이지만, 한 칸씩
+          채워야 해서 대량 수정에는 에디터보다 느립니다.
+        </div>
+      </div>
+    </span>
+  </div>
+  <div id="appRow">
   <aside id="sidebar">
     <div class="side-head">
       <div>
@@ -302,42 +335,12 @@
       <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
       <div class="dock-body">
         <nav id="dockRail">
-          <!-- 입력 방식(에디터/직접 입력) — 선율·장단·가사 전역 공통이라 어느 탭을 보고
-               있든 늘 위에 떠 있다. 호버하면 각 방식이 뭔지 설명이 뜨고, 고른 쪽 밑에는
-               한 줄 요약이 항상 붙어 있어 처음 봐도 바로 감이 온다. 두 방식의 차이를
-               자세히 풀어주는 안내(?)도 전역 설정이라 여기 둔다 — 선율 입력 자체에
-               대한 규칙·시김새 넣는 법은 선율 입력 옆 ?에 따로 있다. -->
-          <div class="mode-lab-row">
-            <span class="mode-lab">입력 방식</span>
-            <span class="guide-wrap">
-              <button type="button" id="inputModeGuideToggle" class="icon-btn" title="입력 방식 안내">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-              </button>
-              <div id="inputModeGuide" class="melody-guide">
-                <div class="mg-sec"><b>에디터</b><br>
-                  곡 전체를 텍스트로 쭉 보며 편집합니다. 줄바꿈=각 구분, <span class="mono">|</span>=정간 구분,
-                  스페이스=분박 같은 문법을 알아야 하지만, 반복 구절 복사·붙여넣기나 한꺼번에 고치는
-                  대량 편집에 강합니다.
-                </div>
-                <div class="mg-sec"><b>직접 입력</b><br>
-                  악보의 정간을 클릭하면 그 자리에 입력창이 열리고, 왼쪽 팔레트를 눌러도 지금 열린
-                  칸에 바로 들어갑니다. 문법을 몰라도 보이는 대로 채울 수 있어 직관적이지만, 한 칸씩
-                  채워야 해서 대량 수정에는 에디터보다 느립니다.
-                </div>
-              </div>
-            </span>
-          </div>
-          <div class="mode-seg" id="melInputSeg">
-            <button type="button" class="seg-btn active tip" data-mode="editor"
-              data-tip="곡 전체를 텍스트로 한눈에 보며 편집합니다. 반복 구절 복사·붙여넣기, 분박(한 칸에 여러 음)·기호 문법 등 복잡한 편집과 대량 수정에 강합니다. 선율·장단·가사 공통.">에디터</button>
-            <button type="button" class="seg-btn tip" data-mode="direct"
-              data-tip="악보의 정간을 클릭하면 그 자리에 입력창이 열리고, Enter로 다음 정간으로 넘어갑니다. 문법을 몰라도 보이는 그대로 채울 수 있어 직관적입니다. 선율·장단·가사 공통.">직접 입력</button>
-          </div>
-          <div class="mode-hint" id="melInputHint">곡 전체를 텍스트로 보며 편집</div>
+          <!-- 입력 방식(에디터/직접 입력)은 이제 화면 맨 위 #topBar로 옮겨 늘 크게 보이게
+               했다(가장 먼저 정해야 하는 선택이라 사이드 레일 안에 작게 있기엔 안 어울렸음).
+               여기 레일에는 그 아래 단계인 선율/장단/가사/텍스트 탭만 남는다. -->
           <!-- 선율/장단/가사/텍스트 탭 — 에디터 모드에서만 쓴다(하나만 골라 하단에 도킹).
                직접 입력 모드에선 이 탭 대신 리본의 도구창 열기 버튼(.win-toggle)들을 쓴다 —
                여러 도구창을 동시에 띄울 수 있어야 해서 '탭(하나만 활성)' 방식이 안 맞는다. -->
-          <div class="rail-sep" id="railTabSep"></div>
           <button type="button" class="rail-btn domain-tab active" data-panel="melodyArea">선율</button>
           <button type="button" class="rail-btn domain-tab" data-panel="jangdanArea">장단</button>
           <button type="button" class="rail-btn domain-tab" data-panel="lyricsArea">가사</button>
@@ -707,6 +710,7 @@
       </div>
     </div>
   </main>
+  </div>
 
   <!-- 리본 버튼 호버 설명 — 리본은 overflow-x:auto라 (CSS 규칙상 overflow-y도 auto가 되어)
        버튼 위로 뜨는 말풍선(.tip::after)이 리본 박스 밖으로 나가는 순간 잘려 안 보인다.
