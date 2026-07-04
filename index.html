@@ -288,6 +288,12 @@
   }
   .readout b { color: var(--ink); }
   .warn { color: #b23b3b; font-size: 11px; margin-top: 6px; }
+  /* 선율↔장단·가사 각/정간 수 어긋남 경고 — 타이핑 중엔 조용히 안 맞다가 다음 구조
+     변경 때 넘치는 내용이 말없이 잘리는 걸 막기 위해, 해당 탭 바로 위에서 바로 알려준다 */
+  .gak-warn { display: none; font-size: 11px; line-height: 1.5; color: #8a2f2f;
+              background: #fbeaea; border: 1px solid #eecccc; border-radius: 7px;
+              padding: 6px 10px; margin-bottom: 8px; }
+  .gak-warn.on { display: block; }
 
   .btns { display: flex; gap: 8px; margin-top: 8px; }
   .btns button {
@@ -411,6 +417,14 @@
   body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after { background: #3f9d63; }
   body.want-jangdan .rail-btn.active[data-panel="jangdanArea"]::after,
   body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after { background: #fff; }
+  /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
+  .rail-shortcuts-wrap { display: block; }
+  .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;
+                        padding: 6px 10px; border: none; background: none; border-radius: 8px;
+                        cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 600;
+                        color: var(--muted); transition: background .12s ease, color .12s ease; }
+  .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: #f0ece3; color: var(--ink); }
+  .rail-shortcuts-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
   .dock-panels { flex: 1 1 auto; min-width: 0; }
   .dock-panel { display: none; padding: 8px 14px 14px; }
   .dock-panel.active { display: block; }
@@ -1032,6 +1046,29 @@
           <button type="button" class="rail-btn" data-panel="jangdanArea">장단</button>
           <button type="button" class="rail-btn" data-panel="lyricsArea">가사</button>
           <button type="button" class="rail-btn" data-panel="textArea">텍스트</button>
+          <div class="rail-sep"></div>
+          <!-- 전역 단축키 안내 — 어느 탭에서든 늘 보이는 자리라 여기 둔다 -->
+          <span class="guide-wrap rail-shortcuts-wrap">
+            <button type="button" id="shortcutsGuideToggle" class="rail-shortcuts-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="6" y1="10" x2="6" y2="10"></line><line x1="10" y1="10" x2="10" y2="10"></line><line x1="14" y1="10" x2="14" y2="10"></line><line x1="18" y1="10" x2="18" y2="10"></line><line x1="6" y1="14" x2="18" y2="14"></line></svg>
+              <span>단축키</span>
+            </button>
+            <div id="shortcutsGuide" class="melody-guide">
+              <div class="mg-sec"><b>편집</b><br>
+                실행 취소 <span class="mono">⌘/Ctrl+Z</span> · 다시 실행 <span class="mono">⌘/Ctrl+⇧+Z</span><br>
+                각 추가(선율 에디터) <span class="mono">⌘/Ctrl+Enter</span><br>
+                각 나누기(선율 에디터, 커서 위치) <span class="mono">Enter</span>
+              </div>
+              <div class="mg-sec"><b>직접 입력 카드</b><br>
+                다음 정간 <span class="mono">Enter</span> / <span class="mono">Tab</span> ·
+                인접 정간 이동 <span class="mono">방향키</span><br>
+                닫기 <span class="mono">Esc</span>
+              </div>
+              <div class="mg-sec"><b>텍스트 에디터(선율·장단·가사)</b><br>
+                다음 정간으로 커서 이동 <span class="mono">→</span>
+              </div>
+            </div>
+          </span>
         </nav>
         <div class="dock-panels">
     <div id="melodyArea" class="dock-panel active">
@@ -1225,6 +1262,7 @@
           </div>
         </span>
       </div>
+      <div class="gak-warn" id="jangdanGakWarn"></div>
       <div id="jangdanRow">
         <div id="jangdanPaletteWrap"><div id="jangdanPalette" class="palette"></div></div>
         <div id="jangdanEditorCol">
@@ -1277,6 +1315,7 @@
           </div>
         </span>
       </div>
+      <div class="gak-warn" id="lyricsGakWarn"></div>
       <div id="lyricsRow">
         <div id="lyricsEditorCol">
           <div class="ed-pager" style="display:none;">
@@ -2116,6 +2155,18 @@
   // 직접 입력 카드가 선율/장단/가사 어디서 열렸는지에 따라 좌표·읽기·쓰기·에디터 커서
   // 이동 방식이 다르므로 한 군데(CELL_EDIT)에 모아두고, 카드 자체(위치 계산·DOM·키보드
   // 처리)는 아래 openCellEditor/commitCellEditor 하나로 공유한다.
+  // 방향키 이동 — 위/아래는 같은 각 안에서 정간(박)을 오르내리고, 좌/우는 각을 넘나든다.
+  // 정간보는 오른쪽 각이 먼저(이전), 왼쪽 각이 나중(다음)이라 ←는 다음 각, →는 이전 각이다.
+  function gridMove(dom, gi, ci, key) {
+    let ngi = gi, nci = ci;
+    if (key === "ArrowUp") nci -= 1;
+    else if (key === "ArrowDown") nci += 1;
+    else if (key === "ArrowLeft") ngi += 1;
+    else if (key === "ArrowRight") ngi -= 1;
+    else return null;
+    if (nci < 0 || ngi < 0) return null;
+    return dom.geom(ngi, nci) ? { gi: ngi, ci: nci } : null;
+  }
   const CELL_EDIT = {
     mel: {
       geom: function (gi, ci) { const g = cellGeom[gi]; return g && g[ci]; },
@@ -2126,7 +2177,8 @@
         let ng = gi, ni = ci + 1;
         if (ni >= beats) { ni = 0; ng = gi + 1; }
         return this.geom(ng, ni) ? { gi: ng, ci: ni } : null;
-      }
+      },
+      move: function (gi, ci, key) { return gridMove(this, gi, ci, key); }
     },
     jd: {
       geom: function (gi, ci) { return jdGeom[ci] || null; },
@@ -2136,6 +2188,11 @@
         const beats = Math.max(1, parseInt($("beats").value) || 1);
         const ni = ci + 1;
         return (ni < beats && jdGeom[ni]) ? { gi: 0, ci: ni } : null;   // 장단은 한 줄뿐 — 다음 각으로 안 넘어감
+      },
+      move: function (gi, ci, key) {   // 장단은 한 줄뿐이라 좌우 이동은 없음
+        if (key !== "ArrowUp" && key !== "ArrowDown") return null;
+        const nci = key === "ArrowUp" ? ci - 1 : ci + 1;
+        return (nci >= 0 && jdGeom[nci]) ? { gi: 0, ci: nci } : null;
       }
     },
     ly: {
@@ -2151,7 +2208,8 @@
         let ng = gi, ni = ci + 1;
         if (ni >= beats) { ni = 0; ng = gi + 1; }
         return this.geom(ng, ni) ? { gi: ng, ci: ni } : null;
-      }
+      },
+      move: function (gi, ci, key) { return gridMove(this, gi, ci, key); }
     }
   };
 
@@ -2234,7 +2292,19 @@
     });
     inp.addEventListener("keydown", function (e) {
       if (e.isComposing || e.keyCode === 229) return;
-      if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); }
+      if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); return; }
+      // 방향키로 인접 칸 이동 — 위/아래는 텍스트 입력창에서 원래 아무 동작이 없어 늘 가로채고,
+      // 좌/우는 글자 편집(커서 이동)과 겹치므로 커서가 글자 맨 앞/뒤에 있을 때만 칸 이동으로 쓴다.
+      let arrowKey = null;
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") arrowKey = e.key;
+      else if (e.key === "ArrowLeft" && inp.selectionStart === 0 && inp.selectionEnd === 0) arrowKey = e.key;
+      else if (e.key === "ArrowRight" && inp.selectionStart === inp.value.length && inp.selectionEnd === inp.value.length) arrowKey = e.key;
+      if (!arrowKey) return;
+      const target = dom.move(gi, ci, arrowKey);
+      if (!target) return;
+      e.preventDefault();
+      commitCellEditor(false);
+      openCellEditor(domain, target.gi, target.ci);
     });
     // Enter의 표준 입력 경로 — 키 이벤트가 IME에 가려져도 브라우저가 insertLineBreak를 준다.
     // keyup 경로와 어느 쪽이 먼저 올지 IME·글자 수에 따라 순서가 달라(한 글자만 입력하고
@@ -3739,13 +3809,33 @@
     updateHighlight();
     saveState();
 
+    // 선율·장단·가사는 구조 변경(각 추가/삭제, 종이 크기 등) 시점에만 서로 맞춰지고
+    // (reconcileJangdan/reconcileLyrics) 타이핑 중엔 조용히 어긋난 채로 있을 수 있다 —
+    // 다음 구조 변경 때 넘치는 내용이 말없이 잘려나가기 전에 눈에 띄게 알려준다.
+    const lyGakMismatch = wantLyrics && lyParsed && parsed.length !== lyParsed.length;
+    const jdBeatMismatch = wantJangdan && jdParsed && jdParsed[0] && jdParsed[0].length !== beats;
+    const lyWarnEl = $("lyricsGakWarn");
+    if (lyWarnEl) {
+      lyWarnEl.classList.toggle("on", lyGakMismatch);
+      if (lyGakMismatch) lyWarnEl.textContent =
+        `⚠ 선율(${parsed.length}각)과 가사(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.`;
+    }
+    const jdWarnEl = $("jangdanGakWarn");
+    if (jdWarnEl) {
+      jdWarnEl.classList.toggle("on", jdBeatMismatch);
+      if (jdBeatMismatch) jdWarnEl.textContent =
+        `⚠ 장단의 정간 수(${jdParsed[0].length})가 선율(${beats})과 달라요 — 구조를 바꾸면 넘치는 내용이 잘릴 수 있습니다.`;
+    }
+
     $("readout").innerHTML =
       `그린 각: <b>${wantGak}</b>${gakAuto ? " (자동)" : ""} · 페이지 <b>${pages.length}</b>장<br>` +
       `가로 각 <b>${gakPerRow}</b> · 세로 밴드 최대 <b>${stack}</b>${stackAuto ? " (자동)" : ""} · ${landscape ? "가로" : "세로"}<br>` +
       `각 너비: <b>${cell.toFixed(1)}</b> · 각 간격: <b>${gap.toFixed(1)}</b> · 밴드 간격: <b>${bandGap.toFixed(1)}</b> mm` +
       (scale < 0.999 ? ` <span style="color:#8a6d3b">(A4 맞춤 ${Math.round(scale * 100)}%)</span>` : "") + `<br>` +
       `<span style="font-size:11px">읽는 순서: 오른쪽 → 왼쪽 (전통)</span>` +
-      (dg.ok ? "" : `<div class="warn">⚠ 대강 값의 합이 정간 수(${beats})와 달라 무시했습니다.</div>`);
+      (dg.ok ? "" : `<div class="warn">⚠ 대강 값의 합이 정간 수(${beats})와 달라 무시했습니다.</div>`) +
+      (lyGakMismatch ? `<div class="warn">⚠ 선율(${parsed.length}각)과 가사(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.</div>` : "") +
+      (jdBeatMismatch ? `<div class="warn">⚠ 장단의 정간 수(${jdParsed[0].length})가 선율(${beats})과 달라요 — 구조를 바꾸면 넘치는 내용이 잘릴 수 있습니다.</div>` : "");
   }
 
   function fillDaegangPreset() {
@@ -4635,6 +4725,7 @@
   makeGuideToggle("lyricsGuide", "lyricsGuideToggle");
   makeGuideToggle("textGuide", "textGuideToggle");
   makeGuideToggle("ornGuide", "ornGuideToggle");
+  makeGuideToggle("shortcutsGuide", "shortcutsGuideToggle");
 
   // 이전 작업 복구(localStorage) — 저장된 게 없어도(첫 방문) 입력 모드 힌트 문구는 채워야 한다
   let restored = false;
