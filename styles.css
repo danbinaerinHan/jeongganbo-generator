@@ -505,6 +505,9 @@
   #ornEditToggle span, #ornAddToggle span { font-size: 11px; font-weight: 700; }
   #ornEditToggle:hover, #ornAddToggle:hover { background: #f1e6cf; }
   #ornEditToggle.on, #ornAddToggle.on { background: var(--accent); color: #fff; }
+  /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
+     상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
+  #ornEditToggle.on span, #ornAddToggle.on span { color: #fff; }
   #ornAddToggle:disabled { opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
 
   /* 시김새 추가 모드 — 붙임표 칩 위에 숫자 배지(피날레의 붙임표 단축키처럼) */
@@ -517,6 +520,18 @@
   }
   body.orn-add-on .ornchip .orn-key-badge { display: inline-flex; }
   .ornchip.orn-armed { background: #f4e2c2; outline: 1.5px solid var(--accent); border-radius: 6px; }
+
+  /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
+  .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
+                      border: 1px solid var(--line); border-radius: 8px; background: #faf8f3; }
+  body.orn-add-on .orn-add-map-bar { display: flex; }
+  .orn-add-map-bar .oam-slot { display: inline-flex; align-items: center; gap: 3px; }
+  .orn-add-map-bar .oam-key { flex: 0 0 auto; min-width: 14px; height: 14px; padding: 0 2px;
+                              display: inline-flex; align-items: center; justify-content: center;
+                              background: var(--accent); color: #fff; border-radius: 4px;
+                              font-size: 9px; font-weight: 700; line-height: 1; }
+  .orn-add-map-bar select { font-size: 11px; padding: 2px 18px 2px 5px; border: 1px solid var(--line);
+                             border-radius: 5px; font-family: inherit; background-color: #fff; cursor: pointer; }
 
   /* 버튼 설명 호버 툴팁 */
   .tip { position: relative; }

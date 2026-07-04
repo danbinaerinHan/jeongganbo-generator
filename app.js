@@ -1119,11 +1119,55 @@
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
 
-  // 시김새 추가 모드(직접 입력) — 붙임표(wo/both) 중 자주 쓰는 앞 10개에만 숫자 단축키(1~9,0) 배정
+  // 시김새 추가 모드(직접 입력) — 붙임표(wo/both) 시김새에 숫자 단축키(1~9,0) 배정.
+  // 기본은 앞 10개지만, 시김새 팔레트 위 배정 줄(#ornAddMapBar)에서 번호마다 원하는
+  // 시김새로 바꿀 수 있다 — ornAddMap[i]가 그 번호(ORN_ADD_KEYS[i])에 배정된 stem.
   const ORN_ADD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
-  const ORN_ADD_LIST = ORN_LIST.filter(function (o) { return o.c === "wo" || o.c === "both"; }).slice(0, ORN_ADD_KEYS.length);
+  const ORN_ADD_ALL = ORN_LIST.filter(function (o) { return o.c === "wo" || o.c === "both"; });
+  const ORN_ADD_DEFAULT = ORN_ADD_ALL.slice(0, ORN_ADD_KEYS.length).map(function (o) { return o.s; });
+  let ornAddMap = ORN_ADD_DEFAULT.slice();
   const ORN_ADD_KEY_BY_STEM = {};
-  ORN_ADD_LIST.forEach(function (o, i) { ORN_ADD_KEY_BY_STEM[o.s] = ORN_ADD_KEYS[i]; });
+  function rebuildOrnAddKeyMap() {
+    Object.keys(ORN_ADD_KEY_BY_STEM).forEach(function (k) { delete ORN_ADD_KEY_BY_STEM[k]; });
+    ornAddMap.forEach(function (stem, i) { if (stem) ORN_ADD_KEY_BY_STEM[stem] = ORN_ADD_KEYS[i]; });
+  }
+  rebuildOrnAddKeyMap();
+
+  // 시김새 추가 모드 숫자 배정 줄 — 번호마다 드롭다운으로 원하는 붙임표 시김새를 고른다.
+  // 같은 시김새를 다른 번호에 또 고르면 중복 단축키를 막기 위해 이전 번호 쪽을 비운다.
+  function buildOrnAddMapBar() {
+    const wrap = $("ornAddMapBar");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    ORN_ADD_KEYS.forEach(function (key, i) {
+      const slot = document.createElement("label");
+      slot.className = "oam-slot";
+      const kb = document.createElement("span");
+      kb.className = "oam-key"; kb.textContent = key;
+      slot.appendChild(kb);
+      const sel = document.createElement("select");
+      const noneOpt = document.createElement("option");
+      noneOpt.value = ""; noneOpt.textContent = "─";
+      sel.appendChild(noneOpt);
+      ORN_ADD_ALL.forEach(function (o) {
+        const opt = document.createElement("option");
+        opt.value = o.s; opt.textContent = o.k;
+        if (ornAddMap[i] === o.s) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener("change", function () {
+        const stem = sel.value || null;
+        if (stem) ornAddMap.forEach(function (s, j) { if (j !== i && s === stem) ornAddMap[j] = null; });
+        ornAddMap[i] = stem;
+        rebuildOrnAddKeyMap();
+        buildOrnAddMapBar();   // 중복 정리로 다른 슬롯이 비워졌을 수 있어 전체 다시 그림
+        refreshOrnAddBadges();
+        saveState();
+      });
+      slot.appendChild(sel);
+      wrap.appendChild(slot);
+    });
+  }
 
   // 시김새 팔레트 아이콘 크기 — 실제 악보(drawCell)가 쓰는 것과 같은 상대 배율 공식으로
   // 계산해서, 팔레트에서도 실제로 그려질 때와 비슷한 비중으로 보이게 한다(칸은 균일해도
@@ -1398,9 +1442,11 @@
     const tag = (e.target && e.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;   // 텍스트 입력 중엔 숫자를 그대로 타이핑
     const idx = ORN_ADD_KEYS.indexOf(e.key);
-    if (idx < 0 || idx >= ORN_ADD_LIST.length) return;
+    if (idx < 0) return;
+    const stem = ornAddMap[idx];
+    if (!stem) return;
     e.preventDefault();
-    armOrnAdd(ORN_ADD_LIST[idx].s);
+    armOrnAdd(stem);
   });
 
   // 클릭한 정간(gi,ci)에 골라둔(armed) 붙임표 시김새를 붙인다 — 음이 없는 빈 칸에는 붙이지 않는다.
@@ -2778,7 +2824,8 @@
     return { v: 1, controls: c, melody: melodyFull, jangdan: $("jangdan").value,
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
-             customTexts: customTexts, palZoom: palZoom, edFontPx: edFontPx, melInput: inputMode };
+             customTexts: customTexts, palZoom: palZoom, edFontPx: edFontPx, melInput: inputMode,
+             ornAddMap: ornAddMap };
   }
 
   function applyState(s) {
@@ -2804,6 +2851,13 @@
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
     applyPalZoom(); applyEdFont();
+    if (Array.isArray(s.ornAddMap) && s.ornAddMap.length === ORN_ADD_KEYS.length) {
+      const validStems = new Set(ORN_ADD_ALL.map(function (o) { return o.s; }));
+      ornAddMap = s.ornAddMap.map(function (stem) { return (stem && validStems.has(stem)) ? stem : null; });
+    } else {
+      ornAddMap = ORN_ADD_DEFAULT.slice();
+    }
+    rebuildOrnAddKeyMap();
     inputMode = s.melInput === "direct" ? "direct" : "editor";
     applyInputMode();
     $("pianoBase").value = $("hwangPitch").value;   // 황 음고 셀렉트는 기준음과 한 값
@@ -3368,6 +3422,7 @@
         buildPalette();
       }
       buildOrnPalette($("directOrnPalette"));
+      buildOrnAddMapBar();
       applyPalZoom();
     }
   }
