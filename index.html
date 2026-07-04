@@ -261,6 +261,11 @@
   #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
   .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
                         white-space: nowrap; margin-right: 2px; }
+  /* 시김새 미세조정 묶음 — 시김새가 실제로 보이는 자리를 따라다닌다(JS가 DOM 위치를 옮김):
+     에디터 모드에선 팔레트가 시김새 탭일 때만, 직접 입력 모드에선 오른쪽 시김새 팔레트 위에 항상 */
+  .orn-tools { display: none; align-items: center; }
+  #paletteCol.orn-active .orn-tools { display: inline-flex; }
+  #directOrnWrap .orn-tools { display: flex; margin: 0 0 8px; }
 
   /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
   .sizebox { border: 1px solid var(--line); border-radius: 10px;
@@ -424,6 +429,28 @@
   #melodySplit::before { content: ""; height: 46px; width: 4px; border-radius: 2px;
                          background: var(--line); transition: background .12s ease; }
   #melodySplit:hover::before { background: var(--accent); }
+  /* 리본 툴바(피날레·시벨리우스 참고) — 되돌리기·초기화·각 추가/삭제·율명 크기처럼
+     내용과 무관하게 늘 같은 자리에 있어야 하는 '문서 편집' 동작을 한데 모아
+     맨 위에 고정 배치. 아이콘 위·설명 아래 두 줄 버튼을 그룹으로 묶고 구분선으로 나눈다. */
+  .ribbon { display: flex; align-items: stretch; gap: 2px; padding: 5px 8px; margin-bottom: 10px;
+            background: #faf8f3; border: 1px solid var(--line); border-radius: 8px;
+            overflow-x: auto; }
+  .ribbon-group { display: flex; align-items: center; gap: 3px; padding: 0 4px; flex: 0 0 auto; }
+  .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
+  .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; width: 52px; padding: 5px 2px 4px; border: 1px solid transparent;
+                border-radius: 6px; background: none; cursor: pointer; font-family: inherit;
+                color: var(--ink); font-size: 17px; line-height: 1; flex: 0 0 auto; }
+  .ribbon-btn span { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-btn:hover { background: #f0ece3; border-color: var(--line); }
+  .ribbon-btn:disabled { opacity: .4; cursor: default; background: none; }
+  .ribbon-num { width: 34px; padding: 3px 2px; border: 1px solid var(--line); border-radius: 5px;
+                font-family: inherit; font-size: 11px; text-align: center; align-self: center; }
+  .ribbon-slider-group { display: flex; align-items: center; gap: 7px; font-size: 11px;
+                         font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-slider-group input[type="range"] { width: 120px; margin: 0; }
+  .ribbon-slider-group #noteScaleVal { font-weight: 400; min-width: 32px; }
+
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
                  white-space: nowrap; }
@@ -474,9 +501,6 @@
   .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
   /* .pal-views·.pal-view 자체 모양은 위 mode-seg 옆에서 .mode-seg .seg-btn, .pal-view로 함께 정의 */
   .melody-head .pal-views { margin-left: 6px; }
-  /* 직접 입력 모드에서 율명 크기·각 추가/삭제를 머리(맨 위)로 올려 담는 자리 */
-  #melHeadTools { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
-  #melHeadTools:empty { display: none; }
   /* 팔레트 머리 두 줄 — 첫 줄(.pal-top): 제목 + 오른쪽 입력·소리·크기(팔레트 전체 공통),
      둘째 줄(.pal-tools): 율명 전용 설정 묶음. 시김새 탭에선 둘째 줄이 통째로 숨어
      첫 줄 하나만 남는다(세로 최소화). */
@@ -595,15 +619,6 @@
   .ed-title { padding: 3px 1px 6px; font-size: 15px; font-weight: 700; color: var(--accent);
               border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
   .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
-  /* 율명 크기 슬라이더 (머리 한 줄 안 인라인) */
-  .ed-tools { display: inline-flex; align-items: center; gap: 8px; font-size: 12px;
-              font-weight: 600; color: var(--muted); flex: 0 1 auto; min-width: 0; }
-  .ed-tools label { white-space: nowrap; }
-  .ed-tools input[type="range"] { flex: 0 1 160px; min-width: 70px; margin: 0; }
-  .ed-tools #noteScaleVal { font-weight: 400; min-width: 34px; }
-  .ed-gak-btns { display: inline-flex; align-items: center; gap: 6px; }
-  .ed-gak-btns input[type="number"] { width: 44px; padding: 3px 4px; border: 1px solid var(--line);
-                                      border-radius: 5px; font-family: inherit; font-size: 11px; }
   /* 텍스트 입력 규칙 안내 — 에디터 바로 위에 항상 보이게 */
   .ed-hint { font-size: 11px; line-height: 1.6; color: var(--muted);
              background: #faf6ec; border: 1px solid #eadfc8; border-radius: 7px; padding: 5px 9px; }
@@ -1012,6 +1027,29 @@
         <div class="dock-panels">
     <div id="melodyArea" class="dock-panel active">
 
+      <!-- 리본 툴바 — 되돌리기·초기화·각 추가/삭제·율명 크기처럼 어느 팔레트/입력 방식을
+           보고 있든 늘 같은 자리에 있어야 하는 문서 편집 동작을 맨 위에 고정 배치 -->
+      <div class="ribbon" id="melodyRibbon">
+        <div class="ribbon-group">
+          <button type="button" id="melodyUndo" class="ribbon-btn tip" data-tip="방금 초기화한 선율을 되돌립니다">↶<span>되돌리기</span></button>
+          <button type="button" id="melodyReset" class="ribbon-btn tip" data-tip="선율 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲<span>초기화</span></button>
+        </div>
+        <div class="ribbon-sep"></div>
+        <div class="ribbon-group">
+          <button type="button" id="gakInsertBtn" class="ribbon-btn tip"
+            data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">⊕<span>각 추가</span></button>
+          <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가할 각 수" class="ribbon-num">
+          <button type="button" id="gakDeleteBtn" class="ribbon-btn tip"
+            data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">⊖<span>각 삭제</span></button>
+        </div>
+        <div class="ribbon-sep"></div>
+        <div class="ribbon-group ribbon-slider-group">
+          <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 붙임 시김새도 함께 커집니다">율명 크기</label>
+          <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
+          <span id="noteScaleVal">1.0×</span>
+        </div>
+      </div>
+
       <div class="melody-head">
         <button type="button" id="editorToggle" class="icon-btn mini-toggle" title="접기/펼치기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1023,7 +1061,6 @@
           <button type="button" class="pal-view active" data-view="yul">율명</button>
           <button type="button" class="pal-view" data-view="orn">시김새</button>
         </div>
-        <span id="melHeadTools"></span>
         <span class="guide-wrap">
           <button type="button" id="melodyGuideToggle" class="icon-btn" title="입력 방법 안내">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -1039,19 +1076,6 @@
               • 음 뒤에 공백 없이 <span class="mono">&lt;</span> 를 붙이면 그 정간 오른쪽-아래에 숨표가 표시됩니다.
             </div>
           </div>
-        </span>
-        <span class="mel-actions">
-          <span class="guide-wrap">
-            <button type="button" id="ornEditToggle" class="mel-btn">시김새 미세조정</button>
-            <button type="button" id="ornGuideToggle" class="icon-btn" title="설명 보기">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            </button>
-            <div id="ornGuide" class="melody-guide">
-              <div class="mg-sec">켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있습니다.</div>
-            </div>
-          </span>
-          <button type="button" id="melodyUndo" class="mel-btn tip" data-tip="방금 초기화한 선율을 되돌립니다">↶ 되돌리기</button>
-          <button type="button" id="melodyReset" class="mel-btn tip" data-tip="선율 내용을 모두 비웁니다 (되돌리기로 복구 가능)">초기화</button>
         </span>
       </div>
 
@@ -1105,6 +1129,18 @@
                   </select>
                 </label>
               </span>
+              <!-- 시김새 팔레트 전용 — 시김새를 직접 만지는 기능이라 그 팔레트 탭에서만 보임 -->
+              <span class="orn-tools" title="시김새 팔레트 전용 설정">
+                <span class="guide-wrap">
+                  <button type="button" id="ornEditToggle" class="mel-btn">시김새 미세조정</button>
+                  <button type="button" id="ornGuideToggle" class="icon-btn" title="설명 보기">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                  </button>
+                  <div id="ornGuide" class="melody-guide">
+                    <div class="mg-sec">켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있습니다.</div>
+                  </div>
+                </span>
+              </span>
             </div>
           </div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
@@ -1114,24 +1150,12 @@
           <div class="ed-head">
             <div class="ed-top">
               <span class="ed-title">텍스트 에디터</span>
-              <span class="ed-tools">
-                <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 붙임 시김새도 함께 커집니다">율명 크기</label>
-                <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
-                <span id="noteScaleVal">1.0×</span>
-              </span>
               <div class="ed-right">
                 <div class="ed-pager" style="display:none;">
                   <button type="button" class="ed-prev mel-btn" title="이전 페이지 편집">◀</button>
                   <span class="ed-plabel">1 / 1 페이지</span>
                   <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
                 </div>
-                <span class="ed-gak-btns">
-                  <button type="button" id="gakInsertBtn" class="mel-btn tip"
-                    data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">⊕ 각 추가</button>
-                  <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가할 각 수">
-                  <button type="button" id="gakDeleteBtn" class="mel-btn tip"
-                    data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">⊖ 각 삭제</button>
-                </span>
               </div>
             </div>
           </div>
@@ -4489,12 +4513,11 @@
     $("melodyArea").classList.toggle("mel-direct", direct);
     const t = document.querySelector("#melodyArea .ed-title");
     if (t) t.textContent = direct ? "시김새" : "텍스트 에디터";
-    // 율명 크기 슬라이더·각 추가/삭제는 직접 입력 모드에선 맨 위 머리줄로 올려 잘 보이게
-    const tools = document.querySelector("#melodyArea .ed-tools");
-    const gaks = document.querySelector("#melodyArea .ed-gak-btns");
+    // 시김새 미세조정 묶음은 시김새가 실제로 보이는 자리를 따라다닌다 —
+    // 에디터 모드에선 왼쪽 팔레트가 시김새 탭일 때(orn-active, CSS로 처리),
+    // 직접 입력 모드에선 오른쪽에 시김새 팔레트가 항상 떠 있으므로 그 위로 옮겨 둔다.
+    const ornTools = document.querySelector("#melodyArea .orn-tools");
     if (direct) {
-      $("melHeadTools").appendChild(tools);
-      $("melHeadTools").appendChild(gaks);
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
         palView = "yul";
         document.querySelectorAll(".pal-view").forEach(function (x) {
@@ -4502,13 +4525,11 @@
         });
         buildPalette();
       }
+      $("directOrnWrap").insertBefore(ornTools, $("directOrnPalette"));
       buildOrnPalette($("directOrnPalette"));
       applyPalZoom();
     } else {
-      const edTop = document.querySelector("#melodyArea .ed-top");
-      const edRight = document.querySelector("#melodyArea .ed-right");
-      edTop.insertBefore(tools, edRight);
-      edRight.appendChild(gaks);
+      document.querySelector("#melodyArea .pal-tools").appendChild(ornTools);
     }
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
