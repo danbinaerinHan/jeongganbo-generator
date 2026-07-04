@@ -286,6 +286,7 @@
         <div class="orn-row"><span>상하</span>
           <button type="button" data-a="y-">↑</button><button type="button" data-a="y+">↓</button></div>
         <button type="button" id="ornReset" class="orn-reset">위치·크기 초기화</button>
+        <button type="button" id="ornDelete" class="orn-reset text-panel-del" title="Backspace·Delete 키로도 지울 수 있습니다">삭제</button>
       </div>
       <div id="textPanel" class="orn-panel">
         <div class="orn-title"><b id="textPanelName">텍스트</b><button type="button" id="textPanelClose" class="icon-btn" title="닫기">
@@ -395,7 +396,7 @@
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group ribbon-slider-group">
-          <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 붙임 시김새도 함께 커집니다">율명 크기</label>
+          <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 시김새 크기는 그대로 유지됩니다">율명 크기</label>
           <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
           <span id="noteScaleVal">1.0×</span>
         </div>
@@ -565,6 +566,7 @@
         <div id="jangdanEditorCol">
           <textarea id="jangdan" spellcheck="false"
             placeholder="| 로 정간 구분(맨 처음 각 옆에만 표시).  예)  덩 | 기덕 | 궁 | 덕"></textarea>
+          <div class="direct-hint">악보 맨 처음 각의 장단 자리를 클릭하면 그 자리에서 바로 입력할 수 있습니다.</div>
         </div>
       </div>
     </div>
@@ -622,6 +624,7 @@
           </div>
           <textarea id="lyrics" spellcheck="false"
             placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  창 | 밖 | 이 | 어 | 른 | 어"></textarea>
+          <div class="direct-hint">악보의 각 정간 오른쪽 가사 자리를 클릭하면 그 자리에서 바로 입력할 수 있습니다.</div>
         </div>
       </div>
     </div>

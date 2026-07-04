@@ -1280,7 +1280,7 @@
 
   // 커서 위치에 토큰(율명 텍스트) 삽입
   function insertToken(txt) {
-    if (cellEditInput) {   // 정간 인라인 편집 중이면 그 칸에 삽입
+    if (cellEditInput && cellEditDomain === "mel") {   // 선율 정간 인라인 편집 중이면 그 칸에 삽입
       const inp = cellEditInput;
       const s = inp.selectionStart != null ? inp.selectionStart : inp.value.length;
       const e = inp.selectionEnd != null ? inp.selectionEnd : s;
@@ -1299,6 +1299,17 @@
   }
 
   function insertJangdanToken(txt) {
+    if (cellEditInput && cellEditDomain === "jd") {   // 직접 입력 — 지금 열려 있는 장단 정간 카드에 삽입
+      const inp = cellEditInput;
+      const s = inp.selectionStart != null ? inp.selectionStart : inp.value.length;
+      const e = inp.selectionEnd != null ? inp.selectionEnd : s;
+      inp.value = inp.value.slice(0, s) + txt + inp.value.slice(e);
+      const pos = s + txt.length;
+      inp.setSelectionRange(pos, pos);
+      inp.focus();
+      inp.dispatchEvent(new Event("input"));
+      return;
+    }
     const ta = $("jangdan");
     const s = ta.selectionStart, e = ta.selectionEnd;
     ta.setRangeText(txt, s, e, "end");
@@ -1671,7 +1682,8 @@
     const ROWS_REF = 3;
     let gs = (cell * 0.90) / ROWS_REF;
     if (maxCols > 1) gs = Math.min(gs, (cell * 0.86) / maxCols);
-    gs *= noteScaleCur;   // 율명 크기 배율 — 붙임 시김새도 gs를 따라 같이 커진다
+    const gsBase = gs;    // 시김새 기준 크기 — 율명 크기 배율(noteScaleCur)을 타지 않도록 배율 적용 전 값을 남겨둠
+    gs *= noteScaleCur;   // 율명 크기 배율 — 이제 음표 글자(drawGlyph)에만 적용됨
 
     const rowH = cell / nRows;
     for (let ri = 0; ri < nRows; ri++) {
@@ -1688,8 +1700,11 @@
         const cx = x + colW * (gi + 0.5);
         if (g.main.sym != null) {
           symK++;
-          // 음길이가 있는(독립 칸을 차지하는) 시김새는 조금 작게 그림
-          const mainBox = gs * 1.06 * (ORN_CAT[g.main.sym] === "with" ? 0.8 : 1)
+          // 음길이가 있는(독립 칸을 차지하는) 시김새는 조금 작게 그림 — 시김새(ORN_CAT에 있는 것)는
+          // 율명 크기 배율을 안 타도록 gsBase(배율 적용 전) 기준으로 그린다. ORN_CAT에 없는 기호
+          // (쉼 등)는 음표와 같은 취급이라 여전히 gs(배율 적용) 기준.
+          const symBase = ORN_CAT[g.main.sym] ? gsBase : gs;
+          const mainBox = symBase * 1.06 * (ORN_CAT[g.main.sym] === "with" ? 0.8 : 1)
             * (SYM_EXTRA_SCALE[g.main.sym] || 1);
           drawAdjSym(svg, g.main, cx, cyc, mainBox, cell, gakIdx, cellIdx, pageIdx, symK);
         }
@@ -1697,10 +1712,11 @@
         // 붙임 시김새: 주 글자 오른쪽에 작게 (여러 개면 세로로 쌓음) —
         // 덧길이표만 예외로 왼쪽에 붙는다(정간보 관행). symK는 화면에 그리는 자리(좌/우)와
         // 무관하게 원문(글자) 등장 순서로 먼저 매겨야 시김새 미세조정(클릭 선택)이 안 어긋난다.
+        // 붙임표는 전부 시김새라 크기는 항상 gsBase 기준(율명 크기 배율 미적용).
         if (g.att.length) {
           const groupRight = x + colW * (gi + 1);
           const groupLeft = x + colW * gi;
-          const saBase = Math.min(gs * 0.55, colW * 0.34);
+          const saBase = Math.min(gsBase * 0.55, colW * 0.34);
           const items = g.att.map(function (tk) {
             // 확대는 붙임표(wo류)에만 적용 — 퇴성·추성처럼 붙어오는 것들은 원래 크기 유지
             const scale = (ORN_CAT[tk.sym] === "wo" && !ATT_SCALE_KEEP.has(tk.sym)) ? ATT_EXTRA_SCALE : 1;
@@ -1860,6 +1876,17 @@
     render();
     refreshEditorSlices();
     showOrnPanel();
+  }
+
+  // 선택된 시김새 토큰을 통째로 지운다(Backspace/Delete 키 또는 패널의 '삭제' 버튼)
+  function deleteSelectedOrn() {
+    const t = getOrnToken(ornSel);
+    if (!t) return;
+    melodyFull = melodyFull.slice(0, t.abs) + melodyFull.slice(t.abs + t.len);
+    ornSel = null;
+    hideOrnPanel();
+    render();
+    refreshEditorSlices();
   }
 
   // ---------- 자유 텍스트 주석(대여음 등) ----------
@@ -3329,6 +3356,16 @@
   });
   $("ornClose").addEventListener("click", function () { ornSel = null; hideOrnPanel(); render(); });
   $("ornReset").addEventListener("click", function () { updateOrnParams(0, 0, 0, true); });
+  $("ornDelete").addEventListener("click", deleteSelectedOrn);
+  // 시김새 미세조정 모드에서 시김새를 고른 뒤 Backspace/Delete로 바로 삭제
+  document.addEventListener("keydown", function (e) {
+    if (!ornEditMode || !ornSel) return;
+    if (e.key !== "Backspace" && e.key !== "Delete") return;
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;   // 텍스트 입력 중엔 글자 지우기로 그대로 둠
+    e.preventDefault();
+    deleteSelectedOrn();
+  });
   document.querySelectorAll("#ornPanel .orn-row button").forEach(function (b) {
     b.addEventListener("click", function () {
       const a = b.getAttribute("data-a");

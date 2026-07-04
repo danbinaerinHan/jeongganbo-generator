@@ -705,6 +705,18 @@
     display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
     color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
 
+  /* 직접 입력 모드 — 장단·가사도 선율과 마찬가지로 악보의 정간을 클릭해 입력한다.
+     텍스트 에디터(칸)는 헷갈리지 않게 숨기고, 그 자리에 안내 문구만 보여준다.
+     (장단 팔레트는 선율의 율명 팔레트처럼 그대로 둬서 열린 정간 카드에 클릭 입력 가능) */
+  .direct-hint { display: none; margin: auto; padding: 14px; max-width: 80%;
+                 font-size: 12px; line-height: 1.6; color: var(--muted); text-align: center;
+                 border: 1px dashed var(--line); border-radius: 8px; background: #faf8f3; }
+  body.input-direct #jangdanEditorCol textarea,
+  body.input-direct #lyricsEditorCol textarea { display: none; }
+  body.input-direct #jangdanEditorCol,
+  body.input-direct #lyricsEditorCol { display: flex; }
+  body.input-direct .direct-hint { display: block; }
+
   /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
   #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
   #melodyHlBack { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
