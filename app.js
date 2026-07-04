@@ -33,6 +33,9 @@
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
   let ornAddMode = false;                   // 시김새 추가 모드(직접 입력) — 숫자키로 붙임표 시김새를 고른 뒤 음을 클릭해 붙임
   let ornAddArmed = null;                   // 지금 골라둔(armed) 붙임표 시김새의 stem
+  let rangeClearMode = false;                // 구간 지우기 모드(직접 입력) — 드래그로 정간 구간을 골라 한꺼번에 지움
+  let rangeDragging = false;                 // 정간 드래그 중인지
+  let rangeStart = null, rangeEnd = null;    // 드래그 시작/현재 정간 {gi, ci}
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
   const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
   const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
@@ -628,6 +631,35 @@
     refreshEditorSlices();
     syncActiveFromCursor();
     refreshUndoBtn();
+  }
+
+  // ---------- 구간 지우기(직접 입력) ----------
+  // 정간을 순서(각 → 정간) 기준 한 줄로 폈을 때의 위치. 드래그 시작~끝 사이(양끝 포함)를 구간으로 본다.
+  function melCellSeq(gi, ci) {
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    return gi * beats + ci;
+  }
+  // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi) 안의 음·시김새를 모두 지운다(빈 정간으로).
+  // 초기화와 같은 되돌리기 스택을 써서 기존 '되돌리기' 버튼으로 복구할 수 있다.
+  function clearMelodyRange(startGi, startCi, endGi, endCi) {
+    const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+    const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+    const rows = parseMelodyOffsets(melodyFull).map(function (g) { return g.map(function (c) { return c.text; }); });
+    let changed = false;
+    for (let gi = 0; gi < rows.length; gi++) {
+      for (let ci = 0; ci < rows[gi].length; ci++) {
+        if (melCellSeq(gi, ci) >= lo && melCellSeq(gi, ci) <= hi && rows[gi][ci] !== "") {
+          rows[gi][ci] = ""; changed = true;
+        }
+      }
+    }
+    if (changed) {
+      melodyUndo.push(melodyFull);
+      melodyFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
+      refreshEditorSlices();
+      refreshUndoBtn();
+    }
+    render();
   }
   function refreshUndoBtn() {
     $("melodyUndo").disabled = melodyUndo.length === 0;
@@ -1461,13 +1493,18 @@
   });
 
   // 클릭한 정간(gi,ci)에 골라둔(armed) 붙임표 시김새를 붙인다 — 음이 없는 빈 칸에는 붙이지 않는다.
-  function addOrnToCell(gi, ci) {
+  // rowIdx: 분박(스페이스로 나뉜 여러 음)이 있을 때 그중 어느 음 뒤에 붙일지(클릭한 세로 위치 기준).
+  // 생략하거나 범위를 벗어나면 맨 끝 음 뒤에 붙인다(기존 동작과 동일).
+  function addOrnToCell(gi, ci, rowIdx) {
     if (!ornAddArmed) return;
     const o = ORN_LIST.find(function (x) { return x.s === ornAddArmed; });
     if (!o) return;
     const cur = CELL_EDIT.mel.getText(gi, ci);
     if (!cur.trim()) return;
-    CELL_EDIT.mel.setText(gi, ci, cur + "{" + o.k + "}");
+    const rows = cur.split(" ");
+    const idx = (rowIdx != null && rowIdx >= 0 && rowIdx < rows.length) ? rowIdx : rows.length - 1;
+    rows[idx] = rows[idx] + "{" + o.k + "}";
+    CELL_EDIT.mel.setText(gi, ci, rows.join(" "));
   }
 
   // ---------- 피아노 팔레트 (건반 위 율명, 클릭 입력 + 미리듣기) ----------
@@ -2362,11 +2399,30 @@
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
-                if (ornAddMode && ornAddArmed && inputMode === "direct") { addOrnToCell(gi, ci); return; }
+                if (rangeClearMode && inputMode === "direct") {
+                  rangeDragging = true; rangeStart = { gi: gi, ci: ci }; rangeEnd = { gi: gi, ci: ci };
+                  render();
+                  return;
+                }
+                if (ornAddMode && ornAddArmed && inputMode === "direct") {
+                  // 분박(스페이스로 나뉜 여러 음)이 있으면 클릭한 세로 위치로 어느 음인지 고른다
+                  // (drawCell이 각 음을 위→아래 순서로 rowH씩 나눠 그리는 것과 같은 계산)
+                  const content = gakCells && gakCells[ci] ? gakCells[ci].text : "";
+                  const nRowsHere = Math.max(1, content.split(/\s+/).filter(Boolean).length);
+                  const pt = svgPointFromEvent(svg, e);
+                  const rowIdx = Math.max(0, Math.min(nRowsHere - 1, Math.floor((pt.y - cyTop) / (cell / nRowsHere))));
+                  addOrnToCell(gi, ci, rowIdx);
+                  return;
+                }
                 if (cellEditInput) commitCellEditor(false);
                 // 입력 모드에 따라: 에디터 → 아래 텍스트로 커서 이동 / 직접 입력 → 옆 입력창
                 if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
                 else openCellEditor("mel", gi, ci);
+              });
+              hit.addEventListener("mouseenter", function () {
+                if (!rangeDragging) return;
+                rangeEnd = { gi: gi, ci: ci };
+                render();
               });
             })(melIdx, j);
             svg.appendChild(hit);
@@ -2579,6 +2635,24 @@
           hit.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); selectOrn(sel); });
         })({ gak: o.gak, cell: o.cell, k: o.k });
         svg.appendChild(hit);
+      });
+    }
+
+    // 구간 지우기 모드: 드래그로 고른 정간 구간을 빨갛게 덧칠해 '지워질 범위'를 미리 보여준다
+    if (rangeClearMode && rangeStart && rangeEnd) {
+      const lo = Math.min(melCellSeq(rangeStart.gi, rangeStart.ci), melCellSeq(rangeEnd.gi, rangeEnd.ci));
+      const hi = Math.max(melCellSeq(rangeStart.gi, rangeStart.ci), melCellSeq(rangeEnd.gi, rangeEnd.ci));
+      Object.keys(cellGeom).forEach(function (giKey) {
+        const gi = parseInt(giKey, 10);
+        const row = cellGeom[gi];
+        Object.keys(row).forEach(function (ciKey) {
+          const ci = parseInt(ciKey, 10);
+          if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+          const cg = row[ci];
+          const svg = pageSvgs[cg.page]; if (!svg) return;
+          svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
+            { fill: "#e05a5a", "fill-opacity": "0.35", stroke: "none", class: "no-print" }));
+        });
       });
     }
 
@@ -3354,6 +3428,22 @@
     $("ornAddToggle").classList.toggle("on", ornAddMode);
     refreshOrnAddBadges();
   });
+  // 구간 지우기 모드 토글 — 직접 입력 모드에서만 의미가 있어 다른 모드일 땐 꺼서 비활성화
+  $("rangeClearToggle").addEventListener("click", function () {
+    rangeClearMode = !rangeClearMode;
+    rangeDragging = false; rangeStart = null; rangeEnd = null;
+    $("rangeClearToggle").classList.toggle("on", rangeClearMode);
+    render();
+  });
+  // 드래그 도중 마우스를 떼면(정간 밖이어도) 그 시점까지 고른 구간을 지운다
+  document.addEventListener("mouseup", function () {
+    if (!rangeDragging) return;
+    rangeDragging = false;
+    const s = rangeStart, en = rangeEnd;
+    rangeStart = null; rangeEnd = null;
+    if (s && en) clearMelodyRange(s.gi, s.ci, en.gi, en.ci);
+    else render();
+  });
   $("ornClose").addEventListener("click", function () { ornSel = null; hideOrnPanel(); render(); });
   $("ornReset").addEventListener("click", function () { updateOrnParams(0, 0, 0, true); });
   $("ornDelete").addEventListener("click", deleteSelectedOrn);
@@ -3449,6 +3539,12 @@
       ornAddMode = false; ornAddArmed = null;
       $("ornAddToggle").classList.remove("on");
       refreshOrnAddBadges();
+    }
+    // 구간 지우기도 직접 입력 전용
+    $("rangeClearToggle").disabled = !direct;
+    if (!direct && rangeClearMode) {
+      rangeClearMode = false; rangeDragging = false; rangeStart = null; rangeEnd = null;
+      $("rangeClearToggle").classList.remove("on");
     }
     if (direct) {
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정

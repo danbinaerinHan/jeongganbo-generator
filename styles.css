@@ -499,16 +499,16 @@
   #melodyReset:hover { background: #f7ecec; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornAddToggle { flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
+  #ornEditToggle, #ornAddToggle, #rangeClearToggle { flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: #faf3e7; font-weight: 700; }
-  #ornEditToggle span, #ornAddToggle span { font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornAddToggle:hover { background: #f1e6cf; }
-  #ornEditToggle.on, #ornAddToggle.on { background: var(--accent); color: #fff; }
+  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span { font-size: 11px; font-weight: 700; }
+  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover { background: #f1e6cf; }
+  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on { background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornAddToggle.on span { color: #fff; }
-  #ornAddToggle:disabled { opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span { color: #fff; }
+  #ornAddToggle:disabled, #rangeClearToggle:disabled { opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
 
   /* 시김새 추가 모드 — 붙임표 칩 위에 숫자 배지(피날레의 붙임표 단축키처럼) */
   .palette .pi.ornchip { position: relative; }
