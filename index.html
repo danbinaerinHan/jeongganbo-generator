@@ -709,7 +709,8 @@
   .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
                   background: rgba(255,255,255,.98); border: 1px solid var(--accent); border-radius: 10px;
                   padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
-                  font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6; }
+                  font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6;
+                  white-space: normal; }   /* .melody-head의 nowrap을 되돌림 — 안 그러면 문장이 박스 밖으로 넘침 */
   .melody-guide.on { display: block; }
   .melody-guide b { color: var(--accent); font-size: 11px; letter-spacing: .5px; }
   .melody-guide .mg-sec { margin-top: 8px; }
@@ -2465,8 +2466,9 @@
   // 붙임표(음표 오른쪽에 붙는 시김새) 확대 — 미는표·흘림표·니레·니라·니로·끊는표·특강표만 원래 크기 유지
   const ATT_EXTRA_SCALE = 1.2;
   const ATT_SCALE_KEEP = new Set(["push", "flow", "nire", "nina", "niro", "staccato", "accent"]);
-  // 특정 붙임표만 따로 더 키움 — 농음표·풀어내림표·잉어질표는 가늘고 길어 2.5배로
-  const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5 };
+  // 특정 붙임표만 따로 크기 조정 — 농음표·풀어내림표·잉어질표는 가늘고 길어 2.5배로,
+  // 반길이표는 지금(1.2배)의 절반 크기가 되도록 0.5배 추가 축소(최종 0.6배)
+  const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5, "len-half": 0.5 };
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
@@ -2950,23 +2952,34 @@
           drawAdjSym(svg, g.main, cx, cyc, mainBox, cell, gakIdx, cellIdx, pageIdx, symK);
         }
         else drawGlyph(svg, g.main, cx, cyc, gs);
-        // 붙임 시김새: 주 글자 오른쪽에 작게 (여러 개면 세로로 쌓음)
+        // 붙임 시김새: 주 글자 오른쪽에 작게 (여러 개면 세로로 쌓음) —
+        // 덧길이표만 예외로 왼쪽에 붙는다(정간보 관행). symK는 화면에 그리는 자리(좌/우)와
+        // 무관하게 원문(글자) 등장 순서로 먼저 매겨야 시김새 미세조정(클릭 선택)이 안 어긋난다.
         if (g.att.length) {
           const groupRight = x + colW * (gi + 1);
+          const groupLeft = x + colW * gi;
           const saBase = Math.min(gs * 0.55, colW * 0.34);
-          const boxes = g.att.map(function (tk) {
+          const items = g.att.map(function (tk) {
             // 확대는 붙임표(wo류)에만 적용 — 퇴성·추성처럼 붙어오는 것들은 원래 크기 유지
             const scale = (ORN_CAT[tk.sym] === "wo" && !ATT_SCALE_KEEP.has(tk.sym)) ? ATT_EXTRA_SCALE : 1;
-            return saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1);
+            const box = saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1);
+            symK++;
+            return { tk: tk, box: box, k: symK, left: tk.sym === "len-double" };
           });
-          const sa = Math.max.apply(null, boxes);
-          // 커진 크기만큼 글자 쪽 여백을 살짝 더 줌(글자와의 간격 조정)
-          const ax = Math.min(cx + gs * 0.47 + sa * 0.5, groupRight - sa * 0.55);
-          const total = g.att.length;
-          for (let ai = 0; ai < total; ai++) {
-            const ay = cyc + (ai - (total - 1) / 2) * sa * 1.08;
-            symK++; drawAdjSym(svg, g.att[ai], ax, ay, boxes[ai], cell, gakIdx, cellIdx, pageIdx, symK);
-          }
+          [false, true].forEach(function (onLeft) {
+            const list = items.filter(function (it) { return it.left === onLeft; });
+            if (!list.length) return;
+            const sa = Math.max.apply(null, list.map(function (it) { return it.box; }));
+            // 커진 크기만큼 글자 쪽 여백을 살짝 더 줌(글자와의 간격 조정)
+            const ax = onLeft
+              ? Math.max(cx - gs * 0.47 - sa * 0.5, groupLeft + sa * 0.55)
+              : Math.min(cx + gs * 0.47 + sa * 0.5, groupRight - sa * 0.55);
+            const total = list.length;
+            list.forEach(function (it, ai) {
+              const ay = cyc + (ai - (total - 1) / 2) * sa * 1.08;
+              drawAdjSym(svg, it.tk, ax, ay, it.box, cell, gakIdx, cellIdx, pageIdx, it.k);
+            });
+          });
         }
       }
     }
