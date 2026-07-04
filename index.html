@@ -195,27 +195,44 @@
   /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
   .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
              flex: 0 0 auto; }
-  /* 입력 방식(에디터/직접 입력)·팔레트 보기(율명/시김새) — 책에 라벨(북마크 탭)을
-     붙인 것처럼: 고르지 않은 건 작고 옅게 뒤로 겹쳐 있고, 고른 것만 크고 진하게
-     앞으로 튀어나와 있어 뭘 고를 수 있는지·뭘 골랐는지 한눈에 보이게 한다.
-     (overflow:visible로 pal-seg의 클리핑을 풀어줘야 튀어나온 부분이 안 잘린다) */
+  /* 팔레트 보기(율명/시김새) — 책에 라벨(북마크 탭)을 붙인 것처럼: 고르지 않은 건
+     작고 옅게 뒤로 겹쳐 있고, 고른 것만 크고 진하게 앞으로 튀어나와 있어 뭘 고를
+     수 있는지·뭘 골랐는지 한눈에 보이게 한다. */
   .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
-  .mode-seg, .pal-views { display: inline-flex; align-items: flex-end; overflow: visible;
-                          border: none; background: none; gap: 0; }
-  .mode-seg .seg-btn, .pal-view {
+  .pal-views { display: inline-flex; align-items: flex-end; overflow: visible;
+               border: none; background: none; gap: 0; }
+  .pal-view {
     position: relative; border: 1px solid var(--line); border-bottom: none;
     border-radius: 6px 6px 0 0; background: #efe8da; color: var(--muted);
     font-size: 11px; font-weight: 600; padding: 3px 10px; margin-right: -7px;
     z-index: 1; cursor: pointer; font-family: inherit; white-space: nowrap;
     transition: all .15s ease;
   }
-  .mode-seg .seg-btn:last-child, .pal-view:last-child { margin-right: 0; }
-  .mode-seg .seg-btn:hover, .pal-view:hover { color: var(--ink); background: #f3ede0; }
-  .mode-seg .seg-btn.active, .pal-view.active {
+  .pal-view:last-child { margin-right: 0; }
+  .pal-view:hover { color: var(--ink); background: #f3ede0; }
+  .pal-view.active {
     background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
     padding: 5px 14px; z-index: 3; transform: translateY(-3px);
     box-shadow: 0 3px 7px rgba(31,26,18,.28);
   }
+  /* 선율 입력 방식(에디터/직접 입력) — 사이드바 '선율' 탭 바로 밑 서브메뉴.
+     선율 탭이 활성일 때만 보이고, 고른 쪽 아래에 한 줄 설명(mode-hint)이 따라온다. */
+  #dockRail .mode-seg { display: none; flex-direction: column; gap: 3px;
+                        margin: 2px 4px 2px 14px; }
+  #dockRail .rail-btn.active[data-panel="melodyArea"] + .mode-seg,
+  #dockRail .rail-btn.active[data-panel="melodyArea"] + .mode-seg + .mode-hint { display: flex; }
+  #dockRail .mode-seg .seg-btn {
+    border: 1px solid var(--line); border-radius: 6px; background: #fff;
+    color: var(--muted); font-size: 11px; font-weight: 600; padding: 4px 9px;
+    text-align: left; cursor: pointer; font-family: inherit;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  #dockRail .mode-seg .seg-btn:hover { color: var(--ink); background: #f0ece3; }
+  #dockRail .mode-seg .seg-btn.active {
+    background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700;
+  }
+  #dockRail .mode-hint { display: none; margin: 0 4px 6px 14px; font-size: 10px;
+                         line-height: 1.35; color: var(--muted); max-width: 92px; }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
                       white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
@@ -942,6 +959,14 @@
       <div class="dock-body">
         <nav id="dockRail">
           <button type="button" class="rail-btn active" data-panel="melodyArea">선율</button>
+          <!-- 선율 입력 방식(에디터/직접 입력) — 장단·가사와 달리 선율만 두 입력 방식이 있어서
+               헤더 줄에 묻히지 않게 '선율' 탭 바로 아래 서브메뉴로 둔다. 고른 쪽 밑에 그
+               방식이 뭔지 한 줄 설명이 따라와서 처음 봐도 바로 감이 온다. -->
+          <div class="mode-seg" id="melInputSeg">
+            <button type="button" class="seg-btn active" data-mode="editor">에디터</button>
+            <button type="button" class="seg-btn" data-mode="direct">직접 입력</button>
+          </div>
+          <div class="mode-hint" id="melInputHint">아래 에디터에 율명을 타이핑</div>
           <button type="button" class="rail-btn" data-panel="jangdanArea">장단</button>
           <button type="button" class="rail-btn" data-panel="lyricsArea">가사</button>
           <button type="button" class="rail-btn" data-panel="textArea">텍스트</button>
@@ -954,14 +979,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
         선율 입력
-        <span class="head-sep"></span>
-        <span class="mode-lab">입력 방식</span>
-        <span class="pal-seg mode-seg" id="melInputSeg">
-          <button type="button" class="seg-btn active tip" data-mode="editor"
-            data-tip="아래 텍스트 에디터에 한글 율명으로 입력합니다. 악보의 정간을 클릭하면 에디터 커서가 그 칸으로 이동합니다.">에디터</button>
-          <button type="button" class="seg-btn tip" data-mode="direct"
-            data-tip="악보의 정간을 클릭하면 그 옆에 입력창이 열립니다. 치는 대로 실시간 반영되고, Enter로 다음 정간으로 넘어갑니다.">직접 입력</button>
-        </span>
         <span class="head-sep"></span>
         <span class="mode-lab">팔레트</span>
         <div class="pal-views">
@@ -4260,10 +4277,15 @@
   $("palInsert").addEventListener("change", saveState);
   // 선율 입력 모드 전환 (에디터 / 직접 입력)
   // 직접 입력: 왼쪽 율명 팔레트 고정 + 오른쪽에 시김새 팔레트 상시 표시 (텍스트 에디터 대신)
+  const MEL_INPUT_HINT = {
+    editor: "아래 에디터에 율명을 타이핑, 정간 클릭 시 커서 이동",
+    direct: "정간 클릭 → 옆 입력창에 바로 타이핑"
+  };
   function applyMelInputSeg() {
     document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-mode") === melInput);
     });
+    if ($("melInputHint")) $("melInputHint").textContent = MEL_INPUT_HINT[melInput] || "";
     const direct = melInput === "direct";
     $("melodyArea").classList.toggle("mel-direct", direct);
     const t = document.querySelector("#melodyArea .ed-title");
