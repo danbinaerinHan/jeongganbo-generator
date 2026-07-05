@@ -8,6 +8,8 @@
   // — 예시 악보처럼 테두리가 페이지 끝에 닿지 않고 항상 여백을 조금 둔다
   const MARGIN_BASE = 12, MARGIN_MIN = 9, INNER_PAD = 5;
   const T_THIN = 0.16, T_THICK = 0.36, T_FRAME = 0.63, T_DAEGANG = 0.45;   // 대강선 0.56 → 0.8배
+  // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계 — 격자선보다 눈에 띄게 조금 더 굵게
+  const CELL_BORDER_WIDTH_PX = { thin: 0.3, medium: 0.6, thick: 1.0 };
 
   const DAEGANG_PRESET = { 8: "", 10: "7 3", 12: "3 3 3 3", 16: "3 2 3 3 2 3", 20: "6 4 4 6" };
   let daegangAuto = "";
@@ -36,10 +38,16 @@
   let rangeClearMode = false;                // 구간 지우기 모드(직접 입력) — 드래그로 정간 구간을 골라 한꺼번에 지움
   let rangeDragging = false;                 // 정간 드래그 중인지
   let rangeStart = null, rangeEnd = null;    // 드래그 시작/현재 정간 {gi, ci}
-  let cellStyleMode = false;                 // 셀 서식(배경색) 칠하기 모드(직접 입력) — 드래그로 정간 구간을 골라 배경색 적용
-  let cellStyleDragging = false;             // 정간 드래그 중인지(서식)
-  let cellStyleStart = null, cellStyleEnd = null;   // 드래그 시작/현재 정간 {gi, ci}
-  let cellStylePendingColor = "#ffe08a";     // 도구창에서 마지막으로 고른 색(다음 드래그에 바로 적용, null이면 지우개)
+  // 셀 서식(직접 입력) — 배경색/테두리 칠하기·지우기 4가지가 전부 같은 드래그 방식을 쓰되
+  // 어느 동작인지는 cellToolMode 하나로만 구분한다(칠하기·지우기를 헷갈리지 않게 서로 다른
+  // 버튼으로 분리 — 색은 그냥 '지금 골라둔 색'일 뿐 지우기 동작과 무관함).
+  let cellToolMode = null;                   // null | "fillPaint" | "fillErase" | "borderPaint" | "borderErase"
+  let cellToolDragging = false;              // 정간 드래그 중인지(서식)
+  let cellToolStart = null, cellToolEnd = null;   // 드래그 시작/현재 정간 {gi, ci}
+  let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
+  let cellBorderSides = { top: false, right: false, bottom: false, left: false };  // 테두리 칠할 변
+  let cellBorderWidth = "medium";            // "thin" | "medium" | "thick"
+  let cellBorderStyle = "solid";             // "solid" | "dashed" | "double"
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
   const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
   const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
@@ -670,7 +678,18 @@
     $("melodyUndo").disabled = melodyUndo.length === 0;
   }
 
-  // ---------- 셀 서식(배경색, 직접 입력) ----------
+  // ---------- 셀 서식(배경색·테두리, 직접 입력) ----------
+  // 정간 하나의 서식 항목(fill/border)이 둘 다 없으면 cellStyles에서 아예 지워서
+  // 빈 {} 찌꺼기가 저장/되돌리기 스냅샷에 남지 않게 한다.
+  function pruneCellStyleEntry(gi, ci) {
+    const row = cellStyles[gi];
+    if (!row || !row[ci]) return;
+    const entry = row[ci];
+    if (!entry.fill && !entry.border) {
+      delete row[ci];
+      if (!Object.keys(row).length) delete cellStyles[gi];
+    }
+  }
   // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi)의 정간마다 배경색을 적용(color가 null이면 지움).
   // 멜로디 전용 되돌리기 스택은 건드리지 않는다 — saveState()가 렌더마다 전체 상태를 스냅샷하므로
   // 앱 전체 되돌리기(Cmd/Ctrl+Z)가 색 변경도 그대로 커버한다.
@@ -684,14 +703,63 @@
         if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
         if (color) {
           cellStyles[gi] = cellStyles[gi] || {};
-          cellStyles[gi][ci] = { fill: color };
-        } else if (cellStyles[gi]) {
-          delete cellStyles[gi][ci];
-          if (!Object.keys(cellStyles[gi]).length) delete cellStyles[gi];
+          cellStyles[gi][ci] = Object.assign({}, cellStyles[gi][ci], { fill: color });
+        } else if (cellStyles[gi] && cellStyles[gi][ci]) {
+          delete cellStyles[gi][ci].fill;
+          pruneCellStyleEntry(gi, ci);
         }
       });
     });
     render();
+  }
+  // 드래그로 고른 구간의 정간마다, 지금 켜둔 변(cellBorderSides)에 테두리를 적용(또는 지움).
+  // 칠하기: spec = { width, style }. 지우기: spec = null (체크된 변만 지움).
+  function applyCellBorderRange(startGi, startCi, endGi, endCi, spec) {
+    const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+    const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+    const sides = ["top", "right", "bottom", "left"].filter(function (s) { return cellBorderSides[s]; });
+    if (!sides.length) { render(); return; }
+    Object.keys(cellGeom).forEach(function (giKey) {
+      const gi = parseInt(giKey, 10);
+      Object.keys(cellGeom[gi]).forEach(function (ciKey) {
+        const ci = parseInt(ciKey, 10);
+        if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+        cellStyles[gi] = cellStyles[gi] || {};
+        const entry = cellStyles[gi][ci] || {};
+        const border = Object.assign({}, entry.border);
+        sides.forEach(function (side) {
+          if (spec) border[side] = { width: spec.width, style: spec.style };
+          else delete border[side];
+        });
+        entry.border = Object.keys(border).length ? border : undefined;
+        if (!entry.border) delete entry.border;
+        cellStyles[gi][ci] = entry;
+        pruneCellStyleEntry(gi, ci);
+      });
+    });
+    render();
+  }
+  // 테두리 한 변 그리기 — 실선/점선/이중선. 이중선은 나란한 두 줄을 살짝 띄워서 그린다.
+  function drawBorderSide(svg, x1, y1, x2, y2, widthKey, styleKey) {
+    const w = CELL_BORDER_WIDTH_PX[widthKey] || CELL_BORDER_WIDTH_PX.medium;
+    if (styleKey === "double") {
+      const gap = Math.max(w, 0.5);
+      const dx = (y1 === y2) ? 0 : gap;   // 세로선(좌/우)이면 가로로 두 줄을 벌림
+      const dy = (x1 === x2) ? 0 : gap;   // 가로선(상/하)이면 세로로 두 줄을 벌림
+      const half = w / 2.4;
+      svg.appendChild(line(x1 - dx, y1 - dy, x2 - dx, y2 - dy, half));
+      svg.appendChild(line(x1 + dx, y1 + dy, x2 + dx, y2 + dy, half));
+    } else {
+      const ln = line(x1, y1, x2, y2, w);
+      if (styleKey === "dashed") ln.setAttribute("stroke-dasharray", (w * 2.5) + "," + (w * 1.8));
+      svg.appendChild(ln);
+    }
+  }
+  function drawCellBorder(svg, cx, cy, w, h, bs) {
+    if (bs.top) drawBorderSide(svg, cx, cy, cx + w, cy, bs.top.width, bs.top.style);
+    if (bs.bottom) drawBorderSide(svg, cx, cy + h, cx + w, cy + h, bs.bottom.width, bs.bottom.style);
+    if (bs.left) drawBorderSide(svg, cx, cy, cx, cy + h, bs.left.width, bs.left.style);
+    if (bs.right) drawBorderSide(svg, cx + w, cy, cx + w, cy + h, bs.right.width, bs.right.style);
   }
 
   // 장단 초기화 / 되돌리기
@@ -2438,6 +2506,11 @@
           for (let i = 1; i < beats; i++) {
             if (!dgSet.has(i)) svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
           }
+          // 정간 커스텀 테두리 — 격자선 위에 겹쳐 그려서 사용자가 지정한 변이 도드라지게 한다
+          for (let j = 0; j < beats; j++) {
+            const bs = cellStyles[melIdx] && cellStyles[melIdx][j] && cellStyles[melIdx][j].border;
+            if (bs) drawCellBorder(svg, x, gridTop + j * cell, cell, cell, bs);
+          }
 
           // 각 번호(보조) — 각 아래 옅은 회색 작은 숫자 (문서 탭 옵션, '화면에만'이면 출력에서 제외)
           if (gakNumMode !== "none") {
@@ -2464,8 +2537,8 @@
                   render();
                   return;
                 }
-                if (cellStyleMode && inputMode === "direct") {
-                  cellStyleDragging = true; cellStyleStart = { gi: gi, ci: ci }; cellStyleEnd = { gi: gi, ci: ci };
+                if (cellToolMode && inputMode === "direct") {
+                  cellToolDragging = true; cellToolStart = { gi: gi, ci: ci }; cellToolEnd = { gi: gi, ci: ci };
                   render();
                   return;
                 }
@@ -2486,7 +2559,7 @@
               });
               hit.addEventListener("mouseenter", function () {
                 if (rangeDragging) { rangeEnd = { gi: gi, ci: ci }; render(); return; }
-                if (cellStyleDragging) { cellStyleEnd = { gi: gi, ci: ci }; render(); }
+                if (cellToolDragging) { cellToolEnd = { gi: gi, ci: ci }; render(); }
               });
             })(melIdx, j);
             svg.appendChild(hit);
@@ -2719,9 +2792,12 @@
         });
       });
     }
-    if (cellStyleMode && cellStyleStart && cellStyleEnd) {
-      const lo = Math.min(melCellSeq(cellStyleStart.gi, cellStyleStart.ci), melCellSeq(cellStyleEnd.gi, cellStyleEnd.ci));
-      const hi = Math.max(melCellSeq(cellStyleStart.gi, cellStyleStart.ci), melCellSeq(cellStyleEnd.gi, cellStyleEnd.ci));
+    if (cellToolMode && cellToolStart && cellToolEnd) {
+      const lo = Math.min(melCellSeq(cellToolStart.gi, cellToolStart.ci), melCellSeq(cellToolEnd.gi, cellToolEnd.ci));
+      const hi = Math.max(melCellSeq(cellToolStart.gi, cellToolStart.ci), melCellSeq(cellToolEnd.gi, cellToolEnd.ci));
+      // 드래그 중 미리보기 색 — 칠하기는 실제 고른 색, 지우기는 회색, 테두리 도구는 파란색으로 구분
+      const previewFill = cellToolMode === "fillPaint" ? cellStylePendingColor
+        : cellToolMode === "fillErase" ? "#999999" : "#5a8de0";
       Object.keys(cellGeom).forEach(function (giKey) {
         const gi = parseInt(giKey, 10);
         const row = cellGeom[gi];
@@ -2731,7 +2807,7 @@
           const cg = row[ci];
           const svg = pageSvgs[cg.page]; if (!svg) return;
           svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
-            { fill: cellStylePendingColor || "#e05a5a", "fill-opacity": "0.45", stroke: "none", class: "no-print" }));
+            { fill: previewFill, "fill-opacity": "0.45", stroke: "none", class: "no-print" }));
         });
       });
     }
@@ -3558,27 +3634,54 @@
     $("rangeClearToggle").classList.toggle("on", rangeClearMode);
     render();
   });
-  // 셀 서식(배경색) 칠하기 모드 토글 — 구간 지우기와 같은 방식, 직접 입력 모드 전용
-  $("cellStylePaintToggle").addEventListener("click", function () {
-    cellStyleMode = !cellStyleMode;
-    cellStyleDragging = false; cellStyleStart = null; cellStyleEnd = null;
-    $("cellStylePaintToggle").classList.toggle("on", cellStyleMode);
+  // 셀 서식 — 배경색/테두리 각각 칠하기·지우기 버튼 4개. 색은 그냥 '지금 고른 값'일 뿐이라
+  // 여러 색을 번갈아 칠해도 칠하기/지우기 버튼 자체는 서로 안 헷갈리게 분리해둔다.
+  const CELL_TOOL_BTN_MODE = {
+    cellFillPaintToggle: "fillPaint",
+    cellFillEraseToggle: "fillErase",
+    cellBorderPaintToggle: "borderPaint",
+    cellBorderEraseToggle: "borderErase"
+  };
+  function setCellToolMode(mode) {
+    cellToolMode = (cellToolMode === mode) ? null : mode;
+    cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
+    Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
+      $(id).classList.toggle("on", CELL_TOOL_BTN_MODE[id] === cellToolMode);
+    });
     render();
+  }
+  Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
+    $(id).addEventListener("click", function () { setCellToolMode(CELL_TOOL_BTN_MODE[id]); });
   });
   $("cellStyleColorPicker").addEventListener("change", function () {
     cellStylePendingColor = $("cellStyleColorPicker").value;
   });
-  $("cellStyleClearBtn").addEventListener("click", function () {
-    cellStylePendingColor = null;
+  ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
+    const key = Side.toLowerCase();
+    $("cellBorderSide" + Side).addEventListener("click", function () {
+      cellBorderSides[key] = !cellBorderSides[key];
+      $("cellBorderSide" + Side).classList.toggle("on", cellBorderSides[key]);
+    });
   });
-  // 드래그 도중 마우스를 떼면(정간 밖이어도) 그 시점까지 고른 구간을 지운다
+  $("cellBorderWidthSelect").addEventListener("change", function () {
+    cellBorderWidth = $("cellBorderWidthSelect").value;
+  });
+  $("cellBorderStyleSelect").addEventListener("change", function () {
+    cellBorderStyle = $("cellBorderStyleSelect").value;
+  });
+  // 드래그 도중 마우스를 떼면(정간 밖이어도) 그 시점까지 고른 구간에 지금 켜둔 도구를 적용한다
   document.addEventListener("mouseup", function () {
-    if (cellStyleDragging) {
-      cellStyleDragging = false;
-      const cs = cellStyleStart, cen = cellStyleEnd;
-      cellStyleStart = null; cellStyleEnd = null;
-      if (cs && cen) applyCellFillRange(cs.gi, cs.ci, cen.gi, cen.ci, cellStylePendingColor);
-      else render();
+    if (cellToolDragging) {
+      cellToolDragging = false;
+      const cs = cellToolStart, cen = cellToolEnd;
+      cellToolStart = null; cellToolEnd = null;
+      if (cs && cen) {
+        if (cellToolMode === "fillPaint") applyCellFillRange(cs.gi, cs.ci, cen.gi, cen.ci, cellStylePendingColor);
+        else if (cellToolMode === "fillErase") applyCellFillRange(cs.gi, cs.ci, cen.gi, cen.ci, null);
+        else if (cellToolMode === "borderPaint") applyCellBorderRange(cs.gi, cs.ci, cen.gi, cen.ci, { width: cellBorderWidth, style: cellBorderStyle });
+        else if (cellToolMode === "borderErase") applyCellBorderRange(cs.gi, cs.ci, cen.gi, cen.ci, null);
+        else render();
+      } else render();
     }
     if (!rangeDragging) return;
     rangeDragging = false;
@@ -3689,11 +3792,11 @@
       rangeClearMode = false; rangeDragging = false; rangeStart = null; rangeEnd = null;
       $("rangeClearToggle").classList.remove("on");
     }
-    // 셀 서식 칠하기도 직접 입력 전용 — 칠해진 색 자체는 모드와 무관하게 항상 보이고 인쇄된다
-    $("cellStylePaintToggle").disabled = !direct;
-    if (!direct && cellStyleMode) {
-      cellStyleMode = false; cellStyleDragging = false; cellStyleStart = null; cellStyleEnd = null;
-      $("cellStylePaintToggle").classList.remove("on");
+    // 셀 서식 칠하기·지우기도 직접 입력 전용 — 칠해진 색/테두리 자체는 모드와 무관하게 항상 보이고 인쇄된다
+    Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).disabled = !direct; });
+    if (!direct && cellToolMode) {
+      cellToolMode = null; cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
+      Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).classList.remove("on"); });
     }
     if (direct) {
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정

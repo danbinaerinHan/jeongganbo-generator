@@ -532,16 +532,33 @@
   #melodyReset:hover { background: #f7ecec; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornAddToggle, #rangeClearToggle { flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
+  #ornEditToggle, #ornAddToggle, #rangeClearToggle,
+  #cellFillPaintToggle, #cellFillEraseToggle, #cellBorderPaintToggle, #cellBorderEraseToggle {
+                   flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: #faf3e7; font-weight: 700; }
-  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span { font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover { background: #f1e6cf; }
-  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on { background: var(--accent); color: #fff; }
+  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span,
+  #cellFillPaintToggle span, #cellFillEraseToggle span, #cellBorderPaintToggle span, #cellBorderEraseToggle span {
+                   font-size: 11px; font-weight: 700; }
+  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover,
+  #cellFillPaintToggle:hover, #cellFillEraseToggle:hover, #cellBorderPaintToggle:hover, #cellBorderEraseToggle:hover {
+                   background: #f1e6cf; }
+  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on,
+  #cellFillPaintToggle.on, #cellFillEraseToggle.on, #cellBorderPaintToggle.on, #cellBorderEraseToggle.on {
+                   background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span { color: #fff; }
-  #ornAddToggle:disabled, #rangeClearToggle:disabled { opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span,
+  #cellFillPaintToggle.on span, #cellFillEraseToggle.on span, #cellBorderPaintToggle.on span, #cellBorderEraseToggle.on span {
+                   color: #fff; }
+  #ornAddToggle:disabled, #rangeClearToggle:disabled,
+  #cellFillPaintToggle:disabled, #cellFillEraseToggle:disabled, #cellBorderPaintToggle:disabled, #cellBorderEraseToggle:disabled {
+                   opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+  /* 테두리 변 선택(위/오/아/왼) — 작은 다중 토글 버튼, 켜지면 강조색으로 채움 */
+  .cell-border-sides .ribbon-btn { flex-direction: row; width: auto; font-size: 12px; font-weight: 700;
+                                    color: var(--accent); border-color: var(--accent); background: #faf3e7; }
+  .cell-border-sides .ribbon-btn:hover { background: #f1e6cf; }
+  .cell-border-sides .ribbon-btn.on { background: var(--accent); color: #fff; }
   /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
   #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
   #lyricsToTextBtn span { font-size: 10px; font-weight: 600; }
@@ -561,10 +578,18 @@
      보여주려고 시김새 창 안에 둔다. */
   .orn-win-modes { display: flex; gap: 6px; margin-bottom: 8px; }
 
-  /* 셀 서식 창 — 배경색 피커 + 지우개 */
-  .cell-style-body { display: flex; align-items: center; gap: 10px; padding: 4px 2px; }
+  /* 셀 서식 창 — 배경색/테두리 섹션. 칠하기·지우기 버튼을 분리해서 색 고르기와
+     지우기 동작이 서로 헷갈리지 않게 한다. */
+  .cell-style-sec { margin-bottom: 10px; }
+  .cell-style-sec:last-child { margin-bottom: 0; }
+  .cell-style-sec-title { font-size: 11px; font-weight: 700; color: #8a7f6a; margin-bottom: 4px; }
+  .cell-style-body { display: flex; align-items: center; gap: 6px; padding: 2px; flex-wrap: wrap; }
   .cell-style-body input[type="color"] { width: 34px; height: 26px; padding: 2px; border: 1px solid var(--line);
                                           border-radius: 6px; background: #fff; cursor: pointer; }
+  .cell-style-body select { font-size: 12px; padding: 5px 20px 5px 8px; border: 1px solid var(--line);
+                             border-radius: 6px; font-family: inherit; background-color: #fff; cursor: pointer; }
+  .cell-border-sides { display: inline-flex; gap: 2px; }
+  .cell-border-sides .ribbon-btn { padding: 4px 8px; }
 
   /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
