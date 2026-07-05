@@ -561,6 +561,11 @@
      보여주려고 시김새 창 안에 둔다. */
   .orn-win-modes { display: flex; gap: 6px; margin-bottom: 8px; }
 
+  /* 셀 서식 창 — 배경색 피커 + 지우개 */
+  .cell-style-body { display: flex; align-items: center; gap: 10px; padding: 4px 2px; }
+  .cell-style-body input[type="color"] { width: 34px; height: 26px; padding: 2px; border: 1px solid var(--line);
+                                          border-radius: 6px; background: #fff; cursor: pointer; }
+
   /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
                       border: 1px solid var(--line); border-radius: 8px; background: #faf8f3; }
