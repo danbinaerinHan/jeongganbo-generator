@@ -2134,6 +2134,21 @@
     refreshEditorSlices();
     showOrnPanel();
   }
+  // 드래그로 위치만 절대값으로 지정(크기는 그대로 유지) — 악보에서 직접 끌어서 옮길 때 씀
+  function setOrnPositionAbsolute(dx, dy) {
+    const t = getOrnToken(ornSel);
+    if (!t) return;
+    const cl = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); };
+    const sz = t.sz;
+    const ndx = cl(Math.round(dx), -90, 90);
+    const ndy = cl(Math.round(dy), -90, 90);
+    const inner = (sz === 100 && ndx === 0 && ndy === 0)
+      ? t.stem : (t.stem + "@" + Math.round(sz) + "," + ndx + "," + ndy);
+    melodyFull = melodyFull.slice(0, t.abs) + "{" + inner + "}" + melodyFull.slice(t.abs + t.len);
+    render();
+    refreshEditorSlices();
+    showOrnPanel();
+  }
 
   // 선택된 시김새 토큰을 통째로 지운다(Backspace/Delete 키 또는 패널의 '삭제' 버튼)
   function deleteSelectedOrn() {
@@ -2866,9 +2881,35 @@
             : { fill: "none", stroke: "#c0392b", "stroke-opacity": "0.32", "stroke-dasharray": "1.1,0.9" }));
         const hit = rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, 0,
           { fill: "transparent", stroke: "none", "pointer-events": "all" });
-        hit.style.cursor = "pointer";
+        hit.style.cursor = "move";
         (function (sel) {
-          hit.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); selectOrn(sel); });
+          hit.addEventListener("mousedown", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            selectOrn(sel);
+            // 악보에서 직접 끌어서 위치를 옮긴다 — 다른 팔레트의 위치 버튼 없이도 바로 조정
+            const t0 = getOrnToken(sel);
+            if (!t0) return;
+            const startPt = svgPointFromEvent(svg, e);
+            const startDx = t0.dx, startDy = t0.dy;
+            let pending = null, raf = null;
+            function flush() {
+              raf = null;
+              if (pending) setOrnPositionAbsolute(pending.dx, pending.dy);
+            }
+            function onMove(e2) {
+              const pt = svgPointFromEvent(svg, e2);
+              pending = { dx: startDx + ((pt.x - startPt.x) / cell) * 100,
+                          dy: startDy + ((pt.y - startPt.y) / cell) * 100 };
+              if (raf == null) raf = requestAnimationFrame(flush);
+            }
+            function onUp() {
+              document.removeEventListener("mousemove", onMove);
+              document.removeEventListener("mouseup", onUp);
+              if (raf != null) { cancelAnimationFrame(raf); flush(); }
+            }
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+          });
         })({ gak: o.gak, cell: o.cell, k: o.k });
         svg.appendChild(hit);
       });
@@ -3488,6 +3529,18 @@
   $("ribbonCollapseToggle").addEventListener("click", function (e) {
     e.stopPropagation();
     $("melodyRibbon").classList.toggle("collapsed");
+  });
+  // 도구창 닫기(×) — 어느 도구창이든 공통: 자기 자신을 win-open 해제하고, 짝이 되는
+  // 리본의 .win-toggle 버튼(data-target으로 연결)의 on 표시도 같이 끈다.
+  document.querySelectorAll(".win-close-btn").forEach(function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const win = btn.closest(".direct-win");
+      if (!win) return;
+      win.classList.remove("win-open");
+      const toggle = document.querySelector('.win-toggle[data-target="' + win.id + '"]');
+      if (toggle) toggle.classList.remove("on");
+    });
   });
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
