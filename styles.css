@@ -491,6 +491,18 @@
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
                                 background-color: #fff; cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
+  /* 도구창 닫기(×) — 그립처럼 직접 입력 모드에서 뜬 상태일 때만 필요하므로 같은 규칙으로 숨김.
+     패널의 DOM 순서와 무관하게 오른쪽 위 모서리에 고정(패널 자체가 position:absolute라
+     가장 가까운 위치 조상이 됨). */
+  .win-close-btn { display: none; }
+  body.input-direct .win-close-btn {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 6px; right: 6px; z-index: 7;
+    width: 20px; height: 20px; padding: 0; border: none; border-radius: 50%;
+    background: transparent; color: var(--muted); font-size: 15px; line-height: 1;
+    cursor: pointer; font-family: inherit;
+  }
+  body.input-direct .win-close-btn:hover { background: #ece7dd; color: var(--ink); }
   /* 직접 입력 모드(피날레 팔레트 스타일) — dockRail의 탭은 숨기고, #melodyRibbon이 늘 떠
      있는 기본 도구바가 된다. 그 안의 .win-toggle 버튼 5개(율명/시김새/장단/가사/텍스트)로
      각 도구창(.direct-win)을 독립적으로 열고 닫는다 — 여러 개를 동시에 띄울 수 있고, 각자
@@ -727,8 +739,8 @@
                       flex-direction: column; gap: 2px; padding: 2px; }
   .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
   /* '다'는 원본 svg가 거의 정사각형이라 object-fit:contain 상자를 다른(세로로 긴) 기호들보다
-     꽉 채워서 유독 커 보였음 — 절반 크기로 줄임 */
-  #jangdanPalette .ornchip img[alt="다"] { max-width: 15px; max-height: 15px; }
+     꽉 채워서 유독 커 보였음 — 기본 크기(30px)의 0.2배로 줄임 */
+  #jangdanPalette .ornchip img[alt="다"] { max-width: 6px; max-height: 6px; }
   .palette .ornchip .ocap { font-size: 8px; color: var(--muted); white-space: normal;
                             text-align: center; line-height: 1.1; word-break: keep-all; }
   /* 시김새 그룹 제목(붙임표/독립 기호) — 악보 서체로 크게, 오른쪽으로 가는 괘선과 함께 */
