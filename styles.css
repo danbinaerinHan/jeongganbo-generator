@@ -674,6 +674,9 @@
   .palette .ornchip { flex: none; width: auto; height: 50px; box-sizing: border-box;
                       flex-direction: column; gap: 2px; padding: 2px; }
   .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
+  /* '다'는 원본 svg가 거의 정사각형이라 object-fit:contain 상자를 다른(세로로 긴) 기호들보다
+     꽉 채워서 유독 커 보였음 — 절반 크기로 줄임 */
+  #jangdanPalette .ornchip img[alt="다"] { max-width: 15px; max-height: 15px; }
   .palette .ornchip .ocap { font-size: 8px; color: var(--muted); white-space: normal;
                             text-align: center; line-height: 1.1; word-break: keep-all; }
   /* 시김새 그룹 제목(붙임표/독립 기호) — 악보 서체로 크게, 오른쪽으로 가는 괘선과 함께 */
