@@ -590,6 +590,22 @@
                              border-radius: 6px; font-family: inherit; background-color: #fff; cursor: pointer; }
   .cell-border-sides { display: inline-flex; gap: 2px; }
   .cell-border-sides .ribbon-btn { padding: 4px 8px; }
+  /* 테두리 프리셋(전체/바깥쪽/안쪽/없음) — 위/오/아/왼 버튼과 같은 톤이되 라벨이 있어 조금 더 넓게 */
+  .cell-style-body .ribbon-btn#cellBorderPresetAll, .cell-style-body .ribbon-btn#cellBorderPresetOuter,
+  .cell-style-body .ribbon-btn#cellBorderPresetInner, .cell-style-body .ribbon-btn#cellBorderPresetNone {
+                   flex-direction: row; width: auto; gap: 4px; padding: 4px 9px; font-size: 13px; font-weight: 700;
+                   color: var(--accent); border-color: var(--accent); background: #faf3e7; }
+  #cellBorderPresetAll span, #cellBorderPresetOuter span, #cellBorderPresetInner span, #cellBorderPresetNone span {
+                   font-size: 11px; font-weight: 700; }
+  #cellBorderPresetAll:hover, #cellBorderPresetOuter:hover, #cellBorderPresetInner:hover, #cellBorderPresetNone:hover {
+                   background: #f1e6cf; }
+  #cellBorderPresetAll.on, #cellBorderPresetOuter.on, #cellBorderPresetInner.on, #cellBorderPresetNone.on {
+                   background: var(--accent); color: #fff; }
+  #cellBorderPresetAll.on span, #cellBorderPresetOuter.on span, #cellBorderPresetInner.on span, #cellBorderPresetNone.on span {
+                   color: #fff; }
+  #cellBorderPresetAll:disabled, #cellBorderPresetOuter:disabled, #cellBorderPresetInner:disabled, #cellBorderPresetNone:disabled,
+  .cell-border-sides .ribbon-btn:disabled {
+                   opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
 
   /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
