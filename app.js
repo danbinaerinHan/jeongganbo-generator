@@ -3703,6 +3703,7 @@
   }
   const toggleMelodyGuide = makeGuideToggle("melodyGuide", "melodyGuideToggle");   // 처음 방문 안내에 재사용
   makeGuideToggle("inputModeGuide", "inputModeGuideToggle");
+  makeGuideToggle("ornGuide", "ornGuideToggle");
   makeGuideToggle("jangdanGuide", "jangdanGuideToggle");
   makeGuideToggle("lyricsGuide", "lyricsGuideToggle");
   makeGuideToggle("textGuide", "textGuideToggle");
