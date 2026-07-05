@@ -1351,11 +1351,9 @@
   }
 
   // ---------- 장단 팔레트 (장구 구음 7종) ----------
-  // 장단 텍스트는 스페이스를 분박 구분자로 쓰므로, 실제로 타이핑/저장되는 이름에는
-  // 공백을 넣을 수 없다 — '작은덩'은 공백 없이 저장하고, 화면에 보여줄 때만
-  // JANGGU_LABEL로 읽기 좋은 '작은 덩'을 따로 붙인다.
+  // 장단 텍스트는 스페이스를 분박 구분자로 쓰므로, 타이핑/저장/화면 표기 모두
+  // 공백 없는 이름으로 통일한다(예: '작은덩').
   const JANGGU_NAMES = ["덩", "작은덩", "기덕", "궁", "덕", "다", "더러러러"];
-  const JANGGU_LABEL = { "작은덩": "작은 덩" };
   function buildJangdanPalette() {
     const wrap = $("jangdanPalette");
     if (!wrap) return;
@@ -1364,17 +1362,16 @@
     const row = document.createElement("div");
     row.className = "ornrow";
     JANGGU_NAMES.forEach(function (name) {
-      const label = JANGGU_LABEL[name] || name;
       const item = document.createElement("div");
       item.className = "pi ornchip";
-      item.title = "'" + label + "' 입력";
+      item.title = "'" + name + "' 입력";
       if (data[name]) {
         const img = document.createElement("img");
-        img.src = data[name]; img.alt = label;
+        img.src = data[name]; img.alt = name;
         item.appendChild(img);
       }
       const cap = document.createElement("span");
-      cap.className = "ocap"; cap.textContent = label;
+      cap.className = "ocap"; cap.textContent = name;
       item.appendChild(cap);
       item.addEventListener("mousedown", function (e) { e.preventDefault(); });
       item.addEventListener("click", function () { insertJangdanToken(name); });
