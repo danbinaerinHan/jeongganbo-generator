@@ -764,6 +764,12 @@
   // 테두리 한 변 그리기 — 실선/점선/이중선. 이중선은 나란한 두 줄을 살짝 띄워서 그린다.
   function drawBorderSide(svg, x1, y1, x2, y2, widthKey, styleKey) {
     const w = CELL_BORDER_WIDTH_PX[widthKey] || CELL_BORDER_WIDTH_PX.medium;
+    // 이 자리에 이미 그려져 있는 격자선(정간 칸 구분선·대강선 등)의 폭까지 감안해 먼저 흰 선으로
+    // 덮어 지운 뒤 원하는 스타일을 그린다 — 안 그러면 점선일 때 그 틈으로 밑에 깔린 실선이
+    // 그대로 비쳐서 "실선 위에 점선이 얹힌" 것처럼 보인다.
+    const halfExtent = (styleKey === "double") ? (Math.max(w, 0.5) + w / 2.4) : (w / 2);
+    const maskW = halfExtent * 2 + 0.4;
+    svg.appendChild(el("line", { x1, y1, x2, y2, stroke: "#fff", "stroke-width": maskW, "stroke-linecap": "square" }));
     if (styleKey === "double") {
       const gap = Math.max(w, 0.5);
       const dx = (y1 === y2) ? 0 : gap;   // 세로선(좌/우)이면 가로로 두 줄을 벌림
