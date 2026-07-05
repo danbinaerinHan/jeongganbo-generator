@@ -532,26 +532,26 @@
   #melodyReset:hover { background: #f7ecec; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornAddToggle, #rangeClearToggle,
+  #ornEditToggle, #ornAddToggle, #rangeClearToggle, #winToggleCellStyle,
   #cellFillPaintToggle, #cellFillEraseToggle, #cellBorderPaintToggle, #cellBorderEraseToggle {
                    flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: #faf3e7; font-weight: 700; }
-  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span,
+  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span, #winToggleCellStyle span,
   #cellFillPaintToggle span, #cellFillEraseToggle span, #cellBorderPaintToggle span, #cellBorderEraseToggle span {
                    font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover,
+  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover,
   #cellFillPaintToggle:hover, #cellFillEraseToggle:hover, #cellBorderPaintToggle:hover, #cellBorderEraseToggle:hover {
                    background: #f1e6cf; }
-  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on,
+  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on,
   #cellFillPaintToggle.on, #cellFillEraseToggle.on, #cellBorderPaintToggle.on, #cellBorderEraseToggle.on {
                    background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span,
+  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span,
   #cellFillPaintToggle.on span, #cellFillEraseToggle.on span, #cellBorderPaintToggle.on span, #cellBorderEraseToggle.on span {
                    color: #fff; }
-  #ornAddToggle:disabled, #rangeClearToggle:disabled,
+  #ornAddToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled,
   #cellFillPaintToggle:disabled, #cellFillEraseToggle:disabled, #cellBorderPaintToggle:disabled, #cellBorderEraseToggle:disabled {
                    opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
   /* 테두리 변 선택(위/오/아/왼) — 작은 다중 토글 버튼, 켜지면 강조색으로 채움 */
