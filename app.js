@@ -3792,6 +3792,12 @@
       rangeClearMode = false; rangeDragging = false; rangeStart = null; rangeEnd = null;
       $("rangeClearToggle").classList.remove("on");
     }
+    // 셀 서식 도구창 열기 버튼도 구간 지우기와 같은 자리에 있으니 같은 방식으로 직접 입력 전용
+    $("winToggleCellStyle").disabled = !direct;
+    if (!direct) {
+      $("cellStyleWin").classList.remove("win-open");
+      $("winToggleCellStyle").classList.remove("on");
+    }
     // 셀 서식 칠하기·지우기도 직접 입력 전용 — 칠해진 색/테두리 자체는 모드와 무관하게 항상 보이고 인쇄된다
     Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).disabled = !direct; });
     if (!direct && cellToolMode) {
