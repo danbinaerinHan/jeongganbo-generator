@@ -395,6 +395,8 @@
             data-tip="가사 도구창을 열고 닫습니다">詞<span>가사</span></button>
           <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
             data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
+          <button type="button" id="winToggleCellStyle" class="ribbon-btn win-toggle tip" data-target="cellStyleWin"
+            data-tip="셀 서식(배경색) 팔레트를 열고 닫습니다">彩<span>셀 서식</span></button>
         </div>
         <div class="ribbon-sep win-toggle-sep"></div>
         <div class="ribbon-group">
@@ -593,6 +595,29 @@
         </div>
         <div id="ornAddMapBar" class="orn-add-map-bar"></div>
         <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
+      </div>
+      <!-- 셀 서식 — 정간(선율 칸)을 드래그로 골라 배경색을 칠하는 도구창. 장단/가사에는 아직 적용 안 됨. -->
+      <div id="cellStyleWin" class="direct-win">
+        <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+          <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+        </div>
+        <div class="pal-top">
+          <span class="pal-col-title">셀 서식</span>
+          <span class="pal-top-right">
+            <div class="orn-win-modes">
+              <button type="button" id="cellStylePaintToggle" class="ribbon-btn tip"
+                data-tip="켜면 악보의 정간을 드래그해 구간을 고를 수 있습니다. 손을 떼면 그 구간에 고른 배경색이 적용됩니다. 직접 입력 모드에서만 쓸 수 있습니다.">⬚<span>칠하기 모드</span></button>
+            </div>
+          </span>
+        </div>
+        <div class="cell-style-body">
+          <label class="tool-inline" title="배경색">
+            <span class="size-lab">배경색</span>
+            <input type="color" id="cellStyleColorPicker" value="#ffe08a">
+          </label>
+          <button type="button" id="cellStyleClearBtn" class="ribbon-btn tip"
+            data-tip="선택한 구간의 배경색을 지웁니다(투명하게)">⌫<span>지우개</span></button>
+        </div>
       </div>
     </div>
     <div id="jangdanArea" class="dock-panel direct-win">

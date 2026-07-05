@@ -36,11 +36,16 @@
   let rangeClearMode = false;                // 구간 지우기 모드(직접 입력) — 드래그로 정간 구간을 골라 한꺼번에 지움
   let rangeDragging = false;                 // 정간 드래그 중인지
   let rangeStart = null, rangeEnd = null;    // 드래그 시작/현재 정간 {gi, ci}
+  let cellStyleMode = false;                 // 셀 서식(배경색) 칠하기 모드(직접 입력) — 드래그로 정간 구간을 골라 배경색 적용
+  let cellStyleDragging = false;             // 정간 드래그 중인지(서식)
+  let cellStyleStart = null, cellStyleEnd = null;   // 드래그 시작/현재 정간 {gi, ci}
+  let cellStylePendingColor = "#ffe08a";     // 도구창에서 마지막으로 고른 색(다음 드래그에 바로 적용, null이면 지우개)
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
   const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
   const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
   // 자유 텍스트 주석(예: '대여음') — 첫 페이지 위에 세로로 표시, 마우스로 위치·크기 조절
   let customTexts = [];                     // { id, text, xf, yf, size } — xf/yf는 페이지 폭/높이 대비 비율(0~1)
+  let cellStyles = {};                      // [gi][ci] = { fill: "#rrggbb" } — 정간 배경색(나중에 border 등 확장 가능)
   let nextTextId = 1;
   let textSel = null;                       // 선택된 텍스트 id (크기·삭제 패널용)
   // 곡 전체 텍스트(원본). 페이지가 여러 장이면 텍스트 에디터에는 현재 페이지 조각만 보여준다.
@@ -663,6 +668,30 @@
   }
   function refreshUndoBtn() {
     $("melodyUndo").disabled = melodyUndo.length === 0;
+  }
+
+  // ---------- 셀 서식(배경색, 직접 입력) ----------
+  // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi)의 정간마다 배경색을 적용(color가 null이면 지움).
+  // 멜로디 전용 되돌리기 스택은 건드리지 않는다 — saveState()가 렌더마다 전체 상태를 스냅샷하므로
+  // 앱 전체 되돌리기(Cmd/Ctrl+Z)가 색 변경도 그대로 커버한다.
+  function applyCellFillRange(startGi, startCi, endGi, endCi, color) {
+    const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+    const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+    Object.keys(cellGeom).forEach(function (giKey) {
+      const gi = parseInt(giKey, 10);
+      Object.keys(cellGeom[gi]).forEach(function (ciKey) {
+        const ci = parseInt(ciKey, 10);
+        if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+        if (color) {
+          cellStyles[gi] = cellStyles[gi] || {};
+          cellStyles[gi][ci] = { fill: color };
+        } else if (cellStyles[gi]) {
+          delete cellStyles[gi][ci];
+          if (!Object.keys(cellStyles[gi]).length) delete cellStyles[gi];
+        }
+      });
+    });
+    render();
   }
 
   // 장단 초기화 / 되돌리기
@@ -2391,6 +2420,13 @@
           const cellCount = gakCells ? gakCells.length : 0;
           const filled = cellCount > 0 ? Math.min(beats, cellCount) : 0;
 
+          // 정간 배경색 — 글자·격자선보다 먼저 그려서 뒤에 깔리게 한다(출력에도 포함되어야 하므로 no-print 아님)
+          for (let j = 0; j < beats; j++) {
+            const cs = cellStyles[melIdx] && cellStyles[melIdx][j];
+            if (cs && cs.fill) {
+              svg.appendChild(rect(x, gridTop + j * cell, cell, cell, 0, { fill: cs.fill, stroke: "none" }));
+            }
+          }
           for (let j = 0; j < filled; j++) {
             const content = gakCells && gakCells[j] ? gakCells[j].text : "";
             if (content) drawCell(svg, x, gridTop + j * cell, cell, content, melIdx, j, pageIdx);
@@ -2428,6 +2464,11 @@
                   render();
                   return;
                 }
+                if (cellStyleMode && inputMode === "direct") {
+                  cellStyleDragging = true; cellStyleStart = { gi: gi, ci: ci }; cellStyleEnd = { gi: gi, ci: ci };
+                  render();
+                  return;
+                }
                 if (ornAddMode && ornAddArmed && inputMode === "direct") {
                   // 분박(스페이스로 나뉜 여러 음)이 있으면 클릭한 세로 위치로 어느 음인지 고른다
                   // (drawCell이 각 음을 위→아래 순서로 rowH씩 나눠 그리는 것과 같은 계산)
@@ -2444,9 +2485,8 @@
                 else openCellEditor("mel", gi, ci);
               });
               hit.addEventListener("mouseenter", function () {
-                if (!rangeDragging) return;
-                rangeEnd = { gi: gi, ci: ci };
-                render();
+                if (rangeDragging) { rangeEnd = { gi: gi, ci: ci }; render(); return; }
+                if (cellStyleDragging) { cellStyleEnd = { gi: gi, ci: ci }; render(); }
               });
             })(melIdx, j);
             svg.appendChild(hit);
@@ -2676,6 +2716,22 @@
           const svg = pageSvgs[cg.page]; if (!svg) return;
           svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
             { fill: "#e05a5a", "fill-opacity": "0.35", stroke: "none", class: "no-print" }));
+        });
+      });
+    }
+    if (cellStyleMode && cellStyleStart && cellStyleEnd) {
+      const lo = Math.min(melCellSeq(cellStyleStart.gi, cellStyleStart.ci), melCellSeq(cellStyleEnd.gi, cellStyleEnd.ci));
+      const hi = Math.max(melCellSeq(cellStyleStart.gi, cellStyleStart.ci), melCellSeq(cellStyleEnd.gi, cellStyleEnd.ci));
+      Object.keys(cellGeom).forEach(function (giKey) {
+        const gi = parseInt(giKey, 10);
+        const row = cellGeom[gi];
+        Object.keys(row).forEach(function (ciKey) {
+          const ci = parseInt(ciKey, 10);
+          if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+          const cg = row[ci];
+          const svg = pageSvgs[cg.page]; if (!svg) return;
+          svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
+            { fill: cellStylePendingColor || "#e05a5a", "fill-opacity": "0.45", stroke: "none", class: "no-print" }));
         });
       });
     }
@@ -2950,7 +3006,7 @@
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
-             melInput: inputMode, ornAddMap: ornAddMap };
+             melInput: inputMode, ornAddMap: ornAddMap, cellStyles: cellStyles };
   }
 
   function applyState(s) {
@@ -2973,6 +3029,7 @@
     customTexts = Array.isArray(s.customTexts) ? s.customTexts : [];
     nextTextId = customTexts.reduce(function (m, t) { return Math.max(m, (t.id || 0) + 1); }, 1);
     textSel = null;
+    cellStyles = (s.cellStyles && typeof s.cellStyles === "object") ? s.cellStyles : {};
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
     ornPalZoom = typeof s.ornPalZoom === "number" ? Math.max(0.6, Math.min(2, s.ornPalZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
@@ -3251,6 +3308,7 @@
   attachBarDrag($("jangdanArea"));
   attachBarDrag($("lyricsArea"));
   attachBarDrag($("textArea"));
+  attachBarDrag($("cellStyleWin"));
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -3500,8 +3558,28 @@
     $("rangeClearToggle").classList.toggle("on", rangeClearMode);
     render();
   });
+  // 셀 서식(배경색) 칠하기 모드 토글 — 구간 지우기와 같은 방식, 직접 입력 모드 전용
+  $("cellStylePaintToggle").addEventListener("click", function () {
+    cellStyleMode = !cellStyleMode;
+    cellStyleDragging = false; cellStyleStart = null; cellStyleEnd = null;
+    $("cellStylePaintToggle").classList.toggle("on", cellStyleMode);
+    render();
+  });
+  $("cellStyleColorPicker").addEventListener("change", function () {
+    cellStylePendingColor = $("cellStyleColorPicker").value;
+  });
+  $("cellStyleClearBtn").addEventListener("click", function () {
+    cellStylePendingColor = null;
+  });
   // 드래그 도중 마우스를 떼면(정간 밖이어도) 그 시점까지 고른 구간을 지운다
   document.addEventListener("mouseup", function () {
+    if (cellStyleDragging) {
+      cellStyleDragging = false;
+      const cs = cellStyleStart, cen = cellStyleEnd;
+      cellStyleStart = null; cellStyleEnd = null;
+      if (cs && cen) applyCellFillRange(cs.gi, cs.ci, cen.gi, cen.ci, cellStylePendingColor);
+      else render();
+    }
     if (!rangeDragging) return;
     rangeDragging = false;
     const s = rangeStart, en = rangeEnd;
@@ -3610,6 +3688,12 @@
     if (!direct && rangeClearMode) {
       rangeClearMode = false; rangeDragging = false; rangeStart = null; rangeEnd = null;
       $("rangeClearToggle").classList.remove("on");
+    }
+    // 셀 서식 칠하기도 직접 입력 전용 — 칠해진 색 자체는 모드와 무관하게 항상 보이고 인쇄된다
+    $("cellStylePaintToggle").disabled = !direct;
+    if (!direct && cellStyleMode) {
+      cellStyleMode = false; cellStyleDragging = false; cellStyleStart = null; cellStyleEnd = null;
+      $("cellStylePaintToggle").classList.remove("on");
     }
     if (direct) {
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
