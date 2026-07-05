@@ -828,6 +828,31 @@
     $("lyricsUndo").disabled = lyricsUndoStack.length === 0;
   }
 
+  // ---------- 상단 바: 새 문서 / 전체 초기화 ----------
+  // 종이 방향·정간 크기·간격 등 '레이아웃'은 그대로 두고, 선율·장단·가사·텍스트·셀 서식처럼
+  // 곡마다 달라지는 '내용'만 지운다. 앱 전체 되돌리기(Cmd/Ctrl+Z)가 render()마다 스냅샷을
+  // 찍어두므로 이 초기화도 그걸로 되돌릴 수 있다.
+  function resetAllContent() {
+    if (!confirm("선율·장단·가사·텍스트·셀 서식 등 내용을 모두 지웁니다(레이아웃은 그대로 둠). 계속할까요?")) return;
+    melodyFull = ""; $("jangdan").value = ""; lyricsFull = "";
+    customTexts = []; nextTextId = 1; textSel = null;
+    cellStyles = {};
+    reconcileMelody(); reconcileJangdan(); reconcileLyrics();
+    refreshEditorSlices();
+    syncActiveFromCursor();
+    render();
+  }
+  // 새 문서 — 다른 프로그램의 'File > New'처럼, 임시저장 여부를 먼저 물은 뒤 제목·레이아웃까지
+  // 포함해 모두 처음 상태(localStorage 없는 첫 실행과 동일)로 되돌린다.
+  function startNewDocument() {
+    if (!confirm("새 문서를 만들까요? 지금 작업 내용(제목·레이아웃 포함)은 모두 사라집니다.")) return;
+    if (confirm("계속하기 전에 지금 상태를 임시저장할까요?")) snapSave();
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  }
+  $("btnResetContent").addEventListener("click", resetAllContent);
+  $("btnNewDoc").addEventListener("click", startNewDocument);
+
   // ---------- 정간 위 인라인 입력(선율) ----------
   function currentCellText(gi, ci) {
     const p = parseMelodyOffsets(melodyFull);
