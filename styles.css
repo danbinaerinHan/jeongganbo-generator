@@ -464,6 +464,12 @@
   .ribbon { display: flex; align-items: stretch; gap: 2px; padding: 5px 8px; margin-bottom: 10px;
             background: #faf8f3; border: 1px solid var(--line); border-radius: 8px;
             overflow-x: auto; }
+  /* 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹을 숨긴다 */
+  .ribbon-collapse-btn { flex: 0 0 auto; }
+  .ribbon-collapse-btn svg { transition: transform .12s ease; }
+  .ribbon.collapsed { overflow: hidden; }
+  .ribbon.collapsed > *:not(.bar-grip):not(.ribbon-collapse-btn) { display: none !important; }
+  .ribbon.collapsed .ribbon-collapse-btn svg { transform: rotate(-90deg); }
   .ribbon-group { display: flex; align-items: center; gap: 3px; padding: 0 4px; flex: 0 0 auto; }
   .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
   .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -500,7 +506,9 @@
     box-shadow: none; padding: 0; margin: 0;
   }
   body.input-direct #melodyRibbon {
-    position: absolute; top: 12px; left: 14px; z-index: 5;
+    /* 문서 크기(#zoomBarWrap)·재생(#playBarWrap) 바가 이미 top:12px 줄을 쓰고 있어서,
+       리본을 같은 자리에 두면 완전히 겹쳐 둘 다 있는지 안 보였다 — 그 아래 줄로 내림 */
+    position: absolute; top: 56px; left: 14px; z-index: 5;
     background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 0;
   }
   body.input-direct .win-toggle-group, body.input-direct .win-toggle-sep { display: flex; }
@@ -509,6 +517,11 @@
   .win-toggle.on span { color: #fff; }
   /* 셀 서식 뜬 도구창 여닫기 버튼 — 직접 입력 전용(에디터 모드에선 대신 레일 탭 '셀 서식' 사용) */
   body:not(.input-direct) #winToggleCellStyle { display: none; }
+  /* 시김새 창(#ornWinWrap)은 melodyArea 안에 있어서, 에디터 모드에선 .direct-win 숨김 규칙이
+     안 걸려(그 규칙 자체가 input-direct 전용) 선율 탭 아래로 그대로 새어 보였다(크기/위치
+     미세조정·단축키 모드 버튼 등 — 전부 직접 입력 전용 기능이라 에디터 모드엔 필요 없음).
+     에디터 모드의 시김새 팔레트는 이미 '율명/시김새' 보기 전환(palView)으로 따로 제공된다. */
+  body:not(.input-direct) #ornWinWrap { display: none; }
 
   body.input-direct .ribbon .bar-grip,
   body.input-direct .dock-panel-grip { display: flex; }
@@ -523,16 +536,19 @@
   body.input-direct .direct-win:not(.win-open) { display: none !important; }
   body.input-direct .direct-win.win-open,
   body.input-direct #paletteCol.win-open {
-    display: flex; flex-direction: column; position: absolute; top: 54px; left: 14px; z-index: 6;
+    /* 리본(top:56px, 높이 약 52px)보다 아래 줄에서 시작하도록 116px로 내림(기존 54px) */
+    display: flex; flex-direction: column; position: absolute; top: 116px; left: 14px; z-index: 6;
     max-width: min(420px, calc(100% - 28px)); max-height: 60vh; overflow: auto;
     background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
     box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
   }
-  /* 여러 개를 한꺼번에 처음 열어도 서로 완전히 겹치지 않도록 기본 위치를 살짝씩 어긋나게 */
-  body.input-direct #ornWinWrap.win-open { top: 54px; left: 448px; }
-  body.input-direct #jangdanArea.win-open { top: 84px; left: 44px; }
-  body.input-direct #lyricsArea.win-open { top: 114px; left: 74px; }
-  body.input-direct #textArea.win-open { top: 144px; left: 104px; }
+  /* 여러 개를 한꺼번에 처음 열어도 서로 완전히 겹치지 않도록 기본 위치를 살짝씩 어긋나게
+     (위 기본값 116px에 맞춰 전부 +62px씩 내림) */
+  body.input-direct #ornWinWrap.win-open { top: 116px; left: 448px; }
+  body.input-direct #jangdanArea.win-open { top: 146px; left: 44px; }
+  body.input-direct #lyricsArea.win-open { top: 176px; left: 74px; }
+  body.input-direct #textArea.win-open { top: 206px; left: 104px; }
+  body.input-direct #cellStyleWin.win-open { top: 146px; left: 478px; }
 
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
