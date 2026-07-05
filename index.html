@@ -385,15 +385,15 @@
              도구창(율명/시김새/장단/가사/텍스트)을 하나씩 독립적으로 열고 닫는다(피날레
              팔레트처럼 여러 개를 동시에 띄울 수 있음). 에디터 모드에선 숨김(CSS 참고). -->
         <div class="ribbon-group win-toggle-group">
-          <button type="button" id="winToggleYul" class="ribbon-btn win-toggle" data-target="paletteCol"
+          <button type="button" id="winToggleYul" class="ribbon-btn win-toggle tip" data-target="paletteCol"
             data-tip="율명 팔레트를 열고 닫습니다">律<span>율명</span></button>
-          <button type="button" id="winToggleOrn" class="ribbon-btn win-toggle" data-target="ornWinWrap"
+          <button type="button" id="winToggleOrn" class="ribbon-btn win-toggle tip" data-target="ornWinWrap"
             data-tip="시김새 팔레트를 열고 닫습니다">飾<span>시김새</span></button>
-          <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle" data-target="jangdanArea"
+          <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
             data-tip="장단 도구창을 열고 닫습니다">長<span>장단</span></button>
-          <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle" data-target="lyricsArea"
+          <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
             data-tip="가사 도구창을 열고 닫습니다">詞<span>가사</span></button>
-          <button type="button" id="winToggleText" class="ribbon-btn win-toggle" data-target="textArea"
+          <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
             data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
         </div>
         <div class="ribbon-sep win-toggle-sep"></div>
@@ -556,6 +556,27 @@
              따로 아래 줄에 두면 제목 밑줄과 겹쳐 보였음 -->
         <div class="pal-top">
           <span class="pal-col-title">시김새</span>
+          <span class="guide-wrap">
+            <button type="button" id="ornGuideToggle" class="icon-btn" title="시김새 입력법 안내">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </button>
+            <div id="ornGuide" class="melody-guide">
+              <div class="mg-sec"><b>팔레트로 넣기</b><br>
+                아래 칩을 클릭하면 커서(에디터) 또는 지금 열린 칸(직접 입력)에 바로 들어갑니다.
+              </div>
+              <div class="mg-sec"><b>글자로 직접 쓰기</b><br>
+                음 뒤에 시김새 이름을 괄호로 감싸 씁니다 — <span class="mono">{ }</span>(중괄호) ·
+                <span class="mono">[ ]</span>(대괄호) · <span class="mono">( )</span>(소괄호) 중
+                아무거나 써도 똑같이 동작합니다(예: <span class="mono">황{미는표}</span>,
+                <span class="mono">황[미는표]</span>, <span class="mono">황(미는표)</span> 모두 같음).
+              </div>
+              <div class="mg-sec"><b>크기·위치를 직접 지정</b><br>
+                괄호 안에 <span class="mono">@크기%,좌우,상하</span>를 덧붙이면 미세조정 모드로
+                고른 것과 같은 효과를 글자로 바로 씁니다(예: <span class="mono">황{미는표@120,5,-5}</span>
+                = 120% 크기로 오른쪽 5·위 5만큼 이동).
+              </div>
+            </div>
+          </span>
           <span class="pal-top-right">
             <div class="orn-win-modes">
               <button type="button" id="ornEditToggle" class="ribbon-btn tip"
