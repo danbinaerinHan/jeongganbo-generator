@@ -532,33 +532,22 @@
   #melodyReset:hover { background: #f7ecec; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornAddToggle, #rangeClearToggle, #winToggleCellStyle,
-  #cellFillPaintToggle, #cellFillEraseToggle, #cellBorderPaintToggle, #cellBorderEraseToggle {
+  #ornEditToggle, #ornAddToggle, #rangeClearToggle, #winToggleCellStyle {
                    flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: #faf3e7; font-weight: 700; }
-  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span, #winToggleCellStyle span,
-  #cellFillPaintToggle span, #cellFillEraseToggle span, #cellBorderPaintToggle span, #cellBorderEraseToggle span {
+  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span, #winToggleCellStyle span {
                    font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover,
-  #cellFillPaintToggle:hover, #cellFillEraseToggle:hover, #cellBorderPaintToggle:hover, #cellBorderEraseToggle:hover {
+  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
                    background: #f1e6cf; }
-  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on,
-  #cellFillPaintToggle.on, #cellFillEraseToggle.on, #cellBorderPaintToggle.on, #cellBorderEraseToggle.on {
+  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
                    background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span,
-  #cellFillPaintToggle.on span, #cellFillEraseToggle.on span, #cellBorderPaintToggle.on span, #cellBorderEraseToggle.on span {
+  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
                    color: #fff; }
-  #ornAddToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled,
-  #cellFillPaintToggle:disabled, #cellFillEraseToggle:disabled, #cellBorderPaintToggle:disabled, #cellBorderEraseToggle:disabled {
+  #ornAddToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
                    opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
-  /* 테두리 변 선택(위/오/아/왼) — 작은 다중 토글 버튼, 켜지면 강조색으로 채움 */
-  .cell-border-sides .ribbon-btn { flex-direction: row; width: auto; font-size: 12px; font-weight: 700;
-                                    color: var(--accent); border-color: var(--accent); background: #faf3e7; }
-  .cell-border-sides .ribbon-btn:hover { background: #f1e6cf; }
-  .cell-border-sides .ribbon-btn.on { background: var(--accent); color: #fff; }
   /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
   #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
   #lyricsToTextBtn span { font-size: 10px; font-weight: 600; }
@@ -578,34 +567,42 @@
      보여주려고 시김새 창 안에 둔다. */
   .orn-win-modes { display: flex; gap: 6px; margin-bottom: 8px; }
 
-  /* 셀 서식 창 — 배경색/테두리 섹션. 칠하기·지우기 버튼을 분리해서 색 고르기와
-     지우기 동작이 서로 헷갈리지 않게 한다. */
-  .cell-style-sec { margin-bottom: 10px; }
-  .cell-style-sec:last-child { margin-bottom: 0; }
+  /* 셀 서식 창 — "설정"(무엇을 그릴지: 프리셋·변·굵기·선종류·색)과 "실행"(칠하기/지우기 —
+     지금 드래그하면 바로 적용되는 도구)을 서로 다른 생김새로 분리해서 한눈에 구분되게 한다. */
+  .cell-style-sec { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .cell-style-sec:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
   .cell-style-sec-title { font-size: 11px; font-weight: 700; color: #8a7f6a; margin-bottom: 4px; }
   .cell-style-body { display: flex; align-items: center; gap: 6px; padding: 2px; flex-wrap: wrap; }
   .cell-style-body input[type="color"] { width: 34px; height: 26px; padding: 2px; border: 1px solid var(--line);
                                           border-radius: 6px; background: #fff; cursor: pointer; }
   .cell-style-body select { font-size: 12px; padding: 5px 20px 5px 8px; border: 1px solid var(--line);
                              border-radius: 6px; font-family: inherit; background-color: #fff; cursor: pointer; }
+
+  /* 설정 칩(테두리 프리셋 4개 + 변 직접 선택 4개) — 조용한 톤. 선택돼도 살짝만 강조해서
+     "지금 켜진 도구"(아래 실행 버튼)와 구분되게 한다. */
   .cell-border-sides { display: inline-flex; gap: 2px; }
-  .cell-border-sides .ribbon-btn { padding: 4px 8px; }
-  /* 테두리 프리셋(전체/바깥쪽/안쪽/없음) — 위/오/아/왼 버튼과 같은 톤이되 라벨이 있어 조금 더 넓게 */
-  .cell-style-body .ribbon-btn#cellBorderPresetAll, .cell-style-body .ribbon-btn#cellBorderPresetOuter,
-  .cell-style-body .ribbon-btn#cellBorderPresetInner, .cell-style-body .ribbon-btn#cellBorderPresetNone {
-                   flex-direction: row; width: auto; gap: 4px; padding: 4px 9px; font-size: 13px; font-weight: 700;
-                   color: var(--accent); border-color: var(--accent); background: #faf3e7; }
-  #cellBorderPresetAll span, #cellBorderPresetOuter span, #cellBorderPresetInner span, #cellBorderPresetNone span {
-                   font-size: 11px; font-weight: 700; }
-  #cellBorderPresetAll:hover, #cellBorderPresetOuter:hover, #cellBorderPresetInner:hover, #cellBorderPresetNone:hover {
-                   background: #f1e6cf; }
-  #cellBorderPresetAll.on, #cellBorderPresetOuter.on, #cellBorderPresetInner.on, #cellBorderPresetNone.on {
-                   background: var(--accent); color: #fff; }
-  #cellBorderPresetAll.on span, #cellBorderPresetOuter.on span, #cellBorderPresetInner.on span, #cellBorderPresetNone.on span {
-                   color: #fff; }
-  #cellBorderPresetAll:disabled, #cellBorderPresetOuter:disabled, #cellBorderPresetInner:disabled, #cellBorderPresetNone:disabled,
-  .cell-border-sides .ribbon-btn:disabled {
-                   opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+  .cell-style-option { flex-direction: row; width: auto; gap: 4px; padding: 5px 9px; font-size: 12px; font-weight: 600;
+                       color: var(--muted); border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+  .cell-style-option span { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .cell-style-option:hover { background: #f5f3ee; }
+  .cell-style-option.on { background: #f4e2c2; border-color: var(--accent); color: var(--accent); }
+  .cell-style-option.on span { color: var(--accent); }
+  .cell-style-option:disabled { opacity: .4; cursor: default; background: #fff; color: var(--muted); }
+
+  /* 실행 버튼(칠하기/지우기) — 지금 드래그하면 바로 적용된다는 걸 강조하는 둥근 필. 배경색·
+     테두리 두 섹션에서 재사용. 칠하기=강조색, 지우기=옅은 붉은색으로 톤을 갈라 서로 헷갈리지 않게. */
+  .cell-style-action { flex-direction: row; width: auto; gap: 5px; padding: 7px 14px; font-size: 14px; font-weight: 700;
+                        border-radius: 999px; }
+  .cell-style-action span { font-size: 11px; font-weight: 700; }
+  .cell-style-action.paint { color: var(--accent); border-color: var(--accent); background: #faf3e7; }
+  .cell-style-action.paint:hover { background: #f1e6cf; }
+  .cell-style-action.paint.on { background: var(--accent); color: #fff; }
+  .cell-style-action.paint.on span { color: #fff; }
+  .cell-style-action.erase { color: #b3463c; border-color: #ddb0aa; background: #fbeeec; }
+  .cell-style-action.erase:hover { background: #f6ddd9; }
+  .cell-style-action.erase.on { background: #b3463c; border-color: #b3463c; color: #fff; }
+  .cell-style-action.erase.on span { color: #fff; }
+  .cell-style-action:disabled { opacity: .4; cursor: default; }
 
   /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;

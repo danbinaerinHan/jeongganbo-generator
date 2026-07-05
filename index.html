@@ -610,9 +610,9 @@
           <div class="cell-style-sec-title">배경색</div>
           <div class="cell-style-body">
             <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="배경색">
-            <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip"
+            <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint"
               data-tip="켜면 악보의 정간을 드래그해 구간을 고를 수 있습니다. 손을 떼면 그 구간에 왼쪽에서 고른 배경색이 칠해집니다. 직접 입력 모드 전용.">⬚<span>칠하기</span></button>
-            <button type="button" id="cellFillEraseToggle" class="ribbon-btn tip"
+            <button type="button" id="cellFillEraseToggle" class="ribbon-btn tip cell-style-action erase"
               data-tip="켜면 드래그로 고른 구간의 배경색을 지웁니다(투명하게). 직접 입력 모드 전용.">⌫<span>지우기</span></button>
           </div>
         </div>
@@ -621,21 +621,21 @@
           <!-- 정간보는 열이 하나뿐인 표라고 보고 고른 프리셋 — 누르면 바로 칠하기/지우기 모드가
                켜져서 드래그만 하면 된다(워드·페이지스의 테두리 프리셋과 비슷한 방식). -->
           <div class="cell-style-body">
-            <button type="button" id="cellBorderPresetAll" class="ribbon-btn tip"
+            <button type="button" id="cellBorderPresetAll" class="ribbon-btn tip cell-style-option"
               data-tip="선택한 정간마다 네 변 모두에 테두리를 그립니다.">▦<span>전체</span></button>
-            <button type="button" id="cellBorderPresetOuter" class="ribbon-btn tip"
+            <button type="button" id="cellBorderPresetOuter" class="ribbon-btn tip cell-style-option"
               data-tip="고른 구간 전체를 사각형 하나로 보고 바깥쪽 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">▢<span>바깥쪽</span></button>
-            <button type="button" id="cellBorderPresetInner" class="ribbon-btn tip"
+            <button type="button" id="cellBorderPresetInner" class="ribbon-btn tip cell-style-option"
               data-tip="고른 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">≡<span>안쪽</span></button>
-            <button type="button" id="cellBorderPresetNone" class="ribbon-btn tip"
+            <button type="button" id="cellBorderPresetNone" class="ribbon-btn tip cell-style-option"
               data-tip="고른 구간의 테두리를 모두 지웁니다.">⊘<span>없음</span></button>
           </div>
           <div class="cell-style-body">
             <span class="cell-border-sides">
-              <button type="button" id="cellBorderSideTop" class="ribbon-btn tip" data-tip="위쪽 변만 직접 선택">위</button>
-              <button type="button" id="cellBorderSideRight" class="ribbon-btn tip" data-tip="오른쪽 변만 직접 선택">오</button>
-              <button type="button" id="cellBorderSideBottom" class="ribbon-btn tip" data-tip="아래쪽 변만 직접 선택">아</button>
-              <button type="button" id="cellBorderSideLeft" class="ribbon-btn tip" data-tip="왼쪽 변만 직접 선택">왼</button>
+              <button type="button" id="cellBorderSideTop" class="ribbon-btn tip cell-style-option" data-tip="위쪽 변만 직접 선택">위</button>
+              <button type="button" id="cellBorderSideRight" class="ribbon-btn tip cell-style-option" data-tip="오른쪽 변만 직접 선택">오</button>
+              <button type="button" id="cellBorderSideBottom" class="ribbon-btn tip cell-style-option" data-tip="아래쪽 변만 직접 선택">아</button>
+              <button type="button" id="cellBorderSideLeft" class="ribbon-btn tip cell-style-option" data-tip="왼쪽 변만 직접 선택">왼</button>
             </span>
             <select id="cellBorderWidthSelect" title="굵기">
               <option value="thin">얇게</option>
@@ -649,9 +649,9 @@
             </select>
           </div>
           <div class="cell-style-body">
-            <button type="button" id="cellBorderPaintToggle" class="ribbon-btn tip"
+            <button type="button" id="cellBorderPaintToggle" class="ribbon-btn tip cell-style-action paint"
               data-tip="켜면 악보의 정간을 드래그해 구간을 고를 수 있습니다. 손을 떼면 위 프리셋(또는 직접 선택한 변)에 고른 굵기·선 종류로 테두리가 그려집니다. 직접 입력 모드 전용.">▭<span>칠하기</span></button>
-            <button type="button" id="cellBorderEraseToggle" class="ribbon-btn tip"
+            <button type="button" id="cellBorderEraseToggle" class="ribbon-btn tip cell-style-action erase"
               data-tip="켜면 드래그로 고른 구간에서, 위 프리셋(또는 직접 선택한 변)의 테두리를 지웁니다. 직접 입력 모드 전용.">⌫<span>지우기</span></button>
           </div>
         </div>
