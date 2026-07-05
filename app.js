@@ -3484,6 +3484,11 @@
   attachBarDrag($("lyricsArea"));
   attachBarDrag($("textArea"));
   attachBarDrag($("cellStyleWin"));
+  // 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹은 숨김
+  $("ribbonCollapseToggle").addEventListener("click", function (e) {
+    e.stopPropagation();
+    $("melodyRibbon").classList.toggle("collapsed");
+  });
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
