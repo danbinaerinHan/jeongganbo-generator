@@ -82,6 +82,18 @@
     background: var(--accent); color: #fff; border-color: var(--accent);
   }
   #topBar .mode-hint { font-size: 12px; color: var(--muted); }
+  /* 문서 단위 액션(새 문서/전체 초기화) — 다른 프로그램의 File 메뉴처럼 맨 왼쪽에,
+     입력 방식(선택)과는 구분되도록 살짝 구분선을 두고 배치한다. */
+  .topbar-doc-actions { display: flex; gap: 8px; }
+  .topbar-sep { width: 1px; height: 22px; background: var(--line); }
+  .topbar-btn {
+    border: 1px solid var(--line); border-radius: 8px; background: #fff;
+    color: var(--ink); font-size: 13px; font-weight: 700; padding: 7px 12px;
+    cursor: pointer; font-family: inherit;
+  }
+  .topbar-btn:hover { background: #f0ece3; }
+  .topbar-btn-danger { color: #b3463c; border-color: #ddb0aa; background: #fbeeec; }
+  .topbar-btn-danger:hover { background: #f6ddd9; }
   /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
   #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
 

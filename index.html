@@ -14,6 +14,13 @@
        자세히 풀어둔다 — 선율 입력 자체에 대한 규칙·시김새 넣는 법은 선율 입력 옆
        ?에 따로 있다. -->
   <div id="topBar">
+    <div class="topbar-doc-actions">
+      <button type="button" id="btnNewDoc" class="topbar-btn tip"
+        data-tip="지금 작업을 임시저장할지 물어본 뒤, 제목·선율·장단·가사·텍스트·레이아웃을 모두 처음 상태로 되돌립니다.">＋ 새 문서</button>
+      <button type="button" id="btnResetContent" class="topbar-btn topbar-btn-danger tip"
+        data-tip="종이 방향·정간 크기·간격 등 레이아웃은 그대로 두고, 선율·장단·가사·텍스트·셀 서식만 모두 지웁니다.">⟲ 전체 초기화</button>
+    </div>
+    <span class="topbar-sep"></span>
     <span class="mode-lab">입력 방식</span>
     <div class="mode-seg" id="melInputSeg">
       <button type="button" class="seg-btn active tip" data-mode="editor"
