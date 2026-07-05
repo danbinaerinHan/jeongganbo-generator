@@ -65,15 +65,17 @@
   /* 입력 방식(에디터/직접 입력) — 화면 맨 위, 사이드바·악보 어느 쪽에도 속하지 않는
      전역 공용 자리. 가장 먼저 정하는 선택이라 여기서만은 사이드 레일의 축소판이 아니라
      제대로 된 크기로 보여준다. */
+  /* 맨 위 바는 자주 안 바뀌는 전역 선택(입력 방식)·문서 단위 액션만 담아서 예전보다
+     낮고 조용하게 — 늘 떠 있어야 하는 도구들(기능바)은 그 아래 자리에 고정해서 둔다. */
   #topBar {
-    flex: 0 0 auto; display: flex; align-items: center; gap: 14px;
-    padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--line);
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
-  #topBar .mode-lab { font-size: 13px; font-weight: 700; color: var(--ink); margin: 0; }
-  #topBar .mode-seg { display: flex; gap: 6px; }
+  #topBar .mode-lab { font-size: 12px; font-weight: 700; color: var(--ink); margin: 0; }
+  #topBar .mode-seg { display: flex; gap: 5px; }
   #topBar .mode-seg .seg-btn {
-    border: 1px solid var(--line); border-radius: 8px; background: #fff;
-    color: var(--muted); font-size: 14px; font-weight: 700; padding: 8px 22px;
+    border: 1px solid var(--line); border-radius: 7px; background: #fff;
+    color: var(--muted); font-size: 12px; font-weight: 700; padding: 5px 14px;
     cursor: pointer; font-family: inherit;
     transition: background .12s ease, color .12s ease, border-color .12s ease;
   }
@@ -81,19 +83,27 @@
   #topBar .mode-seg .seg-btn.active {
     background: var(--accent); color: #fff; border-color: var(--accent);
   }
-  #topBar .mode-hint { font-size: 12px; color: var(--muted); }
-  /* 문서 단위 액션(새 문서/전체 초기화) — 다른 프로그램의 File 메뉴처럼 맨 왼쪽에,
-     입력 방식(선택)과는 구분되도록 살짝 구분선을 두고 배치한다. */
-  .topbar-doc-actions { display: flex; gap: 8px; }
-  .topbar-sep { width: 1px; height: 22px; background: var(--line); }
+  #topBar .mode-hint { font-size: 11px; color: var(--muted); }
+  /* 문서 단위 액션(새 문서/실행취소/다시실행/전체 초기화) — 다른 프로그램의 File 메뉴처럼
+     맨 왼쪽에, 입력 방식(선택)과는 구분되도록 살짝 구분선을 두고 배치한다. */
+  .topbar-doc-actions { display: flex; gap: 6px; align-items: center; }
+  .topbar-sep { width: 1px; height: 18px; background: var(--line); }
   .topbar-btn {
-    border: 1px solid var(--line); border-radius: 8px; background: #fff;
-    color: var(--ink); font-size: 13px; font-weight: 700; padding: 7px 12px;
+    border: 1px solid var(--line); border-radius: 7px; background: #fff;
+    color: var(--ink); font-size: 12px; font-weight: 700; padding: 5px 10px;
     cursor: pointer; font-family: inherit;
   }
   .topbar-btn:hover { background: #f0ece3; }
   .topbar-btn-danger { color: #b3463c; border-color: #ddb0aa; background: #fbeeec; }
   .topbar-btn-danger:hover { background: #f6ddd9; }
+  /* 새 문서/실행취소/다시실행 — 자주 누르는 전역 액션이라 아이콘만으로 작게 */
+  .topbar-icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 7px;
+    background: #fff; color: var(--ink); font-size: 14px; cursor: pointer; font-family: inherit;
+  }
+  .topbar-icon-btn:hover { background: #f0ece3; }
+  .topbar-icon-btn:disabled { opacity: .35; cursor: default; background: #fff; }
   /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
   #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
 
@@ -491,38 +501,13 @@
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
                                 background-color: #fff; cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
-  /* 도구창 닫기(×) — 그립처럼 직접 입력 모드에서 뜬 상태일 때만 필요하므로 같은 규칙으로 숨김.
-     패널의 DOM 순서와 무관하게 오른쪽 위 모서리에 고정(패널 자체가 position:absolute라
-     가장 가까운 위치 조상이 됨). */
-  .win-close-btn { display: none; }
-  body.input-direct .win-close-btn {
-    display: flex; align-items: center; justify-content: center;
-    position: absolute; top: 6px; right: 6px; z-index: 7;
-    width: 20px; height: 20px; padding: 0; border: none; border-radius: 50%;
-    background: transparent; color: var(--muted); font-size: 15px; line-height: 1;
-    cursor: pointer; font-family: inherit;
-  }
-  body.input-direct .win-close-btn:hover { background: #ece7dd; color: var(--ink); }
-  /* 직접 입력 모드(피날레 팔레트 스타일) — dockRail의 탭은 숨기고, #melodyRibbon이 늘 떠
-     있는 기본 도구바가 된다. 그 안의 .win-toggle 버튼 5개(율명/시김새/장단/가사/텍스트)로
-     각 도구창(.direct-win)을 독립적으로 열고 닫는다 — 여러 개를 동시에 띄울 수 있고, 각자
-     따로 끌 수 있다. DOM은 그대로 두고 CSS로만 position을 바꿔서(가장 가까운 position
-     조상인 #main 기준으로 튀어 오름) attachBarDrag가 계속 같은 요소에서 작동한다. */
+  /* 직접 입력 모드 — 예전엔 기능바(#melodyRibbon)와 도구창(팔레트)들이 악보 위에 뜨는
+     Finale 팔레트 스타일이었지만, 늘 보여야 하는 것들을 띄워두기보다 고정하는 쪽으로 바꿨다:
+     기능바는 악보 바로 위(#main 자식)에 항상 고정되고, 지금 고른 탭(#editorDock)의 내용도
+     그 바로 아래·악보 위쪽에 함께 오도록 옮긴다(JS의 applyInputMode 참고). 탭도 여러 개를
+     동시에 띄우는 대신 dockRail처럼 하나만 보이는 방식으로 통일했다. */
   body.input-direct #dockRail .rail-btn { display: none; }
   body.input-direct #melodyResizer { display: none; }
-
-  /* 기본 도구바(리본) — 늘 뜸. #melodyArea는 이제 도구창이 아니라 도구바+두 팔레트를
-     담는 투명한 그릇일 뿐이라 시각적 흔적을 없앤다(에디터 모드 탭 로직은 안 건드림). */
-  body.input-direct #melodyArea {
-    display: block; position: static; background: none; border: none;
-    box-shadow: none; padding: 0; margin: 0;
-  }
-  body.input-direct #melodyRibbon {
-    /* 문서 크기(#zoomBarWrap)·재생(#playBarWrap) 바가 이미 top:12px 줄을 쓰고 있어서,
-       리본을 같은 자리에 두면 완전히 겹쳐 둘 다 있는지 안 보였다 — 그 아래 줄로 내림 */
-    position: absolute; top: 56px; left: 14px; z-index: 5;
-    background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.1); margin-bottom: 0;
-  }
   body.input-direct .win-toggle-group, body.input-direct .win-toggle-sep { display: flex; }
   .win-toggle-group, .win-toggle-sep { display: none; }
   .win-toggle.on { background: var(--accent); color: #fff; }
@@ -535,32 +520,19 @@
      에디터 모드의 시김새 팔레트는 이미 '율명/시김새' 보기 전환(palView)으로 따로 제공된다. */
   body:not(.input-direct) #ornWinWrap { display: none; }
 
-  body.input-direct .ribbon .bar-grip,
-  body.input-direct .dock-panel-grip { display: flex; }
-  /* 텍스트 탭엔 리본이 없어 그립을 패널에 직접 둠(다른 탭은 리본/팔레트 안 그립을 그대로 재사용) */
-  .dock-panel-grip { display: none; margin-bottom: 6px; }
-
-  /* 도구창 5개(율명/시김새/장단/가사/텍스트) 공통 — 열렸을 때(.win-open)만 악보 위에 뜬다.
-     top/left 기본값을 명시해야 한다 — 안 주면 position:absolute가 원래 문서 흐름상의
-     위치(정간 편집 독 훨씬 아래)를 그대로 써서 화면 밖으로 나가버린다. 다 같은 기본
-     자리에서 시작하지만 각자 따로 끌 수 있어(attachBarDrag) 필요하면 떼어놓으면 된다.
-     #paletteCol은 자기 ID 규칙(width:450px 등)이 있어 명시적으로 함께 걸어 덮는다. */
+  /* 도구창(팔레트) — 열렸을 때(.win-open)만 보이되, 이제 뜨지 않고 문서 흐름 그대로
+     고정된 자리에 도킹된다(#paletteCol의 폭 등 자기 고유 규칙은 그대로 유지).
+     max-height가 아니라 height를 명시해야 한다 — 안 그러면 내부의 flex:1 스크롤
+     영역(예: #paletteWrap)이 '정해진 높이가 없는 flex 컨테이너' 안에서 0으로
+     찌그러지는 flexbox 버그가 있다(뜬 상태였을 때는 position:absolute라 겪지 않던 문제). */
   body.input-direct .direct-win:not(.win-open) { display: none !important; }
   body.input-direct .direct-win.win-open,
   body.input-direct #paletteCol.win-open {
-    /* 리본(top:56px, 높이 약 52px)보다 아래 줄에서 시작하도록 116px로 내림(기존 54px) */
-    display: flex; flex-direction: column; position: absolute; top: 116px; left: 14px; z-index: 6;
-    max-width: min(420px, calc(100% - 28px)); max-height: 60vh; overflow: auto;
-    background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
+    display: flex; flex-direction: column;
+    height: 46vh; overflow: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08); padding: 10px 12px 12px;
   }
-  /* 여러 개를 한꺼번에 처음 열어도 서로 완전히 겹치지 않도록 기본 위치를 살짝씩 어긋나게
-     (위 기본값 116px에 맞춰 전부 +62px씩 내림) */
-  body.input-direct #ornWinWrap.win-open { top: 116px; left: 448px; }
-  body.input-direct #jangdanArea.win-open { top: 146px; left: 44px; }
-  body.input-direct #lyricsArea.win-open { top: 176px; left: 74px; }
-  body.input-direct #textArea.win-open { top: 206px; left: 104px; }
-  body.input-direct #cellStyleWin.win-open { top: 146px; left: 478px; }
 
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);

@@ -908,6 +908,8 @@
   }
   $("btnResetContent").addEventListener("click", resetAllContent);
   $("btnNewDoc").addEventListener("click", startNewDocument);
+  $("btnUndo").addEventListener("click", function () { undoGlobal(); });
+  $("btnRedo").addEventListener("click", function () { redoGlobal(); });
 
   // ---------- 정간 위 인라인 입력(선율) ----------
   function currentCellText(gi, ci) {
@@ -3519,18 +3521,6 @@
     e.stopPropagation();
     $("melodyRibbon").classList.toggle("collapsed");
   });
-  // 도구창 닫기(×) — 어느 도구창이든 공통: 자기 자신을 win-open 해제하고, 짝이 되는
-  // 리본의 .win-toggle 버튼(data-target으로 연결)의 on 표시도 같이 끈다.
-  document.querySelectorAll(".win-close-btn").forEach(function (btn) {
-    btn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      const win = btn.closest(".direct-win");
-      if (!win) return;
-      win.classList.remove("win-open");
-      const toggle = document.querySelector('.win-toggle[data-target="' + win.id + '"]');
-      if (toggle) toggle.classList.remove("on");
-    });
-  });
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -3565,15 +3555,26 @@
     });
   });
 
-  // 직접 입력 모드 도구창 열고 닫기(피날레 팔레트 스타일) — 기본 도구바(리본)의 버튼마다
-  // data-target으로 지정한 도구창을 독립적으로 토글한다. 여러 개를 동시에 열어둘 수 있다.
-  document.querySelectorAll(".win-toggle").forEach(function (b) {
-    b.addEventListener("click", function () {
-      const target = $(b.getAttribute("data-target"));
-      if (!target) return;
-      const open = target.classList.toggle("win-open");
-      b.classList.toggle("on", open);
+  // 직접 입력 모드 도구창 전환 — 예전엔 여러 개를 동시에 띄울 수 있었지만, 다른 탭을
+  // 누르면 이전 탭이 자동으로 꺼지도록(에디터 모드 dockRail과 같은 단일 탭 방식으로) 바꿈.
+  // 율명(paletteCol)·시김새(ornWinWrap)는 melodyArea 안에 함께 있어서, 그 둘 중 무엇이
+  // 열리든 melodyArea 자체를 active로 만들어야 한다.
+  const WIN_TOGGLE_PANEL_PARENT = { paletteCol: "melodyArea", ornWinWrap: "melodyArea" };
+  function activateDirectPanel(targetId) {
+    const target = $(targetId);
+    if (!target) return;
+    document.querySelectorAll(".win-toggle").forEach(function (b) {
+      const tid = b.getAttribute("data-target");
+      const t = $(tid);
+      if (t) t.classList.toggle("win-open", tid === targetId);
+      b.classList.toggle("on", tid === targetId);
     });
+    document.querySelectorAll(".dock-panel").forEach(function (p) {
+      p.classList.toggle("active", p.id === (WIN_TOGGLE_PANEL_PARENT[targetId] || targetId));
+    });
+  }
+  document.querySelectorAll(".win-toggle").forEach(function (b) {
+    b.addEventListener("click", function () { activateDirectPanel(b.getAttribute("data-target")); });
   });
 
   // 편집창 높이 조절 (위로 드래그 → 커짐 / 아래로 → 작아짐) — 선율·장단·가사 각 탭의 편집줄에 적용
@@ -3969,6 +3970,38 @@
     // — 악보를 드래그로 고르는 동작 자체는 모드와 무관하기 때문. 셀 서식 도구창을 여닫는
     // winToggleCellStyle 버튼만 '뜬 도구창' 개념이라 직접 입력 전용으로 남고(CSS에서 숨김),
     // 에디터 모드에서는 대신 레일 탭(#dockRail의 '셀 서식')으로 같은 내용을 도킹해서 본다.
+    // 기능바(#melodyRibbon) — 직접 입력 모드에선 되돌리기·구간지우기·탭 전환처럼 늘 보여야
+    // 하는 것들이라, 어느 탭이 활성인지와 무관하게 늘 보이도록 악보 바로 위(#main의 자식,
+    // #sheetArea 앞)로 옮긴다. 지금 활성 탭의 내용(#editorDock)도 그 바로 아래, 악보보다
+    // 위에 오도록 같이 옮겨서 '늘 보이는 기능바 + 지금 고른 탭' 한 덩어리가 위쪽에 모이고
+    // 악보는 그 아래에서 시작하게 한다. 에디터 모드로 돌아가면 둘 다 원래 자리로 되돌린다.
+    const ribbon = $("melodyRibbon");
+    const main = $("main"), sheetArea = $("sheetArea"), editorDock = $("editorDock");
+    if (direct) {
+      if (ribbon.parentNode !== main) main.insertBefore(ribbon, sheetArea);
+      if (editorDock.parentNode !== main || editorDock.nextSibling !== sheetArea) {
+        main.insertBefore(editorDock, sheetArea);
+      }
+    } else {
+      const melodyArea = $("melodyArea");
+      if (ribbon.parentNode !== melodyArea || melodyArea.firstChild !== ribbon) {
+        melodyArea.insertBefore(ribbon, melodyArea.firstChild);
+      }
+      if (editorDock.parentNode !== main || editorDock.previousSibling !== sheetArea) {
+        main.appendChild(editorDock);
+      }
+      // 직접 입력 모드에서 .win-toggle로 탭을 전환할 때도 같은 .dock-panel.active
+      // 클래스를 갖다 쓰기 때문에(activateDirectPanel), 에디터로 돌아왔을 때 레일
+      // 탭(.domain-tab)이 가리키는 패널과 어긋나 있을 수 있다 — 지금 활성 레일 탭
+      // 기준으로 다시 맞춰준다.
+      const activeTab = document.querySelector(".domain-tab.active") || document.querySelector(".domain-tab");
+      const panelId = activeTab ? activeTab.getAttribute("data-panel") : null;
+      if (panelId) {
+        document.querySelectorAll(".dock-panel").forEach(function (p) {
+          p.classList.toggle("active", p.id === panelId);
+        });
+      }
+    }
     if (direct) {
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
         palView = "yul";
@@ -3981,14 +4014,9 @@
       buildOrnAddMapBar();
       applyPalZoom();
       applyOrnPalZoom();
-      // 직접 입력에 새로 들어올 때마다 도구창 상태를 초기화 — 율명만 기본으로 열어두고
-      // 나머지(시김새/장단/가사/텍스트)는 필요할 때 리본에서 직접 열게 한다.
-      document.querySelectorAll(".win-toggle").forEach(function (b) {
-        const target = $(b.getAttribute("data-target"));
-        const open = b.getAttribute("data-target") === "paletteCol";
-        if (target) target.classList.toggle("win-open", open);
-        b.classList.toggle("on", open);
-      });
+      // 직접 입력에 새로 들어올 때마다 도구창 상태를 초기화 — 율명 탭만 기본으로 열어두고
+      // 나머지(시김새/장단/가사/텍스트/셀 서식)는 필요할 때 탭을 눌러 전환한다.
+      activateDirectPanel("paletteCol");
     }
   }
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
