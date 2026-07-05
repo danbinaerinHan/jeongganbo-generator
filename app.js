@@ -35,15 +35,25 @@
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
   let ornAddMode = false;                   // 시김새 추가 모드(직접 입력) — 숫자키로 붙임표 시김새를 고른 뒤 음을 클릭해 붙임
   let ornAddArmed = null;                   // 지금 골라둔(armed) 붙임표 시김새의 stem
-  let rangeClearMode = false;                // 구간 지우기 모드(직접 입력) — 드래그로 정간 구간을 골라 한꺼번에 지움
-  let rangeDragging = false;                 // 정간 드래그 중인지
-  let rangeStart = null, rangeEnd = null;    // 드래그 시작/현재 정간 {gi, ci}
-  // 셀 서식(직접 입력) — 배경색/테두리 칠하기·지우기 4가지가 전부 같은 드래그 방식을 쓰되
-  // 어느 동작인지는 cellToolMode 하나로만 구분한다(칠하기·지우기를 헷갈리지 않게 서로 다른
-  // 버튼으로 분리 — 색은 그냥 '지금 골라둔 색'일 뿐 지우기 동작과 무관함).
-  let cellToolMode = null;                   // null | "fillPaint" | "fillErase" | "borderPaint" | "borderErase"
-  let cellToolDragging = false;              // 정간 드래그 중인지(서식)
-  let cellToolStart = null, cellToolEnd = null;   // 드래그 시작/현재 정간 {gi, ci}
+  // 정간보 기본 드래그 = 구간 선택(스프레드시트 방식). 드래그 없이 그냥 누르면(클릭) 그 정간을
+  // 편집하고, 다른 칸으로 번지면(mouseenter) 드래그로 확정해 구간을 고른다 — 선택은 손을 뗀
+  // 뒤에도 남아있어서, 구간 지우기·셀 서식 칠하기/지우기 버튼을 나중에 눌러 적용할 수 있다.
+  let melSelStart = null, melSelEnd = null;  // 지금 선택된 정간 구간(없으면 null)
+  let melSelActive = false;                  // 마우스가 눌린 채로 클릭/드래그 판정 중인지
+  let melSelDidDrag = false;                 // 이번 제스처가 다른 칸으로 번져 드래그로 확정됐는지
+  function hasMelSel() { return !!(melSelStart && melSelEnd); }
+  // 선택된 구간이 없으면 '구간 지우기'·셀 서식 실행 버튼들을 비활성화 — 눌러도 아무 일 없는
+  // 상태를 미리 보여준다. 렌더마다 호출(선택이 render()로만 바뀌므로).
+  const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle", "cellFillEraseToggle",
+    "cellBorderPaintToggle", "cellBorderEraseToggle",
+    "cellBorderPresetAll", "cellBorderPresetOuter", "cellBorderPresetInner", "cellBorderPresetNone"];
+  function refreshMelSelBtns() {
+    const on = hasMelSel();
+    MEL_SEL_BTN_IDS.forEach(function (id) {
+      const el = $(id);
+      if (el) el.disabled = !on;
+    });
+  }
   let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
   let cellBorderSides = { top: false, right: false, bottom: false, left: false };  // 테두리 칠할 변(직접 선택)
   let cellBorderWidth = "medium";            // "thin" | "medium" | "thick"
@@ -2646,16 +2656,6 @@
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
-                if (rangeClearMode) {
-                  rangeDragging = true; rangeStart = { gi: gi, ci: ci }; rangeEnd = { gi: gi, ci: ci };
-                  render();
-                  return;
-                }
-                if (cellToolMode) {
-                  cellToolDragging = true; cellToolStart = { gi: gi, ci: ci }; cellToolEnd = { gi: gi, ci: ci };
-                  render();
-                  return;
-                }
                 if (ornAddMode && ornAddArmed && inputMode === "direct") {
                   // 분박(스페이스로 나뉜 여러 음)이 있으면 클릭한 세로 위치로 어느 음인지 고른다
                   // (drawCell이 각 음을 위→아래 순서로 rowH씩 나눠 그리는 것과 같은 계산)
@@ -2667,13 +2667,17 @@
                   return;
                 }
                 if (cellEditInput) commitCellEditor(false);
-                // 입력 모드에 따라: 에디터 → 아래 텍스트로 커서 이동 / 직접 입력 → 옆 입력창
-                if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
-                else openCellEditor("mel", gi, ci);
+                // 기본 동작: 아직 클릭인지 드래그인지 모름 — mouseup에서 판가름한다
+                // (다른 칸으로 번지면 드래그로 확정, 안 번기면 그냥 클릭 → 이 칸을 편집)
+                melSelActive = true; melSelDidDrag = false;
+                melSelStart = { gi: gi, ci: ci }; melSelEnd = { gi: gi, ci: ci };
+                render();
               });
               hit.addEventListener("mouseenter", function () {
-                if (rangeDragging) { rangeEnd = { gi: gi, ci: ci }; render(); return; }
-                if (cellToolDragging) { cellToolEnd = { gi: gi, ci: ci }; render(); }
+                if (!melSelActive) return;
+                melSelDidDrag = true;
+                melSelEnd = { gi: gi, ci: ci };
+                render();
               });
             })(melIdx, j);
             svg.appendChild(hit);
@@ -2745,7 +2749,9 @@
                 { fill: "transparent", stroke: "none", "pointer-events": "all" });
               lyHit.style.cursor = "text";
               (function (gi, ci) {
-                lyHit.addEventListener("mousedown", function (e) {
+                // 가사는 더블클릭으로만 편집 — 정간 드래그 선택과 헷갈리지 않게
+                lyHit.addEventListener("mousedown", function (e) { e.preventDefault(); });
+                lyHit.addEventListener("dblclick", function (e) {
                   e.preventDefault();
                   if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
                   if (cellEditInput) commitCellEditor(false);
@@ -2915,10 +2921,11 @@
       });
     }
 
-    // 구간 지우기 모드: 드래그로 고른 정간 구간을 빨갛게 덧칠해 '지워질 범위'를 미리 보여준다
-    if (rangeClearMode && rangeStart && rangeEnd) {
-      const lo = Math.min(melCellSeq(rangeStart.gi, rangeStart.ci), melCellSeq(rangeEnd.gi, rangeEnd.ci));
-      const hi = Math.max(melCellSeq(rangeStart.gi, rangeStart.ci), melCellSeq(rangeEnd.gi, rangeEnd.ci));
+    // 정간 구간 선택 — 드래그로 고르면(또는 고른 뒤에도 계속) 옅은 파란색으로 표시.
+    // 구간 지우기·셀 서식 칠하기/지우기 버튼이 이 선택을 대상으로 즉시 적용된다.
+    if (melSelStart && melSelEnd) {
+      const lo = Math.min(melCellSeq(melSelStart.gi, melSelStart.ci), melCellSeq(melSelEnd.gi, melSelEnd.ci));
+      const hi = Math.max(melCellSeq(melSelStart.gi, melSelStart.ci), melCellSeq(melSelEnd.gi, melSelEnd.ci));
       Object.keys(cellGeom).forEach(function (giKey) {
         const gi = parseInt(giKey, 10);
         const row = cellGeom[gi];
@@ -2928,32 +2935,14 @@
           const cg = row[ci];
           const svg = pageSvgs[cg.page]; if (!svg) return;
           svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
-            { fill: "#e05a5a", "fill-opacity": "0.35", stroke: "none", class: "no-print" }));
-        });
-      });
-    }
-    if (cellToolMode && cellToolStart && cellToolEnd) {
-      const lo = Math.min(melCellSeq(cellToolStart.gi, cellToolStart.ci), melCellSeq(cellToolEnd.gi, cellToolEnd.ci));
-      const hi = Math.max(melCellSeq(cellToolStart.gi, cellToolStart.ci), melCellSeq(cellToolEnd.gi, cellToolEnd.ci));
-      // 드래그 중 미리보기 색 — 칠하기는 실제 고른 색, 지우기는 회색, 테두리 도구는 파란색으로 구분
-      const previewFill = cellToolMode === "fillPaint" ? cellStylePendingColor
-        : cellToolMode === "fillErase" ? "#999999" : "#5a8de0";
-      Object.keys(cellGeom).forEach(function (giKey) {
-        const gi = parseInt(giKey, 10);
-        const row = cellGeom[gi];
-        Object.keys(row).forEach(function (ciKey) {
-          const ci = parseInt(ciKey, 10);
-          if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
-          const cg = row[ci];
-          const svg = pageSvgs[cg.page]; if (!svg) return;
-          svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
-            { fill: previewFill, "fill-opacity": "0.45", stroke: "none", class: "no-print" }));
+            { fill: "#5b8def", "fill-opacity": "0.22", stroke: "#3a6fd8", "stroke-width": "0.15", class: "no-print" }));
         });
       });
     }
 
     updateHighlight();
     saveState();
+    refreshMelSelBtns();
 
     // 선율·장단·가사는 구조 변경(각 추가/삭제, 종이 크기 등) 시점에만 서로 맞춰지고
     // (reconcileJangdan/reconcileLyrics) 타이핑 중엔 조용히 어긋난 채로 있을 수 있다 —
@@ -3784,41 +3773,32 @@
     $("ornAddToggle").classList.toggle("on", ornAddMode);
     refreshOrnAddBadges();
   });
-  // 구간 지우기 모드 토글 — 직접 입력 모드에서만 의미가 있어 다른 모드일 땐 꺼서 비활성화
+  // 구간 지우기 — 토글이 아니라 즉시 실행 버튼. 지금 선택된 구간(드래그로 고른 것)이
+  // 있어야 동작하고, 없으면 아무 일도 안 한다(refreshMelSelBtns가 매 렌더 disabled 처리).
   $("rangeClearToggle").addEventListener("click", function () {
-    rangeClearMode = !rangeClearMode;
-    rangeDragging = false; rangeStart = null; rangeEnd = null;
-    $("rangeClearToggle").classList.toggle("on", rangeClearMode);
-    render();
+    if (!hasMelSel()) return;
+    clearMelodyRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci);
   });
-  // 셀 서식 — 배경색/테두리 각각 칠하기·지우기 버튼 4개. 색은 그냥 '지금 고른 값'일 뿐이라
-  // 여러 색을 번갈아 칠해도 칠하기/지우기 버튼 자체는 서로 안 헷갈리게 분리해둔다.
-  const CELL_TOOL_BTN_MODE = {
-    cellFillPaintToggle: "fillPaint",
-    cellFillEraseToggle: "fillErase",
-    cellBorderPaintToggle: "borderPaint",
-    cellBorderEraseToggle: "borderErase"
-  };
-  function setCellToolMode(mode) {
-    cellToolMode = (cellToolMode === mode) ? null : mode;
-    cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
-    Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
-      $(id).classList.toggle("on", CELL_TOOL_BTN_MODE[id] === cellToolMode);
-    });
-    render();
+  // 셀 서식 — 배경색/테두리 각각 칠하기·지우기 버튼 4개. 전부 '지금 선택된 구간'에 즉시
+  // 적용되는 실행 버튼(토글 아님). 색은 그냥 '지금 고른 값'일 뿐이라 여러 색을 번갈아
+  // 칠해도 칠하기/지우기 버튼 자체는 서로 안 헷갈리게 분리해둔다.
+  $("cellFillPaintToggle").addEventListener("click", function () {
+    if (!hasMelSel()) return;
+    applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, cellStylePendingColor);
+  });
+  $("cellFillEraseToggle").addEventListener("click", function () {
+    if (!hasMelSel()) return;
+    applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, null);
+  });
+  function applyBorderToSelection(spec) {
+    if (!hasMelSel()) return;
+    applyCellBorderRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, spec);
   }
-  // 프리셋 버튼(전체/바깥쪽/안쪽/없음) 전용 — 토글이 아니라 항상 그 모드를 켠 상태로 만든다
-  // (프리셋을 고르면 바로 드래그할 준비가 되도록, 워드/페이지스의 테두리 프리셋 클릭과 비슷하게).
-  function forceCellToolMode(mode) {
-    cellToolMode = mode;
-    cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
-    Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
-      $(id).classList.toggle("on", CELL_TOOL_BTN_MODE[id] === cellToolMode);
-    });
-    render();
-  }
-  Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
-    $(id).addEventListener("click", function () { setCellToolMode(CELL_TOOL_BTN_MODE[id]); });
+  $("cellBorderPaintToggle").addEventListener("click", function () {
+    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
+  });
+  $("cellBorderEraseToggle").addEventListener("click", function () {
+    applyBorderToSelection(null);
   });
   $("cellStyleColorPicker").addEventListener("change", function () {
     cellStylePendingColor = $("cellStyleColorPicker").value;
@@ -3843,7 +3823,9 @@
   $("cellBorderStyleSelect").addEventListener("change", function () {
     cellBorderStyle = $("cellBorderStyleSelect").value;
   });
-  // 테두리 프리셋 4개 — 정간보는 열이 하나뿐인 표라고 보고, 있을 법한 조합만 빠르게 고르게 함
+  // 테두리 프리셋 4개 — 정간보는 열이 하나뿐인 표라고 보고, 있을 법한 조합만 빠르게 고르게 함.
+  // 프리셋도 즉시 실행(누르면 바로 지금 선택된 구간에 적용)이라, 골라만 두고 칠하기/지우기를
+  // 따로 눌러도 되고, 프리셋 버튼 자체로 바로 적용해도 된다.
   function checkAllBorderSides() {
     cellBorderSides = { top: true, right: true, bottom: true, left: true };
     ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
@@ -3853,45 +3835,39 @@
   $("cellBorderPresetAll").addEventListener("click", function () {
     clearCellBorderPresetHighlight();
     checkAllBorderSides();
-    forceCellToolMode("borderPaint");
+    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
   });
   $("cellBorderPresetOuter").addEventListener("click", function () {
     cellBorderPreset = "outer";
     $("cellBorderPresetOuter").classList.add("on");
     $("cellBorderPresetInner").classList.remove("on");
-    forceCellToolMode("borderPaint");
+    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
   });
   $("cellBorderPresetInner").addEventListener("click", function () {
     cellBorderPreset = "inner";
     $("cellBorderPresetInner").classList.add("on");
     $("cellBorderPresetOuter").classList.remove("on");
-    forceCellToolMode("borderPaint");
+    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
   });
   $("cellBorderPresetNone").addEventListener("click", function () {
     clearCellBorderPresetHighlight();
     checkAllBorderSides();
-    forceCellToolMode("borderErase");
+    applyBorderToSelection(null);
   });
-  // 드래그 도중 마우스를 떼면(정간 밖이어도) 그 시점까지 고른 구간에 지금 켜둔 도구를 적용한다
+  // 정간 구간 선택 — 드래그(다른 칸으로 번짐)로 확정되면 선택을 유지, 안 번지면(그냥 클릭)
+  // 그 칸을 편집한다. 손을 뗀 위치가 정간 밖이어도 여기서 판가름한다.
   document.addEventListener("mouseup", function () {
-    if (cellToolDragging) {
-      cellToolDragging = false;
-      const cs = cellToolStart, cen = cellToolEnd;
-      cellToolStart = null; cellToolEnd = null;
-      if (cs && cen) {
-        if (cellToolMode === "fillPaint") applyCellFillRange(cs.gi, cs.ci, cen.gi, cen.ci, cellStylePendingColor);
-        else if (cellToolMode === "fillErase") applyCellFillRange(cs.gi, cs.ci, cen.gi, cen.ci, null);
-        else if (cellToolMode === "borderPaint") applyCellBorderRange(cs.gi, cs.ci, cen.gi, cen.ci, { width: cellBorderWidth, style: cellBorderStyle });
-        else if (cellToolMode === "borderErase") applyCellBorderRange(cs.gi, cs.ci, cen.gi, cen.ci, null);
-        else render();
-      } else render();
+    if (!melSelActive) return;
+    melSelActive = false;
+    if (!melSelDidDrag) {
+      const s = melSelStart;
+      melSelStart = null; melSelEnd = null;
+      render();
+      if (inputMode === "editor") CELL_EDIT.mel.setCursor(s.gi, s.ci, true);
+      else openCellEditor("mel", s.gi, s.ci);
+    } else {
+      render();
     }
-    if (!rangeDragging) return;
-    rangeDragging = false;
-    const s = rangeStart, en = rangeEnd;
-    rangeStart = null; rangeEnd = null;
-    if (s && en) clearMelodyRange(s.gi, s.ci, en.gi, en.ci);
-    else render();
   });
   $("ornClose").addEventListener("click", function () { ornSel = null; hideOrnPanel(); render(); });
   $("ornReset").addEventListener("click", function () { updateOrnParams(0, 0, 0, true); });
