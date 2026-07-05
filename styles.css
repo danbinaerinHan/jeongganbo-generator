@@ -299,6 +299,15 @@
               padding: 6px 10px; margin-bottom: 8px; }
   .gak-warn.on { display: block; }
 
+  /* 새 문서 마법사 — 화면 전체를 덮는 반투명 오버레이 + 가운데 상자. .field/.row/.chk/.btns는
+     레이아웃 탭에서 쓰던 스타일을 그대로 재사용한다. */
+  .modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(28,27,25,.4);
+                    display: flex; align-items: center; justify-content: center; }
+  .modal-box { background: var(--panel); border-radius: 12px; padding: 22px 24px;
+               width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px);
+               overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .modal-box h3 { margin: 0 0 16px; font-size: 16px; }
+
   .btns { display: flex; gap: 8px; margin-top: 8px; }
   .btns button {
     flex: 1; padding: 10px;
@@ -498,6 +507,8 @@
   .win-toggle-group, .win-toggle-sep { display: none; }
   .win-toggle.on { background: var(--accent); color: #fff; }
   .win-toggle.on span { color: #fff; }
+  /* 셀 서식 뜬 도구창 여닫기 버튼 — 직접 입력 전용(에디터 모드에선 대신 레일 탭 '셀 서식' 사용) */
+  body:not(.input-direct) #winToggleCellStyle { display: none; }
 
   body.input-direct .ribbon .bar-grip,
   body.input-direct .dock-panel-grip { display: flex; }

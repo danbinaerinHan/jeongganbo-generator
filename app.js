@@ -842,13 +842,59 @@
     syncActiveFromCursor();
     render();
   }
-  // 새 문서 — 다른 프로그램의 'File > New'처럼, 임시저장 여부를 먼저 물은 뒤 제목·레이아웃까지
-  // 포함해 모두 처음 상태(localStorage 없는 첫 실행과 동일)로 되돌린다.
+  // ---------- 새 문서 마법사 ----------
+  // '새 문서' 버튼과, 저장된 작업이 전혀 없는 첫 실행 둘 다에서 쓴다. 정간보의 가장 기본적인
+  // 뼈대(정간 수·대강·총 각 수·제목·부제·장단 사용 여부)를 먼저 정하고 시작하게 한다.
+  const NEWDOC_PENDING_KEY = "jgb_newdoc_pending_v1";
+  function openNewDocWizard(onCreate) {
+    const modal = $("newDocModal");
+    $("ndBeats").value = "12";
+    $("ndDaegang").value = "";
+    $("ndGakCountAuto").checked = true;
+    $("ndGakCount").value = "8";
+    $("ndTitle").value = "";
+    $("ndSubtitle").value = "";
+    $("ndWantJangdan").checked = false;
+    modal.style.display = "flex";
+    $("ndCreate").onclick = function () {
+      const answers = {
+        beats: Math.max(1, parseInt($("ndBeats").value) || 12),
+        daegang: $("ndDaegang").value.trim(),
+        gakCountAuto: $("ndGakCountAuto").checked,
+        gakCount: Math.max(1, parseInt($("ndGakCount").value) || 8),
+        title: $("ndTitle").value.trim(),
+        subtitle: $("ndSubtitle").value.trim(),
+        wantJangdan: $("ndWantJangdan").checked
+      };
+      modal.style.display = "none";
+      onCreate(answers);
+    };
+    $("ndCancel").onclick = function () { modal.style.display = "none"; };
+  }
+  // 마법사에서 고른 값을 실제 필드에 반영 — 첫 실행(리로드 없이 바로) / 새 문서(리로드 뒤) 공용.
+  function applyNewDocAnswers(a) {
+    if (!a) return;
+    $("beats").value = a.beats;
+    $("daegang").value = a.daegang;
+    $("gakCountAuto").checked = a.gakCountAuto;
+    $("gakCount").value = a.gakCount;
+    $("title").value = a.title;
+    $("subtitle").value = a.subtitle;
+    $("wantJangdan").checked = a.wantJangdan;
+    reconcileJangdan();
+    render();
+    saveState();
+  }
+  // 새 문서 — 다른 프로그램의 'File > New'처럼, 마법사로 뼈대를 정하고, 임시저장 여부를 물은 뒤
+  // 제목·레이아웃까지 포함해 모두 처음 상태(localStorage 없는 첫 실행과 동일)로 되돌린다.
   function startNewDocument() {
     if (!confirm("새 문서를 만들까요? 지금 작업 내용(제목·레이아웃 포함)은 모두 사라집니다.")) return;
-    if (confirm("계속하기 전에 지금 상태를 임시저장할까요?")) snapSave();
-    localStorage.removeItem(LS_KEY);
-    location.reload();
+    openNewDocWizard(function (answers) {
+      if (confirm("계속하기 전에 지금 상태를 임시저장할까요?")) snapSave();
+      localStorage.setItem(NEWDOC_PENDING_KEY, JSON.stringify(answers));
+      localStorage.removeItem(LS_KEY);
+      location.reload();
+    });
   }
   $("btnResetContent").addEventListener("click", resetAllContent);
   $("btnNewDoc").addEventListener("click", startNewDocument);
@@ -2585,12 +2631,12 @@
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
-                if (rangeClearMode && inputMode === "direct") {
+                if (rangeClearMode) {
                   rangeDragging = true; rangeStart = { gi: gi, ci: ci }; rangeEnd = { gi: gi, ci: ci };
                   render();
                   return;
                 }
-                if (cellToolMode && inputMode === "direct") {
+                if (cellToolMode) {
                   cellToolDragging = true; cellToolStart = { gi: gi, ci: ci }; cellToolEnd = { gi: gi, ci: ci };
                   render();
                   return;
@@ -3885,27 +3931,10 @@
       $("ornAddToggle").classList.remove("on");
       refreshOrnAddBadges();
     }
-    // 구간 지우기도 직접 입력 전용
-    $("rangeClearToggle").disabled = !direct;
-    if (!direct && rangeClearMode) {
-      rangeClearMode = false; rangeDragging = false; rangeStart = null; rangeEnd = null;
-      $("rangeClearToggle").classList.remove("on");
-    }
-    // 셀 서식 도구창 열기 버튼도 구간 지우기와 같은 자리에 있으니 같은 방식으로 직접 입력 전용
-    $("winToggleCellStyle").disabled = !direct;
-    if (!direct) {
-      $("cellStyleWin").classList.remove("win-open");
-      $("winToggleCellStyle").classList.remove("on");
-    }
-    // 셀 서식 칠하기·지우기도 직접 입력 전용 — 칠해진 색/테두리 자체는 모드와 무관하게 항상 보이고 인쇄된다
-    const CELL_BORDER_AUX_BTNS = ["cellBorderPresetAll", "cellBorderPresetOuter", "cellBorderPresetInner",
-      "cellBorderPresetNone", "cellBorderSideTop", "cellBorderSideRight", "cellBorderSideBottom", "cellBorderSideLeft"];
-    Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).disabled = !direct; });
-    CELL_BORDER_AUX_BTNS.forEach(function (id) { $(id).disabled = !direct; });
-    if (!direct && cellToolMode) {
-      cellToolMode = null; cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
-      Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).classList.remove("on"); });
-    }
+    // 구간 지우기·셀 서식(칠하기/지우기/프리셋)은 이제 에디터·직접 입력 두 모드 모두에서 쓸 수 있다
+    // — 악보를 드래그로 고르는 동작 자체는 모드와 무관하기 때문. 셀 서식 도구창을 여닫는
+    // winToggleCellStyle 버튼만 '뜬 도구창' 개념이라 직접 입력 전용으로 남고(CSS에서 숨김),
+    // 에디터 모드에서는 대신 레일 탭(#dockRail의 '셀 서식')으로 같은 내용을 도킹해서 본다.
     if (direct) {
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
         palView = "yul";
@@ -4042,6 +4071,15 @@
   let restored = false;
   try { const raw = localStorage.getItem(LS_KEY); if (raw) { applyState(JSON.parse(raw)); restored = true; } } catch (e) {}
   if (!restored) applyInputMode();
+  // 새 문서 마법사 결과 적용(방금 '새 문서'로 리로드된 직후 한 번) — 없으면 저장된 작업이
+  // 아예 없는 첫 실행인지 보고, 맞으면 같은 마법사를 바로 띄운다(임시저장 물어볼 것도 없음).
+  let newDocPending = null;
+  try {
+    const pendingRaw = localStorage.getItem(NEWDOC_PENDING_KEY);
+    if (pendingRaw) { newDocPending = JSON.parse(pendingRaw); localStorage.removeItem(NEWDOC_PENDING_KEY); }
+  } catch (e) {}
+  if (newDocPending) applyNewDocAnswers(newDocPending);
+  else if (!restored) openNewDocWizard(applyNewDocAnswers);
 
   buildPalette();
   buildJangdanPalette();
