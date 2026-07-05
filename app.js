@@ -45,9 +45,14 @@
   let cellToolDragging = false;              // 정간 드래그 중인지(서식)
   let cellToolStart = null, cellToolEnd = null;   // 드래그 시작/현재 정간 {gi, ci}
   let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
-  let cellBorderSides = { top: false, right: false, bottom: false, left: false };  // 테두리 칠할 변
+  let cellBorderSides = { top: false, right: false, bottom: false, left: false };  // 테두리 칠할 변(직접 선택)
   let cellBorderWidth = "medium";            // "thin" | "medium" | "thick"
   let cellBorderStyle = "solid";             // "solid" | "dashed" | "double"
+  // 정간보는 한 칸씩 세로로 쌓인 '열이 하나뿐인 표'라, 워드/페이지스의 표 테두리 프리셋 중
+  // 바깥쪽/안쪽만 '고른 구간 전체를 하나의 사각형으로 볼 때' 의미가 있다(가로 구분선 개념이 없음).
+  // "custom"이면 cellBorderSides 체크값을 모든 선택 칸에 똑같이 적용, "outer"/"inner"는
+  // 드래그로 고른 범위 안에서 칸의 위치(첫 칸/마지막 칸/중간)를 따져 계산한다.
+  let cellBorderPreset = "custom";           // "custom" | "outer" | "inner"
   const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
   const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
   const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
@@ -712,18 +717,35 @@
     });
     render();
   }
-  // 드래그로 고른 구간의 정간마다, 지금 켜둔 변(cellBorderSides)에 테두리를 적용(또는 지움).
-  // 칠하기: spec = { width, style }. 지우기: spec = null (체크된 변만 지움).
+  // 드래그로 고른 구간에서, 정간 하나의 순서 위치(seq)에 따라 어느 변을 적용할지 계산.
+  // "outer"/"inner"는 정간보를 '열이 하나뿐인 표'로 보고, 고른 구간 전체를 하나의 사각형처럼
+  // 다룬다 — outer는 첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우, inner는 칸과 칸 사이 경계선만
+  // (칸을 하나만 고르면 안쪽은 해당 사항 없음).
+  function sidesForCellInRange(seq, lo, hi) {
+    if (cellBorderPreset === "outer") {
+      const s = ["left", "right"];
+      if (seq === lo) s.push("top");
+      if (seq === hi) s.push("bottom");
+      return s;
+    }
+    if (cellBorderPreset === "inner") {
+      return seq === hi ? [] : ["bottom"];
+    }
+    return ["top", "right", "bottom", "left"].filter(function (s) { return cellBorderSides[s]; });
+  }
+  // 드래그로 고른 구간의 정간마다 테두리를 적용(또는 지움).
+  // 칠하기: spec = { width, style }. 지우기: spec = null (계산된 변만 지움).
   function applyCellBorderRange(startGi, startCi, endGi, endCi, spec) {
     const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
     const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
-    const sides = ["top", "right", "bottom", "left"].filter(function (s) { return cellBorderSides[s]; });
-    if (!sides.length) { render(); return; }
     Object.keys(cellGeom).forEach(function (giKey) {
       const gi = parseInt(giKey, 10);
       Object.keys(cellGeom[gi]).forEach(function (ciKey) {
         const ci = parseInt(ciKey, 10);
-        if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+        const seq = melCellSeq(gi, ci);
+        if (seq < lo || seq > hi) return;
+        const sides = sidesForCellInRange(seq, lo, hi);
+        if (!sides.length) return;
         cellStyles[gi] = cellStyles[gi] || {};
         const entry = cellStyles[gi][ci] || {};
         const border = Object.assign({}, entry.border);
@@ -3650,15 +3672,32 @@
     });
     render();
   }
+  // 프리셋 버튼(전체/바깥쪽/안쪽/없음) 전용 — 토글이 아니라 항상 그 모드를 켠 상태로 만든다
+  // (프리셋을 고르면 바로 드래그할 준비가 되도록, 워드/페이지스의 테두리 프리셋 클릭과 비슷하게).
+  function forceCellToolMode(mode) {
+    cellToolMode = mode;
+    cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
+    Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
+      $(id).classList.toggle("on", CELL_TOOL_BTN_MODE[id] === cellToolMode);
+    });
+    render();
+  }
   Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) {
     $(id).addEventListener("click", function () { setCellToolMode(CELL_TOOL_BTN_MODE[id]); });
   });
   $("cellStyleColorPicker").addEventListener("change", function () {
     cellStylePendingColor = $("cellStyleColorPicker").value;
   });
+  // 직접 선택(위/오/아/왼)을 누르면 프리셋(바깥쪽/안쪽)은 해제하고 '직접 선택'으로 돌아간다
+  function clearCellBorderPresetHighlight() {
+    cellBorderPreset = "custom";
+    $("cellBorderPresetOuter").classList.remove("on");
+    $("cellBorderPresetInner").classList.remove("on");
+  }
   ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
     const key = Side.toLowerCase();
     $("cellBorderSide" + Side).addEventListener("click", function () {
+      clearCellBorderPresetHighlight();
       cellBorderSides[key] = !cellBorderSides[key];
       $("cellBorderSide" + Side).classList.toggle("on", cellBorderSides[key]);
     });
@@ -3668,6 +3707,35 @@
   });
   $("cellBorderStyleSelect").addEventListener("change", function () {
     cellBorderStyle = $("cellBorderStyleSelect").value;
+  });
+  // 테두리 프리셋 4개 — 정간보는 열이 하나뿐인 표라고 보고, 있을 법한 조합만 빠르게 고르게 함
+  function checkAllBorderSides() {
+    cellBorderSides = { top: true, right: true, bottom: true, left: true };
+    ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
+      $("cellBorderSide" + Side).classList.add("on");
+    });
+  }
+  $("cellBorderPresetAll").addEventListener("click", function () {
+    clearCellBorderPresetHighlight();
+    checkAllBorderSides();
+    forceCellToolMode("borderPaint");
+  });
+  $("cellBorderPresetOuter").addEventListener("click", function () {
+    cellBorderPreset = "outer";
+    $("cellBorderPresetOuter").classList.add("on");
+    $("cellBorderPresetInner").classList.remove("on");
+    forceCellToolMode("borderPaint");
+  });
+  $("cellBorderPresetInner").addEventListener("click", function () {
+    cellBorderPreset = "inner";
+    $("cellBorderPresetInner").classList.add("on");
+    $("cellBorderPresetOuter").classList.remove("on");
+    forceCellToolMode("borderPaint");
+  });
+  $("cellBorderPresetNone").addEventListener("click", function () {
+    clearCellBorderPresetHighlight();
+    checkAllBorderSides();
+    forceCellToolMode("borderErase");
   });
   // 드래그 도중 마우스를 떼면(정간 밖이어도) 그 시점까지 고른 구간에 지금 켜둔 도구를 적용한다
   document.addEventListener("mouseup", function () {
@@ -3799,7 +3867,10 @@
       $("winToggleCellStyle").classList.remove("on");
     }
     // 셀 서식 칠하기·지우기도 직접 입력 전용 — 칠해진 색/테두리 자체는 모드와 무관하게 항상 보이고 인쇄된다
+    const CELL_BORDER_AUX_BTNS = ["cellBorderPresetAll", "cellBorderPresetOuter", "cellBorderPresetInner",
+      "cellBorderPresetNone", "cellBorderSideTop", "cellBorderSideRight", "cellBorderSideBottom", "cellBorderSideLeft"];
     Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).disabled = !direct; });
+    CELL_BORDER_AUX_BTNS.forEach(function (id) { $(id).disabled = !direct; });
     if (!direct && cellToolMode) {
       cellToolMode = null; cellToolDragging = false; cellToolStart = null; cellToolEnd = null;
       Object.keys(CELL_TOOL_BTN_MODE).forEach(function (id) { $(id).classList.remove("on"); });
