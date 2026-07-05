@@ -424,7 +424,7 @@
         <div class="ribbon-sep"></div>
         <div class="ribbon-group">
           <button type="button" id="rangeClearToggle" class="ribbon-btn tip"
-            data-tip="켜면 악보의 정간을 드래그해 구간을 고를 수 있습니다. 손을 떼면 그 구간의 음·시김새가 모두 지워집니다(되돌리기로 복구 가능). 직접 입력 모드에서만 쓸 수 있습니다.">⌧<span>구간 지우기</span></button>
+            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 그 구간의 음·시김새가 모두 지워집니다(되돌리기로 복구 가능).">⌧<span>구간 지우기</span></button>
           <button type="button" id="winToggleCellStyle" class="ribbon-btn win-toggle tip" data-target="cellStyleWin"
             data-tip="셀 서식(배경색·테두리) 팔레트를 열고 닫습니다">□<span>셀 서식</span></button>
         </div>
@@ -629,24 +629,24 @@
         <div class="cell-style-body">
           <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="배경색">
           <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="켜면 악보의 정간을 드래그해 구간을 고를 수 있습니다. 손을 떼면 그 구간에 왼쪽에서 고른 배경색이 칠해집니다.">⬚<span>칠하기</span></button>
+            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 왼쪽에서 고른 배경색이 칠해집니다.">⬚<span>칠하기</span></button>
           <button type="button" id="cellFillEraseToggle" class="ribbon-btn tip cell-style-action erase"
-            data-tip="켜면 드래그로 고른 구간의 배경색을 지웁니다(투명하게).">⌫<span>지우기</span></button>
+            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 그 구간의 배경색을 지웁니다(투명하게).">⌫<span>지우기</span></button>
         </div>
       </div>
       <div class="cell-style-sec">
         <div class="cell-style-sec-title">테두리</div>
-        <!-- 정간보는 열이 하나뿐인 표라고 보고 고른 프리셋 — 누르면 바로 칠하기/지우기 모드가
-             켜져서 드래그만 하면 된다(워드·페이지스의 테두리 프리셋과 비슷한 방식). -->
+        <!-- 정간보는 열이 하나뿐인 표라고 보고 고른 프리셋 — 악보에서 정간 구간을 드래그로
+             먼저 고른 뒤 누르면 바로 적용된다(워드·페이지스의 테두리 프리셋과 비슷한 방식). -->
         <div class="cell-style-body">
           <button type="button" id="cellBorderPresetAll" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 정간마다 네 변 모두에 테두리를 그립니다.">▦<span>전체</span></button>
+            data-tip="선택한 구간의 정간마다 네 변 모두에 테두리를 그립니다.">▦<span>전체</span></button>
           <button type="button" id="cellBorderPresetOuter" class="ribbon-btn tip cell-style-option"
-            data-tip="고른 구간 전체를 사각형 하나로 보고 바깥쪽 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">▢<span>바깥쪽</span></button>
+            data-tip="선택한 구간 전체를 사각형 하나로 보고 바깥쪽 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">▢<span>바깥쪽</span></button>
           <button type="button" id="cellBorderPresetInner" class="ribbon-btn tip cell-style-option"
-            data-tip="고른 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">≡<span>안쪽</span></button>
+            data-tip="선택한 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">≡<span>안쪽</span></button>
           <button type="button" id="cellBorderPresetNone" class="ribbon-btn tip cell-style-option"
-            data-tip="고른 구간의 테두리를 모두 지웁니다.">⊘<span>없음</span></button>
+            data-tip="선택한 구간의 테두리를 모두 지웁니다.">⊘<span>없음</span></button>
         </div>
         <div class="cell-style-body">
           <span class="cell-border-sides">
@@ -668,9 +668,9 @@
         </div>
         <div class="cell-style-body">
           <button type="button" id="cellBorderPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="켜면 악보의 정간을 드래그해 구간을 고를 수 있습니다. 손을 떼면 위 프리셋(또는 직접 선택한 변)에 고른 굵기·선 종류로 테두리가 그려집니다.">▭<span>칠하기</span></button>
+            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 위 프리셋(또는 직접 선택한 변)에 고른 굵기·선 종류로 테두리가 그려집니다.">▭<span>칠하기</span></button>
           <button type="button" id="cellBorderEraseToggle" class="ribbon-btn tip cell-style-action erase"
-            data-tip="켜면 드래그로 고른 구간에서, 위 프리셋(또는 직접 선택한 변)의 테두리를 지웁니다.">⌫<span>지우기</span></button>
+            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 위 프리셋(또는 직접 선택한 변)의 테두리를 지웁니다.">⌫<span>지우기</span></button>
         </div>
       </div>
     </div>
