@@ -13,3 +13,6 @@
 *.pdf
 정악보/
 symbol_samples/
+
+# 예외: 논문 그림은 커밋 (paper/가 자체 완결로 컴파일되도록)
+!paper/figures/*.png
