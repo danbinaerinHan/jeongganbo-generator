@@ -447,9 +447,13 @@
                         color: var(--muted); transition: background .12s ease, color .12s ease; }
   .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: #f0ece3; color: var(--ink); }
   .rail-shortcuts-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
-  /* 단축키 버튼이 사이드바 맨 아래라 안내 패널이 기본값(아래로 펼침)대로 뜨면
-     화면 아래로 넘어가 잘려 보인다 — 버튼 위로 펼치게 뒤집는다 */
-  #shortcutsGuide { top: auto; bottom: calc(100% + 6px); }
+  /* 단축키 버튼이 사이드바 맨 아래라 안내 패널이 기본값(아래로 펼침)대로 뜨면 화면 아래로
+     넘어가 잘려 보인다 — 버튼 오른쪽에서 위로 펼친다. #dockRail .melody-guide의 top:0보다
+     특이도를 높여야 top/bottom이 동시에 걸려 상자가 짜부라지는 일이 없다. */
+  #dockRail #shortcutsGuide, #shortcutsGuide {
+    top: auto; bottom: 0; left: calc(100% + 8px);
+    max-height: 74vh; overflow: auto;
+  }
   .dock-panels { flex: 1 1 auto; min-width: 0; }
   .dock-panel { display: none; padding: 8px 14px 14px; }
   .dock-panel.active { display: block; }
