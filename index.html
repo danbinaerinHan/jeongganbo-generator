@@ -647,35 +647,62 @@
         <div class="cell-style-sec-title">테두리</div>
         <!-- 정간보는 열이 하나뿐인 표라고 보고 고른 프리셋 — 악보에서 정간 구간을 드래그로
              먼저 고른 뒤 누르면 바로 적용된다(워드·페이지스의 테두리 프리셋과 비슷한 방식). -->
-        <!-- 프리셋 아이콘 — 정간 두 칸을 쌓은 '8'자 모양. 검은 부분이 실제로 그려지는 선,
-             회색 부분은 이번 프리셋이 건드리지 않는 선이라 어디에 적용되는지 한눈에 보인다. -->
+        <!-- 테두리 버튼 7개(프리셋 3 + 변 직접 선택 4) — 전부 정간 두 칸을 쌓은 '8'자
+             아이콘 하나로 통일. 검은 부분이 실제로 그려지는 선, 회색 부분은 안 건드리는 선.
+             글자 라벨 없이 아이콘만 두고, 이름·설명은 호버 말풍선(data-tip)으로 보여준다.
+             회색 획을 먼저, 검은 획을 나중에 그려 모서리가 겹칠 때 검정이 이긴다. -->
         <div class="cell-style-body">
           <button type="button" id="cellBorderPresetAll" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간의 정간마다 네 변 모두에 테두리를 그립니다.">
-            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true">
-              <rect x="1.5" y="1.5" width="11" height="17" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
-              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor" stroke-width="2"/>
-            </svg><span>전체</span></button>
+            data-tip="전체 — 선택한 구간의 정간마다 네 변 모두에 테두리를 그립니다.">
+            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+              <path d="M1.5 1.5 H12.5 V18.5 H1.5 Z" stroke="currentColor"/>
+              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
+            </g></svg></button>
           <button type="button" id="cellBorderPresetOuter" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간 전체를 사각형 하나로 보고 바깥쪽 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">
-            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true">
-              <line x1="3" y1="10" x2="11" y2="10" stroke="#cdc5b4" stroke-width="2"/>
-              <rect x="1.5" y="1.5" width="11" height="17" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
-            </svg><span>바깥쪽</span></button>
+            data-tip="바깥쪽 — 선택한 구간 전체를 사각형 하나로 보고 바깥 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">
+            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="#cdc5b4"/>
+              <path d="M1.5 1.5 H12.5 V18.5 H1.5 Z" stroke="currentColor"/>
+            </g></svg></button>
           <button type="button" id="cellBorderPresetInner" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">
-            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true">
-              <rect x="1.5" y="1.5" width="11" height="17" rx="1" fill="none" stroke="#cdc5b4" stroke-width="2"/>
-              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor" stroke-width="2"/>
-            </svg><span>안쪽</span></button>
+            data-tip="안쪽 — 선택한 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">
+            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+              <path d="M1.5 1.5 H12.5 V18.5 H1.5 Z" stroke="#cdc5b4"/>
+              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
+            </g></svg></button>
+          <span class="head-sep"></span>
+          <span class="cell-border-sides">
+            <button type="button" id="cellBorderSideTop" class="ribbon-btn tip cell-style-option"
+              data-tip="위쪽 — 선택한 각 정간의 위쪽 변만.">
+              <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+                <path d="M12.5 1.5 V18.5 H1.5 V1.5" stroke="#cdc5b4"/>
+                <line x1="1.5" y1="1.5" x2="12.5" y2="1.5" stroke="currentColor"/>
+                <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
+              </g></svg></button>
+            <button type="button" id="cellBorderSideRight" class="ribbon-btn tip cell-style-option"
+              data-tip="오른쪽 — 선택한 각 정간의 오른쪽 변만.">
+              <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+                <path d="M12.5 1.5 H1.5 V18.5 H12.5" stroke="#cdc5b4"/>
+                <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="#cdc5b4"/>
+                <line x1="12.5" y1="1.5" x2="12.5" y2="18.5" stroke="currentColor"/>
+              </g></svg></button>
+            <button type="button" id="cellBorderSideBottom" class="ribbon-btn tip cell-style-option"
+              data-tip="아래쪽 — 선택한 각 정간의 아래쪽 변만.">
+              <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+                <path d="M1.5 18.5 V1.5 H12.5 V18.5" stroke="#cdc5b4"/>
+                <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
+                <line x1="1.5" y1="18.5" x2="12.5" y2="18.5" stroke="currentColor"/>
+              </g></svg></button>
+            <button type="button" id="cellBorderSideLeft" class="ribbon-btn tip cell-style-option"
+              data-tip="왼쪽 — 선택한 각 정간의 왼쪽 변만.">
+              <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+                <path d="M1.5 1.5 H12.5 V18.5 H1.5" stroke="#cdc5b4"/>
+                <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="#cdc5b4"/>
+                <line x1="1.5" y1="1.5" x2="1.5" y2="18.5" stroke="currentColor"/>
+              </g></svg></button>
+          </span>
         </div>
         <div class="cell-style-body">
-          <span class="cell-border-sides">
-            <button type="button" id="cellBorderSideTop" class="ribbon-btn tip cell-style-option" data-tip="위쪽 변만 직접 선택">위</button>
-            <button type="button" id="cellBorderSideRight" class="ribbon-btn tip cell-style-option" data-tip="오른쪽 변만 직접 선택">오</button>
-            <button type="button" id="cellBorderSideBottom" class="ribbon-btn tip cell-style-option" data-tip="아래쪽 변만 직접 선택">아</button>
-            <button type="button" id="cellBorderSideLeft" class="ribbon-btn tip cell-style-option" data-tip="왼쪽 변만 직접 선택">왼</button>
-          </span>
           <select id="cellBorderWidthSelect" title="굵기">
             <option value="thin">얇게</option>
             <option value="medium" selected>보통</option>
@@ -746,11 +773,6 @@
         <div class="ribbon-group">
           <button type="button" id="lyricsUndo" class="ribbon-btn tip" data-tip="방금 초기화한 가사를 되돌립니다">↶<span>되돌리기</span></button>
           <button type="button" id="lyricsReset" class="ribbon-btn tip" data-tip="가사 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲<span>초기화</span></button>
-        </div>
-        <div class="ribbon-sep"></div>
-        <div class="ribbon-group">
-          <button type="button" id="lyricsToTextBtn" class="ribbon-btn tip"
-            data-tip="지금까지 입력한 가사 전체를(|·줄바꿈 없이 이어서) 텍스트 항목으로 추가합니다. 악보 위에서 자유롭게 옮기고 크기를 조절할 수 있습니다.">全<span>전체 가사 담기</span></button>
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group ribbon-select-group">
