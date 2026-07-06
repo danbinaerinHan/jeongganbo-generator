@@ -1,0 +1,129 @@
+% ============================================================
+% 정간보 생성기 논문 초안 — 디지털콘텐츠학회논문지(JDCS) 투고용
+% ------------------------------------------------------------
+% 컴파일 (XeLaTeX 필수 — 한글 폰트):
+%   xelatex main && bibtex main && xelatex main && xelatex main
+%
+% ※ JDCS는 공식 LaTeX 템플릿이 없고 HWP 템플릿만 제공한다.
+%   이 초안은 JDCS 논문 구성(국문요약+영문 Abstract, 번호 매긴
+%   참고문헌)을 따르되 조판은 일반 2단 article로 잡았다.
+%   최종 투고 시 HWP 템플릿으로 옮기거나, 학회에 PDF 투고 가능
+%   여부를 확인할 것. [TODO]
+%
+% ※ 폰트: macOS 기본 폰트 기준. Noto CJK가 설치돼 있으면
+%   아래 주석 처리된 줄로 바꾸는 쪽이 인쇄 품질이 좋다.
+% ============================================================
+\documentclass[twocolumn,10pt,a4paper]{article}
+
+\usepackage{kotex}                % xetexko — XeLaTeX로 컴파일
+% 한글 폰트: 설치된 것을 순서대로 시도 (macOS → Noto → kotex 기본 은글꼴)
+\IfFontExistsTF{Apple SD Gothic Neo}
+  {\setmainhangulfont[BoldFont={* Bold}]{Apple SD Gothic Neo}}
+  {\IfFontExistsTF{Noto Serif CJK KR}
+    {\setmainhangulfont{Noto Serif CJK KR}}
+    {}} % 둘 다 없으면 kotex 기본(UnBatang) — Overleaf에서도 동작
+
+\usepackage[margin=22mm,columnsep=7mm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.2em}
+\usepackage{cite}
+\usepackage[hidelinks]{hyperref}
+
+% 초안용 TODO 표시 — 투고 전 모두 해결하고 이 매크로 제거
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{[TODO: #1]}}}
+
+% 인라인 문법 표기용
+\newcommand{\code}[1]{\texttt{#1}}
+
+\title{\Large\textbf{정간보 생성기: 사람이 읽는 텍스트 문법 기반의\\
+웹 정간보 편집·조판 시스템 설계 및 구현}\\[4pt]
+\large Design and Implementation of a Web-Based Jeongganbo Notation Editor\\
+with a Human-Readable Text Grammar}
+
+% ------------------------------------------------------------
+% TODO: 저자 정보 — 이름·소속·이메일·교신저자 표기를 채울 것.
+%       JDCS 양식은 국문·영문 성명과 소속을 모두 요구한다.
+% ------------------------------------------------------------
+\author{\TODO{저자명} \\ \small \TODO{소속·이메일}}
+\date{}
+
+\begin{document}
+
+\twocolumn[
+\maketitle
+\vspace{-1.5em}
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\small
+\textbf{요\ 약}\quad
+정간보(井間譜)는 15세기에 창안된 동아시아 최초의 유량악보(mensural notation)로,
+오늘날에도 국악 기보의 표준으로 쓰인다. 그러나 서양 오선보 중심의 상용 사보
+소프트웨어는 정간보의 구조 --- 시가(時價)를 기호가 아닌 \emph{위치}로 나타내는 격자,
+오른쪽에서 왼쪽으로 진행하는 세로쓰기, 율명·시김새 --- 를 지원하지 않으며,
+국악 현장은 여전히 워드프로세서 표 기능을 이용한 수작업 조판에 의존한다.
+본 논문은 서버 없이 브라우저만으로 동작하는 정간보 편집·조판·출판 시스템
+``정간보 생성기''를 제안한다. 제안 시스템의 핵심은 (1) 줄바꿈·구분자·공백만으로
+각(刻)·정간·분박을 표현하는 사람이 읽고 쓸 수 있는 경량 텍스트 문법,
+(2) 악보를 직접 클릭해 입력하는 WYSIWYG 방식과 텍스트 편집을 양방향 동기화한
+이중 입력 구조, (3) 우종서 배치·대강(大綱)선·이음표 축약·옥타브 변형 한자 등
+전통 조판 관행의 규칙화와 시김새 59종의 벡터 렌더링,
+(4) A4 물리 단위 기반 SVG 조판으로부터의 인쇄·PDF·고해상도 PNG 출력과
+JSON 문서 교환 포맷, 그리고 Web Audio 기반 재생이다.
+제안 문법은 기존 XML 기반 기술 방식보다 간결하면서 격자 구조와 일대일로
+대응하며, 시스템 전체가 정적 파일만으로 구성되어 설치·계정 없이
+교육·창작·기록 보존에 즉시 활용될 수 있다.
+\\[2pt]
+\textbf{중심어}\,: 정간보, 국악, 악보 표기 문법, 웹 애플리케이션, SVG 조판, 디지털 문화유산
+\\[8pt]
+\textbf{Abstract}\quad
+Jeongganbo, devised in the 15th century, is the first mensural music notation
+in East Asia and remains the standard for notating Korean traditional music.
+Mainstream engraving software built around Western staff notation, however,
+cannot express its defining features---a grid in which duration is encoded by
+\emph{position} rather than by symbols, right-to-left vertical layout, and
+ornamentation (sigimsae)---so practitioners still typeset scores manually with
+word-processor tables. This paper presents \emph{Jeongganbo Editor}, a
+client-side web system for editing, engraving, and publishing jeongganbo
+scores without any server. The system contributes (1) a human-readable,
+lightweight text grammar that maps line breaks, separators, and spaces
+one-to-one onto gak, jeonggan, and beat subdivisions; (2) a dual editing model
+that keeps a click-to-edit WYSIWYG view and a plain-text editor in two-way
+synchronization; (3) codified traditional engraving conventions---right-to-left
+column flow, daegang lines, sustained-tone compression, octave-variant Hanja---
+together with vector rendering of 59 sigimsae ornaments; and (4) print, PDF,
+and 300-dpi PNG export from millimeter-accurate SVG layout, a JSON interchange
+format, and Web Audio playback. The grammar is more concise than previous
+XML-based encodings while remaining structurally faithful, and the entire
+system ships as static files, making it immediately usable for education,
+composition, and digital preservation.
+\\[2pt]
+\textbf{Keywords}\,: Jeongganbo, Korean traditional music, notation grammar,
+web application, SVG engraving, digital heritage
+\end{minipage}
+\end{center}
+\vspace{1.5em}
+]
+
+\input{sections/01-intro}
+\input{sections/02-related}
+\input{sections/03-grammar}
+\input{sections/04-system}
+\input{sections/05-discussion}
+\input{sections/06-conclusion}
+
+% ------------------------------------------------------------
+% 참고문헌 — ieeetr: 인용 순서 번호 방식(JDCS 관례와 유사)
+% ------------------------------------------------------------
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

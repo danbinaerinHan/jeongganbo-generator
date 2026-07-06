@@ -1,0 +1,168 @@
+% ============================================================
+% 정간보 생성기 논문 참고문헌
+% [TODO]가 붙은 항목은 원문 대조로 서지사항을 확정할 것.
+% ============================================================
+
+% ---- 정간보 전산화: 인코딩 ---------------------------------
+
+@article{lee2013xml,
+  author  = {이용주},
+  title   = {확장 마크업 언어({XML})를 이용한 정간보 악보 표기법에 관한 연구},
+  journal = {한국음향학회지},
+  volume  = {32},
+  number  = {5},
+  pages   = {446--455},
+  year    = {2013},
+  note    = {TODO: 공저자 유무·DOI(추정 10.7776/ASK.2013.32.5.446) 원문 확인.
+             원문: https://www.jask.or.kr/articles/xml/aMMG/}
+}
+
+@misc{patent2017jgb,
+  author       = {{한국전자통신연구원}},
+  title        = {정간보 악보 기술 방법 및 정간보 악보 재생 방법},
+  howpublished = {대한민국 등록특허 KR101789851B1},
+  year         = {2017},
+  note         = {TODO: 발명자 성명 확인.
+                  https://patents.google.com/patent/KR101789851B1/ko}
+}
+
+@inproceedings{han2024sixdragons,
+  author    = {Han, Danbinaerin and Gotham, Mark and Kim, Dongmin and
+               Park, Hannah and Lee, Sihun and Jeong, Dasaem},
+  title     = {Six Dragons Fly Again: Reviving 15th-Century Korean Court
+               Music with Transformers and Novel Encoding},
+  booktitle = {Proceedings of the 25th International Society for Music
+               Information Retrieval Conference (ISMIR)},
+  year      = {2024},
+  note      = {arXiv:2408.01096. TODO: 최종 발행 페이지 확인}
+}
+
+% ---- 정간보 전산화: 인식(OMR) ------------------------------
+
+@article{kim2025omr,
+  author  = {{MALerLab 연구진}},
+  title   = {On the Automatic Recognition of Jeongganbo Music Notation:
+             Dataset and Approach},
+  journal = {ACM Journal on Computing and Cultural Heritage},
+  year    = {2025},
+  doi     = {10.1145/3715159},
+  note    = {TODO: 저자 명단·권호·페이지 확인 (dl.acm.org/doi/10.1145/3715159).
+             데이터·코드: https://github.com/MALerLab/jeongganbo-omr}
+}
+
+% ---- 정간보 전산화: 도구 -----------------------------------
+
+@article{jkca2022web,
+  author  = {{저자 미상}},
+  title   = {Designing a Web-Based Jeongganbo Notation Program
+             (웹 기반 정간보 사보 프로그램 설계)},
+  journal = {한국콘텐츠학회논문지},
+  volume  = {22},
+  year    = {2022},
+  note    = {TODO: 저자·국문 제목·호·페이지·DOI 확인.
+             KoreaScience JAKO202213253766158}
+}
+
+@misc{jeongganbo-editor-web,
+  title        = {정간보 에디터 --- 국악 악보 제작 도구},
+  howpublished = {웹 소프트웨어, \texttt{https://jeongganbo.com}},
+  year         = {2024},
+  note         = {TODO: 개발자·최초 공개 연도 확인.
+                  소스: https://github.com/depth221/Jeongganbo-editor}
+}
+
+@misc{musescore-jgb-request,
+  title        = {Jeongganbo Notation (feature request)},
+  howpublished = {MuseScore 커뮤니티 포럼,
+                  \texttt{https://musescore.org/en/node/356508}},
+  year         = {2023},
+  note         = {TODO: 게시 연도 확인}
+}
+
+% ---- 정간보·국악 기보 일반 ---------------------------------
+
+@book{kwon2000notation,
+  author    = {권오성},
+  title     = {한국음악의 기보법 (History of Korean Notations)},
+  publisher = {TODO: 출판사},
+  year      = {2000},
+  note      = {TODO: 정간보 역사 서술의 근거 문헌 확정 --- 대안:
+             장사훈, 『국악총론』(세광음악출판사); 이혜구,
+             「정간보의 시가 해석」 계열 논문. 실제 인용할 판본으로 교체할 것}
+}
+
+% TODO(추가 후보): 국립국악원 표준 기보법 간행물 --- 시김새 59종의
+% 명칭·형태 전거로 인용 필요. 예: 국립국악원, 『국악기 연주법과 기보법』
+% 또는 『한국음악 기보법 통일안』. 정확한 서지 확인 후 추가.
+
+% TODO(추가 후보): 사례 연구(5.2절)에서 재현 대상으로 삼은
+% 취타·군악 악보의 원 간행물 서지 (국립국악원 『한국음악』 시리즈 등).
+
+% ---- 서양 기보 인코딩·렌더링 (비교 대상) --------------------
+
+@incollection{good2001musicxml,
+  author    = {Good, Michael},
+  title     = {{MusicXML}: An Internet-Friendly Format for Sheet Music},
+  booktitle = {Proceedings of XML 2001},
+  year      = {2001},
+  pages     = {3--4},
+  note      = {TODO: 페이지 확인}
+}
+
+@misc{mei,
+  author       = {{Music Encoding Initiative}},
+  title        = {{MEI} Guidelines},
+  howpublished = {\texttt{https://music-encoding.org}},
+  year         = {2023},
+  note         = {TODO: 인용 시점 버전 명시}
+}
+
+@article{verovio,
+  author  = {Pugin, Laurent and Zitellini, Rodolfo and Roland, Perry},
+  title   = {Verovio: A library for Engraving {MEI} Music Notation into {SVG}},
+  journal = {Proceedings of the 15th International Society for Music
+             Information Retrieval Conference (ISMIR)},
+  year    = {2014},
+  pages   = {107--112}
+}
+
+@misc{abc,
+  author       = {Walshaw, Chris},
+  title        = {The {ABC} Music Standard 2.1},
+  howpublished = {\texttt{https://abcnotation.com/wiki/abc:standard:v2.1}},
+  year         = {2011}
+}
+
+@book{humdrum,
+  author    = {Huron, David},
+  title     = {The Humdrum Toolkit: Reference Manual},
+  publisher = {Center for Computer Assisted Research in the Humanities},
+  year      = {1994},
+  note      = {**kern 표기 전거}
+}
+
+@misc{musescore,
+  author       = {{MuseScore BVBA}},
+  title        = {MuseScore: Free Music Composition and Notation Software},
+  howpublished = {\texttt{https://musescore.org}},
+  year         = {2026},
+  note         = {버전 명시 필요 --- TODO}
+}
+
+% ---- 웹 표준 ------------------------------------------------
+
+@misc{svg,
+  author       = {{W3C}},
+  title        = {Scalable Vector Graphics ({SVG}) 2},
+  howpublished = {W3C Candidate Recommendation,
+                  \texttt{https://www.w3.org/TR/SVG2/}},
+  year         = {2018}
+}
+
+@misc{webaudio,
+  author       = {{W3C}},
+  title        = {Web Audio {API}},
+  howpublished = {W3C Recommendation,
+                  \texttt{https://www.w3.org/TR/webaudio/}},
+  year         = {2021}
+}
