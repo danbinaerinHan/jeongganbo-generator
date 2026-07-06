@@ -46,7 +46,7 @@
   // 상태를 미리 보여준다. 렌더마다 호출(선택이 render()로만 바뀌므로).
   const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle", "cellFillEraseToggle",
     "cellBorderPaintToggle", "cellBorderEraseToggle",
-    "cellBorderPresetAll", "cellBorderPresetOuter", "cellBorderPresetInner", "cellBorderPresetNone"];
+    "cellBorderPresetAll", "cellBorderPresetOuter", "cellBorderPresetInner"];
   function refreshMelSelBtns() {
     const on = hasMelSel();
     MEL_SEL_BTN_IDS.forEach(function (id) {
@@ -744,33 +744,65 @@
     });
     render();
   }
-  // 테두리 한 변 그리기 — 실선/점선/이중선. 이중선은 나란한 두 줄을 살짝 띄워서 그린다.
-  function drawBorderSide(svg, x1, y1, x2, y2, widthKey, styleKey) {
-    const w = CELL_BORDER_WIDTH_PX[widthKey] || CELL_BORDER_WIDTH_PX.medium;
-    // 이 자리에 이미 그려져 있는 격자선(정간 칸 구분선·대강선 등)의 폭까지 감안해 먼저 흰 선으로
-    // 덮어 지운 뒤 원하는 스타일을 그린다 — 안 그러면 점선일 때 그 틈으로 밑에 깔린 실선이
-    // 그대로 비쳐서 "실선 위에 점선이 얹힌" 것처럼 보인다.
-    const halfExtent = (styleKey === "double") ? (Math.max(w, 0.5) + w / 2.4) : (w / 2);
-    const maskW = halfExtent * 2 + 0.4;
-    svg.appendChild(el("line", { x1, y1, x2, y2, stroke: "#fff", "stroke-width": maskW, "stroke-linecap": "square" }));
-    if (styleKey === "double") {
-      const gap = Math.max(w, 0.5);
-      const dx = (y1 === y2) ? 0 : gap;   // 세로선(좌/우)이면 가로로 두 줄을 벌림
-      const dy = (x1 === x2) ? 0 : gap;   // 가로선(상/하)이면 세로로 두 줄을 벌림
-      const half = w / 2.4;
-      svg.appendChild(line(x1 - dx, y1 - dy, x2 - dx, y2 - dy, half));
-      svg.appendChild(line(x1 + dx, y1 + dy, x2 + dx, y2 + dy, half));
-    } else {
-      const ln = line(x1, y1, x2, y2, w);
-      if (styleKey === "dashed") ln.setAttribute("stroke-dasharray", (w * 2.5) + "," + (w * 1.8));
-      svg.appendChild(ln);
+  // 이중선 두 줄 사이 간격(선 중심 기준) — 굵기에 비례하되 너무 벌어지지 않게
+  function borderDoubleGap(w) { return Math.max(w * 0.55, 0.3); }
+  // 흰 마스크의 반경 — 밑에 깔린 격자선을 먼저 덮어 지워야 점선 틈으로 실선이 비치지 않는다.
+  // '없음'(줄 숨김)은 선을 새로 그리지 않고 이 마스크만 남기므로, 숨겨야 할 기존 격자선
+  // (정간 세로선 T_THICK, 대강선 T_DAEGANG)보다 넉넉하게 잡는다.
+  function borderMaskHalf(w, styleKey) {
+    if (styleKey === "double") return borderDoubleGap(w) + w / 2.4;
+    if (styleKey === "none") return Math.max(T_THICK, T_DAEGANG) / 2 + 0.15;
+    return w / 2;
+  }
+  // 한 각(세로 열)의 커스텀 테두리를 선분 목록으로 모은다. 좌/우 세로선은 같은 굵기·종류로
+  // 이어지는 칸끼리 한 선분으로 합친다 — 칸마다 따로 그리면 굵은 선·점선·이중선이 칸 경계에서
+  // 끊겨 보인다. 그리기는 render 쪽에서 두 단계(마스크 전부 → 선 전부)로 나눠서 하는데,
+  // 나중 칸의 흰 마스크가 먼저 그린 선의 모서리를 지우는 일이 없게 하기 위해서다.
+  function collectCellBorderSegs(segs, gi, x, gridTop, cell, beats) {
+    const row = cellStyles[gi];
+    if (!row) return;
+    ["left", "right"].forEach(function (side) {
+      const sx = side === "left" ? x : x + cell;
+      let runStart = 0, runKey = null, runSpec = null;
+      for (let j = 0; j <= beats; j++) {
+        const bs = (j < beats && row[j] && row[j].border) ? row[j].border[side] : null;
+        const key = bs ? (bs.width + "|" + bs.style) : null;
+        if (key === runKey) continue;
+        if (runKey) segs.push({ x1: sx, y1: gridTop + runStart * cell, x2: sx, y2: gridTop + j * cell,
+                                width: runSpec.width, style: runSpec.style });
+        runStart = j; runKey = key; runSpec = bs;
+      }
+    });
+    for (let j = 0; j < beats; j++) {
+      const b = row[j] && row[j].border;
+      if (!b) continue;
+      if (b.top) segs.push({ x1: x, y1: gridTop + j * cell, x2: x + cell, y2: gridTop + j * cell,
+                             width: b.top.width, style: b.top.style });
+      if (b.bottom) segs.push({ x1: x, y1: gridTop + (j + 1) * cell, x2: x + cell, y2: gridTop + (j + 1) * cell,
+                                width: b.bottom.width, style: b.bottom.style });
     }
   }
-  function drawCellBorder(svg, cx, cy, w, h, bs) {
-    if (bs.top) drawBorderSide(svg, cx, cy, cx + w, cy, bs.top.width, bs.top.style);
-    if (bs.bottom) drawBorderSide(svg, cx, cy + h, cx + w, cy + h, bs.bottom.width, bs.bottom.style);
-    if (bs.left) drawBorderSide(svg, cx, cy, cx, cy + h, bs.left.width, bs.left.style);
-    if (bs.right) drawBorderSide(svg, cx + w, cy, cx + w, cy + h, bs.right.width, bs.right.style);
+  function drawBorderMask(svg, s) {
+    const w = CELL_BORDER_WIDTH_PX[s.width] || CELL_BORDER_WIDTH_PX.medium;
+    const maskW = borderMaskHalf(w, s.style) * 2 + 0.4;
+    svg.appendChild(el("line", { x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2,
+      stroke: "#fff", "stroke-width": maskW, "stroke-linecap": "square" }));
+  }
+  function drawBorderStroke(svg, s) {
+    if (s.style === "none") return;   // '없음'은 마스크만 — 그 자리 격자선을 숨긴다
+    const w = CELL_BORDER_WIDTH_PX[s.width] || CELL_BORDER_WIDTH_PX.medium;
+    if (s.style === "double") {
+      const gap = borderDoubleGap(w);
+      const dx = (s.y1 === s.y2) ? 0 : gap;   // 세로선(좌/우)이면 가로로 두 줄을 벌림
+      const dy = (s.x1 === s.x2) ? 0 : gap;   // 가로선(상/하)이면 세로로 두 줄을 벌림
+      const half = w / 2.4;
+      svg.appendChild(line(s.x1 - dx, s.y1 - dy, s.x2 - dx, s.y2 - dy, half));
+      svg.appendChild(line(s.x1 + dx, s.y1 + dy, s.x2 + dx, s.y2 + dy, half));
+    } else {
+      const ln = line(s.x1, s.y1, s.x2, s.y2, w);
+      if (s.style === "dashed") ln.setAttribute("stroke-dasharray", (w * 2.5) + "," + (w * 1.8));
+      svg.appendChild(ln);
+    }
   }
 
   // 장단 초기화 / 되돌리기
@@ -2531,6 +2563,10 @@
       const ph = rect(0, 0, 0, 0, 0, { fill: "#60a5fa", "fill-opacity": "0.5", stroke: "none", class: "no-print" });
       ph.style.display = "none"; svg.appendChild(ph); playHi.push(ph);
 
+      // 정간 커스텀 테두리 — 각 칸에서 바로 그리지 않고 페이지 단위로 모아뒀다가,
+      // 밴드 통줄·대강선까지 다 그려진 뒤에 한꺼번에 그린다. 그래야 '없음'(줄 숨김)의
+      // 흰 마스크가 그 선들 위에 얹혀 실제로 숨겨지고, 굵은 선도 끊김 없이 이어진다.
+      const cellBorderSegs = [];
       for (let b = 0; b < usedBands; b++) {
         const bandTop = gridY + b * (bandH + bandGap);
         const gridTop = bandTop + headH;
@@ -2605,11 +2641,8 @@
           for (let i = 1; i < beats; i++) {
             if (!dgSet.has(i)) svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
           }
-          // 정간 커스텀 테두리 — 격자선 위에 겹쳐 그려서 사용자가 지정한 변이 도드라지게 한다
-          for (let j = 0; j < beats; j++) {
-            const bs = cellStyles[melIdx] && cellStyles[melIdx][j] && cellStyles[melIdx][j].border;
-            if (bs) drawCellBorder(svg, x, gridTop + j * cell, cell, cell, bs);
-          }
+          // 정간 커스텀 테두리 — 선분만 모아두고 그리기는 밴드 루프가 끝난 뒤에(위 주석 참고)
+          collectCellBorderSegs(cellBorderSegs, melIdx, x, gridTop, cell, beats);
 
           // 각 번호(보조) — 각 아래 옅은 회색 작은 숫자 (문서 탭 옵션, '화면에만'이면 출력에서 제외)
           if (gakNumMode !== "none") {
@@ -2755,6 +2788,11 @@
           svg.appendChild(line(musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG));
         });
       }
+
+      // 정간 커스텀 테두리 — 마스크 전부를 먼저, 선 전부를 나중에(두 단계). 순서를 섞으면
+      // 이웃 칸의 흰 마스크가 앞서 그린 선의 모서리를 지워 선이 끊겨 보인다.
+      cellBorderSegs.forEach(function (s) { drawBorderMask(svg, s); });
+      cellBorderSegs.forEach(function (s) { drawBorderStroke(svg, s); });
 
       // 제목 칸(세로 표기) — 예시 악보처럼 프레임 위에서 아래까지 한 통짜리 세로 칸으로 그린다.
       // 왼쪽 세로선 하나만 긋고, 오른쪽 경계는 바깥 테두리가 겸한다. 밴드 통줄이 이 선까지 이어진다.
@@ -3792,7 +3830,9 @@
   $("cellBorderStyleSelect").addEventListener("change", function () {
     cellBorderStyle = $("cellBorderStyleSelect").value;
   });
-  // 테두리 프리셋 4개 — 정간보는 열이 하나뿐인 표라고 보고, 있을 법한 조합만 빠르게 고르게 함.
+  // 테두리 프리셋 3개(전체/바깥쪽/안쪽) — 정간보는 열이 하나뿐인 표라고 보고, 있을 법한 조합만
+  // 빠르게 고르게 함. '없음'(줄 숨김)은 프리셋이 아니라 선 종류 선택지에 있다 — 지우기(원래
+  // 격자로 복귀)와 달리 그 자리 격자선 자체를 흰 마스크로 숨기는 별개 스타일이라서.
   // 프리셋도 즉시 실행(누르면 바로 지금 선택된 구간에 적용)이라, 골라만 두고 칠하기/지우기를
   // 따로 눌러도 되고, 프리셋 버튼 자체로 바로 적용해도 된다.
   function checkAllBorderSides() {
@@ -3817,11 +3857,6 @@
     $("cellBorderPresetInner").classList.add("on");
     $("cellBorderPresetOuter").classList.remove("on");
     applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
-  });
-  $("cellBorderPresetNone").addEventListener("click", function () {
-    clearCellBorderPresetHighlight();
-    checkAllBorderSides();
-    applyBorderToSelection(null);
   });
   // 정간 구간 선택 — 드래그(다른 칸으로 번짐)로 확정되면 선택을 유지, 안 번지면(그냥 클릭)
   // 그 칸을 편집한다. 손을 뗀 위치가 정간 밖이어도 여기서 판가름한다.

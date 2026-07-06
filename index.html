@@ -647,15 +647,27 @@
         <div class="cell-style-sec-title">테두리</div>
         <!-- 정간보는 열이 하나뿐인 표라고 보고 고른 프리셋 — 악보에서 정간 구간을 드래그로
              먼저 고른 뒤 누르면 바로 적용된다(워드·페이지스의 테두리 프리셋과 비슷한 방식). -->
+        <!-- 프리셋 아이콘 — 정간 두 칸을 쌓은 '8'자 모양. 검은 부분이 실제로 그려지는 선,
+             회색 부분은 이번 프리셋이 건드리지 않는 선이라 어디에 적용되는지 한눈에 보인다. -->
         <div class="cell-style-body">
           <button type="button" id="cellBorderPresetAll" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간의 정간마다 네 변 모두에 테두리를 그립니다.">▦<span>전체</span></button>
+            data-tip="선택한 구간의 정간마다 네 변 모두에 테두리를 그립니다.">
+            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true">
+              <rect x="1.5" y="1.5" width="11" height="17" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor" stroke-width="2"/>
+            </svg><span>전체</span></button>
           <button type="button" id="cellBorderPresetOuter" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간 전체를 사각형 하나로 보고 바깥쪽 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">▢<span>바깥쪽</span></button>
+            data-tip="선택한 구간 전체를 사각형 하나로 보고 바깥쪽 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">
+            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true">
+              <line x1="3" y1="10" x2="11" y2="10" stroke="#cdc5b4" stroke-width="2"/>
+              <rect x="1.5" y="1.5" width="11" height="17" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+            </svg><span>바깥쪽</span></button>
           <button type="button" id="cellBorderPresetInner" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">≡<span>안쪽</span></button>
-          <button type="button" id="cellBorderPresetNone" class="ribbon-btn tip cell-style-option"
-            data-tip="선택한 구간의 테두리를 모두 지웁니다.">⊘<span>없음</span></button>
+            data-tip="선택한 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">
+            <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true">
+              <rect x="1.5" y="1.5" width="11" height="17" rx="1" fill="none" stroke="#cdc5b4" stroke-width="2"/>
+              <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor" stroke-width="2"/>
+            </svg><span>안쪽</span></button>
         </div>
         <div class="cell-style-body">
           <span class="cell-border-sides">
@@ -669,10 +681,11 @@
             <option value="medium" selected>보통</option>
             <option value="thick">굵게</option>
           </select>
-          <select id="cellBorderStyleSelect" title="선 종류">
+          <select id="cellBorderStyleSelect" title="선 종류 — '없음'은 선을 새로 긋는 대신 그 자리의 원래 정간줄까지 숨깁니다">
             <option value="solid" selected>실선</option>
             <option value="dashed">점선</option>
             <option value="double">이중선</option>
+            <option value="none">없음(줄 숨김)</option>
           </select>
         </div>
         <div class="cell-style-body">

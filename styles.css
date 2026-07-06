@@ -617,9 +617,13 @@
   .cell-style-body select { font-size: 12px; padding: 5px 20px 5px 8px; border: 1px solid var(--line);
                              border-radius: 6px; font-family: inherit; background-color: #fff; cursor: pointer; }
 
-  /* 설정 칩(테두리 프리셋 4개 + 변 직접 선택 4개) — 조용한 톤. 선택돼도 살짝만 강조해서
+  /* 설정 칩(테두리 프리셋 3개 + 변 직접 선택 4개) — 조용한 톤. 선택돼도 살짝만 강조해서
      "지금 켜진 도구"(아래 실행 버튼)와 구분되게 한다. */
   .cell-border-sides { display: inline-flex; gap: 2px; }
+  /* 프리셋 아이콘('8'자 두 칸) — 검은(currentColor) 부분이 그려질 선, 회색은 안 건드리는 선.
+     색을 currentColor로 둬서 켜짐(.on)·비활성 상태의 글자색 변화를 그대로 따라간다. */
+  .cbp-ico { width: 13px; height: 18px; flex: 0 0 auto; display: block; color: var(--ink); }
+  .cell-style-option.on .cbp-ico { color: var(--accent); }
   .cell-style-option { flex-direction: row; width: auto; gap: 4px; padding: 5px 9px; font-size: 12px; font-weight: 600;
                        color: var(--muted); border: 1px solid var(--line); border-radius: 7px; background: #fff; }
   .cell-style-option span { font-size: 10px; font-weight: 600; color: var(--muted); }
