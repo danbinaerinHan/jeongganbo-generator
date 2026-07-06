@@ -1,33 +1,55 @@
+  /* 색은 전부 역할별 변수로 정의 — 라이트 값은 예전 하드코딩과 동일하게 두고,
+     다크모드(body.dark, 파일 끝)는 이 변수 값만 갈아끼운다. 악보(종이)는 별도 흰색
+     SVG라 다크에서도 그대로 흰 종이로 남는다(인쇄·PNG 출력이 안 바뀜). */
   :root {
-    --bg: #f4f4f2;
-    --panel: #ffffff;
-    --line: #d9d6cf;
-    --ink: #1c1b19;
-    --accent: #8a6d3b;
-    --muted: #6b6a66;
+    --bg: #f4f4f2;          /* 앱 바탕 */
+    --panel: #ffffff;       /* 카드·입력·버튼 등 표면(흰색) */
+    --soft: #faf8f3;        /* 리본·안내·읽기창 등 은은한 따뜻한 바탕 */
+    --hover: #f0ece3;       /* 버튼·항목 호버 바탕 */
+    --track: #e4e0d6;       /* 토글 스위치 꺼짐 트랙 */
+    --line: #d9d6cf;        /* 테두리·구분선 */
+    --ink: #1c1b19;         /* 본문 글자 */
+    --muted: #6b6a66;       /* 보조 글자 */
+    --accent: #8a6d3b;      /* 강조(라이트=갈색, 다크=파랑) */
+    --accent-soft: #faf3e7; /* 강조 옅은 바탕(켜진 토글 등) */
+    --accent-tint: #f4e2c2; /* 선택된 옵션 바탕 */
+    --accent-glow: rgba(138,109,59,.15);  /* 입력 포커스 글로우 */
+    --overlay: rgba(255,255,255,.97);   /* 악보 위에 뜨는 도구창 바탕 */
+    --danger: #b23b3b;      /* 경고·지우기 빨강 */
+    --danger-2: #b3463c;    /* 지우기 버튼 빨강 */
+    --danger-soft: #fbeeec; /* 지우기 옅은 바탕 */
+    --danger-line: #ddb0aa; /* 지우기 테두리 */
+    --tip-bg: #2b2b2b;      /* 호버 말풍선(원래도 어두움) */
+    --tip-ink: #ffffff;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   button, select, input, textarea { transition: border-color .12s ease, background .12s ease; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
   input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
-    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(138,109,59,.15);
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
   }
 
   /* 체크박스 = 토글 스위치 하나로 통일 (기본 브라우저 체크박스 대체) */
   input[type="checkbox"] {
     appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
     width: 30px; height: 18px; border-radius: 999px;
-    background: #e4e0d6; border: 1px solid var(--line); position: relative; cursor: pointer;
+    background: var(--track); border: 1px solid var(--line); position: relative; cursor: pointer;
     transition: background .15s ease, border-color .15s ease;
   }
   input[type="checkbox"]::after {
     content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
-    border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.28);
+    /* 손잡이는 트랙(꺼짐)·강조색(켜짐) 어느 쪽 위에서도 보이게 늘 밝게 — 실물 스위치처럼 */
+    border-radius: 50%; background: #f5f4f1; box-shadow: 0 1px 2px rgba(0,0,0,.28);
     transition: transform .15s ease;
   }
   input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
   input[type="checkbox"]:checked::after { transform: translateX(12px); }
+  /* 폼 컨트롤 기본 바탕·글자색 — 배경을 안 정한 입력칸이 다크모드에서 브라우저 기본
+     흰색으로 남지 않게 한다(라이트에선 var(--panel)=흰색이라 겉보기 변화 없음). */
+  input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
+  select, textarea { background-color: var(--panel); color: var(--ink); }
+  textarea::placeholder, input::placeholder { color: var(--muted); opacity: .8; }
 
   /* 셀렉트 = 화살표 아이콘 통일 (기본 브라우저 화살표 대체) */
   select {
@@ -44,7 +66,7 @@
     transition: background .12s ease, color .12s ease, transform .12s ease;
   }
   .icon-btn svg { width: 15px; height: 15px; stroke-width: 2; }
-  .icon-btn:hover { background: #f0ece3; color: var(--ink); }
+  .icon-btn:hover { background: var(--hover); color: var(--ink); }
   .icon-btn.on { background: var(--accent); color: #fff; }
   .icon-btn.collapsed svg.chev { transform: rotate(-90deg); }
 
@@ -74,12 +96,12 @@
   #topBar .mode-lab { font-size: 12px; font-weight: 700; color: var(--ink); margin: 0; }
   #topBar .mode-seg { display: flex; gap: 5px; }
   #topBar .mode-seg .seg-btn {
-    border: 1px solid var(--line); border-radius: 7px; background: #fff;
+    border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
     color: var(--muted); font-size: 12px; font-weight: 700; padding: 5px 14px;
     cursor: pointer; font-family: inherit;
     transition: background .12s ease, color .12s ease, border-color .12s ease;
   }
-  #topBar .mode-seg .seg-btn:hover { color: var(--ink); background: #f0ece3; }
+  #topBar .mode-seg .seg-btn:hover { color: var(--ink); background: var(--hover); }
   #topBar .mode-seg .seg-btn.active {
     background: var(--accent); color: #fff; border-color: var(--accent);
   }
@@ -89,21 +111,22 @@
   .topbar-doc-actions { display: flex; gap: 6px; align-items: center; }
   .topbar-sep { width: 1px; height: 18px; background: var(--line); }
   .topbar-btn {
-    border: 1px solid var(--line); border-radius: 7px; background: #fff;
+    border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
     color: var(--ink); font-size: 12px; font-weight: 700; padding: 5px 10px;
     cursor: pointer; font-family: inherit;
   }
-  .topbar-btn:hover { background: #f0ece3; }
-  .topbar-btn-danger { color: #b3463c; border-color: #ddb0aa; background: #fbeeec; }
-  .topbar-btn-danger:hover { background: #f6ddd9; }
+  .topbar-btn:hover { background: var(--hover); }
+  .topbar-btn-danger { color: var(--danger-2); border-color: var(--danger-line); background: var(--danger-soft); }
+  .topbar-btn-danger:hover { background: var(--danger-soft); }
   /* 새 문서/실행취소/다시실행 — 자주 누르는 전역 액션이라 아이콘만으로 작게 */
   .topbar-icon-btn {
     display: flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 7px;
-    background: #fff; color: var(--ink); font-size: 14px; cursor: pointer; font-family: inherit;
+    background: var(--panel); color: var(--ink); font-size: 14px; cursor: pointer; font-family: inherit;
   }
-  .topbar-icon-btn:hover { background: #f0ece3; }
-  .topbar-icon-btn:disabled { opacity: .35; cursor: default; background: #fff; }
+  .topbar-icon-btn:hover { background: var(--hover); }
+  .topbar-icon-btn:disabled { opacity: .35; cursor: default; background: var(--panel); }
+  .topbar-icon-btn svg { width: 15px; height: 15px; }
   /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
   #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
 
@@ -120,7 +143,10 @@
   #sidebar h1 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-  .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  /* 안내 문구 — 사이드바 전역 공통(예전엔 .field .hint만 걸려 .field 밖 안내는
+     기본 16px 큰 글씨로 튀었음). .hint 자체에 걸어 어디 있든 같은 톤으로. */
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .hint b { color: var(--ink); font-weight: 600; }
   .field input[type="number"],
   .field input[type="text"] {
     width: 100%;
@@ -130,11 +156,11 @@
     font-size: 14px;
     font-family: inherit;
   }
-  .field input:disabled { background: #f2f0ec; color: var(--muted); }
+  .field input:disabled { background: var(--soft); color: var(--muted); }
   .field input[type="range"] { width: 100%; padding: 0; accent-color: var(--accent); cursor: pointer; }
   .field select {
     width: 100%; padding: 8px 26px 8px 10px; border: 1px solid var(--line);
-    border-radius: 6px; font-size: 14px; font-family: inherit; background-color: #fff; cursor: pointer;
+    border-radius: 6px; font-size: 14px; font-family: inherit; background-color: var(--panel); cursor: pointer;
   }
   .row { display: flex; gap: 8px; align-items: center; }
   .two { display: flex; gap: 10px; }
@@ -161,10 +187,10 @@
   details.adv > summary {
     cursor: pointer; list-style: none;
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    background: #f4efe6; border: 1px solid var(--accent); border-radius: 8px;
+    background: var(--soft); border: 1px solid var(--accent); border-radius: 8px;
     padding: 11px 13px; margin-bottom: 14px; transition: background .15s ease;
   }
-  details.adv > summary:hover { background: #ece2d0; }
+  details.adv > summary:hover { background: var(--soft); }
   details.adv > summary::-webkit-details-marker { display: none; }
   details.adv > summary .lbl { display: flex; align-items: baseline; gap: 8px;
     font-size: 13px; font-weight: 700; color: var(--accent); }
@@ -174,7 +200,7 @@
   details.adv[open] > summary .chev { transform: rotate(180deg); }
 
   /* 율명 팔레트 — 음역(행) × 음계(열) 매트릭스 */
-  .palette { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  .palette { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
              width: max-content; min-width: 100%; }
   /* 시김새 뷰: 폭을 컬럼에 맞춰 줄바꿈 → 세로(위아래) 스크롤 */
   .palette.orn-view { width: auto; min-width: 0; }
@@ -196,16 +222,16 @@
   .palette .pi { flex: 0 0 31px; height: 40px; display: flex; align-items: center;
                  justify-content: center; border-radius: 5px; cursor: pointer;
                  transition: background .1s ease; }
-  .palette .pi:hover { background: #f0ece3; }
+  .palette .pi:hover { background: var(--hover); }
   .palette .pi img { width: 24px; height: 24px; object-fit: contain; }
   .palette .pi .pch { display: flex; align-items: center; justify-content: center;
-                      font-size: 19px; line-height: 1; color: #333; white-space: nowrap; }
-  .palette .pi.nofile .pch { color: #aaa; }
+                      font-size: 19px; line-height: 1; color: var(--ink); white-space: nowrap; }
+  .palette .pi.nofile .pch { color: var(--muted); }
   .palette .pi.has-cap { flex-direction: column; justify-content: center; height: 40px;
                          padding: 0; gap: 2px; }
-  .palette .pi .pch-cap { font-size: 8px; color: #aaa; line-height: 1; white-space: nowrap; }
+  .palette .pi .pch-cap { font-size: 8px; color: var(--muted); line-height: 1; white-space: nowrap; }
   .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
-  .palette .pmsg.err { color: #b23b3b; }
+  .palette .pmsg.err { color: var(--danger); }
 
   /* 피아노 팔레트 — 건반 위에 율명 표기, 팔레트 폭 안에서 옆으로 스크롤 */
   /* 건반 높이는 JS(fitPianoHeight)가 팔레트 영역에 맞춰 갱신 — 위아래 스크롤 없이 채움 */
@@ -214,8 +240,8 @@
             border: 1px solid #8f8d88; border-radius: 0 0 4px 4px; background: #fff;
             cursor: pointer; transition: background .1s ease; }
   .pkey-w:hover { background: #f0ece3; }
-  .pkey-w:active { background: #e6dfd0; }
-  .pkey-w.pk-ghost { background: #f3f1ec; cursor: default; pointer-events: none; }
+  .pkey-w:active { background: #faf8f3; }
+  .pkey-w.pk-ghost { background: #faf8f3; cursor: default; pointer-events: none; }
   .pkey-b { position: absolute; top: 0; width: 21px; height: 62%; z-index: 2;
             background: #2f2c28; border: 1px solid #1c1b19; border-radius: 0 0 3px 3px;
             cursor: pointer; transition: background .1s ease; }
@@ -241,13 +267,13 @@
                border: none; background: none; gap: 0; }
   .pal-view {
     position: relative; border: 1px solid var(--line); border-bottom: none;
-    border-radius: 6px 6px 0 0; background: #efe8da; color: var(--muted);
+    border-radius: 6px 6px 0 0; background: var(--soft); color: var(--muted);
     font-size: 12px; font-weight: 600; padding: 4px 11px; margin-right: -7px;
     z-index: 1; cursor: pointer; font-family: inherit; white-space: nowrap;
     transition: all .15s ease;
   }
   .pal-view:last-child { margin-right: 0; }
-  .pal-view:hover { color: var(--ink); background: #f3ede0; }
+  .pal-view:hover { color: var(--ink); background: var(--soft); }
   .pal-view.active {
     background: var(--accent); color: #fff; font-weight: 700; font-size: 15px;
     padding: 6px 16px; z-index: 3; transform: translateY(-3px);
@@ -257,7 +283,7 @@
      쓰는 규칙. 안내 패널이 좁은 레일 밖 오른쪽으로 펼쳐지게 한다. */
   #dockRail .melody-guide { top: 0; left: calc(100% + 8px); }
   #dockRail .rail-sep { height: 1px; background: var(--line); margin: 2px 4px 8px; }
-  .pal-seg .seg-btn { padding: 4px 10px; border: none; background: #fff; font-size: 12px;
+  .pal-seg .seg-btn { padding: 4px 10px; border: none; background: var(--panel); font-size: 12px;
                       white-space: nowrap;
                       font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
                       transition: background .12s ease, color .12s ease; }
@@ -276,14 +302,14 @@
      간격·패딩은 기본 폭(≈395px)에서 네 컨트롤이 한 줄에 들어가게 빠듯하게. */
   .yul-tools { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap;
                padding: 4px 7px; border: 1px solid var(--line); border-radius: 8px;
-               background: #faf8f3; }
+               background: var(--soft); }
   #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
   .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
                         white-space: nowrap; margin-right: 2px; }
 
   /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
   .sizebox { border: 1px solid var(--line); border-radius: 10px;
-             background: #faf8f3; padding: 14px 14px 6px; margin-bottom: 18px; }
+             background: var(--soft); padding: 14px 14px 6px; margin-bottom: 18px; }
   .sizebox .slider-field { margin-bottom: 12px; }
   .sizebox label small { font-weight: 400; font-size: 11px; color: var(--muted); }
   .sizebox details.adv { margin: 0; }
@@ -291,7 +317,7 @@
   .sizebox details.adv[open] > summary { margin-bottom: 12px; }
 
   .readout {
-    background: #f7f5f0;
+    background: var(--soft);
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 10px 12px;
@@ -301,11 +327,11 @@
     margin-bottom: 18px;
   }
   .readout b { color: var(--ink); }
-  .warn { color: #b23b3b; font-size: 11px; margin-top: 6px; }
+  .warn { color: var(--danger); font-size: 11px; margin-top: 6px; }
   /* 선율↔장단·가사 각/정간 수 어긋남 경고 — 타이핑 중엔 조용히 안 맞다가 다음 구조
      변경 때 넘치는 내용이 말없이 잘리는 걸 막기 위해, 해당 탭 바로 위에서 바로 알려준다 */
-  .gak-warn { display: none; font-size: 11px; line-height: 1.5; color: #8a2f2f;
-              background: #fbeaea; border: 1px solid #eecccc; border-radius: 7px;
+  .gak-warn { display: none; font-size: 11px; line-height: 1.5; color: var(--danger);
+              background: var(--danger-soft); border: 1px solid var(--danger-line); border-radius: 7px;
               padding: 6px 10px; margin-bottom: 8px; }
   .gak-warn.on { display: block; }
 
@@ -324,7 +350,7 @@
     border: 1px solid var(--accent); background: var(--accent); color: #fff;
     border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
-  .btns button.secondary { background: #fff; color: var(--accent); }
+  .btns button.secondary { background: var(--panel); color: var(--accent); }
   .btns button:hover { opacity: .9; }
 
   /* ---------- 미리보기 + 멜로디 에디터 ---------- */
@@ -334,10 +360,10 @@
           position: relative; }
   #sheetArea { flex: 1 1 auto; min-height: 0; display: flex;
                align-items: flex-start; justify-content: center; padding: 16px; overflow: auto;
-               background: #e8e5de; position: relative; }
+               background: var(--soft); position: relative; }
   #sheet { transform-origin: top center; transition: transform .08s ease;
            display: flex; flex-direction: column; align-items: center; gap: 16px; }
-  .page { background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+  .page { background: var(--panel); box-shadow: 0 4px 24px rgba(0,0,0,.18); }
   .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
 
   /* 떠 있는 바(문서 크기 / 재생) — 각각 따로 끌어서 옮길 수 있음 */
@@ -348,20 +374,20 @@
   /* 바 왼쪽 이동 손잡이 — 끌어서 바 위치를 옮김 */
   .bar-grip { display: flex; align-items: center; justify-content: center; width: 16px;
               align-self: stretch;
-              background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 8px;
+              background: var(--overlay); border: 1px solid var(--line); border-radius: 8px;
               box-shadow: 0 2px 8px rgba(0,0,0,.1); color: var(--muted); cursor: grab;
               touch-action: none; user-select: none; }
-  .bar-grip:hover { color: var(--ink); background: #f0ece3; }
+  .bar-grip:hover { color: var(--ink); background: var(--hover); }
   .bar-grip:active { cursor: grabbing; }
   .bar-grip svg { width: 10px; height: 16px; }
   /* 문서 크기 바 — 재생 바와 같은 틀(패딩·모서리·버튼 높이)로 맞춤 */
   #zoomBar { display: flex; align-items: center; gap: 2px;
-             background: rgba(255,255,255,.94); border: 1px solid var(--line);
+             background: var(--overlay); border: 1px solid var(--line);
              border-radius: 10px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
   #zoomBar button { min-width: 26px; height: 26px; border: none; background: transparent;
                     font-size: 13px; line-height: 1; cursor: pointer; border-radius: 7px;
                     color: var(--muted); font-family: inherit; }
-  #zoomBar button:hover { background: #eee; color: var(--ink); }
+  #zoomBar button:hover { background: var(--hover); color: var(--ink); }
   #zoomBar .zval { font-size: 12px; min-width: 40px; text-align: center; color: var(--muted); }
   #zoomBar .fit { font-size: 12px; padding: 0 8px; white-space: nowrap; }
   #zoomBar button:disabled { opacity: .35; cursor: default; }
@@ -369,7 +395,7 @@
 
   /* 재생 컨트롤 — 문서 크기 바와 같은 틀. 재생 버튼만 색으로 강조 */
   #playBar { position: relative; display: flex; align-items: center; gap: 4px;
-             background: rgba(255,255,255,.94); border: 1px solid var(--line);
+             background: var(--overlay); border: 1px solid var(--line);
              border-radius: 10px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
   #playBar button { border-radius: 7px; cursor: pointer; font-family: inherit; }
   #btnPlay { height: 26px; padding: 0 12px; border: none; background: var(--accent); color: #fff;
@@ -377,14 +403,14 @@
   #btnPlay:hover { opacity: .92; }
   #btnPause, #btnStop { height: 26px; padding: 0 9px; border: none; background: transparent;
              color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
-  #btnPause:hover, #btnStop:hover { background: #eee; color: var(--ink); }
+  #btnPause:hover, #btnStop:hover { background: var(--hover); color: var(--ink); }
   #btnPlay:disabled, #btnPause:disabled, #btnStop:disabled { opacity: .35; cursor: default; background: transparent; color: var(--muted);
                                           box-shadow: none; }
   #btnPlay:disabled { background: var(--accent); color: #fff; }
   #playSettingsToggle { width: 26px; height: 26px; }
 
   .play-pop { position: absolute; top: 42px; left: 0; z-index: 6; display: none;
-              background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+              background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 224px; font-size: 12px; }
   .play-pop.on { display: block; }
   .play-pop .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
@@ -396,26 +422,26 @@
 
   /* 시김새 수정 패널 */
   .orn-panel { position: absolute; top: 12px; right: 14px; z-index: 6; display: none;
-               background: rgba(255,255,255,.97); border: 1px solid var(--accent); border-radius: 10px;
+               background: var(--overlay); border: 1px solid var(--accent); border-radius: 10px;
                padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 156px; font-size: 12px; }
   .orn-panel.on { display: block; }
   .orn-title { display: flex; justify-content: space-between; align-items: center;
                font-weight: 700; color: var(--accent); margin-bottom: 8px; }
   .orn-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
   .orn-row span { flex: 0 0 34px; color: var(--muted); }
-  .orn-row button { flex: 1; padding: 4px 0; border: 1px solid var(--line); background: #fff;
+  .orn-row button { flex: 1; padding: 4px 0; border: 1px solid var(--line); background: var(--panel);
                     border-radius: 5px; cursor: pointer; font-size: 13px; font-family: inherit; }
-  .orn-row button:hover { background: #f0ece3; }
+  .orn-row button:hover { background: var(--hover); }
   .orn-reset { width: 100%; margin-top: 4px; padding: 5px; border: 1px solid var(--line);
-               background: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
-  .orn-reset:hover { background: #f0ece3; }
+               background: var(--panel); border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .orn-reset:hover { background: var(--hover); }
   @media print { .orn-panel { display: none !important; } }
   /* 각 번호 '화면에만' 모드 — 인쇄에서는 숨김 (PNG는 저장 시 따로 뺌) */
   @media print { body.gaknum-screen .gak-num { display: none !important; } }
   /* 자유 텍스트 주석 크기·삭제 패널 — 시김새 패널과 같은 자리에 겹치지 않게 아래로 내림 */
   #textPanel { top: 64px; }
-  #textPanel .text-panel-del { color: #b23b3b; border-color: #e3b7b7; }
-  #textPanel .text-panel-del:hover { background: #f7ecec; }
+  #textPanel .text-panel-del { color: var(--danger); border-color: var(--danger-line); }
+  #textPanel .text-panel-del:hover { background: var(--danger-soft); }
   /* 텍스트 탭 '추가' 버튼 */
   .at-add { padding: 5px 10px; border: 1px solid var(--accent); background: var(--accent);
             color: #fff; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
@@ -424,12 +450,12 @@
   #editorDock { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); }
   .dock-body { display: flex; align-items: stretch; }
   #dockRail { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px;
-              padding: 12px 8px; border-right: 1px solid var(--line); background: #faf8f3; }
+              padding: 12px 8px; border-right: 1px solid var(--line); background: var(--soft); }
   .rail-btn { padding: 9px 16px; border: none; background: none; border-radius: 8px;
               cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700;
               color: var(--muted); text-align: left; position: relative;
               transition: background .12s ease, color .12s ease; }
-  .rail-btn:hover { background: #f0ece3; color: var(--ink); }
+  .rail-btn:hover { background: var(--hover); color: var(--ink); }
   .rail-btn.active { background: var(--accent); color: #fff; }
   /* 레이어가 켜져 있으면 탭에 점 표시 */
   .rail-btn::after { content: ""; position: absolute; right: 6px; top: 50%;
@@ -438,14 +464,14 @@
   body.want-jangdan .rail-btn[data-panel="jangdanArea"]::after,
   body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after { background: #3f9d63; }
   body.want-jangdan .rail-btn.active[data-panel="jangdanArea"]::after,
-  body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after { background: #fff; }
+  body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after { background: var(--panel); }
   /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
   .rail-shortcuts-wrap { display: block; }
   .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;
                         padding: 6px 10px; border: none; background: none; border-radius: 8px;
                         cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 600;
                         color: var(--muted); transition: background .12s ease, color .12s ease; }
-  .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: #f0ece3; color: var(--ink); }
+  .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: var(--hover); color: var(--ink); }
   .rail-shortcuts-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
   /* 단축키 버튼이 사이드바 맨 아래라 안내 패널이 기본값(아래로 펼침)대로 뜨면 화면 아래로
      넘어가 잘려 보인다 — 버튼 오른쪽에서 위로 펼친다. #dockRail .melody-guide의 top:0보다
@@ -479,7 +505,7 @@
      직접 입력 모드(입력 그룹이 추가돼 더 넓음)에서 오른쪽 그룹이 잘려 안 보였음. */
   .ribbon { display: flex; flex-wrap: wrap; align-items: stretch; gap: 2px; padding: 5px 8px;
             margin-bottom: 10px;
-            background: #faf8f3; border: 1px solid var(--line); border-radius: 8px; }
+            background: var(--soft); border: 1px solid var(--line); border-radius: 8px; }
   /* 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹을 숨긴다 */
   .ribbon-collapse-btn { flex: 0 0 auto; }
   .ribbon-collapse-btn svg { transition: transform .12s ease; }
@@ -500,7 +526,7 @@
                 border-radius: 6px; background: none; cursor: pointer; font-family: inherit;
                 color: var(--ink); font-size: 17px; line-height: 1; flex: 0 0 auto; }
   .ribbon-btn span { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
-  .ribbon-btn:hover { background: #f0ece3; border-color: var(--line); }
+  .ribbon-btn:hover { background: var(--hover); border-color: var(--line); }
   .ribbon-btn:disabled { opacity: .4; cursor: default; background: none; }
   .ribbon-num { width: 34px; padding: 3px 2px; border: 1px solid var(--line); border-radius: 5px;
                 font-family: inherit; font-size: 11px; text-align: center; align-self: center; }
@@ -512,7 +538,7 @@
                         font-weight: 600; color: var(--muted); white-space: nowrap; }
   .ribbon-select-group select { padding: 4px 20px 4px 7px; border: 1px solid var(--line);
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
-                                background-color: #fff; cursor: pointer; }
+                                background-color: var(--panel); cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
   /* 에디터 모드에서 기능바가 아래 독 맨 위로 들어갈 때 — 독 가장자리에서 살짝 띄움 */
   #editorDock > #melodyRibbon { margin: 2px 10px 6px; }
@@ -534,6 +560,16 @@
   .win-toggle-group, .win-toggle-sep { display: none; }
   .win-toggle.on { background: var(--accent); color: #fff; }
   .win-toggle.on span { color: #fff; }
+  /* 마우스 모드 버튼(선택/이동) — 아이콘은 SVG라 크기를 직접 준다. 켜진 쪽만 강조색. */
+  .cursor-btn .cur-ico { width: 17px; height: 17px; }
+  .cursor-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cursor-btn.on span { color: #fff; }
+  /* 이동(팬) 모드 — 악보를 잡고 끌어 화면을 움직인다. 악보(#sheet)의 클릭·드래그
+     상호작용은 꺼서(pointer-events:none) 편집이 안 일어나게 하고, 스크롤 컨테이너
+     (#sheetArea)에서 끌기로 스크롤을 옮긴다(JS). 커서는 손 모양. */
+  body.pan-mode #sheet { pointer-events: none; }
+  body.pan-mode #sheetArea { cursor: grab; }
+  body.pan-mode.panning #sheetArea { cursor: grabbing; }
   /* 셀 서식 뜬 도구창 여닫기 버튼 — 직접 입력 전용(에디터 모드에선 대신 레일 탭 '셀 서식' 사용) */
   body:not(.input-direct) #winToggleCellStyle { display: none; }
   /* 시김새 창(#ornWinWrap)은 melodyArea 안에 있어서, 에디터 모드에선 .direct-win 숨김 규칙이
@@ -556,7 +592,7 @@
   body.input-direct #paletteCol.win-open {
     display: flex; flex-direction: column; position: absolute; top: 84px; left: 14px; z-index: 6;
     max-width: min(460px, calc(100% - 28px)); max-height: 62vh; overflow: auto;
-    background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+    background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
     box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
   }
 
@@ -572,21 +608,21 @@
   .ed-pager .ed-plabel { font-size: 12px; font-weight: 600; color: var(--accent);
                          min-width: 74px; text-align: center; }
   .ed-pager button:disabled { opacity: .35; cursor: default; }
-  .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: #fff;
+  .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: var(--panel);
              border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; color: var(--ink);
              white-space: nowrap; }
-  .mel-btn:hover { background: #f0ece3; }
+  .mel-btn:hover { background: var(--hover); }
   .mel-btn:disabled { opacity: .45; cursor: default; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
   #ornEditToggle, #ornMapToggle, #rangeClearToggle, #winToggleCellStyle {
                    flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
-                   background: #faf3e7; font-weight: 700; }
+                   background: var(--accent-soft); font-weight: 700; }
   #ornEditToggle span, #ornMapToggle span, #rangeClearToggle span, #winToggleCellStyle span {
                    font-size: 11px; font-weight: 700; }
   #ornEditToggle:hover, #ornMapToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
-                   background: #f1e6cf; }
+                   background: var(--accent-soft); }
   #ornEditToggle.on, #ornMapToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
                    background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
@@ -594,7 +630,7 @@
   #ornEditToggle.on span, #ornMapToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
                    color: #fff; }
   #ornMapToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
-                   opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
+                   opacity: .4; cursor: default; background: var(--accent-soft); color: var(--accent); }
   /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
   #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
   #lyricsToTextBtn span { font-size: 10px; font-weight: 600; }
@@ -608,7 +644,7 @@
     font-size: 8px; font-weight: 700; line-height: 1;
   }
   body.orn-add-on .ornchip:not(.orn-no-key) .orn-key-badge { display: inline-flex; }
-  .ornchip.orn-armed { background: #f4e2c2; outline: 1.5px solid var(--accent); border-radius: 6px; }
+  .ornchip.orn-armed { background: var(--accent-tint); outline: 1.5px solid var(--accent); border-radius: 6px; }
 
   /* 시김새 창 안의 모드 버튼(미세조정/추가 모드) — 전역 도구바가 아니라 이 팔레트 설정임을
      보여주려고 시김새 창 안에 둔다. .pal-top 한 줄 안에 들어가므로 아래 마진을 주면
@@ -619,12 +655,12 @@
      지금 드래그하면 바로 적용되는 도구)을 서로 다른 생김새로 분리해서 한눈에 구분되게 한다. */
   .cell-style-sec { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
   .cell-style-sec:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-  .cell-style-sec-title { font-size: 11px; font-weight: 700; color: #8a7f6a; margin-bottom: 4px; }
+  .cell-style-sec-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
   .cell-style-body { display: flex; align-items: center; gap: 6px; padding: 2px; flex-wrap: wrap; }
   .cell-style-body input[type="color"] { width: 34px; height: 26px; padding: 2px; border: 1px solid var(--line);
-                                          border-radius: 6px; background: #fff; cursor: pointer; }
+                                          border-radius: 6px; background: var(--panel); cursor: pointer; }
   .cell-style-body select { font-size: 12px; padding: 5px 20px 5px 8px; border: 1px solid var(--line);
-                             border-radius: 6px; font-family: inherit; background-color: #fff; cursor: pointer; }
+                             border-radius: 6px; font-family: inherit; background-color: var(--panel); cursor: pointer; }
 
   /* 설정 칩(테두리 프리셋 3개 + 변 직접 선택 4개) — 조용한 톤. 선택돼도 살짝만 강조해서
      "지금 켜진 도구"(아래 실행 버튼)와 구분되게 한다. */
@@ -634,25 +670,25 @@
   .cbp-ico { width: 13px; height: 18px; flex: 0 0 auto; display: block; color: var(--ink); }
   .cell-style-option.on .cbp-ico { color: var(--accent); }
   .cell-style-option { flex-direction: row; width: auto; gap: 4px; padding: 5px 9px; font-size: 12px; font-weight: 600;
-                       color: var(--muted); border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+                       color: var(--muted); border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
   .cell-style-option span { font-size: 10px; font-weight: 600; color: var(--muted); }
-  .cell-style-option:hover { background: #f5f3ee; }
-  .cell-style-option.on { background: #f4e2c2; border-color: var(--accent); color: var(--accent); }
+  .cell-style-option:hover { background: var(--hover); }
+  .cell-style-option.on { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); }
   .cell-style-option.on span { color: var(--accent); }
-  .cell-style-option:disabled { opacity: .4; cursor: default; background: #fff; color: var(--muted); }
+  .cell-style-option:disabled { opacity: .4; cursor: default; background: var(--panel); color: var(--muted); }
 
   /* 실행 버튼(칠하기/지우기) — 지금 드래그하면 바로 적용된다는 걸 강조하는 둥근 필. 배경색·
      테두리 두 섹션에서 재사용. 칠하기=강조색, 지우기=옅은 붉은색으로 톤을 갈라 서로 헷갈리지 않게. */
   .cell-style-action { flex-direction: row; width: auto; gap: 5px; padding: 7px 14px; font-size: 14px; font-weight: 700;
                         border-radius: 999px; }
   .cell-style-action span { font-size: 11px; font-weight: 700; }
-  .cell-style-action.paint { color: var(--accent); border-color: var(--accent); background: #faf3e7; }
-  .cell-style-action.paint:hover { background: #f1e6cf; }
+  .cell-style-action.paint { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .cell-style-action.paint:hover { background: var(--accent-soft); }
   .cell-style-action.paint.on { background: var(--accent); color: #fff; }
   .cell-style-action.paint.on span { color: #fff; }
-  .cell-style-action.erase { color: #b3463c; border-color: #ddb0aa; background: #fbeeec; }
-  .cell-style-action.erase:hover { background: #f6ddd9; }
-  .cell-style-action.erase.on { background: #b3463c; border-color: #b3463c; color: #fff; }
+  .cell-style-action.erase { color: var(--danger-2); border-color: var(--danger-line); background: var(--danger-soft); }
+  .cell-style-action.erase:hover { background: var(--danger-soft); }
+  .cell-style-action.erase.on { background: var(--danger-2); border-color: var(--danger-2); color: #fff; }
   .cell-style-action.erase.on span { color: #fff; }
   .cell-style-action:disabled { opacity: .4; cursor: default; }
 
@@ -660,7 +696,7 @@
      지나치기 쉬운 내용이라 늘 보이게 둔다. 율명 팔레트(#paletteCol) 쪽 사본은
      에디터 모드 시김새 보기(palView=orn → .orn-active)일 때만 보인다. */
   .orn-syntax-hint { flex: 0 0 auto; font-size: 11px; color: var(--muted); line-height: 1.5;
-                     background: #faf8f3; border: 1px dashed #cbbfa4; border-radius: 7px;
+                     background: var(--soft); border: 1px dashed var(--line); border-radius: 7px;
                      padding: 4px 9px; margin-bottom: 6px; }
   .orn-syntax-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink); }
   /* 시김새 도구창(직접 입력)에선 위 제목 줄의 모드 버튼들과 맞닿지 않게 사이를 띄운다 */
@@ -671,7 +707,7 @@
   /* 시김새 숫자키 배정 줄(시김새 팔레트 바로 위) — 숫자 단축키 자체는 직접 입력에서
      항상 살아 있고, 이 줄은 '단축키 변환' 버튼을 눌렀을 때만 보인다 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
-                      border: 1px solid var(--line); border-radius: 8px; background: #faf8f3; }
+                      border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
   .orn-add-map-bar.open { display: flex; }
   .orn-add-map-bar .oam-slot { display: inline-flex; align-items: center; gap: 3px; }
   .orn-add-map-bar .oam-key { flex: 0 0 auto; min-width: 14px; height: 14px; padding: 0 2px;
@@ -679,7 +715,7 @@
                               background: var(--accent); color: #fff; border-radius: 4px;
                               font-size: 9px; font-weight: 700; line-height: 1; }
   .orn-add-map-bar select { font-size: 11px; padding: 2px 18px 2px 5px; border: 1px solid var(--line);
-                             border-radius: 5px; font-family: inherit; background-color: #fff; cursor: pointer; }
+                             border-radius: 5px; font-family: inherit; background-color: var(--panel); cursor: pointer; }
 
   /* 버튼 설명 호버 툴팁(.tip + data-tip) — 전부 JS가 띄우는 #ribbonTipFloat 하나로 통일.
      CSS ::after 말풍선은 (1) overflow 있는 조상(리본·도구창) 안에서 잘리고 (2) 화면
@@ -687,7 +723,7 @@
      뜬 말풍선은 뷰포트에 맞춰 좌우를 밀어 넣고 위아래도 뒤집으므로 예외가 없다. */
   .tip { position: relative; }
   .ribbon-tip-float {
-    position: fixed; z-index: 9999; background: #2b2b2b; color: #fff; font-size: 11px;
+    position: fixed; z-index: 9999; background: var(--tip-bg); color: #fff; font-size: 11px;
     font-weight: 400; line-height: 1.45; padding: 6px 9px; border-radius: 7px;
     width: max-content; max-width: 240px; white-space: pre-line; text-align: left;
     box-shadow: 0 2px 8px rgba(0,0,0,.25); opacity: 0; visibility: hidden;
@@ -698,8 +734,8 @@
     content: ""; position: absolute; left: 50%; transform: translateX(-50%);
     border: 5px solid transparent;
   }
-  .ribbon-tip-float.dir-up::after { top: 100%; border-top-color: #2b2b2b; }
-  .ribbon-tip-float.dir-down::after { bottom: 100%; border-bottom-color: #2b2b2b; }
+  .ribbon-tip-float.dir-up::after { top: 100%; border-top-color: var(--tip-bg); }
+  .ribbon-tip-float.dir-down::after { bottom: 100%; border-bottom-color: var(--tip-bg); }
   /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
   #melodyRow { display: flex; gap: 16px; height: 330px; align-items: stretch; }
   /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */
@@ -787,12 +823,12 @@
   .tx-item label { display: flex; align-items: center; gap: 5px;
                    font-size: 11px; color: var(--muted); white-space: nowrap; }
   .tx-item select, .tx-item input[type="number"] { padding: 4px 6px; border: 1px solid var(--line);
-                   border-radius: 6px; font-family: inherit; font-size: 12px; background: #fff; }
+                   border-radius: 6px; font-family: inherit; font-size: 12px; background: var(--panel); }
   .tx-item input[type="number"] { width: 58px; }
-  .tx-item .tx-del { border: none; background: none; color: #b23b3b; cursor: pointer;
+  .tx-item .tx-del { border: none; background: none; color: var(--danger); cursor: pointer;
                      font-size: 16px; line-height: 1; padding: 2px 6px; }
   .tx-item input[type="color"] { width: 28px; height: 22px; padding: 1px 2px; border: 1px solid var(--line);
-                                 border-radius: 5px; cursor: pointer; background: #fff; }
+                                 border-radius: 5px; cursor: pointer; background: var(--panel); }
   .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
 
   /* 임시 저장(이 컴퓨터) 슬롯 목록 */
@@ -806,16 +842,17 @@
   .snap-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
                white-space: nowrap; font-weight: 600; }
   .snap-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
-  .snap-item .snap-load { border: 1px solid var(--line); background: #fff; border-radius: 6px;
+  .snap-item .snap-load { border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+                          border-radius: 6px;
                           padding: 3px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
   .snap-item .snap-load:hover { border-color: var(--accent); color: var(--accent); }
-  .snap-item .snap-del { border: none; background: none; color: #b23b3b; cursor: pointer;
+  .snap-item .snap-del { border: none; background: none; color: var(--danger); cursor: pointer;
                          font-size: 14px; line-height: 1; padding: 2px 4px; }
   .snap-empty { font-size: 12px; color: var(--muted); padding: 6px 0; }
 
   /* 팔레트 표·에디터 글자 크기 조절 (− / + 미니 버튼) */
   .size-ctl { display: inline-flex; align-items: center; gap: 3px; }
-  .size-ctl button { width: 20px; height: 20px; border: 1px solid var(--line); background: #fff;
+  .size-ctl button { width: 20px; height: 20px; border: 1px solid var(--line); background: var(--panel);
                      border-radius: 5px; cursor: pointer; font-size: 13px; line-height: 1;
                      color: var(--ink); padding: 0; }
   .size-ctl button:hover { border-color: var(--accent); color: var(--accent); }
@@ -891,7 +928,7 @@
   /* 율명 표기 셀렉트 */
   .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
   .tool-inline select { padding: 5px 24px 5px 8px; border: 1px solid var(--line); border-radius: 6px;
-                        font-size: 12px; font-family: inherit; background-color: #fff; cursor: pointer;
+                        font-size: 12px; font-family: inherit; background-color: var(--panel); cursor: pointer;
                         background-position: right 7px center; background-size: 10px; }
 
   /* 편집창 접기 */
@@ -902,7 +939,7 @@
   /* 입력 방법 가이드 (?) 토글 — 다른 아이콘 버튼과 같은 부품(.icon-btn) 사용 */
   .guide-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
   .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
-                  background: rgba(255,255,255,.98); border: 1px solid var(--accent); border-radius: 10px;
+                  background: var(--overlay); border: 1px solid var(--accent); border-radius: 10px;
                   padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
                   font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6;
                   white-space: normal; }   /* .melody-head의 nowrap을 되돌림 — 안 그러면 문장이 박스 밖으로 넘침 */
@@ -913,8 +950,49 @@
   .melody-guide .mg-sec { margin-top: 8px; }
   .melody-guide .mg-sec:first-child { margin-top: 0; }
 
+  /* ============ 다크 모드 ============ */
+  /* 색은 전부 위의 역할별 변수를 통하므로, 여기서 그 값만 어둡게 갈아끼우면 UI 전체가
+     따라온다. 악보(종이)는 별도 흰색 SVG라 그대로 흰 종이로 남는다 — #sheetArea만
+     어두워져 종이가 어두운 캔버스 위에 놓인 모양(피그마·워드 다크모드 방식). */
+  body.dark {
+    --bg: #16150f;          /* 앱 바탕 (짙은 먹색) */
+    --panel: #26241d;       /* 카드·입력·버튼 표면 */
+    --soft: #201e18;        /* 은은한 바탕 */
+    --hover: #34302a;       /* 호버 */
+    --track: #3a362e;       /* 토글 꺼짐 트랙 */
+    --line: #423d34;        /* 테두리 */
+    --ink: #eee9dd;         /* 본문 글자 */
+    --muted: #a8a293;       /* 보조 글자 */
+    /* 다크 시그니처 색은 파랑 — 어두운 바탕에서 갈색보다 가시성이 훨씬 높다 */
+    --accent: #4d96ec;      /* 강조(파랑) */
+    --accent-soft: #182a41; /* 강조 옅은 바탕(켜진 토글 등) */
+    --accent-tint: #1f3a5c; /* 선택된 옵션 바탕 */
+    --accent-glow: rgba(77,150,236,.32);  /* 입력 포커스 글로우 */
+    --overlay: rgba(38,36,29,.97);  /* 악보 위 뜨는 도구창 */
+    --danger: #e2857b;      /* 경고 글자 — 어두운 바탕용 밝은 빨강 */
+    --danger-2: #e2857b;
+    --danger-soft: #3a201d; /* 지우기 옅은 바탕 */
+    --danger-line: #6b423d; /* 지우기 테두리 */
+  }
+  /* 셀렉트 화살표 아이콘은 CSS 안 data-URI라 변수로 안 바뀜 — 다크에선 밝은 획으로 교체 */
+  body.dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a293' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  }
+  /* 악보를 둘러싼 캔버스는 더 짙게 해서 흰 종이가 도드라지게 */
+  body.dark #sheetArea { background: #0d0c09; }
+  /* 시김새·장단 팔레트 기호는 검은 선 그림(이미지)이라 어두운 팔레트에서 안 보인다 —
+     팔레트 안에서만 반전해 흰 선으로 그린다. 악보(흰 종이)의 기호는 #sheet svg image라
+     이 규칙에 안 걸려 그대로 검정으로 남는다(인쇄·PNG도 안 바뀜). */
+  body.dark .palette img { filter: invert(1); }
+  /* 상단바 다크모드 토글 — '누르면 갈 모드' 아이콘: 라이트=달(→다크), 다크=해(→라이트) */
+  #darkToggle .sun { display: none; }
+  body.dark #darkToggle .moon { display: none; }
+  body.dark #darkToggle .sun { display: block; }
+
   @media print {
-    body { display: block; height: auto; overflow: visible; }
+    /* 인쇄는 다크모드여도 항상 흰 종이 — 테마 변수를 라이트로 되돌리고 배경도 흰색 고정 */
+    :root, body.dark { --bg:#fff; --panel:#fff; --soft:#fff; --ink:#000; --line:#d9d6cf; }
+    body { display: block; height: auto; overflow: visible; background: #fff; }
     #sidebar, #editorDock, .float-bar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }

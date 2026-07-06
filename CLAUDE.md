@@ -22,6 +22,12 @@
     악보 위에 떠서 한 번에 하나만 열림(`activateDirectPanel`).
   - 에디터: 기능바가 #editorDock 맨 위로 이동, 레일 탭(선율/장단/가사/텍스트/셀 서식)으로 전환.
 - 기능바(.ribbon)는 `flex-wrap: wrap` — 좁으면 줄바꿈, 스크롤 금지(항상 전부 보여야 함).
+- 색은 전부 styles.css `:root`의 역할별 변수(`--bg/--panel/--soft/--hover/--track/--line/
+  --ink/--muted/--accent/--accent-soft/--accent-tint/--overlay/--danger*` 등)를 통한다.
+  새 색을 하드코딩하지 말고 이 변수를 쓸 것 — 다크모드(`body.dark`, 파일 끝)가 변수 값만
+  갈아끼워 동작한다. 예외: 피아노 건반·강조색 위 흰 글자(`color:#fff`)·말풍선은 테마 무관
+  고정색. 악보(종이)는 별도 흰색 SVG라 다크에서도 흰 종이(인쇄·PNG 안 바뀜). 다크는
+  상단바 #darkToggle 수동 토글(`jgb_dark_v1`), `@media print`는 항상 라이트로 강제.
 - 리본/도구창 버튼 툴팁은 CSS ::after가 아니라 #ribbonTipFloat(JS 위치 계산) 하나를 공유.
 - 세로 flex 도구창 안의 머리줄(.pal-top 등)은 `flex: 0 0 auto` 필수 — 없으면 max-height에
   눌려 짜부라지며 자식 버튼이 삐져나온다.

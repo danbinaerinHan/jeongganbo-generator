@@ -886,6 +886,63 @@
   $("btnUndo").addEventListener("click", function () { undoGlobal(); });
   $("btnRedo").addEventListener("click", function () { redoGlobal(); });
 
+  // ---------- 다크 모드 (수동 토글, localStorage에 유지) ----------
+  // 색은 전부 CSS 역할 변수라 body.dark 클래스 하나로 UI 전체가 어두워진다.
+  // 악보(종이)는 별도 흰색 SVG라 그대로 흰 종이로 남는다(인쇄·PNG도 안 바뀜).
+  const DARK_LS_KEY = "jgb_dark_v1";
+  function applyDark(on) {
+    document.body.classList.toggle("dark", !!on);
+    if ($("darkToggle")) $("darkToggle").setAttribute("data-tip",
+      (on ? "밝은 화면으로 전환" : "어두운 화면으로 전환") + "\n· 악보(종이)는 늘 흰색으로 유지됩니다");
+  }
+  try { applyDark(localStorage.getItem(DARK_LS_KEY) === "1"); } catch (e) {}
+  if ($("darkToggle")) $("darkToggle").addEventListener("click", function () {
+    const on = !document.body.classList.contains("dark");
+    applyDark(on);
+    try { localStorage.setItem(DARK_LS_KEY, on ? "1" : "0"); } catch (e) {}
+  });
+
+  // ---------- 마우스 모드: 선택(클릭 편집) / 이동(악보 잡고 팬) ----------
+  // 이동 모드에선 body.pan-mode가 악보 클릭을 막고(CSS), 여기서 #sheetArea를 끌어 스크롤을
+  // 옮긴다. 편집 상호작용과 겹치지 않게 팬은 이동 모드에서만 동작한다.
+  function setCursorMode(pan) {
+    if (pan && cellEditInput) commitCellEditor(false);   // 편집 카드 열려 있으면 정리
+    document.body.classList.toggle("pan-mode", pan);
+    if ($("cursorSelect")) $("cursorSelect").classList.toggle("on", !pan);
+    if ($("cursorPan")) $("cursorPan").classList.toggle("on", pan);
+  }
+  if ($("cursorSelect")) $("cursorSelect").addEventListener("click", function () { setCursorMode(false); });
+  if ($("cursorPan")) $("cursorPan").addEventListener("click", function () { setCursorMode(true); });
+  (function () {
+    const area = $("sheetArea");
+    if (!area) return;
+    let panning = false, sx = 0, sy = 0, sl = 0, st = 0;
+    area.addEventListener("pointerdown", function (e) {
+      if (!document.body.classList.contains("pan-mode")) return;
+      if (e.button !== undefined && e.button !== 0) return;
+      // 악보 위에 떠 있는 컨트롤(줌·재생 바, 시김새·텍스트 조정 패널, 입력 카드)은 팬 대상에서 제외
+      if (e.target.closest(".float-bar, .orn-panel, .cell-editor, #playPop")) return;
+      panning = true;
+      document.body.classList.add("panning");
+      sx = e.clientX; sy = e.clientY; sl = area.scrollLeft; st = area.scrollTop;
+      try { area.setPointerCapture(e.pointerId); } catch (_e) {}
+      e.preventDefault();
+    });
+    area.addEventListener("pointermove", function (e) {
+      if (!panning) return;
+      area.scrollLeft = sl - (e.clientX - sx);
+      area.scrollTop = st - (e.clientY - sy);
+    });
+    function endPan(e) {
+      if (!panning) return;
+      panning = false;
+      document.body.classList.remove("panning");
+      try { area.releasePointerCapture(e.pointerId); } catch (_e) {}
+    }
+    area.addEventListener("pointerup", endPan);
+    area.addEventListener("pointercancel", endPan);
+  })();
+
   // ---------- 정간 위 인라인 입력(선율) ----------
   function currentCellText(gi, ci) {
     const p = parseMelodyOffsets(melodyFull);
@@ -1106,6 +1163,7 @@
     if (px + w > areaRight) px = Math.max(toX(0) + 2, toX(cg.x) - w - cellPx * 0.3);
     const py = Math.max(toY(0) + 2, Math.min(toY(vb.height) - h - 2, toY(cg.y + cg.h / 2) - h / 2));
     const card = document.createElement("div");
+    card.className = "cell-editor";
     card.style.cssText = "position:absolute;left:" + px + "px;top:" + py + "px;" +
       "width:" + w + "px;height:" + h + "px;box-sizing:border-box;display:flex;flex-direction:column;z-index:6;" +
       "background:#fff;border:1px solid rgba(138,109,59,.45);border-radius:" + (h * 0.13) + "px;" +

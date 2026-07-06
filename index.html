@@ -60,6 +60,13 @@
         </div>
       </div>
     </span>
+    <!-- 다크모드 토글 — 상단바 맨 오른쪽. 해(라이트)·달(다크) 아이콘을 CSS로 전환 -->
+    <button type="button" id="darkToggle" class="topbar-icon-btn tip" style="margin-left:auto;"
+      data-tip="어두운 화면 / 밝은 화면 전환
+· 악보(종이)는 늘 흰색으로 유지됩니다">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
   </div>
   <div id="appRow">
   <aside id="sidebar">
@@ -261,13 +268,13 @@
         <button id="btnPrint">인쇄 / PDF 저장</button>
         <button id="btnPng" class="secondary">PNG 다운로드</button>
       </div>
-      <div class="hint" style="margin-top:2px;">• 페이지가 여러 장이면 PNG는 한 장씩 각각의 파일로 나뉘어 저장됩니다 (예: 제목-1.png, 제목-2.png…).</div>
+      <div class="hint">• 페이지가 여러 장이면 PNG는 한 장씩 각각의 파일로 나뉘어 저장됩니다 (예: 제목-1.png, 제목-2.png…).</div>
       <div class="btns">
         <button id="btnExport" class="secondary">파일로 저장</button>
         <button id="btnImport" class="secondary">불러오기</button>
         <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
       </div>
-      <div class="hint" style="margin-top:6px;">• 작업은 자동 저장되어 새로고침해도 유지됩니다.<br>• ‘파일로 저장’으로 곡을 따로 보관/공유할 수 있습니다.</div>
+      <div class="hint" style="margin-top:8px;">• 작업은 자동 저장되어 새로고침해도 유지됩니다.<br>• ‘파일로 저장’으로 곡을 따로 보관/공유할 수 있습니다.</div>
 
       <div class="sec">임시 저장 (이 컴퓨터)</div>
       <div class="field">
@@ -300,6 +307,26 @@
         data-tip="기능바를 접거나 펼칩니다" title="접기/펼치기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
+      <!-- 마우스 모드 — 가장 왼쪽. 선택(클릭해서 정간 입력·편집) / 이동(악보를 잡고 끌어
+           화면을 움직임). 이동 모드에선 CSS(body.pan-mode)가 악보 클릭을 막고 손 모양 커서로
+           바꾼다. -->
+      <div class="ribbon-group">
+        <div class="rb-cap">마우스</div>
+        <div class="rb-items">
+          <button type="button" id="cursorSelect" class="ribbon-btn cursor-btn tip on"
+            data-tip="선택 모드
+· 정간을 클릭해 입력·편집">
+            <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+            <span>선택</span></button>
+          <button type="button" id="cursorPan" class="ribbon-btn cursor-btn tip"
+            data-tip="이동 모드
+· 악보를 잡고 끌어 화면을 움직입니다
+· 편집하려면 '선택'으로">
+            <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>
+            <span>이동</span></button>
+        </div>
+      </div>
+      <div class="ribbon-sep"></div>
       <!-- 그룹마다 얇은 이름표(.rb-cap)를 위에, 실제 컨트롤(.rb-items)을 아래에 두는 2단 구성 -->
       <div class="ribbon-group win-toggle-group">
         <div class="rb-cap">입력</div>
