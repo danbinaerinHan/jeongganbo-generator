@@ -512,6 +512,8 @@
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
                                 background-color: #fff; cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
+  /* 에디터 모드에서 기능바가 아래 독 맨 위로 들어갈 때 — 독 가장자리에서 살짝 띄움 */
+  #editorDock > #melodyRibbon { margin: 2px 10px 6px; }
   /* 직접 입력 모드 — 기능바(#melodyRibbon)는 악보 바로 위(#main 자식)에 항상 고정되고
      (JS의 applyInputMode가 옮김), 도구창(팔레트)들은 예전 Finale 스타일처럼 악보 위에
      뜬다. 단, 여러 개를 동시에 띄우던 방식은 버리고 한 번에 하나만 — 다른 탭을 누르면

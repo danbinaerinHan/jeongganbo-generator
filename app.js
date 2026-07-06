@@ -3972,8 +3972,20 @@
     // — 악보를 드래그로 고르는 동작 자체는 모드와 무관하기 때문. 셀 서식 도구창을 여닫는
     // winToggleCellStyle 버튼만 '뜬 도구창' 개념이라 직접 입력 전용으로 남고(CSS에서 숨김),
     // 에디터 모드에서는 대신 레일 탭(#dockRail의 '셀 서식')으로 같은 내용을 도킹해서 본다.
-    // 기능바(#melodyRibbon)는 이제 두 모드 공통으로 악보 바로 위(#main의 자식,
-    // #sheetArea 앞)에 고정되어 있다 — HTML 자체가 그 자리라 모드 전환 시 옮길 게 없다.
+    // 기능바(#melodyRibbon) 위치 — 직접 입력: 악보를 직접 만지므로 악보 바로 위(#main
+    // 최상단)에 고정. 에디터: 작업 영역이 아래 독(텍스트 에디터·팔레트)이므로 독 맨 위
+    // (리사이저 아래, 탭 내용 위)에 붙인다 — 어느 탭에서든 보이면서 손도 가깝게.
+    const ribbon = $("melodyRibbon");
+    if (direct) {
+      const main = $("main");
+      if (ribbon.parentNode !== main) main.insertBefore(ribbon, $("sheetArea"));
+    } else {
+      const dock = $("editorDock");
+      const dockBody = dock.querySelector(".dock-body");
+      if (ribbon.parentNode !== dock || ribbon.nextSibling !== dockBody) {
+        dock.insertBefore(ribbon, dockBody);
+      }
+    }
     if (direct) {
       if (palView !== "yul") {   // 왼쪽 팔레트는 율명으로 고정
         palView = "yul";
