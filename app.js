@@ -7,7 +7,7 @@
   // MARGIN_BASE: '페이지 채움' 0%일 때 기본 페이지 여백 / MARGIN_MIN: 100%여도 남기는 최소 여백(mm)
   // — 예시 악보처럼 테두리가 페이지 끝에 닿지 않고 항상 여백을 조금 둔다
   const MARGIN_BASE = 12, MARGIN_MIN = 9, INNER_PAD = 5;
-  const T_THIN = 0.16, T_THICK = 0.36, T_FRAME = 0.63, T_DAEGANG = 0.45;   // 대강선 0.56 → 0.8배
+  const T_THIN = 0.14, T_THICK = 0.32, T_FRAME = 0.63, T_DAEGANG = 0.45;   // 정간·각 선은 아주 살짝 얇게(0.16/0.36에서)
   // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계 — 격자선보다 눈에 띄게 조금 더 굵게
   const CELL_BORDER_WIDTH_PX = { thin: 0.3, medium: 0.6, thick: 1.0 };
 
@@ -2821,8 +2821,9 @@
               })(j);
               svg.appendChild(jdHit);
             }
-            // 장단 각은 선율(율명) 각과 한눈에 구분되게 네 변 모두 더 굵게 두른다
-            const jdLineW = T_THICK * 1.8;
+            // 장단 각은 선율(율명) 각과 구분되게 네 변 모두 조금 굵게 두른다
+            // (1.8배는 너무 두꺼웠음 — 기본 각 선이 얇아진 만큼 1.5배로도 충분히 구분됨)
+            const jdLineW = T_THICK * 1.5;
             svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, jdLineW));
             svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, jdLineW));
             svg.appendChild(line(jdLeft, gridTop, jdRight, gridTop, jdLineW));
