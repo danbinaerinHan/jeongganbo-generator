@@ -15,7 +15,7 @@
   let daegangAuto = "";
   let palView = "yul";       // 팔레트 보기: 율명 / 시김새(orn)
   let yulMode = "grid";      // 율명 입력 방식: 표(grid) / 피아노 건반(piano)
-  let inputMode = "editor";   // 정간 클릭 동작(선율·장단·가사 공통): editor(에디터로 커서 이동) / direct(옆 입력창)
+  let inputMode = "direct";   // 정간 클릭 동작(선율·장단·가사 공통): direct(옆 입력창, 기본) / editor(에디터로 커서 이동)
   let gakUserSet = false;   // 사용자가 '총 각 수'를 직접 입력했는지(아니면 페이지를 꽉 채움)
   let activeGak = -1, activeCellIdx = -1;   // 현재 편집 중인 정간
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)

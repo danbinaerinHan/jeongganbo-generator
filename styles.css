@@ -916,7 +916,8 @@
 
   /* 사이드바 접기/펼치기 */
   .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-  .side-open { display: none; position: fixed; top: 12px; right: 12px; z-index: 30;
+  /* right:52px — 상단바 맨 오른쪽 다크 토글(약 42px 폭) 왼쪽에 놓아 안 겹치게 */
+  .side-open { display: none; position: fixed; top: 8px; right: 52px; z-index: 30;
                align-items: center; gap: 6px;
                padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent);
                color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
