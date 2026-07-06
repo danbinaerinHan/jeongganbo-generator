@@ -474,10 +474,12 @@
   #melodySplit:hover::before { background: var(--accent); }
   /* 리본 툴바(피날레·시벨리우스 참고) — 되돌리기·초기화·각 추가/삭제·율명 크기처럼
      내용과 무관하게 늘 같은 자리에 있어야 하는 '문서 편집' 동작을 한데 모아
-     맨 위에 고정 배치. 아이콘 위·설명 아래 두 줄 버튼을 그룹으로 묶고 구분선으로 나눈다. */
-  .ribbon { display: flex; align-items: stretch; gap: 2px; padding: 5px 8px; margin-bottom: 10px;
-            background: #faf8f3; border: 1px solid var(--line); border-radius: 8px;
-            overflow-x: auto; }
+     맨 위에 고정 배치. 아이콘 위·설명 아래 두 줄 버튼을 그룹으로 묶고 구분선으로 나눈다.
+     창이 좁으면 그룹 단위로 줄바꿈해 전부 보이게 한다 — overflow 스크롤로 가리면
+     직접 입력 모드(입력 그룹이 추가돼 더 넓음)에서 오른쪽 그룹이 잘려 안 보였음. */
+  .ribbon { display: flex; flex-wrap: wrap; align-items: stretch; gap: 2px; padding: 5px 8px;
+            margin-bottom: 10px;
+            background: #faf8f3; border: 1px solid var(--line); border-radius: 8px; }
   /* 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹을 숨긴다 */
   .ribbon-collapse-btn { flex: 0 0 auto; }
   .ribbon-collapse-btn svg { transition: transform .12s ease; }
@@ -609,8 +611,9 @@
   .ornchip.orn-armed { background: #f4e2c2; outline: 1.5px solid var(--accent); border-radius: 6px; }
 
   /* 시김새 창 안의 모드 버튼(미세조정/추가 모드) — 전역 도구바가 아니라 이 팔레트 설정임을
-     보여주려고 시김새 창 안에 둔다. */
-  .orn-win-modes { display: flex; gap: 6px; margin-bottom: 8px; }
+     보여주려고 시김새 창 안에 둔다. .pal-top 한 줄 안에 들어가므로 아래 마진을 주면
+     줄 높이보다 커져 위아래로 삐져나오고, 바로 아래 점선 안내 상자와 선이 겹쳐 보인다. */
+  .orn-win-modes { display: flex; gap: 6px; }
 
   /* 셀 서식 창 — "설정"(무엇을 그릴지: 프리셋·변·굵기·선종류·색)과 "실행"(칠하기/지우기 —
      지금 드래그하면 바로 적용되는 도구)을 서로 다른 생김새로 분리해서 한눈에 구분되게 한다. */
@@ -660,6 +663,8 @@
                      background: #faf8f3; border: 1px dashed #cbbfa4; border-radius: 7px;
                      padding: 4px 9px; margin-bottom: 6px; }
   .orn-syntax-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink); }
+  /* 시김새 도구창(직접 입력)에선 위 제목 줄의 모드 버튼들과 맞닿지 않게 사이를 띄운다 */
+  #ornWinWrap .orn-syntax-hint { margin-top: 8px; }
   #paletteCol .orn-syntax-hint { display: none; }
   #paletteCol.orn-active .orn-syntax-hint { display: block; }
 
@@ -676,32 +681,11 @@
   .orn-add-map-bar select { font-size: 11px; padding: 2px 18px 2px 5px; border: 1px solid var(--line);
                              border-radius: 5px; font-family: inherit; background-color: #fff; cursor: pointer; }
 
-  /* 버튼 설명 호버 툴팁 */
+  /* 버튼 설명 호버 툴팁(.tip + data-tip) — 전부 JS가 띄우는 #ribbonTipFloat 하나로 통일.
+     CSS ::after 말풍선은 (1) overflow 있는 조상(리본·도구창) 안에서 잘리고 (2) 화면
+     가장자리 버튼(예: 맨 왼쪽 '새 문서' +)에선 가운데 정렬 때문에 창 밖으로 나갔다.
+     뜬 말풍선은 뷰포트에 맞춰 좌우를 밀어 넣고 위아래도 뒤집으므로 예외가 없다. */
   .tip { position: relative; }
-  .tip::after {
-    content: attr(data-tip);
-    position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
-    background: #2b2b2b; color: #fff; font-size: 11px; font-weight: 400; line-height: 1.4;
-    padding: 6px 9px; border-radius: 7px; width: max-content; max-width: 220px;
-    white-space: pre-line; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,.25);
-    opacity: 0; visibility: hidden; transition: opacity .12s ease; z-index: 40; pointer-events: none;
-  }
-  .tip::before {
-    content: ""; position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
-    border: 5px solid transparent; border-top-color: #2b2b2b;
-    opacity: 0; visibility: hidden; transition: opacity .12s ease; z-index: 40; pointer-events: none;
-  }
-  .tip:hover::after, .tip:hover::before { opacity: 1; visibility: visible; }
-  /* #topBar는 화면 맨 위라 말풍선이 기본값(위로 뜸)대로 나오면 화면 밖으로 나가 안 보인다
-     — 버튼 아래로 뒤집는다 */
-  #topBar .tip::after, #topBar .tip::before { bottom: auto; }
-  #topBar .tip::after { top: calc(100% + 7px); }
-  #topBar .tip::before { top: calc(100% + 2px); border-top-color: transparent; border-bottom-color: #2b2b2b; }
-  /* 리본 버튼은 .ribbon의 overflow-x:auto 때문에(CSS 규칙상 overflow-y도 auto가 되어)
-     기본 말풍선(::after/::before)이 리본 박스 밖으로 나가면 잘려 안 보인다 — 아예 꺼두고
-     JS가 띄우는 #ribbonTipFloat(리본 밖·body 바로 아래)로 대신한다. */
-  .ribbon .tip::after, .ribbon .tip::before,
-  .direct-win .tip::after, .direct-win .tip::before { display: none; }
   .ribbon-tip-float {
     position: fixed; z-index: 9999; background: #2b2b2b; color: #fff; font-size: 11px;
     font-weight: 400; line-height: 1.45; padding: 6px 9px; border-radius: 7px;
@@ -728,7 +712,9 @@
   /* 팔레트 머리 두 줄 — 첫 줄(.pal-top): 제목 + 오른쪽 입력·소리·크기(팔레트 전체 공통),
      둘째 줄(.pal-tools): 율명 전용 설정 묶음. 시김새 탭에선 둘째 줄이 통째로 숨어
      첫 줄 하나만 남는다(세로 최소화). */
-  .pal-top { display: flex; align-items: center; gap: 12px; min-height: 24px; }
+  /* flex:0 0 auto — 세로 flex 도구창(시김새 창 등)이 max-height에 눌릴 때 이 줄까지
+     min-height로 짜부라지면 안의 버튼이 위아래로 삐져나와 아래 안내 상자와 겹쳐 보인다 */
+  .pal-top { display: flex; align-items: center; gap: 12px; min-height: 24px; flex: 0 0 auto; }
   .pal-top-right { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
   .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 5px; }
   #paletteCol.orn-active .pal-tools { display: none; }
@@ -810,6 +796,9 @@
   .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
 
   /* 임시 저장(이 컴퓨터) 슬롯 목록 */
+  /* 임시저장 버튼 — 출력 탭 다른 동작 버튼(.btns button: 13px·600)과 글자 굵기·크기를
+     맞추고, 옆 입력칸(패딩 8px)과 같은 높이가 되도록 세로 패딩을 준다 */
+  #snapSaveBtn { flex: 0 0 auto; padding: 8px 14px; font-size: 13px; font-weight: 600; }
   #snapList { margin-top: 8px; }
   .snap-item { display: flex; align-items: center; gap: 8px; padding: 6px 0;
                border-top: 1px solid var(--line); font-size: 12px; }
@@ -918,6 +907,8 @@
                   font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6;
                   white-space: normal; }   /* .melody-head의 nowrap을 되돌림 — 안 그러면 문장이 박스 밖으로 넘침 */
   .melody-guide.on { display: block; }
+  /* 화면 아래로 넘칠 때 JS(makeGuideToggle)가 붙이는 위로 펼침 상태 */
+  .melody-guide.up { top: auto; bottom: calc(100% + 8px); }
   .melody-guide b { color: var(--accent); font-size: 11px; letter-spacing: .5px; }
   .melody-guide .mg-sec { margin-top: 8px; }
   .melody-guide .mg-sec:first-child { margin-top: 0; }

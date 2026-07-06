@@ -63,8 +63,6 @@
   // "custom"이면 cellBorderSides 체크값을 모든 선택 칸에 똑같이 적용, "outer"/"inner"는
   // 드래그로 고른 범위 안에서 칸의 위치(첫 칸/마지막 칸/중간)를 따져 계산한다.
   let cellBorderPreset = "custom";           // "custom" | "outer" | "inner"
-  const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
-  const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
   // 자유 텍스트 주석(예: '대여음') — 첫 페이지 위에 세로로 표시, 마우스로 위치·크기 조절
   let customTexts = [];                     // { id, text, xf, yf, size } — xf/yf는 페이지 폭/높이 대비 비율(0~1)
   let cellStyles = {};                      // [gi][ci] = { fill: "#rrggbb" } — 정간 배경색(나중에 border 등 확장 가능)
@@ -425,12 +423,9 @@
   function reconcileMelody() {
     const { beats, capacity } = formStructure();
     const parsed = parseMelodyOffsets(melodyFull);
-    // 자동: 멜로디 각 수 유지 / 미입력(기본): 페이지 꽉 채움 / 직접 입력: 그 값(여러 페이지 가능)
-    const gakAuto = $("gakCountAuto").checked;
-    const target = gakAuto
-      ? Math.max(1, parsed.length)
-      : (!gakUserSet ? capacity
-                     : Math.max(1, parseInt($("gakCount").value) || 1));
+    // 미입력(기본): 페이지 꽉 채움 / 직접 입력: 그 값(여러 페이지 가능)
+    const target = !gakUserSet ? capacity
+                               : Math.max(1, parseInt($("gakCount").value) || 1);
     const lines = [];
     for (let g = 0; g < target; g++) {
       const cells = [];
@@ -455,12 +450,8 @@
   function reconcileLyrics() {
     if (!$("wantLyrics").checked) return;
     const { beats, capacity } = formStructure();
-    const parsedMelody = parseMelodyOffsets(melodyFull);
-    const gakAuto = $("gakCountAuto").checked;
-    const target = gakAuto
-      ? Math.max(1, parsedMelody.length)
-      : (!gakUserSet ? capacity
-                     : Math.max(1, parseInt($("gakCount").value) || 1));
+    const target = !gakUserSet ? capacity
+                               : Math.max(1, parseInt($("gakCount").value) || 1);
     const parsed = parseMelodyOffsets(lyricsFull);
     const lines = [];
     for (let g = 0; g < target; g++) {
@@ -805,42 +796,18 @@
     }
   }
 
-  // 장단 초기화 / 되돌리기
+  // 장단/가사 초기화 — 전용 되돌리기 버튼은 없앴다. render()마다 전역 스냅샷이 남으므로
+  // 복구는 전역 되돌리기(Cmd/Ctrl+Z) 하나로 충분하다.
   function resetJangdan() {
-    jangdanUndoStack.push($("jangdan").value);
     $("jangdan").value = "";
     reconcileJangdan();
     render();
-    refreshJangdanUndoBtn();
   }
-  function undoJangdan() {
-    if (!jangdanUndoStack.length) return;
-    $("jangdan").value = jangdanUndoStack.pop();
-    render();
-    refreshJangdanUndoBtn();
-  }
-  function refreshJangdanUndoBtn() {
-    $("jangdanUndo").disabled = jangdanUndoStack.length === 0;
-  }
-
-  // 가사 초기화 / 되돌리기
   function resetLyrics() {
-    lyricsUndoStack.push(lyricsFull);
     lyricsFull = "";
     reconcileLyrics();
     render();
     refreshEditorSlices();
-    refreshLyricsUndoBtn();
-  }
-  function undoLyrics() {
-    if (!lyricsUndoStack.length) return;
-    lyricsFull = lyricsUndoStack.pop();
-    render();
-    refreshEditorSlices();
-    refreshLyricsUndoBtn();
-  }
-  function refreshLyricsUndoBtn() {
-    $("lyricsUndo").disabled = lyricsUndoStack.length === 0;
   }
 
   // ---------- 상단 바: 새 문서 / 전체 초기화 ----------
@@ -865,9 +832,9 @@
     const modal = $("newDocModal");
     $("ndBeats").value = "12";
     $("ndDaegang").value = "";
-    $("ndGakCountAuto").checked = true;
-    $("ndGakCount").value = "8";
-    $("ndTitle").value = "";
+    $("ndGakCount").value = "";   // 비워두면 기본 20각 (placeholder로 안내)
+    $("ndTitle").value = "";      // 비워두면 제목 없음
+    $("ndTitleLayout").value = "side";
     $("ndSubtitle").value = "";
     $("ndWantJangdan").checked = false;
     modal.style.display = "flex";
@@ -875,9 +842,9 @@
       const answers = {
         beats: Math.max(1, parseInt($("ndBeats").value) || 12),
         daegang: $("ndDaegang").value.trim(),
-        gakCountAuto: $("ndGakCountAuto").checked,
-        gakCount: Math.max(1, parseInt($("ndGakCount").value) || 8),
+        gakCount: Math.max(1, parseInt($("ndGakCount").value) || 20),
         title: $("ndTitle").value.trim(),
+        titleLayout: $("ndTitleLayout").value,
         subtitle: $("ndSubtitle").value.trim(),
         wantJangdan: $("ndWantJangdan").checked
       };
@@ -891,9 +858,12 @@
     if (!a) return;
     $("beats").value = a.beats;
     $("daegang").value = a.daegang;
-    $("gakCountAuto").checked = a.gakCountAuto;
     $("gakCount").value = a.gakCount;
+    // 마법사에서 정한(또는 기본 20) 각 수를 '사용자가 정한 값'으로 취급해야 페이지 채움
+    // (capacity)으로 덮이지 않고 그대로 유지된다
+    gakUserSet = true;
     $("title").value = a.title;
+    $("titleLayout").value = a.titleLayout || "side";
     $("subtitle").value = a.subtitle;
     $("wantJangdan").checked = a.wantJangdan;
     reconcileJangdan();
@@ -1886,6 +1856,10 @@
   }
 
   // 장단 칸 하나 그리기: 정간 옆 좁은 줄에 구음 기호(들)를 세로로 배치(분박과 동일한 공백 규칙)
+  // '다'는 원본 svg가 거의 정사각형(작은 점 하나)이라 contain 상자를 꽉 채워 세로로 긴
+  // 다른 기호들보다 유독 커 보인다 — 팔레트(styles.css의 img[alt="다"])와 같은 이유로
+  // 악보에서도 따로 줄여 그린다.
+  const JANGGU_DRAW_SCALE = { "다": 0.3 };
   function drawJangdanCell(svg, x, yTop, width, cellH, content) {
     const rows = content.split(/\s+/).filter(Boolean);
     if (!rows.length) return;
@@ -1895,7 +1869,7 @@
       const href = data[name];
       if (!href) return;
       const cy = yTop + rowH * (i + 0.5);
-      const box = Math.min(width * 0.6, rowH * 0.6);
+      const box = Math.min(width * 0.6, rowH * 0.6) * (JANGGU_DRAW_SCALE[name] || 1);
       const im = el("image", { x: x + (width - box) / 2, y: cy - box / 2, width: box, height: box,
         preserveAspectRatio: "xMidYMid meet" });
       im.setAttribute("href", href);
@@ -1945,19 +1919,32 @@
     gs *= noteScaleCur;   // 율명 크기 배율 — 이제 음표 글자(drawGlyph)에만 적용됨
 
     const rowH = cell / nRows;
+    // 이음(-)만 홀로 있는 분박 행은 세로 비중을 줄여(전통 정간보 관행) 낮게 눌러 그린다.
+    // 그 행이 좁아진 만큼 남는 세로 공간을 음표 행들이 나눠 가져 가운데로 모인다.
+    // (분박이 한 줄뿐이면 비교 대상이 없어 적용하지 않음)
+    const isTieOnlyRow = function (t) { return nRows > 1 && t.length === 1 && t[0].literal === "-"; };
+    const rowWeights = rowToks.map(function (t) { return isTieOnlyRow(t) ? TIE_ROW_WEIGHT : 1; });
+    const hasTieRow = rowWeights.some(function (w) { return w !== 1; });
+    const totalWeight = rowWeights.reduce(function (a, b) { return a + b; }, 0);
+    // 가중치 기반 행 상단 위치(누적) — 이음 행이 있을 때만 이 배치를 쓴다
+    const rowTops = [];
+    { let acc = 0; for (let r = 0; r < nRows; r++) { rowTops.push(acc); acc += cell * rowWeights[r] / totalWeight; } }
     // 정간 안에 음이 정확히 둘일 때는(세로 두 줄=분박이든, 가로 두 글자든) 간격(자간)이
     // 다른 경우보다 헐렁해 보여서 정간 중심을 기준으로 살짝 좁혀 그린다
     // (셋 이상일 때는 그대로 균등 분할).
     const PAIR_GAP_SCALE = 0.8;
     for (let ri = 0; ri < nRows; ri++) {
       let cyc;
-      if (nRows === 2) {
+      if (hasTieRow) {
+        cyc = yTop + rowTops[ri] + (cell * rowWeights[ri] / totalWeight) / 2;
+      } else if (nRows === 2) {
         const halfGap = (rowH / 2) * PAIR_GAP_SCALE;
         cyc = (ri === 0) ? (yTop + cell / 2 - halfGap) : (yTop + cell / 2 + halfGap);
       } else {
         cyc = yTop + rowH * (ri + 0.5);        // 행 세로 중심 (ri=0 위)
       }
       const toks = rowToks[ri];
+      const tieOnly = rowWeights[ri] !== 1;   // 이 행이 이음(-) 단독 행인지
 
       // 토큰을 [주 글자(음표/독립기호) + 붙임 시김새] 그룹으로 묶는다
       const groups = groupRowTokens(toks);
@@ -1982,7 +1969,7 @@
             * (SYM_EXTRA_SCALE[g.main.sym] || 1);
           drawAdjSym(svg, g.main, cx, cyc, mainBox, cell, gakIdx, cellIdx, pageIdx, symK);
         }
-        else drawGlyph(svg, g.main, cx, cyc, gs);
+        else drawGlyph(svg, g.main, cx, cyc, tieOnly ? gs * TIE_ROW_GLYPH : gs);
         // 붙임 시김새: 주 글자 오른쪽에 작게 (여러 개면 세로로 쌓음) —
         // 덧길이표만 예외로 왼쪽에 붙는다(정간보 관행). symK는 화면에 그리는 자리(좌/우)와
         // 무관하게 원문(글자) 등장 순서로 먼저 매겨야 시김새 미세조정(클릭 선택)이 안 어긋난다.
@@ -2031,7 +2018,13 @@
   // 악보에 그려지는 율명(음이름) 글자만 표기 기본 크기보다 1.1배 키움(기호·한자 통과 문자는 그대로)
   const YUL_SCORE_SCALE = 1.15;
   // 이음(-) 표시를 가로로만 늘려서(세로는 그대로) 정간 안에서 너무 짧아 보이지 않게 함
-  const TIE_STRETCH = 1.3;
+  const TIE_STRETCH = 1.95;
+  // 전통 정간보 관행: 한 분박 행에 이음(-)만 홀로 있을 때, 그 행을 한자(음표) 행보다
+  // 낮게 눌러 그린다 — 세로 높이 비중(TIE_ROW_WEIGHT, 한자 행=1)을 줄이면 남는 공간을
+  // 음표 행들이 나눠 가져 가운데로 모이고, 글자 자체(TIE_ROW_GLYPH)도 살짝 작게 그려
+  // '-' 가 음표보다 튀지 않아 가시성이 좋아진다. (분박이 여러 줄일 때만 적용)
+  const TIE_ROW_WEIGHT = 0.68;
+  const TIE_ROW_GLYPH = 0.85;
 
   function drawGlyph(svg, tk, cx, cyc, size) {
     let file = null;
@@ -2419,12 +2412,9 @@
     const jdSlot = wantJangdan ? 1 : 0;
     const page0cap = Math.max(1, cap0 * stack - jdSlot); // 첫 페이지(제목 포함, 모든 밴드 동일 폭)
     const pageNcap = gakPerRow * stack;                 // 이후 페이지
-    const gakAuto = $("gakCountAuto").checked;
-    const wantGak = gakAuto ? Math.max(1, parsed.length)
-                  : (!gakUserSet ? page0cap
-                                 : Math.max(1, parseInt($("gakCount").value) || 1));
-    $("gakCount").disabled = gakAuto;
-    if (gakAuto || !gakUserSet) $("gakCount").value = wantGak;
+    const wantGak = !gakUserSet ? page0cap
+                                : Math.max(1, parseInt($("gakCount").value) || 1);
+    if (!gakUserSet) $("gakCount").value = wantGak;
 
     // 각을 페이지·밴드에 분배
     const pages = [];
@@ -2976,7 +2966,7 @@
     }
 
     $("readout").innerHTML =
-      `그린 각: <b>${wantGak}</b>${gakAuto ? " (자동)" : ""} · 페이지 <b>${pages.length}</b>장<br>` +
+      `그린 각: <b>${wantGak}</b> · 페이지 <b>${pages.length}</b>장<br>` +
       `가로 각 <b>${gakPerRow}</b> · 세로 밴드 최대 <b>${stack}</b>${stackAuto ? " (자동)" : ""} · ${landscape ? "가로" : "세로"}<br>` +
       `각 너비: <b>${cell.toFixed(1)}</b> · 각 간격: <b>${gap.toFixed(1)}</b> · 밴드 간격: <b>${bandGap.toFixed(1)}</b> mm` +
       (scale < 0.999 ? ` <span style="color:#8a6d3b">(A4 맞춤 ${Math.round(scale * 100)}%)</span>` : "") + `<br>` +
@@ -3206,7 +3196,7 @@
   }
 
   // ---------- 저장 / 불러오기 ----------
-  const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount", "gakCountAuto",
+  const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout",
@@ -3456,7 +3446,7 @@
   $("beats").addEventListener("input", () => { fillDaegangPreset(); onFormChange(); });
   // 총 각 수를 직접 입력하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
   $("gakCount").addEventListener("input", function () { gakUserSet = true; });
-  ["gakPerRow", "stackCount", "stackAuto", "title", "titleLayout", "gakCount", "gakCountAuto", "wantJangdan", "wantLyrics"].forEach(id => {
+  ["gakPerRow", "stackCount", "stackAuto", "title", "titleLayout", "gakCount", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
   });
@@ -3753,8 +3743,6 @@
   });
   attachGakGridGuard("jangdan", syncJangdanFromCursor);
   $("jangdanReset").addEventListener("click", resetJangdan);
-  $("jangdanUndo").addEventListener("click", undoJangdan);
-  refreshJangdanUndoBtn();
 
   // 가사 편집 → 렌더 + 가사 줄 하이라이트 갱신
   $("lyrics").addEventListener("input", function () { syncLyricsFromEditor(); render(); syncLyricsFromCursor(); });
@@ -3763,8 +3751,6 @@
   });
   attachGakGridGuard("lyrics", syncLyricsFromCursor);
   $("lyricsReset").addEventListener("click", resetLyrics);
-  $("lyricsUndo").addEventListener("click", undoLyrics);
-  refreshLyricsUndoBtn();
 
   // 시김새 수정 모드 토글 + 조정 패널
   $("ornEditToggle").addEventListener("click", function () {
@@ -4067,6 +4053,29 @@
       const on = typeof show === "boolean" ? show : !$(guideId).classList.contains("on");
       $(guideId).classList.toggle("on", on);
       $(btnId).classList.toggle("on", on);
+      // 화면 밖 방지 — 기본(아래로 펼침)이 화면 아래로 넘치면 위로 뒤집고(.up),
+      // 위도 모자라면 넓은 쪽을 골라 max-height로 눌러 패널 안에서 스크롤되게 한다.
+      // (에디터 모드에선 ? 버튼이 하단 독에 있어 아래 공간이, 직접 입력 모드에선
+      // 도구창이 화면 위쪽에 떠 있어 위 공간이 부족할 수 있다 — 방향 고정으론 안 됨)
+      if (on) {
+        const g = $(guideId);
+        g.classList.remove("up"); g.style.maxHeight = ""; g.style.overflowY = "";
+        const vh = document.documentElement.clientHeight, margin = 8;
+        let r = g.getBoundingClientRect();
+        if (r.bottom > vh) {
+          const wrapR = g.parentNode.getBoundingClientRect();
+          const spaceAbove = wrapR.top - margin * 2;
+          const spaceBelow = vh - wrapR.bottom - margin * 2;
+          if (r.height <= spaceAbove) {
+            g.classList.add("up");
+          } else {
+            const useUp = spaceAbove > spaceBelow;
+            g.classList.toggle("up", useUp);
+            g.style.maxHeight = Math.max(120, useUp ? spaceAbove : spaceBelow) + "px";
+            g.style.overflowY = "auto";
+          }
+        }
+      }
     };
     $(btnId).addEventListener("click", function (e) { e.stopPropagation(); fn(); });
     document.addEventListener("click", function (e) {
@@ -4084,10 +4093,10 @@
   makeGuideToggle("textGuide", "textGuideToggle");
   makeGuideToggle("shortcutsGuide", "shortcutsGuideToggle");
 
-  // 리본·도구창 버튼 호버 설명 — 기본 CSS 말풍선(.tip::after)은 리본의 overflow-x:auto
-  // 때문에(CSS 규칙상 overflow-y도 auto가 되어), 도구창(.direct-win)은 overflow:auto라서
-  // 각각 박스 밖으로 나가는 순간 잘려 안 보인다. 이 버튼들에 한해 body 바로 아래 뜬
-  // 공유 말풍선(#ribbonTipFloat)을 JS로 직접 위치시켜 띄운다.
+  // 버튼 호버 설명(.tip + data-tip) — 모두 body 바로 아래 뜬 공유 말풍선(#ribbonTipFloat)
+  // 하나로 띄운다. CSS ::after 방식은 overflow 있는 조상(리본·도구창) 안에서 잘리고,
+  // 화면 가장자리 버튼(맨 왼쪽 '새 문서' + 등)에선 가운데 정렬 때문에 창 밖으로 나갔다.
+  // 여기는 뷰포트 기준으로 좌우를 밀어 넣고(클램핑) 위 공간이 없으면 아래로 뒤집는다.
   (function () {
     const float = $("ribbonTipFloat");
     if (!float) return;
@@ -4114,7 +4123,7 @@
       float.style.top = top + "px";
     }
     function hide() { float.classList.remove("on"); }
-    document.querySelectorAll(".ribbon .tip, .direct-win .tip").forEach(function (btn) {
+    document.querySelectorAll(".tip").forEach(function (btn) {
       btn.addEventListener("mouseenter", function () { showFor(btn); });
       btn.addEventListener("mouseleave", function () { hideTimer = setTimeout(hide, 30); });
       btn.addEventListener("mousedown", hide);

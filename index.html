@@ -90,7 +90,7 @@
 
       <div class="sec">제목</div>
       <div class="field">
-        <label for="title">곡 제목</label>
+        <label for="title">곡 제목 (선택)</label>
         <div class="row">
           <input type="text" id="title" placeholder="예: 언편" style="flex:1; min-width:0;">
           <select id="titleLayout" title="제목 표기 방향" style="flex:0 0 96px; width:96px;">
@@ -159,38 +159,37 @@
     <!-- ===== 레이아웃 ===== -->
     <div class="tabpanel" data-tab="layout">
       <div class="field">
-        <label for="beats">한 각의 정간 수 (몇 박)</label>
+        <label for="beats">한 각의 정간 수</label>
         <input type="number" id="beats" min="1" max="64" value="12">
       </div>
 
       <div class="field">
         <label for="daegang">대강 분절 (선택)</label>
         <input type="text" id="daegang" placeholder="예: 3 3 3 3">
-        <div class="hint">• 각 안에서 굵은 선으로 나눌 정간 묶음입니다.<br>• 공백/쉼표로 구분하며, 합이 정간 수와 같아야 합니다.<br>• 비우면 대강선이 없고, 박수를 바꾸면 대표 패턴이 자동 입력됩니다.</div>
+        <div class="hint">• 각 안에서 굵은 선으로 나눌 정간 묶음이며, 합이 정간 수와 같아야 합니다.</div>
       </div>
 
       <div class="field">
-        <label for="gakPerRow">한 줄에 놓을 각 수 (가로)</label>
+        <label for="gakCount">총 각 수</label>
+        <input type="number" id="gakCount" min="1" max="480" value="18">
+      </div>
+
+      <!-- 정간·각(내용의 짜임) 위 세 항목과, 그걸 페이지에 어떻게 얹을지(배치) 아래 두
+           항목을 구분선으로 살짝 나눈다 -->
+      <div class="sec">배치</div>
+      <div class="field">
+        <label for="gakPerRow">한 줄에 놓을 각 수</label>
         <input type="number" id="gakPerRow" min="1" max="40" value="10">
-        <div class="hint">• 한 줄에 오른쪽→왼쪽으로 나란히 놓을 각의 개수입니다 (기본 10).<br>• 제목을 '세로 칸'으로 표기하면 첫 페이지에서 제목이 각 2개 자리(6칸 이상일 때, 미만이면 1개)를 차지해 그만큼 내용 각 수가 줄어듭니다.</div>
+        <div class="hint">• 제목을 '세로 칸'일 경우 첫 페이지에서 제목이 각 2개 자리를 차지합니다.</div>
       </div>
 
       <div class="field">
-        <label for="stackCount">한 페이지에 쌓을 줄 수 (최대)</label>
+        <label for="stackCount">한 페이지에 쌓을 줄 수</label>
         <div class="row">
           <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
           <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
         </div>
         <div class="hint">한 페이지에 세로로 최대 몇 줄까지 쌓을지 정합니다.</div>
-      </div>
-
-      <div class="field">
-        <label for="gakCount">총 각 수 (마디 수)</label>
-        <div class="row">
-          <input type="number" id="gakCount" min="1" max="480" value="18" style="flex:1;">
-          <label class="chk"><input type="checkbox" id="gakCountAuto"> 자동</label>
-        </div>
-        <div class="hint">총 각(마디)의 개수입니다.</div>
       </div>
 
       <div class="field">
@@ -277,7 +276,7 @@
           <button type="button" id="snapSaveBtn" class="at-add">임시저장</button>
         </div>
         <div id="snapList"></div>
-        <div class="hint">• 지금 상태를 이 브라우저(컴퓨터)에 저장해두고 언제든 되불러옵니다.<br>• 불러오기는 되돌리기(Cmd/Ctrl+Z)로 취소할 수 있습니다.<br>• 다른 컴퓨터로 옮기려면 ‘파일로 저장’을 쓰세요.</div>
+        <div class="hint">• 지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.<br>• 불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.<br>• <b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 위의 ‘파일로 저장’으로 파일을 만들어 전달하세요.</div>
       </div>
     </div>
   </aside>
@@ -772,8 +771,7 @@
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
         </div>
         <div class="ribbon-group">
-          <button type="button" id="jangdanUndo" class="ribbon-btn tip" data-tip="방금 초기화한 장단을 되돌립니다">↶<span>되돌리기</span></button>
-          <button type="button" id="jangdanReset" class="ribbon-btn tip" data-tip="장단 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲<span>초기화</span></button>
+          <button type="button" id="jangdanReset" class="ribbon-btn tip" data-tip="장단 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲<span>초기화</span></button>
         </div>
       </div>
       <div class="melody-head">
@@ -814,8 +812,7 @@
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
         </div>
         <div class="ribbon-group">
-          <button type="button" id="lyricsUndo" class="ribbon-btn tip" data-tip="방금 초기화한 가사를 되돌립니다">↶<span>되돌리기</span></button>
-          <button type="button" id="lyricsReset" class="ribbon-btn tip" data-tip="가사 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲<span>초기화</span></button>
+          <button type="button" id="lyricsReset" class="ribbon-btn tip" data-tip="가사 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲<span>초기화</span></button>
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group ribbon-select-group">
@@ -899,10 +896,9 @@
   </main>
   </div>
 
-  <!-- 리본 버튼 호버 설명 — 리본은 overflow-x:auto라 (CSS 규칙상 overflow-y도 auto가 되어)
-       버튼 위로 뜨는 말풍선(.tip::after)이 리본 박스 밖으로 나가는 순간 잘려 안 보인다.
-       리본 버튼만은 body 바로 아래(어떤 overflow 조상에도 안 걸리는) 뜬 말풍선 하나를
-       공유해서 JS로 위치를 계산해 띄운다. -->
+  <!-- 리본·뜬 도구창 버튼 호버 설명 — 버튼 위로 뜨는 말풍선(.tip::after)이 overflow 있는
+       조상 상자 밖으로 나가는 순간 잘려 안 보인다. 리본 버튼만은 body 바로 아래(어떤
+       overflow 조상에도 안 걸리는) 뜬 말풍선 하나를 공유해서 JS로 위치를 계산해 띄운다. -->
   <div id="ribbonTipFloat" class="ribbon-tip-float"></div>
 
   <!-- 새 문서 마법사 — '새 문서' 버튼을 눌렀을 때뿐 아니라, 저장된 작업이 전혀 없는 첫 실행에도
@@ -912,7 +908,7 @@
     <div class="modal-box">
       <h3>새 문서 만들기</h3>
       <div class="field">
-        <label for="ndBeats">한 각의 정간 수 (몇 박)</label>
+        <label for="ndBeats">한 각의 정간 수</label>
         <input type="number" id="ndBeats" min="1" max="64" value="12">
       </div>
       <div class="field">
@@ -921,15 +917,19 @@
         <div class="hint">비워두면 박 수에 맞는 대표 패턴이 자동으로 들어갑니다.</div>
       </div>
       <div class="field">
-        <label for="ndGakCount">총 각 수 (마디 수)</label>
-        <div class="row">
-          <input type="number" id="ndGakCount" min="1" max="480" value="8" style="flex:1;">
-          <label class="chk"><input type="checkbox" id="ndGakCountAuto" checked> 자동(선율 입력에 맞춰 늘어남)</label>
-        </div>
+        <label for="ndGakCount">총 각 수</label>
+        <input type="number" id="ndGakCount" min="1" max="480" placeholder="기본: 20">
       </div>
       <div class="field">
-        <label for="ndTitle">곡 제목</label>
-        <input type="text" id="ndTitle" placeholder="예: 언편">
+        <label for="ndTitle">곡 제목 (선택)</label>
+        <div class="row">
+          <input type="text" id="ndTitle" placeholder="예: 언편" style="flex:1; min-width:0;">
+          <select id="ndTitleLayout" title="제목 표기 방향" style="flex:0 0 96px; width:96px;">
+            <option value="side" selected>세로 칸</option>
+            <option value="top">가로 위</option>
+          </select>
+        </div>
+        <div class="hint">비워두면 제목 없이 만듭니다.</div>
       </div>
       <div class="field">
         <label for="ndSubtitle">부제 (선택)</label>
