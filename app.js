@@ -63,7 +63,6 @@
   // "custom"이면 cellBorderSides 체크값을 모든 선택 칸에 똑같이 적용, "outer"/"inner"는
   // 드래그로 고른 범위 안에서 칸의 위치(첫 칸/마지막 칸/중간)를 따져 계산한다.
   let cellBorderPreset = "custom";           // "custom" | "outer" | "inner"
-  const melodyUndo = [];                    // 초기화 되돌리기용 이전 값 스택
   const jangdanUndoStack = [];               // 장단 초기화 되돌리기용 이전 값 스택
   const lyricsUndoStack = [];                // 가사 초기화 되돌리기용 이전 값 스택
   // 자유 텍스트 주석(예: '대여음') — 첫 페이지 위에 세로로 표시, 마우스로 위치·크기 조절
@@ -640,27 +639,6 @@
     return { nRows: nRows, row: row };
   }
 
-  // 멜로디 초기화 / 되돌리기
-  function resetMelody() {
-    melodyUndo.push(melodyFull);
-    melodyFull = "";
-    reconcileMelody();
-    reconcileJangdan();
-    reconcileLyrics();
-    render();
-    refreshEditorSlices();
-    syncActiveFromCursor();
-    refreshUndoBtn();
-  }
-  function undoMelody() {
-    if (!melodyUndo.length) return;
-    melodyFull = melodyUndo.pop();
-    render();
-    refreshEditorSlices();
-    syncActiveFromCursor();
-    refreshUndoBtn();
-  }
-
   // ---------- 구간 지우기(직접 입력) ----------
   // 정간을 순서(각 → 정간) 기준 한 줄로 폈을 때의 위치. 드래그 시작~끝 사이(양끝 포함)를 구간으로 본다.
   function melCellSeq(gi, ci) {
@@ -668,7 +646,7 @@
     return gi * beats + ci;
   }
   // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi) 안의 음·시김새를 모두 지운다(빈 정간으로).
-  // 초기화와 같은 되돌리기 스택을 써서 기존 '되돌리기' 버튼으로 복구할 수 있다.
+  // 매 렌더마다 전역 스냅샷(saveState)이 남으므로 전역 되돌리기(Cmd/Ctrl+Z)로 복구할 수 있다.
   function clearMelodyRange(startGi, startCi, endGi, endCi) {
     const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
     const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
@@ -682,15 +660,10 @@
       }
     }
     if (changed) {
-      melodyUndo.push(melodyFull);
       melodyFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
       refreshEditorSlices();
-      refreshUndoBtn();
     }
     render();
-  }
-  function refreshUndoBtn() {
-    $("melodyUndo").disabled = melodyUndo.length === 0;
   }
 
   // ---------- 셀 서식(배경색·테두리, 직접 입력) ----------
@@ -3305,7 +3278,6 @@
     render();
     refreshEditorSlices();
     syncActiveFromCursor();
-    refreshUndoBtn();
     renderTextList();
     hideTextPanel();
   }
@@ -3717,11 +3689,8 @@
   ["keyup", "click", "select", "focus"].forEach(function (ev) {
     $("melody").addEventListener(ev, syncActiveFromCursor);
   });
-  $("melodyReset").addEventListener("click", resetMelody);
-  $("melodyUndo").addEventListener("click", undoMelody);
   $("gakInsertBtn").addEventListener("click", function () { insertGakBelow(false); });
   $("gakDeleteBtn").addEventListener("click", function () { deleteGakAtCursor(); });
-  refreshUndoBtn();
 
   // 장단 편집 → 렌더 + 장단 칸 하이라이트 갱신
   $("jangdan").addEventListener("input", function () { render(); syncJangdanFromCursor(); });
