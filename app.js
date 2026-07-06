@@ -2587,7 +2587,10 @@
 
       const usedBands = page.bands.length;
       const gridTotalH = usedBands * bandH + (usedBands - 1) * bandGap;
-      const gridX = frameX + frameW - INNER_PAD - gridTotalW;
+      // 격자(+제목 칸) 상자는 페이지 가로 중앙에 — 예전엔 오른쪽 여백선에 붙여 그려서
+      // (오른쪽 정렬) 내용이 페이지보다 좁으면(전체 배율 축소·A4 맞춤 등) 남는 여백이
+      // 전부 왼쪽으로 몰려 치우쳐 보였다. 각 진행(오른쪽→왼쪽)과 상자 위치는 별개.
+      const gridX = frameX + (frameW - gridTotalW) / 2;
       const pageTempoH = (wantTempo && pageIdx === 0) ? tempoH : 0;
       const pageTitleTopH = pageIdx === 0 ? titleTopH : 0;   // 가로 제목은 첫 페이지에만
       const pageTopExtra = pageTempoH + pageTitleTopH;
@@ -4062,10 +4065,12 @@
       buildOrnAddMapBar();
       applyPalZoom();
       applyOrnPalZoom();
-      // 직접 입력에 '새로 들어올 때만' 도구창 상태를 초기화(율명 탭만 기본으로 열기).
-      // 모드가 안 바뀐 재적용(예: 전역 되돌리기의 상태 복원)에서는 지금 열려 있는
-      // 도구창을 그대로 둔다 — 안 그러면 Cmd+Z를 누를 때마다 열어둔 창이 율명으로 튄다.
-      if (lastAppliedInputMode !== "direct") activateDirectPanel("paletteCol");
+      // 에디터에서 직접 입력으로 '전환한 순간'에만 율명 창을 기본으로 열어준다.
+      // - 첫 로드/새로고침(lastApplied=null)에는 열지 않는다 — 직접 입력이 기본값이 되면서
+      //   매번 율명 창이 저절로 떠 있던 문제. 악보만 깨끗하게 보이는 게 맞다.
+      // - 모드가 안 바뀐 재적용(예: 전역 되돌리기의 상태 복원)에서도 지금 열려 있는
+      //   도구창을 그대로 둔다 — 안 그러면 Cmd+Z를 누를 때마다 열어둔 창이 율명으로 튄다.
+      if (lastAppliedInputMode === "editor") activateDirectPanel("paletteCol");
     }
     lastAppliedInputMode = inputMode;
   }
