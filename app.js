@@ -2108,7 +2108,10 @@
              : (tk.sym != null ? tk.sym : (variant || YUL[tk.base] || tk.base));
     const isNote = tk.base != null && tk.literal == null && tk.sym == null;
     const fs = isNote ? size * YUL_SCORE_SCALE : size;
-    const t = el("text", { x: cx, y: cyc + size * 0.34, "text-anchor": "middle",
+    // 이음(-)은 글리프가 베이스라인 쪽에 낮게 찍혀 분박 행 안에서 살짝 아래로 보이므로
+    // 기준 오프셋(0.34)보다 약간 위(0.28)에 놓아 세로 중심을 맞춘다
+    const yOff = ch === "-" ? 0.28 : 0.34;
+    const t = el("text", { x: cx, y: cyc + size * yOff, "text-anchor": "middle",
       "font-size": fs, "font-family": NOTE_FONT, fill: noVariant ? "#aaa" : "#111" });
     t.textContent = ch; svg.appendChild(t);
     if (ch === "-") {   // 이음(-) 표시가 짧아 보이지 않도록 가로로만 늘림(세로 굵기는 그대로)
@@ -2651,6 +2654,9 @@
       // 밴드 통줄·대강선까지 다 그려진 뒤에 한꺼번에 그린다. 그래야 '없음'(줄 숨김)의
       // 흰 마스크가 그 선들 위에 얹혀 실제로 숨겨지고, 굵은 선도 끊김 없이 이어진다.
       const cellBorderSegs = [];
+      // 밴드 맨 위/아래 통줄·대강선은 악보의 뼈대라 '테두리 없음'으로도 지워지면 안 된다
+      // — 마스크를 다 그린 뒤 이 목록으로 되살린다([x1,y1,x2,y2,굵기]).
+      const structuralSegs = [];
       for (let b = 0; b < usedBands; b++) {
         const bandTop = gridY + b * (bandH + bandGap);
         const gridTop = bandTop + headH;
@@ -2815,9 +2821,12 @@
               })(j);
               svg.appendChild(jdHit);
             }
-            // 장단 각은 선율 각과 구분되게 세로줄을 아주 조금 더 굵게
-            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, T_THICK * 1.35));
-            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, T_THICK * 1.35));
+            // 장단 각은 선율(율명) 각과 한눈에 구분되게 네 변 모두 더 굵게 두른다
+            const jdLineW = T_THICK * 1.8;
+            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, jdLineW));
+            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, jdLineW));
+            svg.appendChild(line(jdLeft, gridTop, jdRight, gridTop, jdLineW));
+            svg.appendChild(line(jdLeft, gridBottom, jdRight, gridBottom, jdLineW));
             // 다른 정간과 똑같이 박(정간) 구분선을 그림(대강은 굵게)
             for (let i = 1; i < beats; i++) {
               svg.appendChild(line(jdLeft, gridTop + i * cell, jdRight, gridTop + i * cell,
@@ -2860,6 +2869,8 @@
         // 밴드 위/아래 통줄 (전체 폭 — 각 사이 간격까지 끊기지 않게 한 줄로)
         svg.appendChild(line(capLeft, gridTop, capRight, gridTop, T_THICK));
         svg.appendChild(line(capLeft, gridBottom, capRight, gridBottom, T_THICK));
+        structuralSegs.push([capLeft, gridTop, capRight, gridTop, T_THICK],
+                            [capLeft, gridBottom, capRight, gridBottom, T_THICK]);
         // 맨 오른쪽이 내용 있는 가사 열이면, 통줄이 그 자리까지 덮으므로 오른쪽 끝을 세로선으로 마감.
         // 제목이 있는 페이지는 통줄이 제목 칸 세로선까지 이어져 그 선이 마감을 겸하므로 긋지 않는다.
         if (closeLyricCol && !page.hasTitle) {
@@ -2870,12 +2881,16 @@
         const daegangRight = Math.min(capBase, musicRightEdge);
         dgSet.forEach(function (i) {
           svg.appendChild(line(musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG));
+          structuralSegs.push([musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG]);
         });
       }
 
       // 정간 커스텀 테두리 — 마스크 전부를 먼저, 선 전부를 나중에(두 단계). 순서를 섞으면
       // 이웃 칸의 흰 마스크가 앞서 그린 선의 모서리를 지워 선이 끊겨 보인다.
       cellBorderSegs.forEach(function (s) { drawBorderMask(svg, s); });
+      // 통줄·대강선 되살리기 — '테두리 없음' 마스크가 지운 자리라도 뼈대 선은 남아야 한다.
+      // 커스텀 선(stroke)보다 먼저 그려서, 같은 자리에 일부러 친 굵은 선은 이 위에 얹힌다.
+      structuralSegs.forEach(function (s) { svg.appendChild(line(s[0], s[1], s[2], s[3], s[4])); });
       cellBorderSegs.forEach(function (s) { drawBorderStroke(svg, s); });
 
       // 제목 칸(세로 표기) — 예시 악보처럼 프레임 위에서 아래까지 한 통짜리 세로 칸으로 그린다.
@@ -3626,7 +3641,6 @@
     grip.addEventListener("pointerup", stop);
     grip.addEventListener("pointercancel", stop);
   }
-  attachBarDrag($("zoomBarWrap"));
   attachBarDrag($("playBarWrap"));
   // 직접 입력 모드의 도구창 6개(기본 도구바 + 5개 팔레트) 다 각자 독립적으로 뜨고
   // (그립이 그때만 보임) 따로 끌 수 있음 — 피날레 팔레트처럼.

@@ -60,8 +60,17 @@
         </div>
       </div>
     </span>
+    <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
+         늘 같은 자리에 있는 게 편해서 상단바 오른쪽에 고정했다 -->
+    <div id="zoomBar">
+      <button id="zoomOut" title="축소">−</button>
+      <span class="zval" id="zoomVal">100%</span>
+      <button id="zoomIn" title="확대">+</button>
+      <button id="zoomFitH" class="fit" title="세로 맞춤 (페이지 높이를 화면에 맞춤)">세로맞춤</button>
+      <button id="zoomFitW" class="fit" title="가로 맞춤 (페이지 너비를 화면에 맞춤)">가로맞춤</button>
+    </div>
     <!-- 다크모드 토글 — 상단바 맨 오른쪽. 해(라이트)·달(다크) 아이콘을 CSS로 전환 -->
-    <button type="button" id="darkToggle" class="topbar-icon-btn tip" style="margin-left:auto;"
+    <button type="button" id="darkToggle" class="topbar-icon-btn tip"
       data-tip="어두운 화면 / 밝은 화면 전환
 · 악보(종이)는 늘 흰색으로 유지됩니다">
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -118,7 +127,7 @@
       </div>
       <div class="field">
         <label for="subtitle">부제 (선택)</label>
-        <input type="text" id="subtitle" placeholder="예: (한숨정)">
+        <input type="text" id="subtitle" placeholder="예: (한송정)">
         <div class="mini">
           <span>크기</span>
           <span class="num-unit"><input type="number" id="subSize" min="1" max="20" step="0.5" value="5"><span class="unit">mm</span></span>
@@ -380,18 +389,6 @@
       </div>
     </div>
     <div id="sheetArea">
-        <div id="zoomBarWrap" class="float-bar">
-          <div class="bar-grip" title="끌어서 이동">
-            <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
-          </div>
-          <div id="zoomBar">
-            <button id="zoomOut" title="축소">−</button>
-            <span class="zval" id="zoomVal">100%</span>
-            <button id="zoomIn" title="확대">+</button>
-            <button id="zoomFitH" class="fit" title="세로 맞춤 (페이지 높이를 화면에 맞춤)">세로맞춤</button>
-            <button id="zoomFitW" class="fit" title="가로 맞춤 (페이지 너비를 화면에 맞춤)">가로맞춤</button>
-          </div>
-        </div>
         <div id="playBarWrap" class="float-bar">
           <div class="bar-grip" title="끌어서 이동">
             <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
@@ -960,7 +957,7 @@
       </div>
       <div class="field">
         <label for="ndSubtitle">부제 (선택)</label>
-        <input type="text" id="ndSubtitle" placeholder="예: (한숨정)">
+        <input type="text" id="ndSubtitle" placeholder="예: (한송정)">
       </div>
       <div class="field">
         <label class="chk"><input type="checkbox" id="ndWantJangdan"> 장단 입력 사용</label>

@@ -366,10 +366,9 @@
   .page { background: var(--panel); box-shadow: 0 4px 24px rgba(0,0,0,.18); }
   .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
 
-  /* 떠 있는 바(문서 크기 / 재생) — 각각 따로 끌어서 옮길 수 있음 */
+  /* 떠 있는 바(재생) — 끌어서 옮길 수 있음. 보기 배율 바는 상단바로 옮겨 고정했다 */
   .float-bar { position: absolute; top: 12px; z-index: 5;
                display: flex; align-items: center; gap: 6px; }
-  #zoomBarWrap { left: 14px; }
   #playBarWrap { right: 14px; }   /* 처음엔 화면 오른쪽 위 — 끌면 left 기준으로 바뀜 */
   /* 바 왼쪽 이동 손잡이 — 끌어서 바 위치를 옮김 */
   .bar-grip { display: flex; align-items: center; justify-content: center; width: 16px;
@@ -380,11 +379,11 @@
   .bar-grip:hover { color: var(--ink); background: var(--hover); }
   .bar-grip:active { cursor: grabbing; }
   .bar-grip svg { width: 10px; height: 16px; }
-  /* 문서 크기 바 — 재생 바와 같은 틀(패딩·모서리·버튼 높이)로 맞춤 */
-  #zoomBar { display: flex; align-items: center; gap: 2px;
-             background: var(--overlay); border: 1px solid var(--line);
-             border-radius: 10px; padding: 4px 6px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
-  #zoomBar button { min-width: 26px; height: 26px; border: none; background: transparent;
+  /* 보기 배율 바 — 상단바 오른쪽에 고정(margin-left:auto가 다크 토글 앞까지 밀어줌) */
+  #zoomBar { display: flex; align-items: center; gap: 2px; margin-left: auto;
+             background: var(--panel); border: 1px solid var(--line);
+             border-radius: 8px; padding: 1px 4px; }
+  #zoomBar button { min-width: 24px; height: 22px; border: none; background: transparent;
                     font-size: 13px; line-height: 1; cursor: pointer; border-radius: 7px;
                     color: var(--muted); font-family: inherit; }
   #zoomBar button:hover { background: var(--hover); color: var(--ink); }
@@ -1011,7 +1010,7 @@
     /* 인쇄는 다크모드여도 항상 흰 종이 — 테마 변수를 라이트로 되돌리고 배경도 흰색 고정 */
     :root, body.dark { --bg:#fff; --panel:#fff; --soft:#fff; --ink:#000; --line:#d9d6cf; }
     body { display: block; height: auto; overflow: visible; background: #fff; }
-    #sidebar, #editorDock, .float-bar, .side-open { display: none !important; }
+    #topBar, #sidebar, #editorDock, .float-bar, .side-open { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
