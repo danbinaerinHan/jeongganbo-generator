@@ -3226,14 +3226,12 @@
     h.style.display = "";
   }
 
-  // 재생/일시정지/정지 버튼의 활성 상태 + 라벨을 한곳에서 갱신
+  // 재생 버튼 하나가 상태에 따라 재생↔일시정지↔이어하기를 겸한다(별도 일시정지 버튼 없음)
   function updatePlayButtons() {
     if (!$("btnPlay")) return;
-    $("btnPlay").disabled = playing;
-    $("btnPause").disabled = !playing;
+    $("btnPlay").textContent = !playing ? "▶ 재생" : (paused ? "▶ 이어하기" : "⏸ 일시정지");
+    $("btnPlay").title = !playing ? "재생 (사인파, 시김새 제외)" : (paused ? "이어 재생" : "일시정지");
     $("btnStop").disabled = !playing;
-    $("btnPause").textContent = paused ? "▶ 이어하기" : "⏸ 일시정지";
-    $("btnPause").title = paused ? "이어 재생" : "일시정지";
   }
 
   function stopPlayback() {
@@ -3626,7 +3624,8 @@
   $("zoomFitW").addEventListener("click", () => { fitZoom("width"); });
   applyZoom();
 
-  // 떠 있는 바(문서 크기/재생) 이동 손잡이 — 각각 따로 끌어서 원하는 위치에 놓기 (#main 안에서만)
+  // 떠 있는 창의 이동 손잡이 — 끌어서 원하는 위치에 놓기 (#main 안에서만).
+  // 문서 크기·재생 바는 상단바로 옮겨 고정됐고, 직접 입력 도구창들만 이걸 쓴다.
   function attachBarDrag(bar) {
     const grip = bar.querySelector(".bar-grip"), main = $("main");
     if (!grip) return;
@@ -3651,7 +3650,6 @@
     grip.addEventListener("pointerup", stop);
     grip.addEventListener("pointercancel", stop);
   }
-  attachBarDrag($("playBarWrap"));
   // 직접 입력 모드의 도구창 6개(기본 도구바 + 5개 팔레트) 다 각자 독립적으로 뜨고
   // (그립이 그때만 보임) 따로 끌 수 있음 — 피날레 팔레트처럼.
   attachBarDrag($("melodyRibbon"));
@@ -4051,8 +4049,10 @@
     });
   });
 
-  $("btnPlay").addEventListener("click", playMelody);
-  $("btnPause").addEventListener("click", togglePause);
+  // 재생 버튼 = 상태 토글: 멈춰 있으면 재생, 재생 중이면 일시정지, 일시정지면 이어하기
+  $("btnPlay").addEventListener("click", function () {
+    if (!playing) playMelody(); else togglePause();
+  });
   $("btnStop").addEventListener("click", stopPlayback);
   // 기준음(황 음고) 변경 → 저장 + 팔레트의 황 음고 셀렉트·피아노 건반 라벨도 따라감
   $("hwangPitch").addEventListener("change", function () {

@@ -60,6 +60,30 @@
         </div>
       </div>
     </span>
+    <!-- 재생 컨트롤 — 보기 배율처럼 상단바 오른쪽에 고정(예전엔 악보 위 떠 있는 바).
+         재생 버튼 하나가 상태에 따라 재생→일시정지→이어하기로 바뀐다(별도 일시정지 버튼 없음). -->
+    <div id="playBar">
+      <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
+      <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
+      <button type="button" id="playSettingsToggle" class="icon-btn" title="재생 설정 (기준음·템포)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+      <div id="playPop" class="play-pop">
+        <div class="pp-row"><span>황 음고 (기준음)</span>
+          <select id="hwangPitch">
+            <option value="63" selected>E♭4</option>
+            <option value="60">C4</option>
+          </select>
+        </div>
+        <div class="pp-row"><span>템포 (BPM)</span>
+          <input type="number" id="tempoBpm" min="20" max="240" value="60">
+        </div>
+        <div class="pp-row"><span>악보에 템포 표시</span>
+          <label class="chk" title="켜면 맨 처음 각 위에 一分・三十井 식으로 표시됩니다"><input type="checkbox" id="wantTempo"></label>
+        </div>
+        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 템포 표시를 켜면 맨 처음 각 위에 一分・三十井 식으로 한자로 표시됩니다.</div>
+      </div>
+    </div>
     <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
          늘 같은 자리에 있는 게 편해서 상단바 오른쪽에 고정했다 -->
     <div id="zoomBar">
@@ -389,34 +413,6 @@
       </div>
     </div>
     <div id="sheetArea">
-        <div id="playBarWrap" class="float-bar">
-          <div class="bar-grip" title="끌어서 이동">
-            <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
-          </div>
-          <div id="playBar">
-          <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
-          <button type="button" id="btnPause" title="일시정지" disabled>⏸ 일시정지</button>
-          <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
-          <button type="button" id="playSettingsToggle" class="icon-btn" title="재생 설정 (기준음·템포)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          </button>
-          <div id="playPop" class="play-pop">
-            <div class="pp-row"><span>황 음고 (기준음)</span>
-              <select id="hwangPitch">
-                <option value="63" selected>E♭4</option>
-                <option value="60">C4</option>
-              </select>
-            </div>
-            <div class="pp-row"><span>템포 (BPM)</span>
-              <input type="number" id="tempoBpm" min="20" max="240" value="60">
-            </div>
-            <div class="pp-row"><span>악보에 템포 표시</span>
-              <label class="chk" title="켜면 맨 처음 각 위에 一分・三十井 식으로 표시됩니다"><input type="checkbox" id="wantTempo"></label>
-            </div>
-            <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 템포 표시를 켜면 맨 처음 각 위에 一分・三十井 식으로 한자로 표시됩니다.</div>
-          </div>
-          </div>
-        </div>
       <div id="ornPanel" class="orn-panel">
         <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" class="icon-btn" title="닫기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -691,10 +687,11 @@
           <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="배경색">
           <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint"
             data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
-② 클릭 → 왼쪽에서 고른 색으로 칠함">⬚<span>칠하기</span></button>
+② 클릭 → 왼쪽에서 고른 색으로 칠함">⬚<span>적용</span></button>
           <button type="button" id="cellFillEraseToggle" class="ribbon-btn tip cell-style-action erase"
             data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
-② 클릭 → 배경색 지움(투명)">⌫<span>지우기</span></button>
+② 클릭 → 칠해둔 배경색만 지움(투명)
+· 정간 내용(음·시김새)은 그대로">⌫<span>색 지우기</span></button>
         </div>
       </div>
       <div class="cell-style-sec">
@@ -782,11 +779,12 @@
           <button type="button" id="cellBorderPaintToggle" class="ribbon-btn tip cell-style-action paint"
             data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
 ② 클릭 → 위에서 고른 변에
-지금 굵기·선 종류로 테두리">▭<span>칠하기</span></button>
+지금 굵기·선 종류로 테두리">▭<span>적용</span></button>
           <button type="button" id="cellBorderEraseToggle" class="ribbon-btn tip cell-style-action erase"
             data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
-② 클릭 → 위에서 고른 변의
-테두리 지움(원래 격자로)">⌫<span>지우기</span></button>
+② 클릭 → 위에서 고른 변에 쳐둔
+테두리만 지움(원래 격자선으로)
+· 정간 내용(음·시김새)은 그대로">⌫<span>테두리 지우기</span></button>
         </div>
       </div>
     </div>
