@@ -42,6 +42,13 @@
   let melSelActive = false;                  // 마우스가 눌린 채로 클릭/드래그 판정 중인지
   let melSelDidDrag = false;                 // 이번 제스처가 다른 칸으로 번져 드래그로 확정됐는지
   function hasMelSel() { return !!(melSelStart && melSelEnd); }
+  // 셀 서식 모드인지 — 직접 입력에선 셀 서식 도구창이 떠 있을 때(.win-open), 에디터에선
+  // 셀 서식 레일 탭이 활성일 때(.active). 이 모드에선 정간 클릭이 '내용 편집'(노란 입력창)이
+  // 아니라 '서식 적용 대상 선택'이 된다 — 한 칸 클릭도, 여러 칸 드래그도 전부 선택.
+  function cellStyleMode() {
+    const w = $("cellStyleWin");
+    return inputMode === "direct" ? w.classList.contains("win-open") : w.classList.contains("active");
+  }
   // 선택된 구간이 없으면 '구간 지우기'·셀 서식 실행 버튼들을 비활성화 — 눌러도 아무 일 없는
   // 상태를 미리 보여준다. 렌더마다 호출(선택이 render()로만 바뀌므로).
   const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle", "cellFillEraseToggle",
@@ -60,9 +67,10 @@
   let cellBorderStyle = "solid";             // "solid" | "dashed" | "double"
   // 정간보는 한 칸씩 세로로 쌓인 '열이 하나뿐인 표'라, 워드/페이지스의 표 테두리 프리셋 중
   // 바깥쪽/안쪽만 '고른 구간 전체를 하나의 사각형으로 볼 때' 의미가 있다(가로 구분선 개념이 없음).
-  // "custom"이면 cellBorderSides 체크값을 모든 선택 칸에 똑같이 적용, "outer"/"inner"는
-  // 드래그로 고른 범위 안에서 칸의 위치(첫 칸/마지막 칸/중간)를 따져 계산한다.
-  let cellBorderPreset = "custom";           // "custom" | "outer" | "inner"
+  // "custom"이면 cellBorderSides 체크값을 모든 선택 칸에 똑같이 적용, "all"은 칸마다 네 변
+  // 전부(변 버튼 상태와 무관), "outer"/"inner"는 드래그로 고른 범위 안에서 칸의 위치
+  // (첫 칸/마지막 칸/중간)를 따져 계산한다.
+  let cellBorderPreset = "custom";           // "custom" | "all" | "outer" | "inner"
   // 자유 텍스트 주석(예: '대여음') — 첫 페이지 위에 세로로 표시, 마우스로 위치·크기 조절
   let customTexts = [];                     // { id, text, xf, yf, size } — xf/yf는 페이지 폭/높이 대비 비율(0~1)
   let cellStyles = {};                      // [gi][ci] = { fill: "#rrggbb" } — 정간 배경색(나중에 border 등 확장 가능)
@@ -696,6 +704,7 @@
   // 다룬다 — outer는 첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우, inner는 칸과 칸 사이 경계선만
   // (칸을 하나만 고르면 안쪽은 해당 사항 없음).
   function sidesForCellInRange(seq, lo, hi) {
+    if (cellBorderPreset === "all") return ["top", "right", "bottom", "left"];
     if (cellBorderPreset === "outer") {
       const s = ["left", "right"];
       if (seq === lo) s.push("top");
@@ -3932,16 +3941,19 @@
   $("cellStyleColorPicker").addEventListener("change", function () {
     cellStylePendingColor = $("cellStyleColorPicker").value;
   });
-  // 직접 선택(위/오/아/왼)을 누르면 프리셋(바깥쪽/안쪽)은 해제하고 '직접 선택'으로 돌아간다
-  function clearCellBorderPresetHighlight() {
-    cellBorderPreset = "custom";
-    $("cellBorderPresetOuter").classList.remove("on");
-    $("cellBorderPresetInner").classList.remove("on");
+  // 프리셋(전체/바깥쪽/안쪽)과 변 직접 선택(위/오/아/왼)은 서로 배타 — 프리셋을 누르면
+  // 그 프리셋 버튼만 켜지고 변 버튼 상태는 건드리지 않으며, 변 버튼을 누르면 프리셋이
+  // 꺼지고 '직접 선택'으로 돌아간다.
+  function setBorderPreset(name) {
+    cellBorderPreset = name;
+    $("cellBorderPresetAll").classList.toggle("on", name === "all");
+    $("cellBorderPresetOuter").classList.toggle("on", name === "outer");
+    $("cellBorderPresetInner").classList.toggle("on", name === "inner");
   }
   ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
     const key = Side.toLowerCase();
     $("cellBorderSide" + Side).addEventListener("click", function () {
-      clearCellBorderPresetHighlight();
+      setBorderPreset("custom");
       cellBorderSides[key] = !cellBorderSides[key];
       $("cellBorderSide" + Side).classList.toggle("on", cellBorderSides[key]);
     });
@@ -3957,35 +3969,27 @@
   // 격자로 복귀)와 달리 그 자리 격자선 자체를 흰 마스크로 숨기는 별개 스타일이라서.
   // 프리셋도 즉시 실행(누르면 바로 지금 선택된 구간에 적용)이라, 골라만 두고 칠하기/지우기를
   // 따로 눌러도 되고, 프리셋 버튼 자체로 바로 적용해도 된다.
-  function checkAllBorderSides() {
-    cellBorderSides = { top: true, right: true, bottom: true, left: true };
-    ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
-      $("cellBorderSide" + Side).classList.add("on");
-    });
-  }
+  // '전체'도 다른 프리셋처럼 자기 상태만 가진다 — 변 버튼 4개를 대신 켜지 않는다.
   $("cellBorderPresetAll").addEventListener("click", function () {
-    clearCellBorderPresetHighlight();
-    checkAllBorderSides();
+    setBorderPreset("all");
     applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
   });
   $("cellBorderPresetOuter").addEventListener("click", function () {
-    cellBorderPreset = "outer";
-    $("cellBorderPresetOuter").classList.add("on");
-    $("cellBorderPresetInner").classList.remove("on");
+    setBorderPreset("outer");
     applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
   });
   $("cellBorderPresetInner").addEventListener("click", function () {
-    cellBorderPreset = "inner";
-    $("cellBorderPresetInner").classList.add("on");
-    $("cellBorderPresetOuter").classList.remove("on");
+    setBorderPreset("inner");
     applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
   });
   // 정간 구간 선택 — 드래그(다른 칸으로 번짐)로 확정되면 선택을 유지, 안 번지면(그냥 클릭)
   // 그 칸을 편집한다. 손을 뗀 위치가 정간 밖이어도 여기서 판가름한다.
+  // 단, 셀 서식 모드(도구창/탭이 열려 있음)에서는 클릭도 '한 칸 선택'으로 유지 —
+  // 내용 편집(노란 입력창)이 아니라 서식 적용 대상을 고르는 중이므로.
   document.addEventListener("mouseup", function () {
     if (!melSelActive) return;
     melSelActive = false;
-    if (!melSelDidDrag) {
+    if (!melSelDidDrag && !cellStyleMode()) {
       const s = melSelStart;
       melSelStart = null; melSelEnd = null;
       render();

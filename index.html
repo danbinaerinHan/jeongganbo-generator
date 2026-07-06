@@ -672,7 +672,8 @@
         <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
       </div>
     </div>
-    <!-- 셀 서식 — 정간(선율 칸)을 드래그로 골라 배경색·테두리를 지정하는 도구창. 장단/가사에는 아직 적용 안 됨.
+    <!-- 셀 서식 — 정간(선율 칸)을 클릭(한 칸)·드래그(여러 칸)로 골라 배경색·테두리를 지정하는
+         도구창. 이 창이 열려 있는 동안은 정간 클릭이 내용 편집이 아니라 '선택'이 된다. 장단/가사에는 아직 적용 안 됨.
          장단/가사/텍스트와 같은 dock-panel(에디터 모드에서 레일 탭으로 전환) + direct-win(직접 입력
          모드에서 뜬 도구창) 이중 구조 — 선율 탭 안에 끼워두면 에디터 모드에서 선율 아래로 그냥
          새어 보이므로 독립된 탭으로 분리한다. 색은 그냥 '지금 고른 값'일 뿐이고, 칠하기/지우기는
@@ -689,10 +690,10 @@
         <div class="cell-style-body">
           <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="배경색">
           <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="① 악보 드래그로 구간 선택
+            data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
 ② 클릭 → 왼쪽에서 고른 색으로 칠함">⬚<span>칠하기</span></button>
           <button type="button" id="cellFillEraseToggle" class="ribbon-btn tip cell-style-action erase"
-            data-tip="① 악보 드래그로 구간 선택
+            data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
 ② 클릭 → 배경색 지움(투명)">⌫<span>지우기</span></button>
         </div>
       </div>
@@ -779,11 +780,11 @@
         </div>
         <div class="cell-style-body">
           <button type="button" id="cellBorderPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="① 악보 드래그로 구간 선택
+            data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
 ② 클릭 → 위에서 고른 변에
 지금 굵기·선 종류로 테두리">▭<span>칠하기</span></button>
           <button type="button" id="cellBorderEraseToggle" class="ribbon-btn tip cell-style-action erase"
-            data-tip="① 악보 드래그로 구간 선택
+            data-tip="① 악보에서 정간 클릭(한 칸)·드래그(여러 칸)로 선택
 ② 클릭 → 위에서 고른 변의
 테두리 지움(원래 격자로)">⌫<span>지우기</span></button>
         </div>
