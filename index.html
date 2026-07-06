@@ -566,9 +566,12 @@
               <span class="ed-title">텍스트 에디터</span>
               <button type="button" id="edModeTip" class="icon-btn tip" data-tip="텍스트 입력 규칙
 · 음 = 한글 율명(황·태·협…)
-· 줄바꿈 = 각 / | = 정간 / 스페이스 = 분박
+· 줄바꿈 = 각 구분
+· | = 정간 구분
+· 스페이스 = 한 정간 안 분박(음 여러 개)
 · 음 뒤 < = 숨표
-· 시김새 = 음 뒤 괄호: 황{미는표}">
+· 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나
+예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
               </button>
               <div class="ed-right">
