@@ -653,6 +653,16 @@
   .cell-style-action.erase.on span { color: #fff; }
   .cell-style-action:disabled { opacity: .4; cursor: default; }
 
+  /* 시김새 괄호 문법 상시 안내 — 팔레트 바로 위 한 줄. ? 안내 속에만 있으면 모르는 채
+     지나치기 쉬운 내용이라 늘 보이게 둔다. 율명 팔레트(#paletteCol) 쪽 사본은
+     에디터 모드 시김새 보기(palView=orn → .orn-active)일 때만 보인다. */
+  .orn-syntax-hint { flex: 0 0 auto; font-size: 11px; color: var(--muted); line-height: 1.5;
+                     background: #faf8f3; border: 1px dashed #cbbfa4; border-radius: 7px;
+                     padding: 4px 9px; margin-bottom: 6px; }
+  .orn-syntax-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink); }
+  #paletteCol .orn-syntax-hint { display: none; }
+  #paletteCol.orn-active .orn-syntax-hint { display: block; }
+
   /* 시김새 숫자키 배정 줄(시김새 팔레트 바로 위) — 숫자 단축키 자체는 직접 입력에서
      항상 살아 있고, 이 줄은 '단축키 변환' 버튼을 눌렀을 때만 보인다 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
@@ -673,7 +683,7 @@
     position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
     background: #2b2b2b; color: #fff; font-size: 11px; font-weight: 400; line-height: 1.4;
     padding: 6px 9px; border-radius: 7px; width: max-content; max-width: 220px;
-    white-space: normal; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    white-space: pre-line; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,.25);
     opacity: 0; visibility: hidden; transition: opacity .12s ease; z-index: 40; pointer-events: none;
   }
   .tip::before {
@@ -694,8 +704,8 @@
   .direct-win .tip::after, .direct-win .tip::before { display: none; }
   .ribbon-tip-float {
     position: fixed; z-index: 9999; background: #2b2b2b; color: #fff; font-size: 11px;
-    font-weight: 400; line-height: 1.4; padding: 6px 9px; border-radius: 7px;
-    width: max-content; max-width: 220px; white-space: normal; text-align: center;
+    font-weight: 400; line-height: 1.45; padding: 6px 9px; border-radius: 7px;
+    width: max-content; max-width: 240px; white-space: pre-line; text-align: left;
     box-shadow: 0 2px 8px rgba(0,0,0,.25); opacity: 0; visibility: hidden;
     transition: opacity .12s ease; pointer-events: none;
   }

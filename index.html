@@ -16,21 +16,31 @@
   <div id="topBar">
     <div class="topbar-doc-actions">
       <button type="button" id="btnNewDoc" class="topbar-icon-btn tip"
-        data-tip="새 문서 — 지금 작업을 임시저장할지 물어본 뒤, 제목·선율·장단·가사·텍스트·레이아웃을 모두 처음 상태로 되돌립니다.">＋</button>
+        data-tip="새 문서
+· 지금 작업은 임시저장할지 먼저 물어봄
+· 제목·선율·장단·가사·텍스트·레이아웃 → 처음 상태">＋</button>
       <button type="button" id="btnUndo" class="topbar-icon-btn tip"
         data-tip="실행 취소 (⌘/Ctrl+Z)">↶</button>
       <button type="button" id="btnRedo" class="topbar-icon-btn tip"
         data-tip="다시 실행 (⌘/Ctrl+⇧+Z)">↷</button>
       <button type="button" id="btnResetContent" class="topbar-btn topbar-btn-danger tip"
-        data-tip="종이 방향·정간 크기·간격 등 레이아웃은 그대로 두고, 선율·장단·가사·텍스트·셀 서식만 모두 지웁니다.">⟲ 전체 초기화</button>
+        data-tip="전체 초기화
+· 지움: 선율·장단·가사·텍스트·셀 서식
+· 유지: 종이 방향·정간 크기 등 레이아웃">⟲ 전체 초기화</button>
     </div>
     <span class="topbar-sep"></span>
     <span class="mode-lab">입력 방식</span>
     <div class="mode-seg" id="melInputSeg">
       <button type="button" class="seg-btn active tip" data-mode="editor"
-        data-tip="곡 전체를 텍스트로 한눈에 보며 편집합니다. 반복 구절 복사·붙여넣기, 분박(한 칸에 여러 음)·기호 문법 등 복잡한 편집과 대량 수정에 강합니다. 선율·장단·가사 공통.">에디터</button>
+        data-tip="곡 전체를 텍스트로 보며 편집
+· 반복 구절 복사·붙여넣기에 강함
+· 분박·기호 등 문법으로 대량 수정
+· 선율·장단·가사 공통">에디터</button>
       <button type="button" class="seg-btn tip" data-mode="direct"
-        data-tip="악보의 정간을 클릭하면 그 자리에 입력창이 열리고, Enter로 다음 정간으로 넘어갑니다. 문법을 몰라도 보이는 그대로 채울 수 있어 직관적입니다. 선율·장단·가사 공통.">직접 입력</button>
+        data-tip="정간 클릭 → 그 자리에서 바로 입력
+· Enter/Tab: 다음 정간 · 방향키: 이동
+· 문법 몰라도 보이는 그대로 입력
+· 선율·장단·가사 공통">직접 입력</button>
     </div>
     <span class="mode-hint" id="melInputHint">곡 전체를 텍스트로 보며 편집</span>
     <span class="guide-wrap">
@@ -312,10 +322,14 @@
         <div class="rb-cap">각 삽입/삭제</div>
         <div class="rb-items">
           <button type="button" id="gakInsertBtn" class="ribbon-btn tip"
-            data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">＋<span>추가</span></button>
+            data-tip="커서 각 뒤에 빈 각 추가
+· 단축키: ⌘/Ctrl+Enter
+· 가사도 같이 밀림">＋<span>추가</span></button>
           <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가/삭제할 각 수" class="ribbon-num">
           <button type="button" id="gakDeleteBtn" class="ribbon-btn tip"
-            data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">−<span>삭제</span></button>
+            data-tip="커서가 있는 각 삭제
+· 가사도 같이 당겨짐
+· 복구: ⌘/Ctrl+Z">−<span>삭제</span></button>
         </div>
       </div>
       <div class="ribbon-sep"></div>
@@ -323,7 +337,9 @@
         <div class="rb-cap">셀 서식</div>
         <div class="rb-items">
           <button type="button" id="rangeClearToggle" class="ribbon-btn tip"
-            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 그 구간의 음·시김새가 모두 지워집니다(Cmd/Ctrl+Z로 복구).">⌧<span>내용 지우기</span></button>
+            data-tip="① 악보 드래그로 구간 선택
+② 클릭 → 그 구간의 음·시김새 지움
+· 복구: ⌘/Ctrl+Z">⌧<span>내용 지우기</span></button>
           <button type="button" id="winToggleCellStyle" class="ribbon-btn win-toggle tip" data-target="cellStyleWin"
             data-tip="셀 서식(배경색·테두리) 팔레트를 열고 닫습니다">□<span>색상·테두리</span></button>
         </div>
@@ -538,6 +554,9 @@
               </span>
             </div>
           </div>
+          <!-- 에디터 모드 시김새 보기(palView=orn)에서만 보이는 괄호 문법 안내(CSS 참고) -->
+          <div class="orn-syntax-hint">✎ 글자로도 입력: 음 뒤에 괄호 —
+            <span class="mono">황{미는표}</span> · <span class="mono">황[미는표]</span> · <span class="mono">황(미는표)</span></div>
           <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
         </div>
         <div id="melodySplit" title="좌우로 드래그하여 팔레트·편집창 너비 조절"></div>
@@ -545,7 +564,11 @@
           <div class="ed-head">
             <div class="ed-top">
               <span class="ed-title">텍스트 에디터</span>
-              <button type="button" id="edModeTip" class="icon-btn tip" data-tip="텍스트로 입력할 때 — 음은 한글 율명(황·태·협…)으로 적습니다. 줄바꿈=각 구분, |=정간 구분, 스페이스=한 정간 안 분박, 음 뒤 <=숨표. 시김새는 이름을 {}·[]·() 중 아무 괄호로나 감싸 씁니다(예: 황{미는표}).">
+              <button type="button" id="edModeTip" class="icon-btn tip" data-tip="텍스트 입력 규칙
+· 음 = 한글 율명(황·태·협…)
+· 줄바꿈 = 각 / | = 정간 / 스페이스 = 분박
+· 음 뒤 < = 숨표
+· 시김새 = 음 뒤 괄호: 황{미는표}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
               </button>
               <div class="ed-right">
@@ -602,9 +625,11 @@
           <span class="pal-top-right">
             <div class="orn-win-modes">
               <button type="button" id="ornEditToggle" class="ribbon-btn tip"
-                data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있습니다. 조절 가능한 시김새는 옅은 네모로 표시됩니다.">⌖<span>크기/위치 미세조정</span></button>
+                data-tip="켜면: 악보의 시김새 클릭 → 크기·위치 조절
+(조절 가능한 시김새 = 옅은 네모 표시)">⌖<span>크기/위치 미세조정</span></button>
               <button type="button" id="ornMapToggle" class="ribbon-btn tip"
-                data-tip="숫자(1~0) 단축키마다 어떤 시김새를 배정할지 바꾸는 줄을 열고 닫습니다. 단축키 자체는 항상 켜져 있습니다.">①<span>단축키 변환</span></button>
+                data-tip="숫자(1~0)마다 배정할 시김새 바꾸기
+(단축키 자체는 항상 켜져 있음)">①<span>단축키 변환</span></button>
             </div>
             <span class="tool-inline size-ctl" title="시김새 팔레트 크기 — 율명과 따로 조절됩니다">
               <span class="size-lab">크기</span>
@@ -613,6 +638,10 @@
             </span>
           </span>
         </div>
+        <!-- 괄호 문법 상시 안내 — ? 안내 속에만 있으면 모르는 채 지나치기 쉬워서,
+             시김새를 넣으려는 순간 눈에 들어오는 팔레트 바로 위에 한 줄로 둔다 -->
+        <div class="orn-syntax-hint">✎ 글자로도 입력: 음 뒤에 괄호 —
+          <span class="mono">황{미는표}</span> · <span class="mono">황[미는표]</span> · <span class="mono">황(미는표)</span></div>
         <div id="ornAddMapBar" class="orn-add-map-bar"></div>
         <div id="directOrnWrap"><div id="directOrnPalette" class="palette"></div></div>
       </div>
@@ -634,9 +663,11 @@
         <div class="cell-style-body">
           <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="배경색">
           <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 왼쪽에서 고른 배경색이 칠해집니다.">⬚<span>칠하기</span></button>
+            data-tip="① 악보 드래그로 구간 선택
+② 클릭 → 왼쪽에서 고른 색으로 칠함">⬚<span>칠하기</span></button>
           <button type="button" id="cellFillEraseToggle" class="ribbon-btn tip cell-style-action erase"
-            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 그 구간의 배경색을 지웁니다(투명하게).">⌫<span>지우기</span></button>
+            data-tip="① 악보 드래그로 구간 선택
+② 클릭 → 배경색 지움(투명)">⌫<span>지우기</span></button>
         </div>
       </div>
       <div class="cell-style-sec">
@@ -649,19 +680,24 @@
              회색 획을 먼저, 검은 획을 나중에 그려 모서리가 겹칠 때 검정이 이긴다. -->
         <div class="cell-style-body">
           <button type="button" id="cellBorderPresetAll" class="ribbon-btn tip cell-style-option"
-            data-tip="전체 — 선택한 구간의 정간마다 네 변 모두에 테두리를 그립니다.">
+            data-tip="전체
+선택한 정간마다 네 변 모두">
             <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
               <path d="M1.5 1.5 H12.5 V18.5 H1.5 Z" stroke="currentColor"/>
               <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
             </g></svg></button>
           <button type="button" id="cellBorderPresetOuter" class="ribbon-btn tip cell-style-option"
-            data-tip="바깥쪽 — 선택한 구간 전체를 사각형 하나로 보고 바깥 테두리만 그립니다(첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우).">
+            data-tip="바깥쪽
+구간을 한 상자로 보고 바깥 테두리만
+(첫 칸 위 · 끝 칸 아래 · 모든 칸 좌우)">
             <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
               <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="#cdc5b4"/>
               <path d="M1.5 1.5 H12.5 V18.5 H1.5 Z" stroke="currentColor"/>
             </g></svg></button>
           <button type="button" id="cellBorderPresetInner" class="ribbon-btn tip cell-style-option"
-            data-tip="안쪽 — 선택한 구간 안에서 칸과 칸 사이 경계선만 그립니다(칸을 2개 이상 골라야 의미가 있습니다).">
+            data-tip="안쪽
+칸과 칸 사이 경계선만
+(2칸 이상 선택해야 의미 있음)">
             <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
               <path d="M1.5 1.5 H12.5 V18.5 H1.5 Z" stroke="#cdc5b4"/>
               <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
@@ -669,28 +705,32 @@
           <span class="head-sep"></span>
           <span class="cell-border-sides">
             <button type="button" id="cellBorderSideTop" class="ribbon-btn tip cell-style-option"
-              data-tip="위쪽 — 선택한 각 정간의 위쪽 변만.">
+              data-tip="위쪽
+선택한 각 정간의 위쪽 변만">
               <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
                 <path d="M12.5 1.5 V18.5 H1.5 V1.5" stroke="#cdc5b4"/>
                 <line x1="1.5" y1="1.5" x2="12.5" y2="1.5" stroke="currentColor"/>
                 <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
               </g></svg></button>
             <button type="button" id="cellBorderSideRight" class="ribbon-btn tip cell-style-option"
-              data-tip="오른쪽 — 선택한 각 정간의 오른쪽 변만.">
+              data-tip="오른쪽
+선택한 각 정간의 오른쪽 변만">
               <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
                 <path d="M12.5 1.5 H1.5 V18.5 H12.5" stroke="#cdc5b4"/>
                 <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="#cdc5b4"/>
                 <line x1="12.5" y1="1.5" x2="12.5" y2="18.5" stroke="currentColor"/>
               </g></svg></button>
             <button type="button" id="cellBorderSideBottom" class="ribbon-btn tip cell-style-option"
-              data-tip="아래쪽 — 선택한 각 정간의 아래쪽 변만.">
+              data-tip="아래쪽
+선택한 각 정간의 아래쪽 변만">
               <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
                 <path d="M1.5 18.5 V1.5 H12.5 V18.5" stroke="#cdc5b4"/>
                 <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="currentColor"/>
                 <line x1="1.5" y1="18.5" x2="12.5" y2="18.5" stroke="currentColor"/>
               </g></svg></button>
             <button type="button" id="cellBorderSideLeft" class="ribbon-btn tip cell-style-option"
-              data-tip="왼쪽 — 선택한 각 정간의 왼쪽 변만.">
+              data-tip="왼쪽
+선택한 각 정간의 왼쪽 변만">
               <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
                 <path d="M1.5 1.5 H12.5 V18.5 H1.5" stroke="#cdc5b4"/>
                 <line x1="1.5" y1="10" x2="12.5" y2="10" stroke="#cdc5b4"/>
@@ -713,9 +753,13 @@
         </div>
         <div class="cell-style-body">
           <button type="button" id="cellBorderPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 위 프리셋(또는 직접 선택한 변)에 고른 굵기·선 종류로 테두리가 그려집니다.">▭<span>칠하기</span></button>
+            data-tip="① 악보 드래그로 구간 선택
+② 클릭 → 위에서 고른 변에
+지금 굵기·선 종류로 테두리">▭<span>칠하기</span></button>
           <button type="button" id="cellBorderEraseToggle" class="ribbon-btn tip cell-style-action erase"
-            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 위 프리셋(또는 직접 선택한 변)의 테두리를 지웁니다.">⌫<span>지우기</span></button>
+            data-tip="① 악보 드래그로 구간 선택
+② 클릭 → 위에서 고른 변의
+테두리 지움(원래 격자로)">⌫<span>지우기</span></button>
         </div>
       </div>
     </div>
