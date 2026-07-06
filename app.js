@@ -2336,7 +2336,8 @@
       szLab.appendChild(document.createTextNode("크기(mm)"));
       const sz = document.createElement("input");
       sz.type = "number"; sz.min = "2"; sz.max = "30"; sz.step = "0.5"; sz.value = t.size;
-      sz.addEventListener("input", function () {
+      // 숫자 타이핑 칸은 확정(change) 때만 — 다른 숫자 입력칸들과 동일한 규칙
+      sz.addEventListener("change", function () {
         const v = parseFloat(sz.value);
         if (!isNaN(v)) { t.size = Math.max(2, Math.min(30, v)); render(); }
       });
@@ -2345,7 +2346,7 @@
       spLab.appendChild(document.createTextNode("자간(mm)"));
       const sp = document.createElement("input");
       sp.type = "number"; sp.min = "-3"; sp.max = "20"; sp.step = "0.5"; sp.value = t.spacing || 0;
-      sp.addEventListener("input", function () {
+      sp.addEventListener("change", function () {
         const v = parseFloat(sp.value);
         if (!isNaN(v)) { t.spacing = Math.max(-3, Math.min(20, v)); render(); }
       });
@@ -2503,28 +2504,34 @@
     if (edPage >= pages.length) edPage = pages.length - 1;
     updateEdPagers();
 
-    // 모든 페이지 공통 스케일(가장 꽉 찬 페이지 기준) → 페이지끼리 크기 일치
-    let maxCols = 1, maxBands = 1, maxMusicCols = 1;
-    pages.forEach(function (p, pi) {
-      p.bands.forEach(function (m, i) {
-        // 제목이 있는 페이지는 모든 밴드가 똑같이 제목 자리를 예약하므로(오른쪽 정렬),
-        // 폭 계산도 그 페이지의 모든 밴드에서 titleGak을 반영. 맨 처음 밴드는 장단 자리도 포함.
-        const cols = m + ((pi === 0 && i === 0) ? jdSlot : 0) + (p.hasTitle ? titleGak : 0);
-        if (cols > maxCols) maxCols = cols;
-        if (m > maxMusicCols) maxMusicCols = m;
-      });
-      if (p.bands.length > maxBands) maxBands = p.bands.length;
-    });
-    // 장단 줄(맨 처음 각 옆에만 한 번 추가) — 한 각 자리(jdSlot)를 차지하므로 폭은 이미 maxCols에 반영됨
-    const desiredJdGap = wantJangdan ? desiredGap : 0;
-    const desiredJdW = wantJangdan ? desiredCell : 0;
     // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨
     const desiredLyGap = wantLyrics ? desiredGap * 0.18 : 0;
     const desiredLyW = wantLyrics ? desiredCell * 0.4 : 0;
     const desiredLyExtra = desiredLyGap + desiredLyW;
+    // 모든 페이지 공통 스케일(가장 꽉 찬 페이지 기준) → 페이지끼리 크기 일치.
+    // 폭은 밴드마다 실제로 그려지는 구성(각 + 각별 가사 칸 + 장단 칸(가사 자리 포함) +
+    // 제목 칸)을 그대로 합산해 가장 넓은 밴드를 기준으로 잡는다 — 예전 근사식은
+    // 장단 칸이 가사 자리(lyExtra)까지 차지하는 걸 빼먹어, 장단+가사 문서에서 장단
+    // 밴드가 가장 넓으면(한 줄 악보 등) 내용이 프레임 왼쪽으로 삐져나갔다.
+    let maxBands = 1;
+    let wCells = 1, wGaps = 0, wLys = 0;   // 가장 넓은 밴드의 (정간 칸, 간격, 가사 칸) 개수
+    {
+      let bestW = -1;
+      pages.forEach(function (p, pi) {
+        p.bands.forEach(function (m, i) {
+          let cells = m, gaps = m - 1, lys = wantLyrics ? m : 0;
+          if (pi === 0 && i === 0 && jdSlot) { cells += 1; gaps += 1; if (wantLyrics) lys += 1; }
+          if (p.hasTitle) { cells += titleGak; gaps += titleGak; }   // 제목 칸 + titleGutter(간격 1개)
+          const w = cells * desiredCell + gaps * desiredGap + lys * desiredLyExtra;
+          if (w > bestW) { bestW = w; wCells = cells; wGaps = gaps; wLys = lys; }
+        });
+        if (p.bands.length > maxBands) maxBands = p.bands.length;
+      });
+    }
+    const desiredJdGap = wantJangdan ? desiredGap : 0;
+    const desiredJdW = wantJangdan ? desiredCell : 0;
     const headRatio = wantHeader ? 1.1 : 0;
-    const wNeed = maxCols * desiredCell + (maxCols - 1) * desiredGap
-      + maxMusicCols * desiredLyExtra;
+    const wNeed = wCells * desiredCell + wGaps * desiredGap + wLys * desiredLyExtra;
     const hNeed = maxBands * (beats + headRatio) * desiredCell + (maxBands - 1) * desiredBandGap;
     const scale = Math.min(1, availW / wNeed, availH / hNeed);
 
@@ -2560,9 +2567,34 @@
     const slot = cell + gap + (wantLyrics ? lyExtraFull : 0);
     const bandH = headH + beats * cell;
     const titleGutter = gap;   // 격자 ↔ 제목 칸 사이 여유(다른 각 사이 간격과 동일)
-    const gridTotalW = maxCols * cell + (maxCols - 1) * gap
-      + (wantLyrics ? maxMusicCols * lyExtraFull : 0);
+    const gridTotalW = wCells * cell + wGaps * gap + wLys * lyExtraFull;
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
+    // 프레임·가운데 정렬은 '실제로 보이는' 오른쪽 끝 기준 — 맨 오른쪽 가사 자리가 모든
+    // 밴드에서 비어 있으면(장단 칸 옆은 늘 빈 띠, 내용 없이 열린 가사 열) 그 폭만큼
+    // 프레임을 줄이고 중앙정렬도 보이는 폭으로 잡는다. 어느 한 밴드라도 오른쪽 끝을
+    // 실제로 쓰면(닫힌 가사 열·세로 제목 칸) 프레임은 전체 폭을 유지한다.
+    let rightInset = Infinity;
+    {
+      let acc = 0;
+      pages.forEach(function (p, pi) {
+        p.bands.forEach(function (m, i) {
+          let inset = 0;
+          if (!p.hasTitle && wantLyrics) {
+            if (pi === 0 && i === 0 && jdSlot) inset = lyExtraFull;
+            else {
+              const firstLy = lyParsed && lyParsed[acc];
+              const has = !!(firstLy && firstLy.some(function (c) { return c && c.text; }));
+              // 열린 가사 열(가로 제목 모드)이라도 내용이 있으면 글자가 그 자리를 차지한다
+              if (!has) inset = lyExtraFull;
+            }
+          }
+          if (inset < rightInset) rightInset = inset;
+          acc += m;
+        });
+      });
+      if (!isFinite(rightInset)) rightInset = 0;
+    }
+    const visibleW = gridTotalW - rightInset;
 
     const dgSet = new Set();
     if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
@@ -2590,7 +2622,8 @@
       // 격자(+제목 칸) 상자는 페이지 가로 중앙에 — 예전엔 오른쪽 여백선에 붙여 그려서
       // (오른쪽 정렬) 내용이 페이지보다 좁으면(전체 배율 축소·A4 맞춤 등) 남는 여백이
       // 전부 왼쪽으로 몰려 치우쳐 보였다. 각 진행(오른쪽→왼쪽)과 상자 위치는 별개.
-      const gridX = frameX + (frameW - gridTotalW) / 2;
+      // 중앙정렬 기준은 보이는 폭(visibleW = gridTotalW - rightInset).
+      const gridX = frameX + (frameW - visibleW) / 2;
       const pageTempoH = (wantTempo && pageIdx === 0) ? tempoH : 0;
       const pageTitleTopH = pageIdx === 0 ? titleTopH : 0;   // 가로 제목은 첫 페이지에만
       const pageTopExtra = pageTempoH + pageTitleTopH;
@@ -2605,7 +2638,7 @@
       const boxTop = hugY + (frameY - hugY) * fillT;
       const boxBottom = hugBottom + ((frameY + frameH) - hugBottom) * fillT;
       if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, boxTop,
-        gridTotalW + 2 * INNER_PAD, boxBottom - boxTop, T_FRAME));
+        visibleW + 2 * INNER_PAD, boxBottom - boxTop, T_FRAME));
 
       // 편집 하이라이트 자리(내용 아래 레이어) — 인쇄·PNG 저장에는 나오지 않아야 하므로 no-print 표시
       const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none", class: "no-print" });
@@ -2879,7 +2912,7 @@
 
       // 가로 제목 — 첫 페이지 격자 위 중앙에 가로쓰기 (부제는 그 아래 줄)
       if (titleTopMode && pageIdx === 0) {
-        const cx = gridX + gridTotalW / 2;
+        const cx = gridX + visibleW / 2;
         const baseBottom = gridY - INNER_PAD - pageTempoH;
         const titleBase = baseBottom - (subTxt ? titleTopSubFont * 1.5 : 0)
           - titleTopFont * 0.3 + desiredTitleOff * scale;
@@ -3503,18 +3536,29 @@
     refreshEditorSlices();
   }
 
+  // 타이핑하는 숫자 입력칸은 글자마다(input) 적용하지 않고 '확정'(change = Enter 또는
+  // 칸 밖 클릭) 때만 적용한다 — "12"를 치는 도중 "1"인 순간에 구조가 재계산되어
+  // 내용이 잘려나가던 문제. 스피너(▲▼)·방향키는 브라우저가 change도 함께 쏘므로
+  // 즉시 반영되고, 슬라이더(range)·체크박스·셀렉트·텍스트는 예전처럼 실시간이다.
   // 구조(칸 수)에 영향을 주는 입력 → 멜로디 재구성 후 렌더
-  $("beats").addEventListener("input", () => { fillDaegangPreset(); onFormChange(); });
+  $("beats").addEventListener("change", () => { fillDaegangPreset(); onFormChange(); });
   // 총 각 수를 직접 입력하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
-  $("gakCount").addEventListener("input", function () { gakUserSet = true; });
-  ["gakPerRow", "stackCount", "stackAuto", "title", "titleLayout", "gakCount", "wantJangdan", "wantLyrics"].forEach(id => {
+  // (onFormChange보다 먼저 등록해야 확정 시점에 플래그가 먼저 선다)
+  $("gakCount").addEventListener("change", function () { gakUserSet = true; });
+  ["gakPerRow", "stackCount", "gakCount"].forEach(id => {   // 숫자 타이핑 칸 — 확정 시에만
+    $(id).addEventListener("change", onFormChange);
+  });
+  ["stackAuto", "title", "titleLayout", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
   });
   // 모양만 바꾸는 입력 → 렌더만
-  ["cellSize", "gakGap", "bandGap", "sizeScale", "pageFill", "noteScale", "daegang", "subtitle",
+  ["cellSize", "gakGap", "bandGap", "daegang",
    "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
-   "subSize", "subOffset", "subOffsetX", "subSpacing",
+   "subSize", "subOffset", "subOffsetX", "subSpacing"].forEach(id => {   // 숫자 타이핑 칸
+    $(id).addEventListener("change", render);
+  });
+  ["sizeScale", "pageFill", "noteScale", "subtitle",
    "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
