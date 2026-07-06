@@ -3276,16 +3276,26 @@
     });
   }
 
+  // 되돌리기(Cmd/Ctrl+Z)는 '문서 내용' 변경만 밟는다 — 지금 보고 있는 탭, 입력 방식,
+  // 팔레트 크기/글자 크기, 시김새 단축키 배정 같은 UI 상태는 스냅샷 비교·복원 양쪽에서
+  // 모두 빼서, 팔레트를 열고 닫거나 모드를 바꾼 것이 되돌리기 단계로 남지 않게 한다.
+  // (localStorage에는 UI 상태까지 통째로 저장한다 — 새로고침 복원용이라 목적이 다름.)
+  const UNDO_UI_KEYS = ["activeTab", "palZoom", "ornPalZoom", "edFontPx", "melInput", "ornAddMap"];
+  function docJsonOf(state) {
+    const s = Object.assign({}, state);
+    UNDO_UI_KEYS.forEach(function (k) { delete s[k]; });
+    return JSON.stringify(s);
+  }
   function saveState() {
     try {
-      const json = JSON.stringify(collectState());
-      localStorage.setItem(LS_KEY, json);
-      pushUndo(json);
+      const full = collectState();
+      localStorage.setItem(LS_KEY, JSON.stringify(full));
+      pushUndo(docJsonOf(full));
     } catch (e) {}
   }
 
   // ---------- 전역 되돌리기 (Cmd/Ctrl+Z · Shift+Cmd/Ctrl+Z) ----------
-  // 문서 전체 스냅샷(collectState)을 스택에 쌓는다. 스택 맨 위 = 현재 상태.
+  // 문서 내용 스냅샷(docJsonOf)을 스택에 쌓는다. 스택 맨 위 = 현재 상태.
   // 브라우저 내장 undo는 값을 코드로 갈아끼우는 순간 무효가 되므로 앱이 직접 관리한다.
   const UNDO_MAX = 100;
   let undoStack = [], redoStack = [];
@@ -3319,14 +3329,21 @@
     renderTextList();
     hideTextPanel();
   }
+  // 스냅샷엔 UI 상태가 없으므로, 복원 직전에 '지금' UI 상태를 채워 넣어 그대로 유지시킨다
+  // — 안 그러면 applyState가 빠진 필드를 기본값으로 되돌려 탭/모드/크기가 튀어버린다.
+  function restoreDocJson(json) {
+    const s = JSON.parse(json);
+    const cur = collectState();
+    UNDO_UI_KEYS.forEach(function (k) { s[k] = cur[k]; });
+    undoApplying = true;
+    try { restoreFromState(s); } finally { undoApplying = false; }
+  }
   function undoGlobal() {
     if (cellEditInput) commitCellEditor(false);   // 정간 인라인 편집 중이면 먼저 확정
     commitUndoSnapshot();                          // 묶는 중이던 변경을 한 단계로 확정
     if (undoStack.length < 2) return;
     redoStack.push(undoStack.pop());
-    const json = undoStack[undoStack.length - 1];
-    undoApplying = true;
-    try { restoreFromState(JSON.parse(json)); } finally { undoApplying = false; }
+    restoreDocJson(undoStack[undoStack.length - 1]);
   }
   function redoGlobal() {
     if (cellEditInput) commitCellEditor(false);
@@ -3334,8 +3351,7 @@
     if (!redoStack.length) return;
     const json = redoStack.pop();
     undoStack.push(json);
-    undoApplying = true;
-    try { restoreFromState(JSON.parse(json)); } finally { undoApplying = false; }
+    restoreDocJson(json);
   }
   document.addEventListener("keydown", function (e) {
     if (e.isComposing || e.keyCode === 229) return;
@@ -3750,21 +3766,6 @@
   $("lyricsUndo").addEventListener("click", undoLyrics);
   refreshLyricsUndoBtn();
 
-  // 지금까지 입력한 가사 전체를(구조용 |·줄바꿈 없이 이어붙여) 텍스트 항목으로 담기 —
-  // 정간마다 나뉜 가사와 별개로, 악보 위 아무 데나 놓는 캡션 형태의 전체 가사가 필요할 때.
-  $("lyricsToTextBtn").addEventListener("click", function () {
-    const plain = lyricsFull.replace(/\|/g, "").replace(/\s+/g, "").trim();
-    if (!plain) return;
-    addCustomText(plain);
-    // 결과를 바로 볼 수 있게 텍스트 쪽을 열어준다(직접 입력은 도구창, 에디터는 탭)
-    if (inputMode === "direct") {
-      activateDirectPanel("textArea");
-    } else {
-      const railBtn = document.querySelector('#dockRail .rail-btn[data-panel="textArea"]');
-      if (railBtn) railBtn.click();
-    }
-  });
-
   // 시김새 수정 모드 토글 + 조정 패널
   $("ornEditToggle").addEventListener("click", function () {
     ornEditMode = !ornEditMode;
@@ -3997,11 +3998,14 @@
       buildOrnAddMapBar();
       applyPalZoom();
       applyOrnPalZoom();
-      // 직접 입력에 새로 들어올 때마다 도구창 상태를 초기화 — 율명 탭만 기본으로 열어두고
-      // 나머지(시김새/장단/가사/텍스트/셀 서식)는 필요할 때 탭을 눌러 전환한다.
-      activateDirectPanel("paletteCol");
+      // 직접 입력에 '새로 들어올 때만' 도구창 상태를 초기화(율명 탭만 기본으로 열기).
+      // 모드가 안 바뀐 재적용(예: 전역 되돌리기의 상태 복원)에서는 지금 열려 있는
+      // 도구창을 그대로 둔다 — 안 그러면 Cmd+Z를 누를 때마다 열어둔 창이 율명으로 튄다.
+      if (lastAppliedInputMode !== "direct") activateDirectPanel("paletteCol");
     }
+    lastAppliedInputMode = inputMode;
   }
+  let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
   document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
     b.addEventListener("click", function () {
       inputMode = b.getAttribute("data-mode");
