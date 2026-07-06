@@ -488,14 +488,6 @@
   .rb-cap label { cursor: inherit; }
   .rb-items { display: flex; align-items: center; justify-content: center; gap: 3px;
               flex: 1 1 auto; }
-  /* 되돌리기·초기화 — 이름표 줄 높이의 작은 알약 버튼 두 개를 그룹 맨 위에 세로로 쌓음 */
-  .rb-minis { justify-content: flex-start; gap: 3px; padding-top: 2px; }
-  .rb-mini { display: inline-flex; align-items: center; justify-content: center; gap: 3px;
-             padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px;
-             background: #fff; color: var(--ink); font-size: 10.5px; font-weight: 600;
-             cursor: pointer; font-family: inherit; white-space: nowrap; }
-  .rb-mini:hover { background: #f0ece3; }
-  .rb-mini:disabled { opacity: .4; cursor: default; background: #fff; }
   .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
   .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
                 gap: 2px; width: 52px; padding: 5px 2px 4px; border: 1px solid transparent;
@@ -577,25 +569,23 @@
              white-space: nowrap; }
   .mel-btn:hover { background: #f0ece3; }
   .mel-btn:disabled { opacity: .45; cursor: default; }
-  #melodyReset { color: #b23b3b; border-color: #e3b7b7; }
-  #melodyReset:hover { background: #f7ecec; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornAddToggle, #rangeClearToggle, #winToggleCellStyle {
+  #ornEditToggle, #ornMapToggle, #rangeClearToggle, #winToggleCellStyle {
                    flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: #faf3e7; font-weight: 700; }
-  #ornEditToggle span, #ornAddToggle span, #rangeClearToggle span, #winToggleCellStyle span {
+  #ornEditToggle span, #ornMapToggle span, #rangeClearToggle span, #winToggleCellStyle span {
                    font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornAddToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
+  #ornEditToggle:hover, #ornMapToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
                    background: #f1e6cf; }
-  #ornEditToggle.on, #ornAddToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
+  #ornEditToggle.on, #ornMapToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
                    background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornAddToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
+  #ornEditToggle.on span, #ornMapToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
                    color: #fff; }
-  #ornAddToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
+  #ornMapToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
                    opacity: .4; cursor: default; background: #faf3e7; color: var(--accent); }
   /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
   #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
