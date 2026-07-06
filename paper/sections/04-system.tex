@@ -56,19 +56,31 @@ WYSIWYG 조작(입력 카드, 팔레트 클릭)도 내부적으로는 해당 정
 분절로 굵은 선이 그어진다. 제목은 첫 페이지 오른쪽의 세로 칸(전통식)
 또는 상단 가로줄로 배치할 수 있으며, 붓글씨체 등 서체·크기·자간을
 지정할 수 있다. 화면 표시용 SVG와 인쇄·PNG용 SVG가 동일한 조판 결과를
-공유하므로 ``보는 대로 인쇄된다''.
+공유하므로 ``보는 대로 인쇄된다''. 그림~\ref{fig:page}는 본 엔진이
+조판한 A4 한 페이지의 300\,dpi PNG 출력 전체이다.
+
+\begin{figure}[t]
+\centering
+\fbox{\includegraphics[width=0.86\columnwidth]{figures/fig-page.png}}
+\caption{조판 결과 예 --- A4 세로, 12정간(대강 3·3·3·3), 한 줄 11칸
+배치(세로 제목 칸 2 + 장단 각 1 + 선율 8각), 두 줄. 장단 각(맨 오른쪽
+열)은 굵은 테두리로 선율 각과 구분되며, 각은 오른쪽에서 왼쪽으로
+진행한다. 300\,dpi PNG 내보내기 원본.}
+\label{fig:page}
+\end{figure}
 
 \subsection{이중 입력과 양방향 동기화}
 
-\textbf{직접 입력(WYSIWYG).} 악보의 정간을 클릭하면 그 자리에 입력 카드가
-열려 보이는 그대로 입력한다. Enter/Tab으로 다음 정간, 방향키로 인접 정간을
+\textbf{직접 입력(WYSIWYG, 그림~\ref{fig:ui}).} 악보의 정간을 클릭하면
+그 자리에 입력 카드가 열려 보이는 그대로 입력한다. Enter/Tab으로 다음 정간, 방향키로 인접 정간을
 이동하며, 율명 팔레트(음역$\times$12율 매트릭스 또는 피아노 건반 뷰)와
 시김새·장단 팔레트를 클릭해 채운다. 붙임표 시김새에는 숫자 단축키(1--0)가
 배지로 표시되어, 숫자키로 고른 뒤 음을 클릭하면 즉시 부가된다.
 문법을 전혀 몰라도 완전한 악보를 만들 수 있는 경로다.
 
-\textbf{에디터.} 곡 전체를 텍스트로 편집한다. 각 정간 뒤에 탭을 자동
-삽입해 줄이 달라도 \code{|}가 세로로 정렬되는 그리드 정렬, 해석 불가능한
+\textbf{에디터(그림~\ref{fig:editor}).} 곡 전체를 텍스트로 편집한다.
+각 정간 뒤에 탭을 자동 삽입해 줄이 달라도 \code{|}가 세로로 정렬되는
+그리드 정렬, 해석 불가능한
 토큰의 실시간 오류 표시(문법 검사), 여러 페이지 곡의 페이지 단위 표시를
 제공한다. 반복 구절 복사·붙여넣기와 대량 수정에 강하다.
 
@@ -111,21 +123,45 @@ WYSIWYG 조작(입력 카드, 팔레트 클릭)도 내부적으로는 해당 정
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox[c][38mm][c]{0.9\columnwidth}{\centering
-\TODO{그림: 전체 UI 스크린샷 --- 직접 입력 모드에서 팔레트·입력 카드가
-열린 화면}}}
-\caption{정간보 생성기 편집 화면. \TODO{캡션 보완}}
+\includegraphics[width=\columnwidth]{figures/fig-ui.png}
+\caption{직접 입력 모드 편집 화면. 율명 도구창(음역$\times$12율 매트릭스,
+한자·한글 병기)이 악보 위에 떠 있고, 클릭한 정간(파란 하이라이트)에
+팔레트 선택이 바로 입력된다. 오른쪽은 문서 설정 사이드바.}
 \label{fig:ui}
 \end{figure}
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox[c][38mm][c]{0.9\columnwidth}{\centering
-\TODO{그림: 텍스트 소스(왼쪽)와 렌더링된 악보(오른쪽)의 대응 예 ---
-취타 도입부 2--3각. 이음 축약·대강선·시김새가 보이는 부분으로}}}
-\caption{텍스트 문법과 조판 결과의 대응. \TODO{캡션 보완}}
-\label{fig:mapping}
+\includegraphics[width=\columnwidth]{figures/fig-editor.png}
+\caption{에디터 모드. 아래 편집 독의 텍스트 에디터는 정간 구분자
+\code{|}가 세로로 정렬되는 그리드 정렬을 제공하며, 악보에서 정간을
+클릭하면 에디터의 해당 위치로 커서가 이동하고 그 정간이 악보에
+하이라이트된다(양방향 동기화).}
+\label{fig:editor}
 \end{figure}
+
+\begin{figure*}[t]
+\centering
+\begin{minipage}[c]{0.56\textwidth}
+\scriptsize
+\begin{verbatim}
+임|-|임 남|청황|-|남|임{농음표}|중 임|남 임|중|태|황<
+황|태 황|-|중|임{미는표}|-|남|청황 남|임|중태 황|-|-
+임|남|청황|-|청태{흘림표}|청황|남|임|중|-|태|황
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.40\textwidth}
+\centering
+\includegraphics[height=88mm]{figures/fig-mapping.png}
+\end{minipage}
+\caption{텍스트 문법(왼쪽)과 조판 결과(오른쪽)의 대응. 텍스트 첫 행이
+오른쪽 그림의 맨 오른쪽 각에 해당한다(우종서). \code{|}가 정간 경계,
+공백이 분박(예: 1행 셋째 정간 \code{임 남}), 연접이 붙임(2행
+\code{중태 황}), \code{-}가 이음, \code{<}가 숨표로 대응되고,
+시김새 \code{\{농음표\}} 등은 음표 곁의 기호로 그려진다.
+굵은 가로선은 대강(3·3·3·3) 경계이다.}
+\label{fig:mapping}
+\end{figure*}
 
 \subsection{셀 서식과 편집 지원}
 
