@@ -480,7 +480,22 @@
   .ribbon.collapsed { overflow: hidden; }
   .ribbon.collapsed > *:not(.bar-grip):not(.ribbon-collapse-btn) { display: none !important; }
   .ribbon.collapsed .ribbon-collapse-btn svg { transform: rotate(-90deg); }
-  .ribbon-group { display: flex; align-items: center; gap: 3px; padding: 0 4px; flex: 0 0 auto; }
+  /* 그룹은 2단 — 위에 얇은 이름표(.rb-cap), 아래에 실제 컨트롤(.rb-items) */
+  .ribbon-group { display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+                  padding: 0 4px; flex: 0 0 auto; }
+  .rb-cap { font-size: 9px; font-weight: 700; color: var(--muted); text-align: center;
+            letter-spacing: .03em; line-height: 1; padding-top: 2px; white-space: nowrap; }
+  .rb-cap label { cursor: inherit; }
+  .rb-items { display: flex; align-items: center; justify-content: center; gap: 3px;
+              flex: 1 1 auto; }
+  /* 되돌리기·초기화 — 이름표 줄 높이의 작은 알약 버튼 두 개를 그룹 맨 위에 세로로 쌓음 */
+  .rb-minis { justify-content: flex-start; gap: 3px; padding-top: 2px; }
+  .rb-mini { display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+             padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px;
+             background: #fff; color: var(--ink); font-size: 10.5px; font-weight: 600;
+             cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .rb-mini:hover { background: #f0ece3; }
+  .rb-mini:disabled { opacity: .4; cursor: default; background: #fff; }
   .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
   .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
                 gap: 2px; width: 52px; padding: 5px 2px 4px; border: 1px solid transparent;
@@ -501,13 +516,20 @@
                                 border-radius: 5px; font-family: inherit; font-size: 11px;
                                 background-color: #fff; cursor: pointer; }
   .ribbon .bar-grip { display: none; margin-right: 2px; }
-  /* 직접 입력 모드 — 예전엔 기능바(#melodyRibbon)와 도구창(팔레트)들이 악보 위에 뜨는
-     Finale 팔레트 스타일이었지만, 늘 보여야 하는 것들을 띄워두기보다 고정하는 쪽으로 바꿨다:
-     기능바는 악보 바로 위(#main 자식)에 항상 고정되고, 지금 고른 탭(#editorDock)의 내용도
-     그 바로 아래·악보 위쪽에 함께 오도록 옮긴다(JS의 applyInputMode 참고). 탭도 여러 개를
-     동시에 띄우는 대신 dockRail처럼 하나만 보이는 방식으로 통일했다. */
+  /* 직접 입력 모드 — 기능바(#melodyRibbon)는 악보 바로 위(#main 자식)에 항상 고정되고
+     (JS의 applyInputMode가 옮김), 도구창(팔레트)들은 예전 Finale 스타일처럼 악보 위에
+     뜬다. 단, 여러 개를 동시에 띄우던 방식은 버리고 한 번에 하나만 — 다른 탭을 누르면
+     이전 창이 자동으로 닫힌다(JS의 activateDirectPanel). */
   body.input-direct #dockRail .rail-btn { display: none; }
   body.input-direct #melodyResizer { display: none; }
+
+  /* #melodyArea는 이제 도구창이 아니라 뜬 팔레트 둘(율명·시김새)을 담는 투명한 그릇일
+     뿐이라 시각적 흔적을 없앤다 — .dock-panel.active 여부와 무관하게 늘 보여야
+     자식 팔레트가 뜰 수 있다(에디터 모드 탭 로직은 안 건드림). */
+  body.input-direct #melodyArea {
+    display: block; position: static; background: none; border: none;
+    box-shadow: none; padding: 0; margin: 0;
+  }
   body.input-direct .win-toggle-group, body.input-direct .win-toggle-sep { display: flex; }
   .win-toggle-group, .win-toggle-sep { display: none; }
   .win-toggle.on { background: var(--accent); color: #fff; }
@@ -520,18 +542,22 @@
      에디터 모드의 시김새 팔레트는 이미 '율명/시김새' 보기 전환(palView)으로 따로 제공된다. */
   body:not(.input-direct) #ornWinWrap { display: none; }
 
-  /* 도구창(팔레트) — 열렸을 때(.win-open)만 보이되, 이제 뜨지 않고 문서 흐름 그대로
-     고정된 자리에 도킹된다(#paletteCol의 폭 등 자기 고유 규칙은 그대로 유지).
-     max-height가 아니라 height를 명시해야 한다 — 안 그러면 내부의 flex:1 스크롤
-     영역(예: #paletteWrap)이 '정해진 높이가 없는 flex 컨테이너' 안에서 0으로
-     찌그러지는 flexbox 버그가 있다(뜬 상태였을 때는 position:absolute라 겪지 않던 문제). */
+  /* 직접 입력 모드에서만 뜬 창을 끌 수 있는 그립 표시 */
+  body.input-direct .dock-panel-grip { display: flex; }
+  .dock-panel-grip { display: none; margin-bottom: 6px; }
+
+  /* 도구창(팔레트) — 열렸을 때(.win-open)만 악보 위에 뜬다(한 번에 하나).
+     top/left 기본값을 명시해야 한다 — 안 주면 position:absolute가 원래 문서 흐름상의
+     위치(정간 편집 독 훨씬 아래)를 그대로 써서 화면 밖으로 나가버린다. 기능바가 이제
+     #main 맨 위의 일반 흐름에 있으므로 그 높이(약 66px + 아래 여백)만큼 내려서 시작.
+     #paletteCol은 자기 ID 규칙(width:450px 등)이 있어 명시적으로 함께 걸어 덮는다. */
   body.input-direct .direct-win:not(.win-open) { display: none !important; }
   body.input-direct .direct-win.win-open,
   body.input-direct #paletteCol.win-open {
-    display: flex; flex-direction: column;
-    height: 46vh; overflow: auto;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.08); padding: 10px 12px 12px;
+    display: flex; flex-direction: column; position: absolute; top: 84px; left: 14px; z-index: 6;
+    max-width: min(460px, calc(100% - 28px)); max-height: 62vh; overflow: auto;
+    background: rgba(255,255,255,.97); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
   }
 
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
@@ -627,10 +653,11 @@
   .cell-style-action.erase.on span { color: #fff; }
   .cell-style-action:disabled { opacity: .4; cursor: default; }
 
-  /* 시김새 추가 모드 — 숫자키 배정 줄(시김새 팔레트 바로 위). 모드가 꺼져 있으면 숨김 */
+  /* 시김새 숫자키 배정 줄(시김새 팔레트 바로 위) — 숫자 단축키 자체는 직접 입력에서
+     항상 살아 있고, 이 줄은 '단축키 변환' 버튼을 눌렀을 때만 보인다 */
   .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
                       border: 1px solid var(--line); border-radius: 8px; background: #faf8f3; }
-  body.orn-add-on .orn-add-map-bar { display: flex; }
+  .orn-add-map-bar.open { display: flex; }
   .orn-add-map-bar .oam-slot { display: inline-flex; align-items: center; gap: 3px; }
   .orn-add-map-bar .oam-key { flex: 0 0 auto; min-width: 14px; height: 14px; padding: 0 2px;
                               display: inline-flex; align-items: center; justify-content: center;
