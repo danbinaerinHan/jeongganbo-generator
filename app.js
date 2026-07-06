@@ -3945,11 +3945,18 @@
     editor: "곡 전체를 텍스트로 보며 편집",
     direct: "정간 클릭 → 그 자리에서 바로 입력"
   };
-  // ed-head '?' 아이콘 — 텍스트 에디터일 땐 문법 규칙, 직접 입력일 땐 시김새 팔레트 사용법
-  const ED_MODE_TIP = {
-    editor: "텍스트로 입력할 때 — 음은 한글 율명(황·태·협…)으로 적습니다. 줄바꿈=각 구분, |=정간 구분, 스페이스=한 정간 안 분박, 음 뒤 <=숨표. 시김새는 이름을 {}·[]·() 중 아무 괄호로나 감싸 씁니다(예: 황{미는표}).",
-    direct: "왼쪽 팔레트(율명)와 오른쪽 시김새 팔레트를 클릭하면 지금 열려 있는 정간에 바로 들어갑니다. 리본의 '시김새 추가 모드'를 켜면 숫자키(1~0)로 붙임표 시김새를 고른 뒤 음을 클릭해 그 옆에 바로 붙일 수 있습니다."
-  };
+  // ed-head '?' 아이콘 — 텍스트 에디터의 문법 규칙 안내. #editorCol(이 아이콘이 속한 자리)은
+  // 직접 입력 모드에선 통째로 숨겨지므로(CSS의 .mel-direct #editorCol) 이 문구는 에디터
+  // 모드에서만 보이면 된다.
+  const ED_MODE_TIP =
+    "텍스트 입력 규칙\n" +
+    "· 음 = 한글 율명(황·태·협…)\n" +
+    "· 줄바꿈 = 각 구분\n" +
+    "· | = 정간 구분\n" +
+    "· 스페이스 = 한 정간 안 분박(음 여러 개)\n" +
+    "· 음 뒤 < = 숨표\n" +
+    "· 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나\n" +
+    "예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)";
   function applyInputMode() {
     document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
       b.classList.toggle("active", b.getAttribute("data-mode") === inputMode);
@@ -3960,9 +3967,7 @@
     // 선율·장단·가사 리본이 뜬 바로 바뀌는 것도 이 클래스 하나로 같이 처리(CSS 참고)
     document.body.classList.toggle("input-direct", direct);
     $("melodyArea").classList.toggle("mel-direct", direct);
-    const t = document.querySelector("#melodyArea .ed-title");
-    if (t) t.textContent = direct ? "시김새" : "텍스트 에디터";
-    if ($("edModeTip")) $("edModeTip").setAttribute("data-tip", ED_MODE_TIP[inputMode] || "");
+    if ($("edModeTip")) $("edModeTip").setAttribute("data-tip", ED_MODE_TIP);
     // 시김새 숫자 단축키(1~0)는 직접 입력에서 항상 활성 — 칩에 번호 배지가 늘 보이고,
     // 숫자키로 고른 뒤 악보의 음을 클릭하면 붙는다. 에디터 모드로 나가면 자동으로 꺼진다.
     ornAddMode = direct;
