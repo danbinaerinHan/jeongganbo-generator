@@ -397,46 +397,59 @@
           data-tip="기능바를 접거나 펼칩니다" title="접기/펼치기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
-        <!-- 직접 입력 모드 전용 — 이 리본이 늘 떠 있는 기본 도구바가 되고, 여기 버튼들로
-             도구창(율명/시김새/장단/가사/텍스트)을 하나씩 독립적으로 열고 닫는다(피날레
-             팔레트처럼 여러 개를 동시에 띄울 수 있음). 에디터 모드에선 숨김(CSS 참고). -->
+        <!-- 그룹마다 얇은 이름표(.rb-cap)를 위에, 실제 컨트롤(.rb-items)을 아래에 두는
+             2단 구성. 직접 입력 모드에선 이 기능바가 악보 위에 늘 고정되고(에디터 모드에선
+             선율 탭 안), '입력' 그룹의 탭 버튼으로 도구창을 하나씩 열고 닫는다(다른 탭을
+             누르면 이전 창은 자동으로 닫힘). -->
         <div class="ribbon-group win-toggle-group">
-          <button type="button" id="winToggleYul" class="ribbon-btn win-toggle tip" data-target="paletteCol"
-            data-tip="율명 팔레트를 열고 닫습니다">律<span>율명</span></button>
-          <button type="button" id="winToggleOrn" class="ribbon-btn win-toggle tip" data-target="ornWinWrap"
-            data-tip="시김새 팔레트를 열고 닫습니다">飾<span>시김새</span></button>
-          <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
-            data-tip="장단 도구창을 열고 닫습니다">長<span>장단</span></button>
-          <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
-            data-tip="가사 도구창을 열고 닫습니다">詞<span>가사</span></button>
-          <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
-            data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
+          <div class="rb-cap">입력</div>
+          <div class="rb-items">
+            <button type="button" id="winToggleYul" class="ribbon-btn win-toggle tip" data-target="paletteCol"
+              data-tip="율명 팔레트를 열고 닫습니다">律<span>율명</span></button>
+            <button type="button" id="winToggleOrn" class="ribbon-btn win-toggle tip" data-target="ornWinWrap"
+              data-tip="시김새 팔레트를 열고 닫습니다">飾<span>시김새</span></button>
+            <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
+              data-tip="장단 도구창을 열고 닫습니다">長<span>장단</span></button>
+            <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
+              data-tip="가사 도구창을 열고 닫습니다">詞<span>가사</span></button>
+            <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
+              data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
+          </div>
         </div>
         <div class="ribbon-sep win-toggle-sep"></div>
-        <div class="ribbon-group">
-          <button type="button" id="melodyUndo" class="ribbon-btn tip" data-tip="방금 초기화한 선율을 되돌립니다">↶<span>되돌리기</span></button>
-          <button type="button" id="melodyReset" class="ribbon-btn tip" data-tip="선율 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲<span>초기화</span></button>
+        <!-- 되돌리기·초기화 — 요청대로 그룹 맨 위(이름표 줄 높이)에 작게 겹쳐 배치 -->
+        <div class="ribbon-group rb-minis">
+          <button type="button" id="melodyUndo" class="rb-mini tip" data-tip="방금 초기화한 선율을 되돌립니다">↶ 되돌리기</button>
+          <button type="button" id="melodyReset" class="rb-mini tip" data-tip="선율 내용을 모두 비웁니다 (되돌리기로 복구 가능)">⟲ 초기화</button>
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group">
-          <button type="button" id="gakInsertBtn" class="ribbon-btn tip"
-            data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">⊕<span>각 추가</span></button>
-          <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가할 각 수" class="ribbon-num">
-          <button type="button" id="gakDeleteBtn" class="ribbon-btn tip"
-            data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">⊖<span>각 삭제</span></button>
+          <div class="rb-cap">각 삽입/삭제</div>
+          <div class="rb-items">
+            <button type="button" id="gakInsertBtn" class="ribbon-btn tip"
+              data-tip="커서가 있는 각 뒤에 빈 각 추가 (Cmd/Ctrl+Enter) — 가사도 같이 밀립니다">＋<span>추가</span></button>
+            <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가/삭제할 각 수" class="ribbon-num">
+            <button type="button" id="gakDeleteBtn" class="ribbon-btn tip"
+              data-tip="커서가 있는 각 삭제 — 가사도 같이 당겨집니다 (Cmd/Ctrl+Z로 복구)">−<span>삭제</span></button>
+          </div>
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group">
-          <button type="button" id="rangeClearToggle" class="ribbon-btn tip"
-            data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 그 구간의 음·시김새가 모두 지워집니다(되돌리기로 복구 가능).">⌧<span>구간 지우기</span></button>
-          <button type="button" id="winToggleCellStyle" class="ribbon-btn win-toggle tip" data-target="cellStyleWin"
-            data-tip="셀 서식(배경색·테두리) 팔레트를 열고 닫습니다">□<span>셀 서식</span></button>
+          <div class="rb-cap">셀 서식</div>
+          <div class="rb-items">
+            <button type="button" id="rangeClearToggle" class="ribbon-btn tip"
+              data-tip="악보를 드래그해 정간 구간을 고른 뒤 이 버튼을 누르면 그 구간의 음·시김새가 모두 지워집니다(되돌리기로 복구 가능).">⌧<span>내용 지우기</span></button>
+            <button type="button" id="winToggleCellStyle" class="ribbon-btn win-toggle tip" data-target="cellStyleWin"
+              data-tip="셀 서식(배경색·테두리) 팔레트를 열고 닫습니다">□<span>색상·테두리</span></button>
+          </div>
         </div>
         <div class="ribbon-sep"></div>
         <div class="ribbon-group ribbon-slider-group">
-          <label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 시김새 크기는 그대로 유지됩니다">율명 크기</label>
-          <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
-          <span id="noteScaleVal">1.0×</span>
+          <div class="rb-cap"><label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 시김새 크기는 그대로 유지됩니다">율명 크기</label></div>
+          <div class="rb-items">
+            <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
+            <span id="noteScaleVal">1.0×</span>
+          </div>
         </div>
       </div>
 
@@ -470,9 +483,10 @@
               <span class="mono">[이름]</span>·<span class="mono">(이름)</span> 중 아무 괄호로나 감쌉니다
               (예: <span class="mono">황{미는표}</span>).
             </div>
-            <div class="mg-sec"><b>시김새 추가 모드(직접 입력)</b><br>
-              리본의 '시김새 추가 모드'를 켜면 붙임표 시김새 칩에 숫자(1~0)가 붙습니다.
+            <div class="mg-sec"><b>시김새 숫자 단축키(직접 입력)</b><br>
+              직접 입력 모드에선 붙임표 시김새 칩에 숫자(1~0)가 항상 붙어 있습니다.
               숫자키로 시김새를 고른 뒤 악보에서 붙일 음을 클릭하면 그 옆에 바로 붙습니다.
+              번호 배정은 시김새 팔레트의 '단축키 변환'에서 바꿀 수 있습니다.
             </div>
           </div>
         </span>
@@ -599,8 +613,8 @@
             <div class="orn-win-modes">
               <button type="button" id="ornEditToggle" class="ribbon-btn tip"
                 data-tip="켜면 악보의 시김새를 클릭해 크기·위치를 조절할 수 있습니다. 조절 가능한 시김새는 옅은 네모로 표시됩니다.">⌖<span>크기/위치 미세조정</span></button>
-              <button type="button" id="ornAddToggle" class="ribbon-btn tip"
-                data-tip="켜면 붙임표 시김새 칩에 숫자(1~0)가 붙습니다. 숫자키로 시김새를 고른 뒤 악보의 음을 클릭하면 그 옆에 붙습니다.">①<span>단축키 모드</span></button>
+              <button type="button" id="ornMapToggle" class="ribbon-btn tip"
+                data-tip="숫자(1~0) 단축키마다 어떤 시김새를 배정할지 바꾸는 줄을 열고 닫습니다. 단축키 자체는 항상 켜져 있습니다.">①<span>단축키 변환</span></button>
             </div>
             <span class="tool-inline size-ctl" title="시김새 팔레트 크기 — 율명과 따로 조절됩니다">
               <span class="size-lab">크기</span>
