@@ -581,6 +581,22 @@
   /* 직접 입력 모드에서만 뜬 창을 끌 수 있는 그립 표시 */
   body.input-direct .dock-panel-grip { display: flex; }
   .dock-panel-grip { display: none; margin-bottom: 6px; }
+  /* 도구창 오른쪽 위 닫기(X) — JS가 각 .direct-win에 붙이고, 직접 입력 모드에서 열린
+     창에만 보인다. 창은 position:absolute라 이 버튼이 오른쪽 위 모서리에 고정된다
+     (그립은 왼쪽·별도 줄이라 겹치지 않음). */
+  .direct-win-close { display: none; }
+  body.input-direct .direct-win.win-open .direct-win-close {
+    display: inline-flex; position: absolute; top: 8px; right: 9px; z-index: 4;
+    width: 22px; height: 22px; align-items: center; justify-content: center;
+    padding: 0; border: none; background: none; border-radius: 6px;
+    color: var(--muted); cursor: pointer; transition: background .12s ease, color .12s ease;
+  }
+  body.input-direct .direct-win.win-open .direct-win-close:hover { background: var(--hover); color: var(--ink); }
+  .direct-win-close svg { width: 15px; height: 15px; stroke-width: 2.2; }
+  /* 머리줄(장단·가사·텍스트의 melody-head, 장단·가사 리본)이 맨 윗줄이면 오른쪽 끝의
+     안내(?)·컨트롤이 닫기(X)와 겹친다 — 오른쪽에 X 자리만큼 여백을 확보한다. */
+  body.input-direct .direct-win.win-open > .melody-head,
+  body.input-direct .direct-win.win-open > .ribbon { padding-right: 30px; }
 
   /* 도구창(팔레트) — 열렸을 때(.win-open)만 악보 위에 뜬다(한 번에 하나).
      top/left 기본값을 명시해야 한다 — 안 주면 position:absolute가 원래 문서 흐름상의
@@ -916,13 +932,14 @@
 
   /* 사이드바 접기/펼치기 */
   .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-  /* right:52px — 상단바 맨 오른쪽 다크 토글(약 42px 폭) 왼쪽에 놓아 안 겹치게 */
-  .side-open { display: none; position: fixed; top: 8px; right: 52px; z-index: 30;
-               align-items: center; gap: 6px;
-               padding: 8px 12px; border: 1px solid var(--accent); background: var(--accent);
-               color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+  /* 상단바 안(맨 오른쪽 다크 토글 왼쪽)에 딱 맞게 — top·높이를 다크 토글과 맞춰
+     상단바 아래 가로 구분선에 걸치지 않고 그 위에 깔끔하게 앉게 한다(right:52px로 안 겹침) */
+  .side-open { display: none; position: fixed; top: 6px; right: 52px; z-index: 30;
+               align-items: center; gap: 5px; height: 26px;
+               padding: 0 11px; border: 1px solid var(--accent); background: var(--accent);
+               color: #fff; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600;
                font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
-  .side-open svg { width: 15px; height: 15px; stroke-width: 2; }
+  .side-open svg { width: 14px; height: 14px; stroke-width: 2; }
   body.sidebar-collapsed #sidebar { display: none; }
   body.sidebar-collapsed .side-open { display: inline-flex; }
 

@@ -1338,7 +1338,7 @@
     return s;
   }
   // 기호 약어 → 파일명 (짧게 입력). 이음은 이미지 대신 '-' 문자 그대로 사용.
-  const SYM_MARK = { "쉼": "pause_001", "쉼표": "pause_001" };
+  const SYM_MARK = { "쉼": "pause_007", "쉼표": "pause_007" };
 
   // 시김새 토큰 괄호 — {}·[]·() 셋 다 같은 뜻으로 허용(취향껏 섞어 써도 됨).
   // 여는 괄호로 짝 닫는 괄호를 찾는다.
@@ -1894,7 +1894,7 @@
     // 쉼표 · 연음 기호 — 대표 하나씩만 (약어로 삽입)
     const data = window.NOTE_DATA || {};
     const symList = [];
-    if (data["pause_001"]) symList.push({ file: "pause_001", label: "쉼표", ins: "쉼", cap: "쉼표" });
+    if (data["pause_007"]) symList.push({ file: "pause_007", label: "쉼표", ins: "쉼", cap: "쉼표" });
     // '-' 문자 그대로 삽입 — 타이핑으로도 바로 쓸 수 있다는 걸 캡션에서 보여줌
     symList.push({ file: null, label: "이음", ins: "-", fallback: "-", cap: "이음(-)" });
     // '<' 문자 그대로 삽입 — 그 정간의 마지막 음 뒤에 바로 이어 쓰면(공백 없이) 오른쪽-아래 모서리에 표시됨
@@ -3140,7 +3140,7 @@
             if (tk.base) {
               const semis = SCALE.indexOf(tk.base) + tk.oct * 12;
               note(midiToFreq(hwangMidi + semis), slotDur, g, j);
-            } else if (tk.sym === "pause_001") {
+            } else if (tk.sym === "pause_007") {
               rest(slotDur, g, j);
             } else {
               extend(slotDur, g, j);   // 이음(-)·시김새 단독·기타 문자 → 지속
@@ -3648,6 +3648,21 @@
       const t = $(tid);
       activateDirectPanel(t && t.classList.contains("win-open") ? null : tid);
     });
+  });
+  // 직접 입력 도구창마다 오른쪽 위 닫기(X) 버튼 — 누르면 그 창을 닫는다(한 번에 하나만
+  // 열리므로 activateDirectPanel(null)이 곧 지금 창 닫기). 리본의 여닫기 버튼(.on)도 같이 꺼진다.
+  document.querySelectorAll(".direct-win").forEach(function (win) {
+    const x = document.createElement("button");
+    x.type = "button";
+    x.className = "direct-win-close";
+    x.title = "닫기";
+    x.setAttribute("aria-label", "도구창 닫기");
+    x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    x.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      activateDirectPanel(null);
+    });
+    win.appendChild(x);
   });
 
   // 편집창 높이 조절 (위로 드래그 → 커짐 / 아래로 → 작아짐) — 선율·장단·가사 각 탭의 편집줄에 적용
