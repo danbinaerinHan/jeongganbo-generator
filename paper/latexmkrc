@@ -1,0 +1,4 @@
+# Overleaf가 이 파일을 읽어 컴파일러를 XeLaTeX으로 강제한다.
+# (메뉴의 Compiler 설정과 무관하게 동작)
+$pdf_mode = 5;    # 5 = xelatex
+$bibtex_use = 2;  # bib 변경 시 bibtex 자동 실행

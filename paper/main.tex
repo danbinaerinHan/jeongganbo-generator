@@ -1,27 +1,47 @@
 % ============================================================
 % 정간보 생성기 논문 초안 — 디지털콘텐츠학회논문지(JDCS) 투고용
 % ------------------------------------------------------------
-% 컴파일 (XeLaTeX 필수 — 한글 폰트):
-%   xelatex main && bibtex main && xelatex main && xelatex main
+% 컴파일: XeLaTeX 필수 (한글).
+%   - Overleaf: paper/ 내용을 프로젝트 루트로 올리면 함께 든
+%     latexmkrc가 컴파일러를 XeLaTeX으로 자동 강제한다
+%     (메뉴에서 직접 Compiler: XeLaTeX으로 바꿔도 된다).
+%   - 로컬:  xelatex main && bibtex main && xelatex main && xelatex main
 %
 % ※ JDCS는 공식 LaTeX 템플릿이 없고 HWP 템플릿만 제공한다.
 %   이 초안은 JDCS 논문 구성(국문요약+영문 Abstract, 번호 매긴
 %   참고문헌)을 따르되 조판은 일반 2단 article로 잡았다.
 %   최종 투고 시 HWP 템플릿으로 옮기거나, 학회에 PDF 투고 가능
 %   여부를 확인할 것. [TODO]
-%
-% ※ 폰트: macOS 기본 폰트 기준. Noto CJK가 설치돼 있으면
-%   아래 주석 처리된 줄로 바꾸는 쪽이 인쇄 품질이 좋다.
 % ============================================================
 \documentclass[twocolumn,10pt,a4paper]{article}
 
-\usepackage{kotex}                % xetexko — XeLaTeX로 컴파일
-% 한글 폰트: 설치된 것을 순서대로 시도 (macOS → Noto → kotex 기본 은글꼴)
-\IfFontExistsTF{Apple SD Gothic Neo}
-  {\setmainhangulfont[BoldFont={* Bold}]{Apple SD Gothic Neo}}
-  {\IfFontExistsTF{Noto Serif CJK KR}
-    {\setmainhangulfont{Noto Serif CJK KR}}
-    {}} % 둘 다 없으면 kotex 기본(UnBatang) — Overleaf에서도 동작
+\usepackage{iftex}
+\RequireXeTeX                     % pdfLaTeX로 돌리면 여기서 명확히 멈춘다
+
+\usepackage{kotex}                % xetexko
+% ------------------------------------------------------------
+% 한글·한자 폰트: 설치된 것을 순서대로 시도.
+%   macOS(Apple SD Gothic Neo) → Noto CJK(리눅스/직접 설치)
+%   → 은바탕(UnBatang, TeX Live 동봉 = Overleaf에 항상 있음)
+% 한자 폰트를 따로 지정하지 않으면 율명 한자(潢 등)가 빠질 수
+% 있어 한글과 같은 폰트로 함께 지정한다.
+% ------------------------------------------------------------
+\IfFontExistsTF{Apple SD Gothic Neo}{%
+  \setmainhangulfont[BoldFont={* Bold}]{Apple SD Gothic Neo}%
+  \setmainhanjafont[BoldFont={* Bold}]{Apple SD Gothic Neo}%
+}{%
+\IfFontExistsTF{Noto Serif CJK KR}{%
+  \setmainhangulfont{Noto Serif CJK KR}%
+  \setmainhanjafont{Noto Serif CJK KR}%
+}{%
+\IfFontExistsTF{Noto Sans CJK KR}{%
+  \setmainhangulfont{Noto Sans CJK KR}%
+  \setmainhanjafont{Noto Sans CJK KR}%
+}{%
+  % 은바탕은 TeX Live 동봉 파일명으로 지정 (fontconfig 불필요)
+  \setmainhangulfont[BoldFont={UnBatangBold.ttf}]{UnBatang.ttf}%
+  \setmainhanjafont[BoldFont={UnBatangBold.ttf}]{UnBatang.ttf}%
+}}}
 
 \usepackage[margin=22mm,columnsep=7mm]{geometry}
 \usepackage{graphicx}
@@ -58,7 +78,8 @@ with a Human-Readable Text Grammar}
 
 \begin{document}
 
-\twocolumn[
+% 주의: 선택 인자 안에 \\[2pt]의 ']'가 있으므로 반드시 [{ ... }]로 감싼다
+\twocolumn[{
 \maketitle
 \vspace{-1.5em}
 \begin{center}
@@ -111,7 +132,7 @@ web application, SVG engraving, digital heritage
 \end{minipage}
 \end{center}
 \vspace{1.5em}
-]
+}]
 
 \input{sections/01-intro}
 \input{sections/02-related}
