@@ -2049,6 +2049,7 @@
     const n = followMel ? melRows.length : rows.length;
     const fs = Math.min(width * 0.86, cellH * 0.7, (cellH / n) * 0.9);
     rows.forEach(function (str, i) {
+      if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
       const t = el("text", { x: x + width / 2, y: centers[i] + fs * 0.36, "text-anchor": "middle",
         "font-size": fs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
       t.textContent = str;
