@@ -2046,8 +2046,9 @@
     const centers = followMel
       ? melodyRowCenters(melRows, yTop, cellH)
       : rows.map(function (_, i) { return yTop + (cellH / rows.length) * (i + 0.5); });
-    const n = followMel ? melRows.length : rows.length;
-    const fs = Math.min(width * 0.86, cellH * 0.7, (cellH / n) * 0.9);
+    // 글자 크기는 분박·글자 수와 무관하게 문서 전체 한 가지 — 율명 글자가 행 수와
+    // 무관하게 고정인 것과 같은 규칙(행이 많으면 촘촘해질 뿐 줄어들지 않는다).
+    const fs = Math.min(width * 0.86, cellH * 0.7);
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
       const t = el("text", { x: x + width / 2, y: centers[i] + fs * 0.36, "text-anchor": "middle",
