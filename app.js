@@ -744,13 +744,19 @@
     });
     render();
   }
-  // 이중선 두 줄 사이 간격(선 중심 기준) — 굵기에 비례하되 너무 벌어지지 않게
-  function borderDoubleGap(w) { return Math.max(w * 0.55, 0.3); }
+  // 이중선의 안쪽 줄이 격자선에서 칸 안쪽으로 떨어지는 거리(선 중심 기준)
+  // — 굵기에 비례하되 얇아도 흰 틈이 또렷이 보이게 최소값을 둔다
+  function borderDoubleInset(w) { return Math.max(w * 1.6, 0.8); }
+  // 모서리에서 이웃 변의 안쪽 줄과 만날 때 끝을 다듬는 양 — 이웃 줄의 중심이 아니라
+  // 바깥 가장자리까지 닿게(중심까지만 자르면 모서리에 계단이 생긴다)
+  function borderCornerTrim(spec) {
+    const w = CELL_BORDER_WIDTH_PX[spec.width] || CELL_BORDER_WIDTH_PX.medium;
+    return borderDoubleInset(w) - w / 2;
+  }
   // 흰 마스크의 반경 — 밑에 깔린 격자선을 먼저 덮어 지워야 점선 틈으로 실선이 비치지 않는다.
   // '없음'(줄 숨김)은 선을 새로 그리지 않고 이 마스크만 남기므로, 숨겨야 할 기존 격자선
   // (정간 세로선 T_THICK, 대강선 T_DAEGANG)보다 넉넉하게 잡는다.
   function borderMaskHalf(w, styleKey) {
-    if (styleKey === "double") return borderDoubleGap(w) + w / 2.4;
     if (styleKey === "none") return Math.max(T_THICK, T_DAEGANG) / 2 + 0.15;
     return w / 2;
   }
@@ -768,36 +774,69 @@
         const bs = (j < beats && row[j] && row[j].border) ? row[j].border[side] : null;
         const key = bs ? (bs.width + "|" + bs.style) : null;
         if (key === runKey) continue;
-        if (runKey) segs.push({ x1: sx, y1: gridTop + runStart * cell, x2: sx, y2: gridTop + j * cell,
-                                width: runSpec.width, style: runSpec.style });
+        if (runKey) {
+          const seg = { x1: sx, y1: gridTop + runStart * cell, x2: sx, y2: gridTop + j * cell,
+                        width: runSpec.width, style: runSpec.style, side: side };
+          // 이중선의 안쪽 줄끼리는 모서리에서 만나 사각형을 이룬다 — 이웃 변(위/아래)도
+          // 이중선이면 끝을 그 안쪽 줄 위치까지 다듬는다(안 그러면 서로를 지나쳐 #꼴로 교차).
+          if (runSpec.style === "double") {
+            const bs2 = row[runStart] && row[runStart].border;
+            if (bs2 && bs2.top && bs2.top.style === "double") seg.y1 += borderCornerTrim(bs2.top);
+            const be = row[j - 1] && row[j - 1].border;
+            if (be && be.bottom && be.bottom.style === "double") seg.y2 -= borderCornerTrim(be.bottom);
+          }
+          segs.push(seg);
+        }
         runStart = j; runKey = key; runSpec = bs;
       }
     });
     for (let j = 0; j < beats; j++) {
       const b = row[j] && row[j].border;
       if (!b) continue;
-      if (b.top) segs.push({ x1: x, y1: gridTop + j * cell, x2: x + cell, y2: gridTop + j * cell,
-                             width: b.top.width, style: b.top.style });
-      if (b.bottom) segs.push({ x1: x, y1: gridTop + (j + 1) * cell, x2: x + cell, y2: gridTop + (j + 1) * cell,
-                                width: b.bottom.width, style: b.bottom.style });
+      ["top", "bottom"].forEach(function (side) {
+        if (!b[side]) return;
+        const y = gridTop + (side === "top" ? j : j + 1) * cell;
+        const seg = { x1: x, y1: y, x2: x + cell, y2: y,
+                      width: b[side].width, style: b[side].style, side: side };
+        if (b[side].style === "double") {   // 좌/우가 이중선이면 모서리 다듬기(위 주석 참고)
+          if (b.left && b.left.style === "double") seg.x1 += borderCornerTrim(b.left);
+          if (b.right && b.right.style === "double") seg.x2 -= borderCornerTrim(b.right);
+        }
+        segs.push(seg);
+      });
     }
   }
   function drawBorderMask(svg, s) {
+    // 이중선은 정간 틀(원래 격자선)을 바깥 줄로 그대로 쓰고 안쪽에 한 줄만 더 긋는
+    // 방식이라, 밑에 깔린 격자선을 지울 일이 없다 — 마스크 없음.
+    if (s.style === "double") return;
     const w = CELL_BORDER_WIDTH_PX[s.width] || CELL_BORDER_WIDTH_PX.medium;
     const maskW = borderMaskHalf(w, s.style) * 2 + 0.4;
-    svg.appendChild(el("line", { x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2,
-      stroke: "#fff", "stroke-width": maskW, "stroke-linecap": "square" }));
+    let x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2, cap = "square";
+    if (s.style === "none") {
+      // '없음' 마스크는 격자선보다 넓어서, square cap으로 끝을 지나치면 교차하는
+      // 세로선(정간 세로선)이나 경계 너머로 이어지는 선까지 지운다 — 대강선·통줄은
+      // structuralSegs로 되살리지만 세로선은 아니라서 그 자리에 틈이 남는다.
+      // butt cap으로 끝을 정확히 맞추고, 가로 마스크는 세로선 반굵기만큼 안으로
+      // 들인다(가려진 가로선의 남는 토막은 세로선 밑에 정확히 숨는다).
+      cap = "butt";
+      if (y1 === y2) { x1 += T_THICK / 2; x2 -= T_THICK / 2; }
+    }
+    svg.appendChild(el("line", { x1: x1, y1: y1, x2: x2, y2: y2,
+      stroke: "#fff", "stroke-width": maskW, "stroke-linecap": cap }));
   }
   function drawBorderStroke(svg, s) {
     if (s.style === "none") return;   // '없음'은 마스크만 — 그 자리 격자선을 숨긴다
     const w = CELL_BORDER_WIDTH_PX[s.width] || CELL_BORDER_WIDTH_PX.medium;
     if (s.style === "double") {
-      const gap = borderDoubleGap(w);
-      const dx = (s.y1 === s.y2) ? 0 : gap;   // 세로선(좌/우)이면 가로로 두 줄을 벌림
-      const dy = (s.x1 === s.x2) ? 0 : gap;   // 가로선(상/하)이면 세로로 두 줄을 벌림
-      const half = w / 2.4;
-      svg.appendChild(line(s.x1 - dx, s.y1 - dy, s.x2 - dx, s.y2 - dy, half));
-      svg.appendChild(line(s.x1 + dx, s.y1 + dy, s.x2 + dx, s.y2 + dy, half));
+      // 이중선 — 정간 틀(원래 격자선)을 바깥 줄로 그대로 두고, 칸 안쪽으로 나란히
+      // 한 줄을 더 긋는다(전통 악보의 겹줄 표기). butt cap — square면 안쪽 줄의
+      // 끝이 칸 밖(각 사이 여백)으로 삐져나온다.
+      const off = borderDoubleInset(w);
+      const dx = s.side === "left" ? off : s.side === "right" ? -off : 0;
+      const dy = s.side === "top" ? off : s.side === "bottom" ? -off : 0;
+      svg.appendChild(el("line", { x1: s.x1 + dx, y1: s.y1 + dy, x2: s.x2 + dx, y2: s.y2 + dy,
+        stroke: "#000", "stroke-width": w, "stroke-linecap": "butt" }));
     } else {
       const ln = line(s.x1, s.y1, s.x2, s.y2, w);
       if (s.style === "dashed") ln.setAttribute("stroke-dasharray", (w * 2.5) + "," + (w * 1.8));
