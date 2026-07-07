@@ -1984,15 +1984,44 @@
     });
   }
 
-  // 가사 칸 하나 그리기: 정간 오른쪽 좁은 줄에 글자를 세로로 배치(분박과 동일한 공백 규칙)
-  function drawLyricCell(svg, x, yTop, width, cellH, content, family) {
+  // 율명 분박 행들의 세로 중심 — drawCell과 같은 배치 규칙(이음(-) 단독 행 눌림,
+  // 2분박 좁힘)을 그대로 따라 계산한다. 가사가 옆 율명과 나란히 앉는 데 쓴다.
+  function melodyRowCenters(melRows, yTop, cellH) {
+    const n = melRows.length;
+    const weights = melRows.map(function (r) { return (n > 1 && r === "-") ? TIE_ROW_WEIGHT : 1; });
+    if (weights.some(function (w) { return w !== 1; })) {
+      const total = weights.reduce(function (a, b) { return a + b; }, 0);
+      const centers = []; let acc = 0;
+      for (let r = 0; r < n; r++) {
+        const h = cellH * weights[r] / total;
+        centers.push(yTop + acc + h / 2); acc += h;
+      }
+      return centers;
+    }
+    if (n === 2) {
+      const halfGap = (cellH / 4) * PAIR_GAP_SCALE;
+      return [yTop + cellH / 2 - halfGap, yTop + cellH / 2 + halfGap];
+    }
+    const rowH = cellH / n;
+    return melRows.map(function (_, i) { return yTop + rowH * (i + 0.5); });
+  }
+
+  // 가사 칸 하나 그리기: 정간 오른쪽 좁은 줄에 글자를 세로로 배치(분박과 동일한 공백 규칙).
+  // 옆 정간의 율명이 분박이면 가사도 그 행 위치를 그대로 따라가 '율 하나-가사 하나'로
+  // 나란히 앉고, 글자 크기도 분박 수 때문에 줄지 않는다(율명 글자가 안 줄어드는 것과 같은
+  // 규칙). 가사 글자 수가 율 수보다 많을 때만 예전처럼 가사 기준 등분으로 물러난다.
+  function drawLyricCell(svg, x, yTop, width, cellH, content, family, melContent) {
     const rows = content.split(/\s+/).filter(Boolean);
     if (!rows.length) return;
-    const rowH = cellH / rows.length;
+    const melRows = (melContent || "").split(/\s+/).filter(Boolean);
+    const followMel = melRows.length > 1 && rows.length <= melRows.length;
+    const centers = followMel
+      ? melodyRowCenters(melRows, yTop, cellH)
+      : rows.map(function (_, i) { return yTop + (cellH / rows.length) * (i + 0.5); });
+    const n = followMel ? melRows.length : rows.length;
+    const fs = Math.min(width * 0.86, cellH * 0.7, (cellH / n) * 0.9);
     rows.forEach(function (str, i) {
-      const cy = yTop + rowH * (i + 0.5);
-      const fs = Math.min(width * 0.86, rowH * 0.7);
-      const t = el("text", { x: x + width / 2, y: cy + fs * 0.36, "text-anchor": "middle",
+      const t = el("text", { x: x + width / 2, y: centers[i] + fs * 0.36, "text-anchor": "middle",
         "font-size": fs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
       t.textContent = str;
       svg.appendChild(t);
@@ -2035,10 +2064,6 @@
     // 가중치 기반 행 상단 위치(누적) — 이음 행이 있을 때만 이 배치를 쓴다
     const rowTops = [];
     { let acc = 0; for (let r = 0; r < nRows; r++) { rowTops.push(acc); acc += cell * rowWeights[r] / totalWeight; } }
-    // 정간 안에 음이 정확히 둘일 때는(세로 두 줄=분박이든, 가로 두 글자든) 간격(자간)이
-    // 다른 경우보다 헐렁해 보여서 정간 중심을 기준으로 살짝 좁혀 그린다
-    // (셋 이상일 때는 그대로 균등 분할).
-    const PAIR_GAP_SCALE = 0.8;
     for (let ri = 0; ri < nRows; ri++) {
       let cyc;
       if (hasTieRow) {
@@ -2131,6 +2156,10 @@
   // '-' 가 음표보다 튀지 않아 가시성이 좋아진다. (분박이 여러 줄일 때만 적용)
   const TIE_ROW_WEIGHT = 0.68;
   const TIE_ROW_GLYPH = 0.85;
+  // 정간 안에 음이 정확히 둘일 때는(세로 두 줄=분박이든, 가로 두 글자든) 간격(자간)이
+  // 다른 경우보다 헐렁해 보여서 정간 중심을 기준으로 살짝 좁혀 그린다(셋 이상은 균등 분할).
+  // drawCell(율명)과 melodyRowCenters(가사 정렬)가 같은 값을 써야 나란히 앉는다.
+  const PAIR_GAP_SCALE = 0.8;
 
   function drawGlyph(svg, tk, cx, cyc, size) {
     let file = null;
@@ -2891,7 +2920,9 @@
             const lyFilled = lyCount > 0 ? Math.min(beats, lyCount) : 0;
             for (let j = 0; j < lyFilled; j++) {
               const content = lyCells[j] ? lyCells[j].text : "";
-              if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content, lyricsFontFam);
+              // 옆 정간의 율명 내용을 같이 넘겨 분박 행 위치에 가사를 나란히 앉힌다
+              const melTxt = gakCells && gakCells[j] ? gakCells[j].text : "";
+              if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content, lyricsFontFam, melTxt);
             }
             // 클릭 영역 — 숨은 정간 포함 전체 beats, 글자 위로 올려야 그 위를 클릭해도 먹힌다
             for (let j = 0; j < beats; j++) {
