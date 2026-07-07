@@ -15,18 +15,19 @@
        ?에 따로 있다. -->
   <div id="topBar">
     <div class="topbar-doc-actions">
-      <button type="button" id="btnNewDoc" class="topbar-icon-btn tip"
+      <!-- 명령 버튼은 전부 리본 버튼과 같은 '기호 + 아래 작은 글씨' 꼴(.topbar-cmd)로 통일 -->
+      <button type="button" id="btnNewDoc" class="topbar-cmd tip"
         data-tip="새 문서
 · 지금 작업은 임시저장할지 먼저 물어봄
-· 제목·선율·장단·가사·텍스트·레이아웃 → 처음 상태">＋</button>
-      <button type="button" id="btnUndo" class="topbar-icon-btn tip"
-        data-tip="실행 취소 (⌘/Ctrl+Z)">↶</button>
-      <button type="button" id="btnRedo" class="topbar-icon-btn tip"
-        data-tip="다시 실행 (⌘/Ctrl+⇧+Z)">↷</button>
-      <button type="button" id="btnResetContent" class="topbar-btn topbar-btn-danger tip"
+· 제목·선율·장단·가사·텍스트·레이아웃 → 처음 상태">＋<span class="lbl">새 문서</span></button>
+      <button type="button" id="btnUndo" class="topbar-cmd tip"
+        data-tip="실행 취소 (⌘/Ctrl+Z)">↶<span class="lbl">실행 취소</span></button>
+      <button type="button" id="btnRedo" class="topbar-cmd tip"
+        data-tip="다시 실행 (⌘/Ctrl+⇧+Z)">↷<span class="lbl">다시 실행</span></button>
+      <button type="button" id="btnResetContent" class="topbar-cmd topbar-btn-danger tip"
         data-tip="전체 초기화
 · 지움: 선율·장단·가사·텍스트·셀 서식
-· 유지: 종이 방향·정간 크기 등 레이아웃">⟲ 전체 초기화</button>
+· 유지: 종이 방향·정간 크기 등 레이아웃">⟲<span class="lbl">전체 초기화</span></button>
     </div>
     <span class="topbar-sep"></span>
     <span class="mode-lab">입력 방식</span>
@@ -63,11 +64,12 @@
     <!-- 재생 컨트롤 — 보기 배율처럼 상단바 오른쪽에 고정(예전엔 악보 위 떠 있는 바).
          재생 버튼 하나가 상태에 따라 재생→일시정지→이어하기로 바뀐다(별도 일시정지 버튼 없음). -->
     <div id="playBar">
-      <button type="button" id="btnPlay" title="재생 (사인파, 시김새 제외)">▶ 재생</button>
-      <button type="button" id="btnStop" title="정지" disabled>■ 정지</button>
-      <button type="button" id="playSettingsToggle" class="icon-btn" title="재생 설정 (기준음·템포)">
+      <!-- 재생은 상태에 따라 기호·라벨이 바뀌므로(재생↔일시정지↔이어하기) 둘 다 id로 잡는다 -->
+      <button type="button" id="btnPlay" class="topbar-cmd" title="재생 (사인파, 시김새 제외)"><span id="btnPlayIco">▶</span><span class="lbl" id="btnPlayLbl">재생</span></button>
+      <button type="button" id="btnStop" class="topbar-cmd" title="정지" disabled>■<span class="lbl">정지</span></button>
+      <button type="button" id="playSettingsToggle" class="topbar-cmd" title="재생 설정 (기준음·템포)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      </button>
+      <span class="lbl">재생 설정</span></button>
       <div id="playPop" class="play-pop">
         <div class="pp-row"><span>황 음고 (기준음)</span>
           <select id="hwangPitch">
@@ -99,6 +101,12 @@
 · 악보(종이)는 늘 흰색으로 유지됩니다">
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    </button>
+    <!-- 설정 폼 열기 — 사이드바를 접었을 때만 나타난다. 예전엔 화면 위에 fixed로 떠 있어서
+         가로맞춤 버튼과 겹쳤는데, 상단바 흐름 안의 맨 오른쪽 자리로 옮겨 겹칠 일이 없게 했다. -->
+    <button type="button" id="sidebarOpen" class="side-open topbar-cmd" title="설정 폼 열기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span class="lbl">설정</span>
     </button>
   </div>
   <div id="appRow">
@@ -320,11 +328,6 @@
       </div>
     </div>
   </aside>
-
-  <button type="button" id="sidebarOpen" class="side-open" title="설정 폼 열기">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-    설정
-  </button>
 
   <main id="main">
     <!-- 기능바(리본) — 각 추가/삭제·셀 서식·율명 크기처럼 어느 탭/입력 방식을 보고 있든

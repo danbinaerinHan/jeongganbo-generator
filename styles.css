@@ -91,9 +91,11 @@
      낮고 조용하게 — 늘 떠 있어야 하는 도구들(기능바)은 그 아래 자리에 고정해서 둔다. */
   #topBar {
     flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    /* 좁으면 기능바처럼 줄바꿈 — 안 그러면 라벨 글자가 세로로 짜부라진다 */
+    flex-wrap: wrap;
     padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
-  #topBar .mode-lab { font-size: 12px; font-weight: 700; color: var(--ink); margin: 0; }
+  #topBar .mode-lab { font-size: 12px; font-weight: 700; color: var(--ink); margin: 0; white-space: nowrap; }
   #topBar .mode-seg { display: flex; gap: 5px; }
   #topBar .mode-seg .seg-btn {
     border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
@@ -105,20 +107,26 @@
   #topBar .mode-seg .seg-btn.active {
     background: var(--accent); color: #fff; border-color: var(--accent);
   }
-  #topBar .mode-hint { font-size: 11px; color: var(--muted); }
+  #topBar .mode-hint { font-size: 11px; color: var(--muted); white-space: nowrap; }
   /* 문서 단위 액션(새 문서/실행취소/다시실행/전체 초기화) — 다른 프로그램의 File 메뉴처럼
      맨 왼쪽에, 입력 방식(선택)과는 구분되도록 살짝 구분선을 두고 배치한다. */
-  .topbar-doc-actions { display: flex; gap: 6px; align-items: center; }
+  .topbar-doc-actions { display: flex; gap: 4px; align-items: center; }
   .topbar-sep { width: 1px; height: 18px; background: var(--line); }
-  .topbar-btn {
-    border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
-    color: var(--ink); font-size: 12px; font-weight: 700; padding: 5px 10px;
-    cursor: pointer; font-family: inherit;
-  }
-  .topbar-btn:hover { background: var(--hover); }
+  /* 상단바 명령 버튼 — 리본 버튼(.ribbon-btn)과 같은 '기호 + 아래 작은 글씨' 한 가지 꼴로 통일
+     (새 문서/실행취소/다시실행/전체 초기화/재생/정지/재생 설정/설정 열기).
+     입력 방식 세그먼트·확대축소 스테퍼·다크 토글은 컨트롤 종류가 달라 제외한다. */
+  .topbar-cmd { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; min-width: 46px; padding: 4px 7px 3px; border: 1px solid transparent;
+                border-radius: 7px; background: none; cursor: pointer; font-family: inherit;
+                color: var(--ink); font-size: 15px; line-height: 1; flex: 0 0 auto; }
+  .topbar-cmd .lbl { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .topbar-cmd svg { width: 15px; height: 15px; }
+  .topbar-cmd:hover { background: var(--hover); border-color: var(--line); }
+  .topbar-cmd:disabled { opacity: .35; cursor: default; background: none; }
   .topbar-btn-danger { color: var(--danger-2); border-color: var(--danger-line); background: var(--danger-soft); }
-  .topbar-btn-danger:hover { background: var(--danger-soft); }
-  /* 새 문서/실행취소/다시실행 — 자주 누르는 전역 액션이라 아이콘만으로 작게 */
+  .topbar-btn-danger:hover { background: var(--danger-soft); border-color: var(--danger-line); }
+  .topbar-btn-danger .lbl { color: var(--danger-2); }
+  /* 다크 토글 — 구석 유틸이라 아이콘만 작게 */
   .topbar-icon-btn {
     display: flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 7px;
@@ -393,17 +401,11 @@
      재생 버튼 하나가 재생↔일시정지↔이어하기를 겸하고, 색으로만 강조한다 */
   #playBar { position: relative; display: flex; align-items: center; gap: 3px; margin-left: auto;
              background: var(--panel); border: 1px solid var(--line);
-             border-radius: 8px; padding: 1px 4px; }
-  #playBar button { border-radius: 6px; cursor: pointer; font-family: inherit; }
-  #btnPlay { height: 22px; padding: 0 10px; border: none; background: var(--accent); color: #fff;
-             font-size: 12px; font-weight: 700; letter-spacing: .2px; white-space: nowrap; }
-  #btnPlay:hover { opacity: .92; }
-  #btnStop { height: 22px; padding: 0 8px; border: none; background: transparent;
-             color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
-  #btnStop:hover { background: var(--hover); color: var(--ink); }
-  #btnStop:disabled { opacity: .35; cursor: default; background: transparent; color: var(--muted);
-                      box-shadow: none; }
-  #playSettingsToggle { width: 22px; height: 22px; }
+             border-radius: 9px; padding: 2px 3px; }
+  /* 재생만 강조색 배경 — 그 위 글자는 테마 무관 흰색 고정 */
+  #btnPlay { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #btnPlay .lbl { color: #fff; }
+  #btnPlay:hover { background: var(--accent); border-color: var(--accent); opacity: .92; }
 
   /* 재생 설정 팝오버 — 상단바의 재생 바 바로 아래, 오른쪽 끝에 맞춰 뜬다(화면 밖으로 안 나가게) */
   .play-pop { position: absolute; top: calc(100% + 10px); right: 0; left: auto; z-index: 20; display: none;
@@ -940,16 +942,11 @@
 
   /* 사이드바 접기/펼치기 */
   .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-  /* 상단바 안(맨 오른쪽 다크 토글 왼쪽)에 딱 맞게 — top·높이를 다크 토글과 맞춰
-     상단바 아래 가로 구분선에 걸치지 않고 그 위에 깔끔하게 앉게 한다(right:52px로 안 겹침) */
-  .side-open { display: none; position: fixed; top: 6px; right: 52px; z-index: 30;
-               align-items: center; gap: 5px; height: 26px;
-               padding: 0 11px; border: 1px solid var(--accent); background: var(--accent);
-               color: #fff; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 600;
-               font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
-  .side-open svg { width: 14px; height: 14px; stroke-width: 2; }
+  /* 설정 폼 열기 — 상단바 흐름 안의 맨 오른쪽 자리(.topbar-cmd 꼴). 접혀 있을 때만 나타난다.
+     예전엔 화면 위에 fixed(right:52px)로 떠 있어서 확대축소 바의 가로맞춤 버튼과 겹쳤다. */
+  .side-open { display: none; }
   body.sidebar-collapsed #sidebar { display: none; }
-  body.sidebar-collapsed .side-open { display: inline-flex; }
+  body.sidebar-collapsed .side-open { display: flex; }
 
   /* 율명 표기 셀렉트 */
   .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }

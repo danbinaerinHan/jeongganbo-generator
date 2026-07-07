@@ -3268,7 +3268,8 @@
   // 재생 버튼 하나가 상태에 따라 재생↔일시정지↔이어하기를 겸한다(별도 일시정지 버튼 없음)
   function updatePlayButtons() {
     if (!$("btnPlay")) return;
-    $("btnPlay").textContent = !playing ? "▶ 재생" : (paused ? "▶ 이어하기" : "⏸ 일시정지");
+    $("btnPlayIco").textContent = (!playing || paused) ? "▶" : "⏸";
+    $("btnPlayLbl").textContent = !playing ? "재생" : (paused ? "이어하기" : "일시정지");
     $("btnPlay").title = !playing ? "재생 (사인파, 시김새 제외)" : (paused ? "이어 재생" : "일시정지");
     $("btnStop").disabled = !playing;
   }
