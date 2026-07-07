@@ -2053,11 +2053,16 @@
     const fs = Math.min(width * 0.86, cellH * 0.7) * lyricsScaleCur;
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
-      // 한 행에 여러 글자('더지' 등)면 그 행만 칸 폭에 맞춰 줄인다 — 안 그러면 옆 정간을 침범
+      // 한 행에 여러 글자('더지' 등)면 옆을 침범하지 않게 맞추되, 글자 크기는 조금만
+      // 줄이고 나머지는 자간 압축(textLength)으로 해결 — 등분 축소보다 글자가 훨씬 크다
       const len = Array.from(str).length;
-      const rowFs = len > 1 ? Math.min(fs, (width * 0.94) / len) : fs;
+      const rowFs = len > 1 ? Math.min(fs, (width * 1.3) / len) : fs;
       const t = el("text", { x: x + width / 2, y: centers[i] + rowFs * 0.36, "text-anchor": "middle",
         "font-size": rowFs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
+      if (len > 1 && rowFs * len > width * 0.94) {
+        t.setAttribute("textLength", width * 0.94);
+        t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      }
       t.textContent = str;
       svg.appendChild(t);
     });
