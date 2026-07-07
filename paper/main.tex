@@ -2,9 +2,10 @@
 % 정간보 생성기 논문 초안 — 디지털콘텐츠학회논문지(JDCS) 투고용
 % ------------------------------------------------------------
 % 컴파일: XeLaTeX 필수 (한글). ★ Overleaf 최초 1회 설정 ★
-%   왼쪽 위 Menu → Settings → Compiler 를 "XeLaTeX"으로 바꾼 뒤
-%   Recompile. (Overleaf 기본값 pdfLaTeX으로는 한글 폰트를 못 쓴다.
-%   latexmkrc로는 컴파일러를 못 바꾸므로 반드시 메뉴에서 설정할 것.)
+%   프로젝트 화면의 톱니바퀴(⚙, 설정) 아이콘 → Compiler → "XeLaTeX"
+%   선택 → Recompile.  (구버전 UI는 왼쪽 위 Menu → Settings → Compiler)
+%   Overleaf 기본값 pdfLaTeX으로는 한글 폰트를 못 쓰며, latexmkrc나
+%   magic comment로는 컴파일러를 못 바꾼다 — 반드시 설정에서 바꿀 것.
 %   로컬: xelatex main && bibtex main && xelatex main && xelatex main
 %
 % ※ JDCS는 공식 LaTeX 템플릿이 없고 HWP 템플릿만 제공한다.
@@ -21,8 +22,10 @@
 \ifPDFTeX
   \PackageError{jgb-paper}
     {Wrong compiler: this paper needs XeLaTeX}
-    {In Overleaf: click Menu (top-left) -> Settings -> Compiler ->
-     choose "XeLaTeX" -> Recompile. Locally: use xelatex, not pdflatex.}
+    {In Overleaf: click the gear icon (settings) in your project,
+     find the "Compiler" dropdown, choose "XeLaTeX", then Recompile.
+     (Older UI: Menu at top-left -> Settings -> Compiler.)
+     Locally: compile with xelatex, not pdflatex.}
 \fi
 
 \usepackage{kotex}                % xetexko
