@@ -2051,8 +2051,11 @@
     const fs = Math.min(width * 0.86, cellH * 0.7);
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
-      const t = el("text", { x: x + width / 2, y: centers[i] + fs * 0.36, "text-anchor": "middle",
-        "font-size": fs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
+      // 한 행에 여러 글자('더지' 등)면 그 행만 칸 폭에 맞춰 줄인다 — 안 그러면 옆 정간을 침범
+      const len = Array.from(str).length;
+      const rowFs = len > 1 ? Math.min(fs, (width * 0.94) / len) : fs;
+      const t = el("text", { x: x + width / 2, y: centers[i] + rowFs * 0.36, "text-anchor": "middle",
+        "font-size": rowFs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
       t.textContent = str;
       svg.appendChild(t);
     });
@@ -2082,6 +2085,9 @@
     if (maxCols > 1) gs = Math.min(gs, (cell * 0.86) / maxCols);
     const gsBase = gs;    // 시김새 기준 크기 — 율명 크기 배율(noteScaleCur)을 타지 않도록 배율 적용 전 값을 남겨둠
     gs *= noteScaleCur;   // 율명 크기 배율 — 이제 음표 글자(drawGlyph)에만 적용됨
+    // 넘침 방지 캡은 배율 적용 뒤에도 다시 건다 — 안 걸면 배율을 키웠을 때
+    // 가로 두 글자(하하배임 둘 등)가 정간 좌우 선을 침범한다(이 경우에만 글자가 줄어듦)
+    if (maxCols > 1) gs = Math.min(gs, (cell * 0.86) / maxCols);
 
     const rowH = cell / nRows;
     // 이음(-)만 홀로 있는 분박 행은 세로 비중을 줄여(전통 정간보 관행) 낮게 눌러 그린다.
