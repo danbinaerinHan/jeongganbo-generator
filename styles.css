@@ -749,6 +749,17 @@
   }
   .ribbon-tip-float.dir-up::after { top: 100%; border-top-color: var(--tip-bg); }
   .ribbon-tip-float.dir-down::after { bottom: 100%; border-bottom-color: var(--tip-bg); }
+  /* 숫자 입력 확정 버튼 — 값을 바꾼 칸의 오른쪽 끝에 떠서(JS가 위치 계산) 누르면 적용.
+     확정 없이 칸을 벗어나면 원래 값으로 되돌아간다(타이핑 중간값 적용 사고 방지). */
+  #numConfirmBtn {
+    display: none; position: fixed; z-index: 9999;
+    padding: 4px 9px; border: none; border-radius: 5px;
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
+    font-family: inherit; line-height: 1; cursor: pointer;
+    box-shadow: 0 1px 5px rgba(0,0,0,.3);
+  }
+  #numConfirmBtn.on { display: inline-flex; }
+  #numConfirmBtn:hover { opacity: .9; }
   /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
   #melodyRow { display: flex; gap: 16px; height: 330px; align-items: stretch; }
   /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */

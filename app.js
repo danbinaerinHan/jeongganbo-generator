@@ -2387,8 +2387,8 @@
       szLab.appendChild(document.createTextNode("크기(mm)"));
       const sz = document.createElement("input");
       sz.type = "number"; sz.min = "2"; sz.max = "30"; sz.step = "0.5"; sz.value = t.size;
-      // 숫자 타이핑 칸은 확정(change) 때만 — 다른 숫자 입력칸들과 동일한 규칙
-      sz.addEventListener("change", function () {
+      // 숫자 타이핑 칸은 [확인]/Enter로만 적용 — 다른 숫자 입력칸들과 동일한 규칙
+      wireConfirm(sz, function () {
         const v = parseFloat(sz.value);
         if (!isNaN(v)) { t.size = Math.max(2, Math.min(30, v)); render(); }
       });
@@ -2397,7 +2397,7 @@
       spLab.appendChild(document.createTextNode("자간(mm)"));
       const sp = document.createElement("input");
       sp.type = "number"; sp.min = "-3"; sp.max = "20"; sp.step = "0.5"; sp.value = t.spacing || 0;
-      sp.addEventListener("change", function () {
+      wireConfirm(sp, function () {
         const v = parseFloat(sp.value);
         if (!isNaN(v)) { t.spacing = Math.max(-3, Math.min(20, v)); render(); }
       });
@@ -3598,27 +3598,78 @@
     refreshEditorSlices();
   }
 
-  // 타이핑하는 숫자 입력칸은 글자마다(input) 적용하지 않고 '확정'(change = Enter 또는
-  // 칸 밖 클릭) 때만 적용한다 — "12"를 치는 도중 "1"인 순간에 구조가 재계산되어
-  // 내용이 잘려나가던 문제. 스피너(▲▼)·방향키는 브라우저가 change도 함께 쏘므로
-  // 즉시 반영되고, 슬라이더(range)·체크박스·셀렉트·텍스트는 예전처럼 실시간이다.
-  // 구조(칸 수)에 영향을 주는 입력 → 멜로디 재구성 후 렌더
-  $("beats").addEventListener("change", () => { fillDaegangPreset(); onFormChange(); });
-  // 총 각 수를 직접 입력하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
-  // (onFormChange보다 먼저 등록해야 확정 시점에 플래그가 먼저 선다)
-  $("gakCount").addEventListener("change", function () { gakUserSet = true; });
-  ["gakPerRow", "stackCount", "gakCount"].forEach(id => {   // 숫자 타이핑 칸 — 확정 시에만
-    $(id).addEventListener("change", onFormChange);
+  // ---------- 숫자 입력 확정([확인] 버튼 / Enter) ----------
+  // 타이핑하는 숫자 칸은 값을 바꿔도 절대 바로 적용하지 않는다 — "12"를 치는 도중
+  // "1"인 순간에 구조가 재계산되어 내용이 잘려나가던 문제. 값이 바뀌면 칸 옆에
+  // [확인] 버튼이 떠서 그걸 누르거나 Enter를 쳐야만 적용되고, 확정 없이 칸을
+  // 벗어나면(다른 곳 클릭) 원래 값으로 조용히 되돌린다. Esc = 즉시 원복.
+  // 스피너(▲▼)·방향키로 바꾼 값도 같은 규칙(확정 필요)이다.
+  const numConfirmBtn = (function () {
+    const b = document.createElement("button");
+    b.type = "button"; b.id = "numConfirmBtn"; b.textContent = "확인";
+    document.body.appendChild(b);
+    return b;
+  })();
+  let numConfirmCur = null;   // 지금 [확인]이 떠 있는 칸의 { el, commit }
+  function numConfirmPlace() {
+    if (!numConfirmCur) return;
+    const r = numConfirmCur.el.getBoundingClientRect();
+    numConfirmBtn.classList.add("on");
+    const bw = numConfirmBtn.offsetWidth, bh = numConfirmBtn.offsetHeight;
+    numConfirmBtn.style.left = (r.right - bw - 3) + "px";
+    numConfirmBtn.style.top = (r.top + (r.height - bh) / 2) + "px";
+  }
+  function numConfirmHide() { numConfirmBtn.classList.remove("on"); numConfirmCur = null; }
+  // pointerdown + preventDefault — 클릭으로 칸의 포커스가 빠져(blur) 원복되기 전에 적용.
+  // click은 폴백(보조기기 등 pointerdown이 안 오는 경로) — commit이 상태를 비우므로 중복 없음.
+  numConfirmBtn.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    if (numConfirmCur) numConfirmCur.commit();
   });
+  numConfirmBtn.addEventListener("click", function () {
+    if (numConfirmCur) numConfirmCur.commit();
+  });
+  // 사이드바 스크롤·창 크기 변경 때 버튼이 칸을 따라가게
+  window.addEventListener("scroll", function () { numConfirmPlace(); }, true);
+  window.addEventListener("resize", function () { numConfirmPlace(); });
+  function wireConfirm(el, apply) {
+    if (!el) return;
+    let base = el.value;   // 마지막으로 적용된(확정된) 값 — 포커스 때마다 다시 잡는다
+    function dirty() { return el.value !== base; }
+    function commit() {
+      base = el.value;
+      if (numConfirmCur && numConfirmCur.el === el) numConfirmHide();
+      apply();
+    }
+    function revert() {
+      if (dirty()) el.value = base;
+      if (numConfirmCur && numConfirmCur.el === el) numConfirmHide();
+    }
+    function refresh() {
+      if (document.activeElement === el && dirty()) { numConfirmCur = { el: el, commit: commit }; numConfirmPlace(); }
+      else if (numConfirmCur && numConfirmCur.el === el) numConfirmHide();
+    }
+    el.addEventListener("focus", function () { base = el.value; });   // 외부(자동 채움)로 바뀐 값 동기화
+    el.addEventListener("input", refresh);
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); if (dirty()) commit(); }
+      else if (e.key === "Escape") { e.preventDefault(); revert(); }
+    });
+    el.addEventListener("blur", revert);   // [확인] pointerdown은 preventDefault라 blur가 안 남
+  }
+  // 구조(칸 수)에 영향을 주는 숫자 칸 → 확정 시 멜로디 재구성 후 렌더
+  wireConfirm($("beats"), function () { fillDaegangPreset(); onFormChange(); });
+  // 총 각 수를 직접 확정하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
+  wireConfirm($("gakCount"), function () { gakUserSet = true; onFormChange(); });
+  ["gakPerRow", "stackCount"].forEach(id => wireConfirm($(id), onFormChange));
+  // 모양만 바꾸는 숫자 칸(대강 분절 포함) → 확정 시 렌더만
+  ["cellSize", "gakGap", "bandGap", "daegang",
+   "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
+   "subSize", "subOffset", "subOffsetX", "subSpacing"].forEach(id => wireConfirm($(id), render));
+  // 체크박스·셀렉트·제목 텍스트는 예전처럼 즉시 반영
   ["stackAuto", "title", "titleLayout", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
-  });
-  // 모양만 바꾸는 입력 → 렌더만
-  ["cellSize", "gakGap", "bandGap", "daegang",
-   "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
-   "subSize", "subOffset", "subOffsetX", "subSpacing"].forEach(id => {   // 숫자 타이핑 칸
-    $(id).addEventListener("change", render);
   });
   ["sizeScale", "pageFill", "noteScale", "subtitle",
    "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
@@ -4201,7 +4252,7 @@
     buildPalette();
   });
   // 템포(BPM)는 재생뿐 아니라 템포 표시(악보)에도 쓰이므로 바뀌면 다시 그림
-  $("tempoBpm").addEventListener("change", render);
+  wireConfirm($("tempoBpm"), render);   // 숫자 타이핑 칸 — [확인]/Enter로만 적용
   $("wantTempo").addEventListener("change", render);
   $("wantTempo").addEventListener("input", render);
   // 재생 설정(기준음·템포) 팝오버
