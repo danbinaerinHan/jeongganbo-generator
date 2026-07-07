@@ -1585,6 +1585,7 @@
   const NOTE_DIR = "symbol_samples/notes/";
   let noteMode = "font";   // "font" | "hangul" (이미지 표기 옵션은 제거됨)
   let noteScaleCur = 1;    // 율명 크기 배율 (레이아웃 탭 슬라이더, 1 = 기본이자 최소)
+  let lyricsScaleCur = 1;  // 가사 크기 배율 (기능바 슬라이더 — 가사 켜졌을 때만 보임)
   let palZoom = 1;         // 율명 팔레트(표·건반) 표시 배율
   let ornPalZoom = 1;      // 시김새 팔레트 표시 배율 — 율명과 따로 조절됨
   let edFontPx = 14;       // 선율 텍스트 에디터 글자 크기(px)
@@ -2048,7 +2049,8 @@
       : rows.map(function (_, i) { return yTop + (cellH / rows.length) * (i + 0.5); });
     // 글자 크기는 분박·글자 수와 무관하게 문서 전체 한 가지 — 율명 글자가 행 수와
     // 무관하게 고정인 것과 같은 규칙(행이 많으면 촘촘해질 뿐 줄어들지 않는다).
-    const fs = Math.min(width * 0.86, cellH * 0.7);
+    // 여기에 '가사 크기' 슬라이더 배율만 곱한다(여러 글자 행의 넘침 방지 캡은 배율과 무관).
+    const fs = Math.min(width * 0.86, cellH * 0.7) * lyricsScaleCur;
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
       // 한 행에 여러 글자('더지' 등)면 그 행만 칸 폭에 맞춰 줄인다 — 안 그러면 옆 정간을 침범
@@ -2535,6 +2537,8 @@
     $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
     noteScaleCur = Math.max(0.5, parseFloat($("noteScale").value) || 1);
     $("noteScaleVal").textContent = noteScaleCur.toFixed(2).replace(/0$/, "") + "×";
+    lyricsScaleCur = Math.max(0.5, parseFloat($("lyricsScale").value) || 1);
+    $("lyricsScaleVal").textContent = lyricsScaleCur.toFixed(2).replace(/0$/, "") + "×";
     const desiredCell = Math.max(2, parseFloat($("cellSize").value) || 11) * sizeScale;
     // 가사를 켜면 각 오른쪽에 가사 칸이 붙어 이미 사이가 벌어지므로, 원래 각 간격은 0.7배로 줄인다
     const desiredGap = Math.max(0, parseFloat($("gakGap").value) || 0) * sizeScale
@@ -3424,7 +3428,7 @@
 
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
-    "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "cellSize", "gakGap", "bandGap", "header", "frame",
+    "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout",
     "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode"];
@@ -3742,7 +3746,7 @@
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
   });
-  ["sizeScale", "pageFill", "noteScale", "subtitle",
+  ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
    "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
@@ -4183,7 +4187,7 @@
   });
 
   // 크기·간격을 처음 값으로 초기화 (제목·선율 등 내용과 문서 구조는 그대로)
-  const LAYOUT_DEFAULTS = { sizeScale: 1, pageFill: 0, noteScale: 1, cellSize: 11, gakGap: 7, bandGap: 10 };
+  const LAYOUT_DEFAULTS = { sizeScale: 1, pageFill: 0, noteScale: 1, lyricsScale: 1, cellSize: 11, gakGap: 7, bandGap: 10 };
   $("layoutReset").addEventListener("click", function () {
     Object.keys(LAYOUT_DEFAULTS).forEach(function (id) { $(id).value = LAYOUT_DEFAULTS[id]; });
     render();

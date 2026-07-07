@@ -532,7 +532,10 @@
   .ribbon-slider-group { display: flex; align-items: center; gap: 7px; font-size: 11px;
                          font-weight: 600; color: var(--muted); white-space: nowrap; }
   .ribbon-slider-group input[type="range"] { width: 120px; margin: 0; }
-  .ribbon-slider-group #noteScaleVal { font-weight: 400; min-width: 32px; }
+  .ribbon-slider-group #noteScaleVal,
+  .ribbon-slider-group #lyricsScaleVal { font-weight: 400; min-width: 32px; }
+  /* 가사 크기 슬라이더 — 가사를 켰을 때만 나타남(render가 body.want-lyrics를 관리) */
+  body:not(.want-lyrics) #lyricsScaleGroup { display: none; }
   .ribbon-select-group { display: flex; align-items: center; gap: 6px; font-size: 11px;
                         font-weight: 600; color: var(--muted); white-space: nowrap; }
   .ribbon-select-group select { padding: 4px 20px 4px 7px; border: 1px solid var(--line);
