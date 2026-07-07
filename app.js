@@ -281,6 +281,8 @@
       const t2 = ch + (a[i + 1] || "");
       if (SYM_MARK[t2]) { i += 2; continue; }
       if (SYM_MARK[ch]) { i += 1; continue; }
+      const spn = matchSpecialNote(a, i);            // 특수 율명(하하배임 등) — tokenizeNotes와 같은 순서
+      if (spn) { i += spn.length; continue; }
       if (PRE2.indexOf(t2) >= 0 && BASESET.has(a[i + 2])) { i += 3; continue; }
       if (PRE2U.indexOf(t2) >= 0 && BASESET.has(a[i + 2])) { i += 3; continue; }
       if (PRE1U.indexOf(ch) >= 0 && BASESET.has(a[i + 1])) { i += 2; continue; }
@@ -1559,6 +1561,14 @@
       if (SYM_MARK[t2]) { out.push({ sym: SYM_MARK[t2] }); i += 2; continue; }
       if (SYM_MARK[a[i]]) { out.push({ sym: SYM_MARK[a[i]] }); i += 1; continue; }
       if (a[i] === "<") { out.push({ breath: true }); i += 1; continue; }
+      // 특수 율명(하하배임 등) — 옥타브 접두어 규칙보다 먼저 이름 전체를 통째로 매칭
+      // (안 그러면 '하하배임'이 '하'+'하배임'으로 쪼개진다)
+      const spn = matchSpecialNote(a, i);
+      if (spn) {
+        const sp = SPECIAL_NOTES[spn];
+        out.push({ base: sp.base, oct: sp.oct, file: sp.file });
+        i += spn.length; continue;
+      }
       const two = a[i] + (a[i + 1] || "");
       if (PRE2.indexOf(two) >= 0 && BASESET.has(a[i + 2])) { out.push({ base: a[i + 2], oct: -2 }); i += 3; continue; }
       if (PRE2U.indexOf(two) >= 0 && BASESET.has(a[i + 2])) { out.push({ base: a[i + 2], oct: 2 }); i += 3; continue; }
@@ -1592,6 +1602,18 @@
   function octPrefix(oct) {
     const row = OCT_ROWS.find(function (r) { return r.oct === oct; });
     return row ? row.prefix : "";
+  }
+  // 유니코드 한자가 아예 없는 특수 율명(거문고 전용 저음역 등) — 전용 SVG 이미지로 그린다.
+  // 12율×5옥타브 전부 이미지를 만드는 대신 실제로 쓰이는 음만 등록: 팔레트 '특수' 줄,
+  // 이름 그대로 타이핑, 문법 검사, 재생(base+oct로 음높이 계산)이 모두 이 표를 같이 쓴다.
+  const SPECIAL_NOTES = {
+    "하하배임": { base: "임", oct: -3, file: "lim_ddd" }
+  };
+  function matchSpecialNote(a, i) {
+    for (const nm in SPECIAL_NOTES) {
+      if (a.slice(i, i + nm.length).join("") === nm) return nm;
+    }
+    return null;
   }
   // 조(악조) 프리셋 — 고르면 표 팔레트가 그 조의 구성음만 적힌 순서대로 모아 보여준다
   const JO_PRESETS = {
@@ -1939,9 +1961,15 @@
       wrap.appendChild(rowEl);
     });
 
-    // 쉼표 · 연음 기호 — 대표 하나씩만 (약어로 삽입)
+    // 특수 — 쉼표·이음·숨표(약어로 삽입)에 더해, 유니코드 없는 특수 율명(SPECIAL_NOTES,
+    // 거문고 하하배임 등)도 이 줄에 들어간다(12율×5옥타브 표 밖의 음이라 매트릭스엔 자리가 없음).
     const data = window.NOTE_DATA || {};
     const symList = [];
+    Object.keys(SPECIAL_NOTES).forEach(function (nm) {
+      const sp = SPECIAL_NOTES[nm];
+      if (data[sp.file]) symList.push({ file: sp.file, label: nm, ins: nm, cap: nm,
+                                        semis: SCALE.indexOf(sp.base) + sp.oct * 12 });
+    });
     if (data["pause_007"]) symList.push({ file: "pause_007", label: "쉼표", ins: "쉼", cap: "쉼표" });
     // '-' 문자 그대로 삽입 — 타이핑으로도 바로 쓸 수 있다는 걸 캡션에서 보여줌
     symList.push({ file: null, label: "이음", ins: "-", fallback: "-", cap: "이음(-)" });
@@ -1952,10 +1980,10 @@
       rowEl.className = "prow symrow";
       const lab = document.createElement("span");
       lab.className = "plabel";
-      lab.textContent = "기호";
+      lab.textContent = "특수";
       rowEl.appendChild(lab);
       symList.forEach(function (s) {
-        rowEl.appendChild(paletteChip(s.label, s.file, s.ins, s.fallback, false, s.cap));
+        rowEl.appendChild(paletteChip(s.label, s.file, s.ins, s.fallback, false, s.cap, s.semis));
       });
       wrap.appendChild(rowEl);
     }
@@ -2162,6 +2190,9 @@
   const PAIR_GAP_SCALE = 0.8;
 
   function drawGlyph(svg, tk, cx, cyc, size) {
+    // 특수 율명(유니코드 없음, SPECIAL_NOTES) — 전용 이미지를 한자 글자와 같은 크기로.
+    // 한글 표기 모드에도 이미지 그대로(하배/중청 같은 접두어 체계 밖의 음이라 글자가 없다).
+    if (tk.file) { drawSymImage(svg, tk.file, cx, cyc, size * YUL_SCORE_SCALE); return; }
     let file = null;
     if (tk.sym) file = symURL(tk.sym) ? tk.sym : null;
 
