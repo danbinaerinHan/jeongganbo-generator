@@ -3,26 +3,29 @@
 
 \subsection{기존 도구·연구와의 기능 비교}
 
+% JDCS: 표 내부는 영문, 캡션은 표 위 국문+영문 병기
 \begin{table*}[t]
-\centering\small
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
 \caption{정간보 관련 도구·연구와의 기능 비교
-(\(\bullet\)=지원, \(\circ\)=부분 지원, ---=미지원)}
+(\(\bullet\)=지원, \(\circ\)=부분 지원, ---=미지원)\\
+Table~\thetable. Feature comparison with existing jeongganbo tools and
+studies (\(\bullet\)=supported, \(\circ\)=partial, ---=unsupported)}
 \label{tab:compare}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
- & 본 시스템 & XML 기술~\cite{lee2013xml} & 웹 설계~\cite{jkca2022web}
- & 웹 편집기~\cite{jeongganbo-editor-web} & HWP 표 조판 & MuseScore~\cite{musescore} \\
+ & Ours & XML encoding~\cite{lee2013xml} & Web design~\cite{jkca2022web}
+ & Web editor~\cite{jeongganbo-editor-web} & HWP tables & MuseScore~\cite{musescore} \\
 \midrule
-사람이 읽는 텍스트 문법      & \(\bullet\) & --- & --- & --- & --- & --- \\
-WYSIWYG 편집                & \(\bullet\) & --- & \(\circ\) & \(\bullet\) & \(\bullet\) & \(\bullet\) \\
-분박·붙임(위치 시가)         & \(\bullet\) & \(\bullet\) & \TODO{확인} & \(\circ\) & \(\circ\) & --- \\
-시김새                      & \(\bullet\)(59종) & \(\circ\) & \TODO{확인} & --- & \(\circ\)(수작업) & --- \\
-장단·가사 계층               & \(\bullet\) & \(\circ\) & \TODO{확인} & --- & \(\circ\)(수작업) & --- \\
-우종서·대강 조판             & \(\bullet\) & \(\circ\) & \TODO{확인} & \(\circ\) & \(\circ\)(수작업) & --- \\
-재생                        & \(\bullet\) & \(\circ\) & --- & --- & --- & \(\bullet\)(오선보) \\
-인쇄·PDF·PNG 출력            & \(\bullet\) & --- & --- & \(\circ\)(PNG) & \(\bullet\) & \(\bullet\) \\
-구조화 문서 교환             & \(\bullet\)(JSON) & \(\bullet\)(XML) & \TODO{확인} & \(\circ\)(JSON) & --- & \(\bullet\)(MusicXML) \\
-서버리스·오프라인            & \(\bullet\) & 해당 없음 & \TODO{확인} & --- & \(\bullet\) & \(\bullet\) \\
+Human-readable text grammar      & \(\bullet\) & --- & --- & --- & --- & --- \\
+WYSIWYG editing                  & \(\bullet\) & --- & \(\circ\) & \(\bullet\) & \(\bullet\) & \(\bullet\) \\
+Positional duration (subdivision) & \(\bullet\) & \(\bullet\) & \TODO{확인} & \(\circ\) & \(\circ\) & --- \\
+Sigimsae ornaments               & \(\bullet\)(59) & \(\circ\) & \TODO{확인} & --- & \(\circ\)(manual) & --- \\
+Rhythm and lyric layers          & \(\bullet\) & \(\circ\) & \TODO{확인} & --- & \(\circ\)(manual) & --- \\
+Right-to-left layout with daegang & \(\bullet\) & \(\circ\) & \TODO{확인} & \(\circ\) & \(\circ\)(manual) & --- \\
+Playback                         & \(\bullet\) & \(\circ\) & --- & --- & --- & \(\bullet\)(staff) \\
+Print/PDF/PNG export             & \(\bullet\) & --- & --- & \(\circ\)(PNG) & \(\bullet\) & \(\bullet\) \\
+Structured interchange           & \(\bullet\)(JSON) & \(\bullet\)(XML) & \TODO{확인} & \(\circ\)(JSON) & --- & \(\bullet\)(MusicXML) \\
+Serverless offline use           & \(\bullet\) & N/A & \TODO{확인} & --- & \(\bullet\) & \(\bullet\) \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -60,7 +63,8 @@ WYSIWYG 편집                & \(\bullet\) & --- & \(\circ\) & \(\bullet\) & \(
 셋째, MusicXML·MEI 등 표준 포맷과의 상호 변환이 없어 오선보 병기나
 서양 도구 연계가 수동이다.
 넷째, 사용성 평가를 아직 수행하지 않았다. 국악 전공자·교사를 대상으로
-과제 기반 평가(기존 HWP 조판 대비 작성 시간·오류율·SUS 점수)를 수행하는
-것이 후속 과제다. \TODO{투고 전 소규모라도 사용자 평가를 실시해 5장을
+과제 기반 평가(기존 HWP 조판 대비 작성 시간·오류율·SUS(system usability
+scale) 점수)를 수행하는
+것이 후속 과제다. \TODO{투고 전 소규모라도 사용자 평가를 실시해 Ⅴ장을
 평가 결과 중심으로 재구성하는 것을 강력 권장 --- JDCS 심사에서 평가 부재가
 지적될 가능성이 높음}

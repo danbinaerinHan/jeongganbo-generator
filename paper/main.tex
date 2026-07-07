@@ -4,27 +4,27 @@
 % 컴파일: XeLaTeX 필수 (한글). ★ Overleaf 최초 1회 설정 ★
 %   프로젝트 화면의 톱니바퀴(⚙, 설정) 아이콘 → Compiler → "XeLaTeX"
 %   선택 → Recompile.  (구버전 UI는 왼쪽 위 Menu → Settings → Compiler)
-%   Overleaf 기본값 pdfLaTeX으로는 한글 폰트를 못 쓰며, latexmkrc나
-%   magic comment로는 컴파일러를 못 바꾼다 — 반드시 설정에서 바꿀 것.
-%   로컬: xelatex main && bibtex main && xelatex main && xelatex main
+%   로컬: xelatex main && xelatex main  (참고문헌은 수동이라 bibtex 불필요)
 %
 % ※ JDCS는 공식 LaTeX 템플릿이 없고 HWP 템플릿만 제공한다.
-%   이 초안은 JDCS 논문 구성(국문요약+영문 Abstract, 번호 매긴
-%   참고문헌)을 따르되 조판은 일반 2단 article로 잡았다.
-%   최종 투고 시 HWP 템플릿으로 옮기거나, 학회에 PDF 투고 가능
-%   여부를 확인할 것. [TODO]
+%   이 초안은 JDCS HWP 템플릿(2025 v2)의 규칙을 LaTeX에서 근사한다:
+%   · 판형 210×280mm, 여백 상하 25mm·좌우 20mm, 2단
+%   · 장 번호 = Ⅰ. Ⅱ. …(로마숫자), 절 = 2-1, 부절 = 1)
+%   · 그림 캡션은 그림 아래(그림 n. + Fig. n.), 표 캡션은 표 위(표 n. + Table n.)
+%   · 표·그림 내부 내용은 영문(불가피한 국문은 * 사유 병기)
+%   · 각주 금지(모두 본문·참고문헌으로), 참고문헌은 영문·인용 순서
+%   신명조/한컴고딕/돋움/장평/자간은 HWP 전용 개념이라 재현하지 않는다.
+%   최종 투고는 반드시 HWP 파일로 옮겨 제출해야 한다(PDF 불가). [TODO]
 % ============================================================
-\documentclass[twocolumn,10pt,a4paper]{article}
+\documentclass[twocolumn,10pt]{article}
 
 % pdfLaTeX로 잘못 돌리면 아래에서 멈추고 로그에 해결법이 표시된다.
-% (XeLaTeX·LuaLaTeX은 통과)
 \usepackage{iftex}
 \ifPDFTeX
   \PackageError{jgb-paper}
     {Wrong compiler: this paper needs XeLaTeX}
     {In Overleaf: click the gear icon (settings) in your project,
      find the "Compiler" dropdown, choose "XeLaTeX", then Recompile.
-     (Older UI: Menu at top-left -> Settings -> Compiler.)
      Locally: compile with xelatex, not pdflatex.}
 \fi
 
@@ -33,8 +33,6 @@
 % 한글·한자 폰트: 설치된 것을 순서대로 시도.
 %   macOS(Apple SD Gothic Neo) → Noto CJK(리눅스/직접 설치)
 %   → 은바탕(UnBatang, TeX Live 동봉 = Overleaf에 항상 있음)
-% 한자 폰트를 따로 지정하지 않으면 율명 한자(潢 등)가 빠질 수
-% 있어 한글과 같은 폰트로 함께 지정한다.
 % ------------------------------------------------------------
 \IfFontExistsTF{Apple SD Gothic Neo}{%
   \setmainhangulfont[BoldFont={* Bold}]{Apple SD Gothic Neo}%
@@ -48,12 +46,14 @@
   \setmainhangulfont{Noto Sans CJK KR}%
   \setmainhanjafont{Noto Sans CJK KR}%
 }{%
-  % 은바탕은 TeX Live 동봉 파일명으로 지정 (fontconfig 불필요)
   \setmainhangulfont[BoldFont={UnBatangBold.ttf}]{UnBatang.ttf}%
   \setmainhanjafont[BoldFont={UnBatangBold.ttf}]{UnBatang.ttf}%
 }}}
 
-\usepackage[margin=22mm,columnsep=7mm]{geometry}
+% JDCS 판형: 210×280mm, 위·아래 25mm, 좌·우 20mm, 2단(단 간격 8mm)
+\usepackage[paperwidth=210mm,paperheight=280mm,
+            top=25mm,bottom=25mm,left=20mm,right=20mm,
+            columnsep=8mm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{array}
@@ -61,8 +61,32 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
+
+% ------------------------------------------------------------
+% JDCS 장·절 번호: 장 Ⅰ. Ⅱ. …, 절 2-1, 부절 1)
+% ------------------------------------------------------------
+\usepackage{titlesec}
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\arabic{section}-\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{subsubsection})}
+\titleformat{\section}{\normalfont\large\bfseries\sffamily}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries\sffamily}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{0.4em}{}
+% 장과 장 사이 2줄 간격(템플릿 지시)의 근사
+\titlespacing*{\section}{0pt}{2\baselineskip}{0.8\baselineskip}
+\titlespacing*{\subsection}{0pt}{1.2\baselineskip}{0.5\baselineskip}
+
+% ------------------------------------------------------------
+% JDCS 캡션: 그림 아래 "그림 n. 국문" + "Fig. n. 영문",
+%            표 위 "표 n. 국문" + "Table n. 영문"
+% 캡션 본문에서 \\ 뒤에 Fig./Table 줄을 직접 쓴다.
+% ------------------------------------------------------------
 \usepackage{caption}
-\captionsetup{font=small,labelfont=bf}
+\captionsetup{font=small,labelfont=bf,labelsep=period,
+              justification=raggedright,singlelinecheck=false}
+\renewcommand{\figurename}{그림}
+\renewcommand{\tablename}{표}
+
 \usepackage{enumitem}
 \setlist{nosep,leftmargin=1.2em}
 \usepackage{cite}
@@ -80,10 +104,10 @@
 with a Human-Readable Text Grammar}
 
 % ------------------------------------------------------------
-% TODO: 저자 정보 — 이름·소속·이메일·교신저자 표기를 채울 것.
-%       JDCS 양식은 국문·영문 성명과 소속을 모두 요구한다.
+% TODO: 저자 정보 — 국문·영문 성명, 소속과 직위를 채울 것.
+% ※ 심사용 파일에서는 저자 정보를 모두 삭제해야 한다(JDCS 규정).
 % ------------------------------------------------------------
-\author{\TODO{저자명} \\ \small \TODO{소속·이메일}}
+\author{\TODO{저자명(심사용 파일에서는 삭제)} \\ \small \TODO{소속·직위}}
 \date{}
 
 \begin{document}
@@ -96,22 +120,19 @@ with a Human-Readable Text Grammar}
 \begin{minipage}{0.92\textwidth}
 \small
 \textbf{요\ 약}\quad
-정간보(井間譜)는 15세기에 창안된 동아시아 최초의 유량악보(mensural notation)로,
-오늘날에도 국악 기보의 표준으로 쓰인다. 그러나 서양 오선보 중심의 상용 사보
-소프트웨어는 정간보의 구조 --- 시가(時價)를 기호가 아닌 \emph{위치}로 나타내는 격자,
-오른쪽에서 왼쪽으로 진행하는 세로쓰기, 율명·시김새 --- 를 지원하지 않으며,
+정간보(井間譜)는 15세기에 창안된 동아시아 최초의 유량악보로, 오늘날에도
+국악 기보의 표준으로 쓰인다. 그러나 서양 오선보 중심의 상용 사보
+소프트웨어는 시가(時價)를 위치로 나타내는 격자, 오른쪽에서 왼쪽으로
+진행하는 세로쓰기, 율명·시김새 등 정간보의 구조를 지원하지 않아,
 국악 현장은 여전히 워드프로세서 표 기능을 이용한 수작업 조판에 의존한다.
 본 논문은 서버 없이 브라우저만으로 동작하는 정간보 편집·조판·출판 시스템
-``정간보 생성기''를 제안한다. 제안 시스템의 핵심은 (1) 줄바꿈·구분자·공백만으로
-각(刻)·정간·분박을 표현하는 사람이 읽고 쓸 수 있는 경량 텍스트 문법,
-(2) 악보를 직접 클릭해 입력하는 WYSIWYG 방식과 텍스트 편집을 양방향 동기화한
-이중 입력 구조, (3) 우종서 배치·대강(大綱)선·이음표 축약·옥타브 변형 한자 등
-전통 조판 관행의 규칙화와 시김새 59종의 벡터 렌더링,
-(4) A4 물리 단위 기반 SVG 조판으로부터의 인쇄·PDF·고해상도 PNG 출력과
-JSON 문서 교환 포맷, 그리고 Web Audio 기반 재생이다.
-제안 문법은 기존 XML 기반 기술 방식보다 간결하면서 격자 구조와 일대일로
-대응하며, 시스템 전체가 정적 파일만으로 구성되어 설치·계정 없이
-교육·창작·기록 보존에 즉시 활용될 수 있다.
+``정간보 생성기''를 제안한다. 제안 시스템은 (1) 각(刻)·정간·분박을
+줄바꿈·구분자·공백만으로 표현하는 사람이 읽고 쓸 수 있는 경량 텍스트 문법,
+(2) WYSIWYG 편집과 텍스트 편집의 양방향 동기화, (3) 우종서 배치·대강(大綱)선
+등 전통 조판 관행의 규칙화와 시김새 59종의 벡터 렌더링, (4) 인쇄·PDF·PNG
+출력과 JSON 문서 교환, Web Audio 재생을 제공한다. 제안 문법은 기존 XML 기반
+기술 방식보다 간결하면서 격자 구조와 일대일로 대응하며, 시스템 전체가 정적
+파일만으로 구성되어 설치·계정 없이 교육·창작·기록 보존에 즉시 활용될 수 있다.
 \\[2pt]
 \textbf{중심어}\,: 정간보, 국악, 악보 표기 문법, 웹 애플리케이션, SVG 조판, 디지털 문화유산
 \\[8pt]
@@ -131,7 +152,7 @@ that keeps a click-to-edit WYSIWYG view and a plain-text editor in two-way
 synchronization; (3) codified traditional engraving conventions---right-to-left
 column flow, daegang lines, sustained-tone compression, octave-variant Hanja---
 together with vector rendering of 59 sigimsae ornaments; and (4) print, PDF,
-and 300-dpi PNG export from millimeter-accurate SVG layout, a JSON interchange
+and 300 dpi PNG export from millimeter-accurate SVG layout, a JSON interchange
 format, and Web Audio playback. The grammar is more concise than previous
 XML-based encodings while remaining structurally faithful, and the entire
 system ships as static files, making it immediately usable for education,
@@ -152,9 +173,93 @@ web application, SVG engraving, digital heritage
 \input{sections/06-conclusion}
 
 % ------------------------------------------------------------
-% 참고문헌 — ieeetr: 인용 순서 번호 방식(JDCS 관례와 유사)
+% 참고문헌 — JDCS 규정:
+%   · 반드시 영문 표기(국문 문헌도 영문으로), 본문 인용 순서대로 번호
+%   · 논문지: 저자, "제목," 논문지명, Vol., No., pp., 월 년. doi
+%   · 모든 단어 첫 글자 대문자, URL은 하이퍼링크 해제
+%   · 본문에 인용된 것만 수록(미인용 항목 금지)
+% ieeetr 자동 생성으로는 이 형식이 안 나와 수동 목록으로 전환했다.
+% 서지 원천 데이터는 references.bib에 계속 유지(TODO 목록 포함).
 % ------------------------------------------------------------
-\bibliographystyle{ieeetr}
-\bibliography{references}
+\begin{thebibliography}{99}\small
+
+\bibitem{kwon2000notation}
+O. S. Kwon, \textit{History of Korean Notations}, \TODO{출판사·소재지},
+2000. \TODO{실제 인용 판본으로 서지 확정(대안: 장사훈 국악총론 등)}
+
+\bibitem{han2024sixdragons}
+D. Han, M. Gotham, D. Kim, H. Park, S. Lee, and D. Jeong,
+``Six Dragons Fly Again: Reviving 15th-Century Korean Court Music with
+Transformers and Novel Encoding,'' in \textit{Proceedings of the 25th
+International Society for Music Information Retrieval Conference (ISMIR)},
+San Francisco, CA, pp. 1--8, Nov. 2024. \TODO{최종 페이지 확인}
+
+\bibitem{musescore}
+MuseScore BVBA, \textit{MuseScore: Free Music Composition and Notation
+Software} [Internet]. Available: https://musescore.org/. \TODO{버전 명시}
+
+\bibitem{musescore-jgb-request}
+MuseScore Community Forum, \textit{Jeongganbo Notation (Feature Request)}
+[Internet]. Available: https://musescore.org/en/node/356508.
+
+\bibitem{lee2013xml}
+Y. J. Lee, ``A Study on the Musical Notation of Jeongganbo Using Extensible
+Markup Language,'' \textit{The Journal of the Acoustical Society of Korea},
+Vol. 32, No. 5, pp. 446--455, Sep. 2013.
+https://doi.org/10.7776/ASK.2013.32.5.446
+\TODO{영문 제목·공저자·DOI 원문 대조}
+
+\bibitem{patent2017jgb}
+Electronics and Telecommunications Research Institute, \textit{Method for
+Describing Jeongganbo Music Score and Method for Playing Jeongganbo Music
+Score}, Korean Patent KR101789851B1, Oct. 2017. \TODO{발명자 성명 확인}
+
+\bibitem{jkca2022web}
+\TODO{저자}, ``Designing a Web-Based Jeongganbo Notation Program,''
+\textit{The Journal of the Korea Contents Association}, Vol. 22,
+\TODO{No.·pp.·월}, 2022. \TODO{서지 전체 확인(KoreaScience JAKO202213253766158)}
+
+\bibitem{kim2025omr}
+\TODO{저자 명단(MALerLab)}, ``On the Automatic Recognition of Jeongganbo
+Music Notation: Dataset and Approach,'' \textit{ACM Journal on Computing and
+Cultural Heritage}, 2025. https://doi.org/10.1145/3715159
+\TODO{권·호·페이지 확인}
+
+\bibitem{jeongganbo-editor-web}
+\textit{Jeongganbo Editor} [Internet]. Available: https://jeongganbo.com/.
+\TODO{개발자·공개 연도 확인}
+
+\bibitem{good2001musicxml}
+M. Good, ``MusicXML: An Internet-Friendly Format for Sheet Music,'' in
+\textit{Proceedings of XML 2001}, Orlando, FL, pp. 3--4, Dec. 2001.
+\TODO{개최지·페이지 확인}
+
+\bibitem{mei}
+Music Encoding Initiative, \textit{MEI Guidelines} [Internet].
+Available: https://music-encoding.org/. \TODO{인용 시점 버전 명시}
+
+\bibitem{verovio}
+L. Pugin, R. Zitellini, and P. Roland, ``Verovio: A Library for Engraving
+MEI Music Notation into SVG,'' in \textit{Proceedings of the 15th
+International Society for Music Information Retrieval Conference (ISMIR)},
+Taipei, Taiwan, pp. 107--112, Oct. 2014.
+
+\bibitem{abc}
+C. Walshaw, \textit{The ABC Music Standard 2.1} [Internet].
+Available: https://abcnotation.com/wiki/abc:standard:v2.1.
+
+\bibitem{humdrum}
+D. Huron, \textit{The Humdrum Toolkit: Reference Manual}, Center for
+Computer Assisted Research in the Humanities, Menlo Park, CA, 1994.
+
+\end{thebibliography}
+
+% ------------------------------------------------------------
+% 저자 약력 — 게재 확정본에만 넣는다(심사용 파일에서는 삭제).
+% 형식: 이름(영문명) / 연도: 학력·경력 / ※관심분야: …
+% 사진 28×29mm, 300dpi, jpg.
+% ------------------------------------------------------------
+% \section*{저자약력}
+% \TODO{저자 약력·사진 (심사용 파일에는 넣지 않음)}
 
 \end{document}

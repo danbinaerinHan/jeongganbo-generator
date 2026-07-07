@@ -14,27 +14,33 @@
 
 \subsection{문법 정의}
 
+% JDCS: 표 캡션은 표 위, 국문(표 n.)+영문(Table n.) 병기, 표 내부는 영문
 \begin{table}[t]
 \centering\small
-\caption{선율 텍스트 문법 요약}
+\caption{선율 텍스트 문법 요약\\
+Table~\thetable. Summary of the melody text grammar}
 \label{tab:grammar}
 \begin{tabularx}{\columnwidth}{@{}lX@{}}
 \toprule
-표기 & 의미 \\
+Notation & Meaning \\
 \midrule
-줄바꿈 & 각(세로열, 마디) 구분 \\
-\code{|} & 정간(1박) 구분 \\
-정간 안 공백 & 분박 --- 칸을 위$\to$아래로 등분 \\
-공백 없는 연접 & 붙임 --- 한 분박 행 안의 가로 배치 \\
-황·대·태$\cdots$응 & 12율 율명(한글 입력) \\
-청·중청·배·하배 & 옥타브 접두어($+1,+2,-1,-2$) \\
-\code{-} & 이음 --- 앞 음을 지속 \\
-\code{쉼} & 쉼표(무음) \\
-음 뒤 \code{<} & 숨표 --- 정간 오른쪽 아래 표시 \\
-\code{\{이름\}} & 시김새 부가(예: \code{황\{미는표\}}) \\
-\code{\{이름@$s$,$x$,$y$\}} & 시김새 크기 $s$\%·가로 $x$·세로 $y$ 조정 \\
+Line break & Gak (vertical column) boundary \\
+\code{|} & Jeonggan (one-beat cell) boundary \\
+Space inside a cell & Bunbak --- vertical subdivision of the cell \\
+Juxtaposition (no space) & Buchim --- horizontal grouping within a row \\
+황·대·태$\cdots$응* & Twelve yulmyeong pitch names (Hangul) \\
+청·중청·배·하배* & Octave prefixes ($+1,+2,-1,-2$) \\
+\code{-} & Sustain of the previous note \\
+\code{쉼}* & Rest (silence) \\
+\code{<} after a note & Breath mark (lower-right corner of the cell) \\
+\code{\{name\}} & Attach a sigimsae (e.g., \code{황\{미는표\}}) \\
+\code{\{name@$s$,$x$,$y$\}} & Sigimsae scale $s$ \% and offset $x$, $y$ \\
 \bottomrule
 \end{tabularx}
+
+\smallskip
+\raggedright\scriptsize *Korean tokens are unavoidable here: they are the
+literal input vocabulary of the notation itself.
 \end{table}
 
 표~\ref{tab:grammar}이 문법 전체다. 형식적으로 문서는 다음과 같이 정의된다.
@@ -66,8 +72,9 @@
 
 \subsection{시김새의 텍스트 직렬화}
 
-시김새는 이름 기반으로 \code{\{미는표\}}처럼 부가하며, GUI에서 개별 기호의
-크기·위치를 미세 조정하면 그 값이 \code{\{미는표@120,5,-5\}}(120\% 크기,
+시김새는 이름 기반으로 \code{\{미는표\}}처럼 부가하며, 그래픽 사용자
+인터페이스(GUI; graphical user interface)에서 개별 기호의
+크기·위치를 미세 조정하면 그 값이 \code{\{미는표@120,5,-5\}}(120 \% 크기,
 오른쪽 5, 위 5) 형태로 같은 텍스트에 직렬화된다. 기본값(100,0,0)이면 이름만
 남는다. 이로써 ``문법으로 표현 못 하는 시각 조정''이 생기지 않으며,
 텍스트 하나가 문서의 완전한 원천(single source of truth)이 된다.
@@ -89,4 +96,4 @@ XML 방식: \code{<jeonggan><bunbak><note pitch="황"/>}\allowbreak
 표로 제시할 것}
 
 물론 XML은 스키마 검증·범용 파서라는 장점이 있으므로, 제안 시스템은
-문서 교환 시 텍스트 문법을 JSON 컨테이너에 담는 절충을 취했다(4.8절).
+문서 교환 시 텍스트 문법을 JSON 컨테이너에 담는 절충을 취했다(4-8절).
