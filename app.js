@@ -963,10 +963,23 @@
   }
   if ($("cursorSelect")) $("cursorSelect").addEventListener("click", function () { setCursorMode(false); });
   if ($("cursorPan")) $("cursorPan").addEventListener("click", function () { setCursorMode(true); });
+  // 악보가 화면보다 좁아 가로 스크롤 여지가 없을 땐 시트 자체를 옆으로 밀어(translate) 둘 수
+  // 있게 한다 — 팔레트 창에 가리는 악보를 옆에 치워두는 용도. 줌이 바뀌면 범위 안으로 되돌림.
+  // translate는 transform(scale)과 별개 속성이라 줌과 안 겹치고, #sheet의 transform 트랜지션도 안 탄다.
+  let sheetShiftX = 0;
+  function clampSheetShift() {
+    const area = $("sheetArea"), sheet = $("sheet");
+    if (!area || !sheet) return;
+    // 폭은 rect 대신 레이아웃 폭×배율로 — 줌 트랜지션(.08s) 중간 값에 흔들리지 않게
+    const scaledW = sheet.offsetWidth * viewZoom;
+    const half = Math.max(0, (area.clientWidth - scaledW) / 2);
+    sheetShiftX = Math.max(-half, Math.min(half, sheetShiftX));
+    sheet.style.translate = sheetShiftX + "px 0px";
+  }
   (function () {
     const area = $("sheetArea");
     if (!area) return;
-    let panning = false, sx = 0, sy = 0, sl = 0, st = 0;
+    let panning = false, sx = 0, sy = 0, sl = 0, st = 0, baseShift = 0;
     area.addEventListener("pointerdown", function (e) {
       if (!document.body.classList.contains("pan-mode")) return;
       if (e.button !== undefined && e.button !== 0) return;
@@ -975,13 +988,21 @@
       panning = true;
       document.body.classList.add("panning");
       sx = e.clientX; sy = e.clientY; sl = area.scrollLeft; st = area.scrollTop;
+      baseShift = sheetShiftX;
       try { area.setPointerCapture(e.pointerId); } catch (_e) {}
       e.preventDefault();
     });
     area.addEventListener("pointermove", function (e) {
       if (!panning) return;
-      area.scrollLeft = sl - (e.clientX - sx);
-      area.scrollTop = st - (e.clientY - sy);
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      area.scrollTop = st - dy;
+      // 가로: 스크롤 여지가 있으면 스크롤, 없으면 시트를 민다(둘 다일 일은 없음)
+      if (area.scrollWidth > area.clientWidth) {
+        area.scrollLeft = sl - dx;
+      } else {
+        sheetShiftX = baseShift + dx;
+        clampSheetShift();
+      }
     });
     function endPan(e) {
       if (!panning) return;
@@ -3774,6 +3795,8 @@
   function applyZoom() {
     $("sheet").style.transform = "scale(" + viewZoom + ")";
     $("zoomVal").textContent = Math.round(viewZoom * 100) + "%";
+    // 이동(팬)으로 밀어둔 시트를 새 배율의 여유 범위 안으로 — 커져서 여유가 없어지면 0으로 복귀
+    clampSheetShift();
   }
   $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(6, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
   $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });

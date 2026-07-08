@@ -29,8 +29,9 @@
 · 지움: 선율·장단·가사·텍스트·셀 서식
 · 유지: 종이 방향·정간 크기 등 레이아웃">⟲<span class="lbl">전체 초기화</span></button>
     </div>
-    <!-- 입력 방식 — 세그먼트 버튼 2개 대신 드롭다운 하나(상단바 상자 문법 통일).
-         두 모드의 자세한 차이는 옆 ? 가이드와 툴팁이 담당한다. -->
+    <span class="topbar-sep"></span>
+    <!-- 입력 방식 — 세그먼트 버튼 2개 대신 드롭다운 하나. 이름표(작은 글씨)+값(굵은 글씨)으로
+         구분하고, 두 모드의 자세한 차이는 옆 ? 가이드와 툴팁이 담당한다. -->
     <div class="topbar-box" id="modeBox">
       <span class="mode-lab">입력 방식</span>
       <select id="melInputSelect" class="tip"
@@ -85,6 +86,7 @@
     </div>
     <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
          늘 같은 자리에 있는 게 편해서 상단바 오른쪽에 고정했다 -->
+    <span class="topbar-sep"></span>
     <div id="zoomBar" class="topbar-box">
       <button id="zoomOut" title="축소">−</button>
       <span class="zval" id="zoomVal">100%</span>
@@ -92,6 +94,7 @@
       <button id="zoomFitH" class="fit" title="세로 맞춤 (페이지 높이를 화면에 맞춤)">세로맞춤</button>
       <button id="zoomFitW" class="fit" title="가로 맞춤 (페이지 너비를 화면에 맞춤)">가로맞춤</button>
     </div>
+    <span class="topbar-sep"></span>
     <!-- 다크모드 토글 — 상단바 맨 오른쪽. 해(라이트)·달(다크) 아이콘을 CSS로 전환 -->
     <button type="button" id="darkToggle" class="topbar-icon-btn tip"
       data-tip="어두운 화면 / 밝은 화면 전환
