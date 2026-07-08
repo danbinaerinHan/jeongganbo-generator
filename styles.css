@@ -493,8 +493,10 @@
   /* 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹을 숨긴다 */
   .ribbon-collapse-btn { flex: 0 0 auto; }
   .ribbon-collapse-btn svg { transition: transform .12s ease; }
+  /* 접기·도킹 전환 묶음 — 가로 배치에선 앞쪽 아이콘 두 개, 세로 도킹에선 맨 위 한 줄 */
+  .ribbon-topctl { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
   .ribbon.collapsed { overflow: hidden; }
-  .ribbon.collapsed > *:not(.bar-grip):not(.ribbon-collapse-btn) { display: none !important; }
+  .ribbon.collapsed > *:not(.bar-grip):not(.ribbon-topctl) { display: none !important; }
   .ribbon.collapsed .ribbon-collapse-btn svg { transform: rotate(-90deg); }
   /* 그룹은 2단 — 위에 얇은 이름표(.rb-cap), 아래에 실제 컨트롤(.rb-items) */
   .ribbon-group { display: flex; flex-direction: column; align-items: stretch; gap: 2px;
@@ -533,7 +535,10 @@
      (JS의 applyInputMode가 옮김), 도구창(팔레트)들은 예전 Finale 스타일처럼 악보 위에
      뜬다. 단, 여러 개를 동시에 띄우던 방식은 버리고 한 번에 하나만 — 다른 탭을 누르면
      이전 창이 자동으로 닫힌다(JS의 activateDirectPanel). */
-  body.input-direct #dockRail .rail-btn { display: none; }
+  /* 직접 입력 모드에선 편집 레일(선율/장단/… 탭)을 안 쓴다 — 예전엔 .rail-btn만 숨겨서
+     '단축키' 버튼이 빈 독에 홀로 떠 보였다(위쪽 배치=왼쪽 아래, 왼쪽 도킹=오른쪽 위).
+     레일 자체를 통째로 숨긴다. 단축키 안내는 상단바 도움말(도움말 → 단축키 탭)에 그대로 있다. */
+  body.input-direct #dockRail { display: none; }
   body.input-direct #melodyResizer { display: none; }
 
   /* #melodyArea는 이제 도구창이 아니라 뜬 팔레트 둘(율명·시김새)을 담는 투명한 그릇일
@@ -622,6 +627,31 @@
   /* 세로 배치에선 그룹 구분선도 가로줄로 눕힌다 */
   body.ribbon-left #melodyRibbon .ribbon-sep { width: auto; height: 1px; }
   body.ribbon-left #editorDock { border-top: none; }
+  /* 입력 그룹(율명·시김새·장단·가사·텍스트 5개)을 3:2로 감싸 중앙정렬 — 한 줄(5개)이
+     열 폭을 넓게 잡던 걸 좁힌다. 버튼 52px×3 + gap 3px×2 = 162px에서 4번째가 다음 줄로. */
+  body.ribbon-left .win-toggle-group { align-items: center; }
+  body.ribbon-left .win-toggle-group .rb-items {
+    flex-wrap: wrap; justify-content: center; max-width: 162px;
+  }
+
+  /* --- 왼쪽 도킹 꾸밈(밋밋함 완화) --- */
+  /* 접기·도킹 되돌리기 버튼을 열 맨 위 한 줄(헤더)로 — 세로로 안 쌓이고 나란히, 아래 구분선. */
+  body.ribbon-left #melodyRibbon > .ribbon-topctl {
+    width: 100%; justify-content: flex-start; gap: 4px;
+    padding: 1px 2px 7px; margin-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  /* 세로 도킹에선 섹션 이름표(.rb-cap)를 강조색 소제목처럼 — 회색 잔글씨보다 구획이 또렷하고
+     밋밋함이 줄어든다. 각 그룹엔 옅은 강조 배경 카드를 깔아 시각 리듬을 준다. */
+  body.ribbon-left #melodyRibbon > .ribbon-group {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 5px 8px 7px; margin: 0 2px;
+  }
+  body.ribbon-left #melodyRibbon > .ribbon-group .rb-cap {
+    color: var(--accent); font-size: 9.5px; letter-spacing: .05em; padding-bottom: 4px;
+  }
+  /* 그룹 카드가 이미 구획을 나눠주므로 그 사이 구분선(가로줄)은 지운다 */
+  body.ribbon-left #melodyRibbon > .ribbon-sep { display: none; }
 
   /* 팔레트를 '입력' 그룹(.win-toggle-group) 바로 아래에 오게 한다 — flex order로 정렬:
      입력 그룹까지는 기본(order 0), 도구창은 order 2, 그 뒤 그룹들(각 삽입/셀 서식/크기)은

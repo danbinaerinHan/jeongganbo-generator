@@ -34,8 +34,12 @@
 - 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
   머리줄(.melody-head) 오른쪽 끝(`.mh-right`/`.mh-reset`)으로 이전. 끌기 그립도 머리줄 안
   `.bar-grip.dock-panel-grip`으로 옮겨 플로팅 끌기 유지(attachBarDrag가 첫 .bar-grip 사용).
-- 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00~s25(임시 이름)로 등록 — 정식 이름이
-  정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s01}` 꼴도 같이 바뀜에 유의).
+- 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00·s02~s08·s11·s12~s25(임시 이름)로 등록
+  — 정식 이름이 정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s11}` 꼴도 같이 바뀜에 유의).
+  파일 stem은 그대로, 표시 이름(k)·순서만 조정 가능(예: sigimsae-01→표시 s11).
+  이 SVG들은 원래 viewBox 안 여백이 커 잉크가 박스의 ~45%만 채워 작게 보였음 → symbol_svgs
+  원본의 viewBox를 잉크 경계로 크롭(여백 3%)해 다른 기호처럼 꽉 채우게 만듦(다시 다듬으려면
+  같은 방식으로 재크롭 후 symbols-data.js 재생성). 그래서 크기 보정 코드는 없음.
 - 색은 전부 styles.css `:root`의 역할별 변수(`--bg/--panel/--soft/--hover/--track/--line/
   --ink/--muted/--accent/--accent-soft/--accent-tint/--overlay/--danger*` 등)를 통한다.
   새 색을 하드코딩하지 말고 이 변수를 쓸 것 — 다크모드(`body.dark`, 파일 끝)가 변수 값만

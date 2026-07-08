@@ -1441,11 +1441,13 @@
     { s: "len-half", k: "반길이표", c: "wo" },
     // 이름 미상 추가 시김새(symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
     // 파일 번호 그대로 s00~s25로 부른다(토큰도 {s01} 꼴). 이름이 정해지면 k만 바꾸면 됨.
-    { s: "sigimsae-00", k: "s00", c: "wo" }, { s: "sigimsae-01", k: "s01", c: "wo" },
+    { s: "sigimsae-00", k: "s00", c: "wo" },
     { s: "sigimsae-02", k: "s02", c: "wo" }, { s: "sigimsae-03", k: "s03", c: "wo" },
     { s: "sigimsae-04", k: "s04", c: "wo" }, { s: "sigimsae-05", k: "s05", c: "wo" },
     { s: "sigimsae-06", k: "s06", c: "wo" }, { s: "sigimsae-07", k: "s07", c: "wo" },
-    { s: "sigimsae-08", k: "s08", c: "wo" }, { s: "sigimsae-12", k: "s12", c: "wo" },
+    // sigimsae-01 파일은 s11로 이름·순서를 옮김(파일 stem은 그대로, 토큰은 {s11})
+    { s: "sigimsae-08", k: "s08", c: "wo" }, { s: "sigimsae-01", k: "s11", c: "wo" },
+    { s: "sigimsae-12", k: "s12", c: "wo" },
     { s: "sigimsae-13", k: "s13", c: "wo" }, { s: "sigimsae-14", k: "s14", c: "wo" },
     { s: "sigimsae-15", k: "s15", c: "wo" }, { s: "sigimsae-16", k: "s16", c: "wo" },
     { s: "sigimsae-20", k: "s20", c: "wo" }, { s: "sigimsae-21", k: "s21", c: "wo" },
@@ -1472,12 +1474,6 @@
   // 특정 붙임표만 따로 크기 조정 — 농음표·풀어내림표·잉어질표는 가늘고 길어 2.5배로,
   // 반길이표는 지금(1.2배)의 절반 크기가 되도록 0.5배 추가 축소(최종 0.6배)
   const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5, "len-half": 0.5 };
-  // 잉크 여백 보정 — 시김새 대표 이미지(sigimsae-XX)는 SVG 안 여백이 커서 실제 글자(잉크)가
-  // 박스의 ~46%만 채운다(다른 기호는 ~100%). 그대로 두면 절반 크기로 보여, 다른 기호의 70%가
-  // 되도록 렌더 크기를 0.70/0.46 ≈ 1.52배 키운다. 팔레트(ornIconPx)·악보(붙임표 box) 양쪽에
-  // 같은 값으로 곱해 일관되게 적용한다.
-  const INK_COMP = {};
-  ORN_LIST.forEach(function (o) { if (o.s.indexOf("sigimsae-") === 0) INK_COMP[o.s] = 1.52; });
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
@@ -1802,7 +1798,7 @@
         if (url) {
           const img = document.createElement("img");
           img.src = url; img.alt = o.k;
-          const px = Math.round(ornIconPx(o) * (INK_COMP[o.s] || 1));
+          const px = ornIconPx(o);
           img.style.width = px + "px"; img.style.height = px + "px";
           item.appendChild(img);
         }
@@ -2195,7 +2191,7 @@
           const items = g.att.map(function (tk) {
             // 확대는 붙임표(wo류)에만 적용 — 퇴성·추성처럼 붙어오는 것들은 원래 크기 유지
             const scale = (ORN_CAT[tk.sym] === "wo" && !ATT_SCALE_KEEP.has(tk.sym)) ? ATT_EXTRA_SCALE : 1;
-            const box = saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1) * (INK_COMP[tk.sym] || 1);
+            const box = saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1);
             symK++;
             return { tk: tk, box: box, k: symK, left: tk.sym === "len-double" };
           });
