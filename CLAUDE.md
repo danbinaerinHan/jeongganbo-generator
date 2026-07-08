@@ -48,7 +48,7 @@
   `rsync -a --delete --exclude .git --exclude .claude "<워크트리>/" /tmp/jgb-mirror-wt/`
 - 첫 로드에 새 문서 모달이 뜸 → `document.getElementById('ndCancel').click()`.
   localStorage가 완전히 비어 있으면 대신 환영 카드(#welcomeModal)가 뜸 → `#wcSkip` 클릭.
-- 직접 입력 전환: `document.querySelector('#melInputSeg .seg-btn[data-mode="direct"]').click()`.
+- 직접 입력 전환: `const s=document.getElementById('melInputSelect'); s.value='direct'; s.dispatchEvent(new Event('change'))` (입력 방식은 #modeBox 안 드롭다운).
 - preview_eval에서 DOMRect는 `{}`로 직렬화됨 — `[left,top,right,bottom]` 배열로 손수 변환.
 - 뷰포트가 0×0으로 측정되면 preview_resize 후 다시 측정.
 - requestAnimationFrame·scrollIntoView(smooth)는 실행 안 됨 — setTimeout 사용.

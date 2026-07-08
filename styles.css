@@ -95,23 +95,20 @@
     flex-wrap: wrap;
     padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
-  #topBar .mode-lab { font-size: 12px; font-weight: 700; color: var(--ink); margin: 0; white-space: nowrap; }
-  #topBar .mode-seg { display: flex; gap: 5px; }
-  #topBar .mode-seg .seg-btn {
-    border: 1px solid var(--line); border-radius: 7px; background: var(--panel);
-    color: var(--muted); font-size: 12px; font-weight: 700; padding: 5px 14px;
-    cursor: pointer; font-family: inherit;
-    transition: background .12s ease, color .12s ease, border-color .12s ease;
-  }
-  #topBar .mode-seg .seg-btn:hover { color: var(--ink); background: var(--hover); }
-  #topBar .mode-seg .seg-btn.active {
-    background: var(--accent); color: #fff; border-color: var(--accent);
-  }
-  #topBar .mode-hint { font-size: 11px; color: var(--muted); white-space: nowrap; }
-  /* 문서 단위 액션(새 문서/실행취소/다시실행/전체 초기화) — 다른 프로그램의 File 메뉴처럼
-     맨 왼쪽에, 입력 방식(선택)과는 구분되도록 살짝 구분선을 두고 배치한다. */
-  .topbar-doc-actions { display: flex; gap: 4px; align-items: center; }
-  .topbar-sep { width: 1px; height: 18px; background: var(--line); }
+  /* 상단바 그룹 상자 — 모든 그룹(문서 액션·입력 방식·재생·배율)을 같은 상자 문법
+     (테두리 · 9px 모서리 · stretch로 같은 줄 높이 통일)으로 묶는다. */
+  .topbar-box { display: flex; align-items: center; gap: 3px; align-self: stretch;
+                background: var(--panel); border: 1px solid var(--line);
+                border-radius: 9px; padding: 2px 4px; }
+  #topBar .mode-lab { font-size: 12px; font-weight: 700; color: var(--ink);
+                      margin: 0 0 0 6px; white-space: nowrap; }
+  /* 입력 방식 — 세그먼트 버튼 2개 대신 드롭다운 하나. 상자 안이라 테두리 없이 눌리는 느낌만 */
+  #modeBox select { border: none; background-color: transparent; font-size: 12px; font-weight: 700;
+                    color: var(--ink); font-family: inherit; cursor: pointer; border-radius: 7px;
+                    padding: 6px 24px 6px 6px; background-position: right 6px center; }
+  #modeBox select:hover { background-color: var(--hover); }
+  /* 문서 단위 액션(새 문서/실행취소/다시실행/전체 초기화) — 다른 프로그램의 File 메뉴처럼 맨 왼쪽 */
+  .topbar-doc-actions { gap: 4px; }
   /* 상단바 명령 버튼 — 리본 버튼(.ribbon-btn)과 같은 '기호 + 아래 작은 글씨' 한 가지 꼴로 통일
      (새 문서/실행취소/다시실행/전체 초기화/재생/정지/재생 설정/설정 열기).
      입력 방식 세그먼트·확대축소 스테퍼·다크 토글은 컨트롤 종류가 달라 제외한다. */
@@ -385,11 +382,8 @@
   .bar-grip:active { cursor: grabbing; }
   .bar-grip svg { width: 10px; height: 16px; }
   /* 보기 배율 바 — 상단바 오른쪽에 고정(재생 바가 auto 마진으로 먼저 밀어줌).
-     align-self: stretch — 같은 줄의 재생 바(오른쪽 무리에서 가장 큰 상자) 높이만큼
-     늘어나 세 상자(재생·배율·다크)의 위아래 폭이 같아진다. */
-  #zoomBar { display: flex; align-items: center; gap: 2px; align-self: stretch;
-             background: var(--panel); border: 1px solid var(--line);
-             border-radius: 9px; padding: 2px 4px; }
+     상자 자체는 .topbar-box 공통 문법, 여기선 간격만 촘촘하게. */
+  #zoomBar { gap: 2px; }
   #zoomBar button { min-width: 24px; height: 26px; border: none; background: transparent;
                     font-size: 13px; line-height: 1; cursor: pointer; border-radius: 7px;
                     color: var(--muted); font-family: inherit; }
@@ -400,12 +394,15 @@
   #zoomBar button:disabled:hover { background: transparent; }
 
   /* 재생 컨트롤 — 보기 배율 바처럼 상단바 오른쪽에 고정(auto 마진으로 오른쪽 무리의 시작).
-     재생 버튼 하나가 재생↔일시정지↔이어하기를 겸하고, 색으로만 강조한다 */
-  #playBar { position: relative; display: flex; align-items: center; gap: 3px; margin-left: auto;
-             background: var(--panel); border: 1px solid var(--line);
-             border-radius: 9px; padding: 2px 4px; }
-  /* 다크 토글 — 오른쪽 무리의 다른 두 상자와 높이·모서리를 맞춘 정사각형에 가까운 상자 */
+     상자 자체는 .topbar-box 공통, 재생 설정 팝오버의 기준점만 여기서 잡는다. */
+  #playBar { position: relative; margin-left: auto; }
+  /* 다크 토글 — 오른쪽 무리의 다른 상자와 높이·모서리를 맞춘 정사각형에 가까운 상자 */
   #darkToggle { align-self: stretch; width: 42px; height: auto; border-radius: 9px; }
+  /* 도움말·설정 열기 — 명령 버튼(.topbar-cmd) 꼴이지만 홀로 서는 자리라 상자 테두리를 입혀
+     오른쪽 무리(재생·배율·다크)와 같은 문법으로 보이게 한다 */
+  #btnHelp, #sidebarOpen { align-self: stretch; border-color: var(--line);
+                           background: var(--panel); border-radius: 9px; }
+  #btnHelp:hover, #sidebarOpen:hover { background: var(--hover); }
   /* 재생만 강조색 배경 — 그 위 글자는 테마 무관 흰색 고정 */
   #btnPlay { background: var(--accent); border-color: var(--accent); color: #fff; }
   #btnPlay .lbl { color: #fff; }
@@ -776,7 +773,7 @@
                 min-height: 0; }
   /* 팔레트 머리: 한 줄(표·건반, 조, 표기, 소리 + 크기 ±) — 율명/시김새 탭은 위 선율 입력 머리로 이동 */
   .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-  /* .pal-views·.pal-view 자체 모양은 위 mode-seg 옆에서 .mode-seg .seg-btn, .pal-view로 함께 정의 */
+  /* .pal-views·.pal-view 자체 모양은 팔레트 섹션 앞쪽(.pal-views/.pal-view)에서 정의 */
   .melody-head .pal-views { margin-left: 6px; }
   /* 팔레트 머리 두 줄 — 첫 줄(.pal-top): 제목 + 오른쪽 입력·소리·크기(팔레트 전체 공통),
      둘째 줄(.pal-tools): 율명 전용 설정 묶음. 시김새 탭에선 둘째 줄이 통째로 숨어

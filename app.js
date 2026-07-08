@@ -4236,10 +4236,6 @@
   // 입력 모드 전환 (에디터 / 직접 입력) — 선율·장단·가사 전역 공통.
   // 직접 입력이면 선율만 추가로: 왼쪽 율명 팔레트 고정 + 오른쪽에 시김새 팔레트 상시 표시
   // (텍스트 에디터 대신) — 장단·가사는 팔레트 배치가 원래도 간단해 레이아웃을 바꿀 게 없다.
-  const INPUT_MODE_HINT = {
-    editor: "곡 전체를 텍스트로 보며 편집",
-    direct: "정간 클릭 → 그 자리에서 바로 입력"
-  };
   // ed-head '?' 아이콘 — 텍스트 에디터의 문법 규칙 안내. #editorCol(이 아이콘이 속한 자리)은
   // 직접 입력 모드에선 통째로 숨겨지므로(CSS의 .mel-direct #editorCol) 이 문구는 에디터
   // 모드에서만 보이면 된다.
@@ -4253,10 +4249,7 @@
     "· 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나\n" +
     "예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)";
   function applyInputMode() {
-    document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
-      b.classList.toggle("active", b.getAttribute("data-mode") === inputMode);
-    });
-    if ($("melInputHint")) $("melInputHint").textContent = INPUT_MODE_HINT[inputMode] || "";
+    if ($("melInputSelect")) $("melInputSelect").value = inputMode;
     const direct = inputMode === "direct";
     if (!direct && cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
     // 선율·장단·가사 리본이 뜬 바로 바뀌는 것도 이 클래스 하나로 같이 처리(CSS 참고)
@@ -4308,12 +4301,10 @@
     lastAppliedInputMode = inputMode;
   }
   let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
-  document.querySelectorAll("#melInputSeg .seg-btn").forEach(function (b) {
-    b.addEventListener("click", function () {
-      inputMode = b.getAttribute("data-mode");
-      applyInputMode();
-      saveState();
-    });
+  $("melInputSelect").addEventListener("change", function () {
+    inputMode = $("melInputSelect").value === "editor" ? "editor" : "direct";
+    applyInputMode();
+    saveState();
   });
   // 율명 입력 방식 전환 (표 / 건반)
   document.querySelectorAll("#yulModeSeg .seg-btn").forEach(function (b) {
@@ -4487,7 +4478,7 @@
   const TOUR_STEPS = [
     { sel: ".topbar-doc-actions", title: "문서 관리",
       body: "새 문서 만들기, 실행 취소·다시 실행, 전체 초기화를 여기서 합니다." },
-    { sel: "#melInputSeg", title: "입력 방식",
+    { sel: "#modeBox", title: "입력 방식",
       body: "직접 입력은 악보의 정간을 클릭해 그 자리에서 입력하고, 에디터는 곡 전체를 텍스트로 편집합니다. 언제든 바꿀 수 있습니다." },
     { sel: "#melodyRibbon", title: "기능바",
       body: "율명·시김새 팔레트 열기, 각 추가·삭제, 셀 서식, 율명 크기 조절을 여기서 합니다." },
