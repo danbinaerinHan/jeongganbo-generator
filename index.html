@@ -96,11 +96,14 @@
     </div>
     <span class="topbar-sep"></span>
     <!-- 다크모드 토글 — 상단바 맨 오른쪽. 해(라이트)·달(다크) 아이콘을 CSS로 전환 -->
-    <button type="button" id="darkToggle" class="topbar-icon-btn tip"
+    <!-- 다크/라이트 전환 — 다른 명령 버튼과 같은 '기호 + 아래 작은 글씨' 꼴.
+         글자는 '누르면 갈 모드'(라이트 화면일 땐 "다크")를 보여준다 — JS(applyDark)가 갱신. -->
+    <button type="button" id="darkToggle" class="topbar-cmd tip"
       data-tip="어두운 화면 / 밝은 화면 전환
 · 악보(종이)는 늘 흰색으로 유지됩니다">
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      <span class="lbl" id="darkToggleLbl">다크</span>
     </button>
     <!-- 도움말 센터 열기 — 정간보 기초부터 사용법·단축키까지 담은 모달(#helpModal).
          첫 방문 환영 카드·둘러보기(투어)도 여기서 다시 열 수 있다. -->
@@ -351,6 +354,13 @@
         data-tip="기능바를 접거나 펼칩니다" title="접기/펼치기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
+      <!-- 기능바 도킹 위치(위쪽 가로 / 왼쪽 세로) 전환 — 직접 입력 전용(에디터 모드에선
+           기능바가 아래 독에 들어가므로 CSS가 숨김). 아이콘은 '누르면 갈 곳'을 보여준다. -->
+      <button type="button" id="ribbonPosToggle" class="icon-btn ribbon-pos-btn tip"
+        data-tip="기능바를 왼쪽에 세로로 붙입니다" title="기능바 위치">
+        <svg class="rp-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+        <svg class="rp-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>
+      </button>
       <!-- 마우스 모드 — 가장 왼쪽. 선택(클릭해서 정간 입력·편집) / 이동(악보를 잡고 끌어
            화면을 움직임). 이동 모드에선 CSS(body.pan-mode)가 악보 클릭을 막고 손 모양 커서로
            바꾼다. -->
@@ -431,6 +441,10 @@
         </div>
       </div>
     </div>
+    <!-- 기능바 왼쪽 도킹용 그릇 — 위쪽 배치에선 display:contents라 없는 셈이고,
+         body.ribbon-left일 때만 세로 열이 되어 기능바와 열린 도구창을 위아래로 담는다.
+         직접 입력이면 JS(applyInputMode)가 기능바를 늘 이 안에 넣는다. -->
+    <div id="leftDock"></div>
     <div id="sheetArea">
       <div id="ornPanel" class="orn-panel">
         <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" class="icon-btn" title="닫기">
@@ -808,15 +822,12 @@
       </div>
     </div>
     <div id="jangdanArea" class="dock-panel direct-win">
-      <div class="ribbon" id="jangdanRibbon">
-        <div class="bar-grip" title="끌어서 이동">
+      <!-- 초기화는 예전엔 위 별도 리본 박스에 있었는데, 뜬/도킹 창의 닫기(X)와 겹쳐서
+           머리줄(melody-head) 오른쪽 끝으로 옮겼다. 끌기 그립도 여기로 와 플로팅 끌기를 유지. -->
+      <div class="melody-head">
+        <div class="bar-grip dock-panel-grip" title="끌어서 이동">
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
         </div>
-        <div class="ribbon-group">
-          <button type="button" id="jangdanReset" class="ribbon-btn tip" data-tip="장단 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲<span>초기화</span></button>
-        </div>
-      </div>
-      <div class="melody-head">
         <button type="button" id="jangdanToggle" class="icon-btn mini-toggle" title="접기/펼치기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
@@ -838,6 +849,7 @@
             </div>
           </div>
         </span>
+        <button type="button" id="jangdanReset" class="mel-btn mh-reset tip" data-tip="장단 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲ 초기화</button>
       </div>
       <div class="gak-warn" id="jangdanGakWarn"></div>
       <div id="jangdanRow">
@@ -849,26 +861,12 @@
       </div>
     </div>
     <div id="lyricsArea" class="dock-panel direct-win">
-      <div class="ribbon" id="lyricsRibbon">
-        <div class="bar-grip" title="끌어서 이동">
+      <!-- 초기화·글씨체는 예전 위 별도 리본 박스에 있었는데, 닫기(X)와 겹쳐 머리줄 오른쪽 끝으로
+           옮겼다. 끌기 그립도 여기로 와 플로팅 끌기를 유지. -->
+      <div class="melody-head">
+        <div class="bar-grip dock-panel-grip" title="끌어서 이동">
           <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
         </div>
-        <div class="ribbon-group">
-          <button type="button" id="lyricsReset" class="ribbon-btn tip" data-tip="가사 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲<span>초기화</span></button>
-        </div>
-        <div class="ribbon-sep"></div>
-        <div class="ribbon-group ribbon-select-group">
-          <label for="lyricsFont">글씨체</label>
-          <select id="lyricsFont">
-            <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
-            <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
-            <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
-            <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
-            <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
-          </select>
-        </div>
-      </div>
-      <div class="melody-head">
         <button type="button" id="lyricsToggle" class="icon-btn mini-toggle" title="접기/펼치기">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </button>
@@ -889,6 +887,19 @@
               • <span class="mono">|</span> 는 정간(칸) 구분입니다.
             </div>
           </div>
+        </span>
+        <span class="mh-right">
+          <span class="ribbon-select-group">
+            <label for="lyricsFont">글씨체</label>
+            <select id="lyricsFont">
+              <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+              <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+              <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+              <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+              <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+            </select>
+          </span>
+          <button type="button" id="lyricsReset" class="mel-btn mh-reset tip" data-tip="가사 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲ 초기화</button>
         </span>
       </div>
       <div class="gak-warn" id="lyricsGakWarn"></div>

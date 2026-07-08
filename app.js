@@ -944,6 +944,7 @@
     document.body.classList.toggle("dark", !!on);
     if ($("darkToggle")) $("darkToggle").setAttribute("data-tip",
       (on ? "밝은 화면으로 전환" : "어두운 화면으로 전환") + "\n· 악보(종이)는 늘 흰색으로 유지됩니다");
+    if ($("darkToggleLbl")) $("darkToggleLbl").textContent = on ? "라이트" : "다크";
   }
   try { applyDark(localStorage.getItem(DARK_LS_KEY) === "1"); } catch (e) {}
   if ($("darkToggle")) $("darkToggle").addEventListener("click", function () {
@@ -1438,6 +1439,18 @@
     { s: "staccato", k: "끊는표", c: "wo" }, { s: "accent", k: "특강표", c: "wo" },
     { s: "fermata", k: "늘임표", c: "wo" }, { s: "len-double", k: "덧길이표", c: "wo" },
     { s: "len-half", k: "반길이표", c: "wo" },
+    // 이름 미상 추가 시김새(symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
+    // 파일 번호 그대로 s00~s25로 부른다(토큰도 {s01} 꼴). 이름이 정해지면 k만 바꾸면 됨.
+    { s: "sigimsae-00", k: "s00", c: "wo" }, { s: "sigimsae-01", k: "s01", c: "wo" },
+    { s: "sigimsae-02", k: "s02", c: "wo" }, { s: "sigimsae-03", k: "s03", c: "wo" },
+    { s: "sigimsae-04", k: "s04", c: "wo" }, { s: "sigimsae-05", k: "s05", c: "wo" },
+    { s: "sigimsae-06", k: "s06", c: "wo" }, { s: "sigimsae-07", k: "s07", c: "wo" },
+    { s: "sigimsae-08", k: "s08", c: "wo" }, { s: "sigimsae-12", k: "s12", c: "wo" },
+    { s: "sigimsae-13", k: "s13", c: "wo" }, { s: "sigimsae-14", k: "s14", c: "wo" },
+    { s: "sigimsae-15", k: "s15", c: "wo" }, { s: "sigimsae-16", k: "s16", c: "wo" },
+    { s: "sigimsae-20", k: "s20", c: "wo" }, { s: "sigimsae-21", k: "s21", c: "wo" },
+    { s: "sigimsae-22", k: "s22", c: "wo" }, { s: "sigimsae-23", k: "s23", c: "wo" },
+    { s: "sigimsae-24", k: "s24", c: "wo" }, { s: "sigimsae-25", k: "s25", c: "wo" },
     { s: "no", k: "노", c: "with" }, { s: "ni", k: "니", c: "with" },
     { s: "ro", k: "로", c: "with" }, { s: "ri", k: "리", c: "with" },
     { s: "nina-dur", k: "니나", c: "with" }, { s: "neuna", k: "느나", c: "with" },
@@ -1459,6 +1472,12 @@
   // 특정 붙임표만 따로 크기 조정 — 농음표·풀어내림표·잉어질표는 가늘고 길어 2.5배로,
   // 반길이표는 지금(1.2배)의 절반 크기가 되도록 0.5배 추가 축소(최종 0.6배)
   const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5, "len-half": 0.5 };
+  // 잉크 여백 보정 — 시김새 대표 이미지(sigimsae-XX)는 SVG 안 여백이 커서 실제 글자(잉크)가
+  // 박스의 ~46%만 채운다(다른 기호는 ~100%). 그대로 두면 절반 크기로 보여, 다른 기호의 70%가
+  // 되도록 렌더 크기를 0.70/0.46 ≈ 1.52배 키운다. 팔레트(ornIconPx)·악보(붙임표 box) 양쪽에
+  // 같은 값으로 곱해 일관되게 적용한다.
+  const INK_COMP = {};
+  ORN_LIST.forEach(function (o) { if (o.s.indexOf("sigimsae-") === 0) INK_COMP[o.s] = 1.52; });
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
@@ -1783,7 +1802,7 @@
         if (url) {
           const img = document.createElement("img");
           img.src = url; img.alt = o.k;
-          const px = ornIconPx(o);
+          const px = Math.round(ornIconPx(o) * (INK_COMP[o.s] || 1));
           img.style.width = px + "px"; img.style.height = px + "px";
           item.appendChild(img);
         }
@@ -2176,7 +2195,7 @@
           const items = g.att.map(function (tk) {
             // 확대는 붙임표(wo류)에만 적용 — 퇴성·추성처럼 붙어오는 것들은 원래 크기 유지
             const scale = (ORN_CAT[tk.sym] === "wo" && !ATT_SCALE_KEEP.has(tk.sym)) ? ATT_EXTRA_SCALE : 1;
-            const box = saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1);
+            const box = saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1) * (INK_COMP[tk.sym] || 1);
             symK++;
             return { tk: tk, box: box, k: symK, left: tk.sym === "len-double" };
           });
@@ -3471,7 +3490,7 @@
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
-             melInput: inputMode, ornAddMap: ornAddMap, cellStyles: cellStyles };
+             melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, cellStyles: cellStyles };
   }
 
   function applyState(s) {
@@ -3507,6 +3526,7 @@
     }
     rebuildOrnAddKeyMap();
     inputMode = s.melInput === "direct" ? "direct" : "editor";
+    ribbonPos = s.ribbonPos === "left" ? "left" : "top";
     applyInputMode();
     $("pianoBase").value = $("hwangPitch").value;   // 황 음고 셀렉트는 기준음과 한 값
   }
@@ -3527,7 +3547,7 @@
   // 팔레트 크기/글자 크기, 시김새 단축키 배정 같은 UI 상태는 스냅샷 비교·복원 양쪽에서
   // 모두 빼서, 팔레트를 열고 닫거나 모드를 바꾼 것이 되돌리기 단계로 남지 않게 한다.
   // (localStorage에는 UI 상태까지 통째로 저장한다 — 새로고침 복원용이라 목적이 다름.)
-  const UNDO_UI_KEYS = ["activeTab", "palZoom", "ornPalZoom", "edFontPx", "melInput", "ornAddMap"];
+  const UNDO_UI_KEYS = ["activeTab", "palZoom", "ornPalZoom", "edFontPx", "melInput", "ribbonPos", "ornAddMap"];
   function docJsonOf(state) {
     const s = Object.assign({}, state);
     UNDO_UI_KEYS.forEach(function (k) { delete s[k]; });
@@ -3903,6 +3923,7 @@
       if (t) t.classList.toggle("win-open", tid === targetId);
       b.classList.toggle("on", tid === targetId);
     });
+    dockDirectWins();   // 기능바 왼쪽 도킹이면 열린 창을 #leftDock 안으로 (아니면 원위치)
   }
   document.querySelectorAll(".win-toggle").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -4293,8 +4314,9 @@
     // (리사이저 아래, 탭 내용 위)에 붙인다 — 어느 탭에서든 보이면서 손도 가깝게.
     const ribbon = $("melodyRibbon");
     if (direct) {
-      const main = $("main");
-      if (ribbon.parentNode !== main) main.insertBefore(ribbon, $("sheetArea"));
+      // #leftDock은 위쪽 배치에선 display:contents(없는 셈), 왼쪽 도킹에선 세로 열이 된다
+      const ld = $("leftDock");
+      if (ribbon.parentNode !== ld) ld.appendChild(ribbon);
     } else {
       const dock = $("editorDock");
       const dockBody = dock.querySelector(".dock-body");
@@ -4321,12 +4343,53 @@
       //   도구창을 그대로 둔다 — 안 그러면 Cmd+Z를 누를 때마다 열어둔 창이 율명으로 튄다.
       if (lastAppliedInputMode === "editor") activateDirectPanel("paletteCol");
     }
+    applyRibbonPos();   // 기능바 도킹 위치(위/왼쪽)는 직접 입력에서만 유효 — 모드 바뀔 때 재적용
     lastAppliedInputMode = inputMode;
   }
   let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
   $("melInputSelect").addEventListener("change", function () {
     inputMode = $("melInputSelect").value === "editor" ? "editor" : "direct";
     applyInputMode();
+    saveState();
+  });
+
+  // ---------- 기능바 도킹 위치 (위쪽 가로 / 왼쪽 세로, 직접 입력 전용) ----------
+  // body.ribbon-left 클래스 하나로 CSS가 갈라진다(#main 가로 배치·#leftDock 세로 열).
+  // 왼쪽 도킹에선 도구창(.direct-win)도 악보 위에 띄우는 대신 #leftDock 안(기능바 아래)에
+  // 도킹한다 — dockDirectWins()가 열린 창을 옮기고, 닫히거나 위쪽 배치로 돌아가면
+  // 원래 자리(placeholder 주석 노드)로 되돌린다.
+  let ribbonPos = "top";   // "top" | "left"
+  const DIRECT_WIN_HOME = new Map();   // 창 → 원래 자리 표시용 주석 노드
+  document.querySelectorAll(".direct-win").forEach(function (w) {
+    const ph = document.createComment("win-home:" + w.id);
+    w.parentNode.insertBefore(ph, w);
+    DIRECT_WIN_HOME.set(w, ph);
+  });
+  function dockDirectWins() {
+    const leftMode = document.body.classList.contains("ribbon-left");
+    document.querySelectorAll(".direct-win").forEach(function (w) {
+      if (leftMode && w.classList.contains("win-open")) {
+        // 기능바 안으로 넣는다 — 실제 위치(입력 그룹 바로 아래)는 CSS flex order가 잡는다.
+        if (w.parentNode !== $("melodyRibbon")) $("melodyRibbon").appendChild(w);
+        // 떠 있을 때 끌어둔 인라인 좌표는 도킹(position:relative)에서 어긋남 유발 — 지운다
+        w.style.top = ""; w.style.left = "";
+      } else {
+        const ph = DIRECT_WIN_HOME.get(w);
+        if (ph && w.previousSibling !== ph) ph.parentNode.insertBefore(w, ph.nextSibling);
+      }
+    });
+  }
+  function applyRibbonPos() {
+    const left = inputMode === "direct" && ribbonPos === "left";
+    document.body.classList.toggle("ribbon-left", left);
+    const btn = $("ribbonPosToggle");
+    if (btn) btn.setAttribute("data-tip",
+      left ? "기능바를 위쪽에 가로로 되돌립니다" : "기능바를 왼쪽에 세로로 붙입니다");
+    dockDirectWins();
+  }
+  $("ribbonPosToggle").addEventListener("click", function () {
+    ribbonPos = ribbonPos === "left" ? "top" : "left";
+    applyRibbonPos();
     saveState();
   });
   // 율명 입력 방식 전환 (표 / 건반)

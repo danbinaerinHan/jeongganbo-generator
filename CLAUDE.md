@@ -22,6 +22,20 @@
     악보 위에 떠서 한 번에 하나만 열림(`activateDirectPanel`).
   - 에디터: 기능바가 #editorDock 맨 위로 이동, 레일 탭(선율/장단/가사/텍스트/셀 서식)으로 전환.
 - 기능바(.ribbon)는 `flex-wrap: wrap` — 좁으면 줄바꿈, 스크롤 금지(항상 전부 보여야 함).
+- 기능바 도킹(직접 입력 전용): #ribbonPosToggle이 위쪽 가로 ↔ 왼쪽 세로 전환
+  (`ribbonPos` 상태 + `body.ribbon-left` 클래스, `applyRibbonPos()`). #leftDock 래퍼가
+  위쪽 배치에선 display:contents(없는 셈), 왼쪽 도킹에선 세로 열이 된다. 왼쪽 도킹일 때
+  `dockDirectWins()`가 열린 도구창(팔레트)을 #melodyRibbon **안**으로 넣고, CSS flex
+  `order`(입력 그룹 뒤 형제 order:3, 도구창 order:2)로 '입력' 그룹 바로 아래에 오게 한다.
+  도킹된 창은 카드 스타일을 벗고(배경·테두리 없음) 기능바와 한 몸처럼 보인다. 닫히거나
+  위쪽 배치로 돌아가면 placeholder 주석 노드로 원위치 복원.
+- 도구창 헤더는 창마다 클래스가 다름: 율명=`.pal-head`, 시김새·셀서식=`.pal-top`,
+  장단·가사·텍스트=`.melody-head`. 닫기(X) 겹침 방지 padding-right는 이 세 클래스 모두 대상.
+- 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
+  머리줄(.melody-head) 오른쪽 끝(`.mh-right`/`.mh-reset`)으로 이전. 끌기 그립도 머리줄 안
+  `.bar-grip.dock-panel-grip`으로 옮겨 플로팅 끌기 유지(attachBarDrag가 첫 .bar-grip 사용).
+- 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00~s25(임시 이름)로 등록 — 정식 이름이
+  정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s01}` 꼴도 같이 바뀜에 유의).
 - 색은 전부 styles.css `:root`의 역할별 변수(`--bg/--panel/--soft/--hover/--track/--line/
   --ink/--muted/--accent/--accent-soft/--accent-tint/--overlay/--danger*` 등)를 통한다.
   새 색을 하드코딩하지 말고 이 변수를 쓸 것 — 다크모드(`body.dark`, 파일 끝)가 변수 값만
@@ -45,7 +59,8 @@
 
 - iCloud 폴더라 프리뷰 서버 프로세스가 직접 못 읽음 — launch.json은 /tmp/jgb-mirror-wt를
   서빙하고, 파일 수정 후엔 Bash에서 rsync로 미러 갱신 + 리로드해야 반영됨:
-  `rsync -a --delete --exclude .git --exclude .claude "<워크트리>/" /tmp/jgb-mirror-wt/`
+  `rsync -a --delete --exclude .git --exclude .claude --exclude paper --exclude legacies "<워크트리>/" /tmp/jgb-mirror-wt/`
+  (paper/ 안 일부 한글 파일명이 rsync에서 Illegal byte sequence를 내므로 반드시 제외)
 - 첫 로드에 새 문서 모달이 뜸 → `document.getElementById('ndCancel').click()`.
   localStorage가 완전히 비어 있으면 대신 환영 카드(#welcomeModal)가 뜸 → `#wcSkip` 클릭.
 - 직접 입력 전환: `const s=document.getElementById('melInputSelect'); s.value='direct'; s.dispatchEvent(new Event('change'))` (입력 방식은 #modeBox 안 드롭다운).
