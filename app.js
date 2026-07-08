@@ -35,6 +35,7 @@
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
   let ornAddMode = false;                   // 시김새 추가 모드(직접 입력) — 숫자키로 붙임표 시김새를 고른 뒤 음을 클릭해 붙임
   let ornAddArmed = null;                   // 지금 골라둔(armed) 붙임표 시김새의 stem
+  let ornAddHeldKey = null;                 // 숫자키를 '누르고 있는 동안에만' armed — 그 키. 떼면 해제
   // 정간보 기본 드래그 = 구간 선택(스프레드시트 방식). 드래그 없이 그냥 누르면(클릭) 그 정간을
   // 편집하고, 다른 칸으로 번지면(mouseenter) 드래그로 확정해 구간을 고른다 — 선택은 손을 뗀
   // 뒤에도 남아있어서, 구간 지우기·셀 서식 칠하기/지우기 버튼을 나중에 눌러 적용할 수 있다.
@@ -1807,9 +1808,14 @@
         item.appendChild(cap);
         item.addEventListener("mousedown", function (e) { e.preventDefault(); });
         item.addEventListener("click", function () {
-          // 추가 모드에선(지금 이 시김새에 숫자가 배정돼 있으면) 칩 클릭도 숫자키처럼 골라두기만
-          // 함 — ORN_ADD_KEY_BY_STEM을 매번 다시 조회해야 배정을 바꾼 뒤에도 안 어긋난다.
-          if (ornAddMode && ORN_ADD_KEY_BY_STEM[o.s]) { armOrnAdd(o.s); return; }
+          // 추가 모드에선(지금 이 시김새에 숫자가 배정돼 있으면) 칩 클릭으로 골라둔다 —
+          // 마우스엔 '누르고 있기'가 없어 클릭은 켜고, 같은 칩을 다시 누르면 끄는 토글로 둔다
+          // (안 그러면 마우스로 고른 건 해제할 길이 없다). ORN_ADD_KEY_BY_STEM은 매번 다시
+          // 조회해야 배정을 바꾼 뒤에도 안 어긋난다.
+          if (ornAddMode && ORN_ADD_KEY_BY_STEM[o.s]) {
+            if (ornAddArmed === o.s) disarmOrnAdd(); else armOrnAdd(o.s);
+            return;
+          }
           insertToken("{" + o.k + "}");
         });
         g.appendChild(item);
@@ -1837,6 +1843,14 @@
       el.classList.toggle("orn-armed", ornAddMode && !!ornAddArmed && stem === ornAddArmed);
     });
   }
+  // 숫자키는 '누르고 있는 동안에만' 붙임표를 골라둔다(keydown=고름 / keyup=해제) — 한 번
+  // 눌러 계속 붙던 예전 방식은 해제할 길이 없어 불편했다. 키를 누른 채 악보의 음을 클릭하면
+  // 붙고, 키를 떼면 곧바로 풀린다.
+  function disarmOrnAdd() {
+    if (!ornAddArmed && !ornAddHeldKey) return;
+    ornAddHeldKey = null; ornAddArmed = null;
+    refreshOrnAddBadges();
+  }
   document.addEventListener("keydown", function (e) {
     if (!ornAddMode || inputMode !== "direct") return;
     const tag = (e.target && e.target.tagName) || "";
@@ -1846,8 +1860,14 @@
     const stem = ornAddMap[idx];
     if (!stem) return;
     e.preventDefault();
+    ornAddHeldKey = e.key;
     armOrnAdd(stem);
   });
+  document.addEventListener("keyup", function (e) {
+    if (ornAddHeldKey && e.key === ornAddHeldKey) disarmOrnAdd();
+  });
+  // 키를 누른 채 창을 벗어나면 keyup을 놓쳐 armed가 남을 수 있다 — 안전하게 해제
+  window.addEventListener("blur", disarmOrnAdd);
 
   // 클릭한 정간(gi,ci)에 골라둔(armed) 붙임표 시김새를 붙인다 — 음이 없는 빈 칸에는 붙이지 않는다.
   // rowIdx: 분박(스페이스로 나뉜 여러 음)이 있을 때 그중 어느 음 뒤에 붙일지(클릭한 세로 위치 기준).
