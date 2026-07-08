@@ -1474,7 +1474,10 @@
   const ATT_SCALE_KEEP = new Set(["push", "flow", "nire", "nina", "niro", "staccato", "accent"]);
   // 특정 붙임표만 따로 크기 조정 — 농음표·풀어내림표·잉어질표는 가늘고 길어 2.5배로,
   // 반길이표는 지금(1.2배)의 절반 크기가 되도록 0.5배 추가 축소(최종 0.6배)
-  const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5, "len-half": 0.5 };
+  const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5, "len-half": 0.5,
+    // 싸랭·슬기둥1~3은 130%로 키우고, s00(sigimsae-00)은 80%로 줄임(팔레트·악보 공통)
+    "diff-str-fast": 1.3, "diff-str-1": 1.3, "diff-str-2": 1.3, "diff-str-3": 1.3,
+    "sigimsae-00": 0.8 };
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
   ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
@@ -3834,8 +3837,18 @@
     // 이동(팬)으로 밀어둔 시트를 새 배율의 여유 범위 안으로 — 커져서 여유가 없어지면 0으로 복귀
     clampSheetShift();
   }
-  $("zoomIn").addEventListener("click", () => { viewZoom = Math.min(6, +(viewZoom + 0.1).toFixed(2)); applyZoom(); });
-  $("zoomOut").addEventListener("click", () => { viewZoom = Math.max(0.3, +(viewZoom - 0.1).toFixed(2)); applyZoom(); });
+  function setZoom(v) { viewZoom = Math.max(0.3, Math.min(6, +v.toFixed(2))); applyZoom(); }
+  $("zoomIn").addEventListener("click", () => setZoom(viewZoom + 0.1));
+  $("zoomOut").addEventListener("click", () => setZoom(viewZoom - 0.1));
+  // Ctrl/⌘ + − / ＋ 를 브라우저 확대 대신 '보기 배율'(악보 줌)에 연결한다. 종이(SVG)는 높이가
+  // 뷰포트(100vh) 기준이라 브라우저 줌을 하면 종이와 고정 px UI가 서로 반대로 어긋난다 —
+  // 여기서 가로채(preventDefault) −/＋ 버튼처럼 악보만 매끄럽게 확대·축소한다.
+  document.addEventListener("keydown", function (e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const k = e.key;
+    if (k === "-" || k === "Subtract") { e.preventDefault(); setZoom(viewZoom - 0.1); }
+    else if (k === "=" || k === "+" || k === "Add") { e.preventDefault(); setZoom(viewZoom + 0.1); }
+  });
   // 세로/가로 맞춤: 현재 페이지의 원본(100%) 크기 대비, 화면에서 실제로 쓸 수 있는 폭/높이에 맞는 배율을 계산
   function fitZoom(dim) {
     const svg = $("sheet").querySelector(".page svg");
