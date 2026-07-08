@@ -102,6 +102,13 @@
       <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
     </button>
+    <!-- 도움말 센터 열기 — 정간보 기초부터 사용법·단축키까지 담은 모달(#helpModal).
+         첫 방문 환영 카드·둘러보기(투어)도 여기서 다시 열 수 있다. -->
+    <button type="button" id="btnHelp" class="topbar-icon-btn tip"
+      data-tip="도움말
+· 정간보 기초 · 시작하기 · 입력 방법 · 단축키">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </button>
     <!-- 설정 폼 열기 — 사이드바를 접었을 때만 나타난다. 예전엔 화면 위에 fixed로 떠 있어서
          가로맞춤 버튼과 겹쳤는데, 상단바 흐름 안의 맨 오른쪽 자리로 옮겨 겹칠 일이 없게 했다. -->
     <button type="button" id="sidebarOpen" class="side-open topbar-cmd" title="설정 폼 열기">
@@ -975,6 +982,178 @@
       <div class="btns">
         <button type="button" id="ndCancel" class="secondary">취소</button>
         <button type="button" id="ndCreate">만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 도움말 센터 — 상단바 ? 버튼(#btnHelp)으로 여는 큰 모달. 정간보를 처음 보는 사람의
+       기초(정간보란?)부터 사용 흐름(시작하기)·입력 문법(입력 방법)·단축키까지 4개 탭.
+       탭 클래스는 사이드바용 .tab/.tabpanel과 절대 겹치면 안 됨(app.js가 문서 전체를
+       토글하므로) — 도움말 전용 .help-tab/.help-pane 사용. 본문 출처: 기능-정리.md 압축. -->
+  <div id="helpModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box help-box">
+      <div class="help-head">
+        <h3>도움말</h3>
+        <button type="button" id="helpClose" class="icon-btn" title="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="help-body">
+        <nav class="help-tabs">
+          <button type="button" class="help-tab active" data-help="basics">정간보란?</button>
+          <button type="button" class="help-tab" data-help="start">시작하기</button>
+          <button type="button" class="help-tab" data-help="input">입력 방법</button>
+          <button type="button" class="help-tab" data-help="keys">단축키</button>
+        </nav>
+        <div class="help-panes">
+
+          <section class="help-pane active" data-help="basics">
+            <h4>정간보(井間譜)란?</h4>
+            <p>조선 세종 때 만들어진 우리나라 전통 악보입니다. 우물 정(井) 자처럼 생긴 칸에 음을 적는데, <b>칸 하나(정간)가 1박</b>입니다. 칸을 세로로 나누면 한 박을 잘게 쪼갠 <b>분박</b>이 됩니다.</p>
+            <!-- 도해 1: 읽는 순서 — 3각×4정간 미니 격자. 색은 전부 변수라 다크 자동 대응 -->
+            <svg class="help-fig" viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정간보 읽는 순서 도해">
+              <text x="244" y="16" font-size="11" fill="var(--accent)" text-anchor="end">읽는 방향</text>
+              <line x1="238" y1="26" x2="92" y2="26" stroke="var(--accent)" stroke-width="1.5"></line>
+              <path d="M98 22 L90 26 L98 30 Z" fill="var(--accent)"></path>
+              <g stroke="var(--line)" fill="none">
+                <rect x="76" y="36" width="168" height="128"></rect>
+                <line x1="132" y1="36" x2="132" y2="164"></line>
+                <line x1="188" y1="36" x2="188" y2="164"></line>
+                <line x1="76" y1="68" x2="244" y2="68"></line>
+                <line x1="76" y1="100" x2="244" y2="100"></line>
+                <line x1="76" y1="132" x2="244" y2="132"></line>
+              </g>
+              <g font-size="13" fill="var(--ink)" text-anchor="middle">
+                <text x="216" y="57">①</text><text x="216" y="89">②</text><text x="216" y="121">③</text><text x="216" y="153">④</text>
+                <text x="160" y="57">⑤</text><text x="160" y="89">⑥</text><text x="160" y="121">⑦</text><text x="160" y="153">⑧</text>
+                <text x="104" y="57">⑨</text><text x="104" y="89">⑩</text><text x="104" y="121">⑪</text><text x="104" y="153">⑫</text>
+              </g>
+              <line x1="254" y1="44" x2="254" y2="156" stroke="var(--muted)" stroke-width="1"></line>
+              <path d="M250 148 L254 158 L258 148 Z" fill="var(--muted)"></path>
+              <text x="260" y="90" font-size="10" fill="var(--muted)">칸 안은</text>
+              <text x="260" y="104" font-size="10" fill="var(--muted)">위→아래</text>
+              <text x="160" y="182" font-size="10" fill="var(--muted)" text-anchor="middle">세로 한 줄이 각(마디) · 칸 하나가 정간(1박)</text>
+            </svg>
+            <h4>읽는 순서</h4>
+            <ul>
+              <li>세로 한 줄을 <b>각</b>(마디)이라 부르고, 전통 방식 그대로 <b>오른쪽에서 왼쪽으로</b> 읽어 나갑니다.</li>
+              <li>한 각 안에서는 <b>위에서 아래로</b>, 한 칸이 나뉘어 있으면 그 안에서도 위에서 아래로 읽습니다.</li>
+            </ul>
+            <h4>12율명 — 음이름</h4>
+            <p>서양의 도레미 대신 12개의 율명을 씁니다: <b>황·대·태·협·고·중·유·임·이·남·무·응</b>. 한 옥타브 위 음은 앞에 <b>청</b>(예: 청황), 아래 음은 <b>배</b>(탁)를 붙입니다. 악보에는 한자(黃·太…) 또는 한글로 표기할 수 있습니다.</p>
+            <!-- 도해 2: 정간 하나 해부 — 분박·율명·시김새 표식의 위치 -->
+            <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정간 구성 요소 도해">
+              <rect x="48" y="14" width="108" height="120" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <line x1="48" y1="74" x2="156" y2="74" stroke="var(--line)"></line>
+              <text x="96" y="54" font-size="26" fill="var(--ink)" text-anchor="middle">黃</text>
+              <path d="M118 34 q7 -8 14 0" fill="none" stroke="var(--accent)" stroke-width="2"></path>
+              <text x="102" y="116" font-size="26" fill="var(--ink)" text-anchor="middle">太</text>
+              <g font-size="11" fill="var(--muted)">
+                <line x1="134" y1="30" x2="196" y2="24" stroke="var(--line)"></line>
+                <text x="200" y="28" fill="var(--accent)">시김새(꾸밈음 기호)</text>
+                <line x1="112" y1="46" x2="196" y2="52" stroke="var(--line)"></line>
+                <text x="200" y="56">율명(음)</text>
+                <line x1="156" y1="74" x2="196" y2="80" stroke="var(--line)"></line>
+                <text x="200" y="84">분박 — 한 박을 위→아래로</text>
+                <text x="200" y="98">나눠 2·3분박 등으로 쪼갬</text>
+              </g>
+            </svg>
+            <h4>함께 적는 것들</h4>
+            <ul>
+              <li><b>시김새</b> — 음을 밀거나 흔드는 꾸밈을 나타내는 작은 기호로, 음 곁에 붙습니다. 이 앱은 59종을 지원합니다.</li>
+              <li><b>장단</b> — 장구 구음(덩·덕·쿵 등)을 선율 곁 장단 칸에 적습니다.</li>
+              <li><b>가사</b> — 노랫말을 각 정간에 1:1로 맞춰 가사 칸에 적습니다.</li>
+            </ul>
+          </section>
+
+          <section class="help-pane" data-help="start">
+            <h4>다섯 단계면 악보가 완성됩니다</h4>
+            <ol>
+              <li><b>새 문서 만들기</b> — 상단바 ＋ 버튼을 누르면 마법사가 열립니다. 한 각의 정간 수(박 수)·총 각 수·제목만 정하면 빈 악보가 만들어집니다.</li>
+              <li><b>입력 방식 고르기</b> — 상단바 가운데에서 <b>직접 입력</b>(악보 칸을 클릭해 그 자리에서 입력, 기본)과 <b>에디터</b>(곡 전체를 텍스트로 편집) 중 하나를 고릅니다. 언제든 바꿀 수 있습니다.</li>
+              <li><b>선율 입력</b> — 직접 입력이면 정간을 클릭해 입력 카드에 쓰고, 팔레트(율명·시김새)를 열어 클릭으로 넣을 수도 있습니다. 장단·가사도 같은 방식입니다.</li>
+              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 출력 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 <b>파일로 저장</b>(.jgb.json)을 쓰면 됩니다.</li>
+              <li><b>인쇄·내보내기</b> — 사이드바 출력 탭에서 인쇄(PDF 저장)와 PNG 이미지 내보내기를 할 수 있습니다.</li>
+            </ol>
+            <p>화면 구성이 궁금하면 아래의 <b>둘러보기 다시 시작</b>을 눌러 주요 영역을 하나씩 확인할 수 있습니다.</p>
+          </section>
+
+          <section class="help-pane" data-help="input">
+            <h4>직접 입력 — 문법을 몰라도 됩니다 (기본)</h4>
+            <ul>
+              <li>악보의 정간을 클릭하면 <b>입력 카드</b>가 열립니다. <span class="key">Enter</span>/<span class="key">Tab</span>으로 다음 정간, 방향키로 옆 정간 이동.</li>
+              <li>기능바의 입력 그룹(율명·시김새·장단·가사·텍스트)으로 뜬 도구창을 열고, 팔레트를 클릭하면 지금 열린 칸에 바로 들어갑니다.</li>
+            </ul>
+            <h4>에디터 — 곡 전체를 텍스트로</h4>
+            <ul>
+              <li>반복 구절 복사·붙여넣기, 대량 수정에 강합니다. 악보 칸을 클릭하면 에디터의 해당 위치로 커서가 이동합니다(양방향 동기화).</li>
+              <li>에디터·텍스트 입력에서 쓰는 문법은 아래 표와 같습니다.</li>
+            </ul>
+            <table>
+              <tr><th>문법</th><th>의미</th></tr>
+              <tr><td>줄바꿈</td><td>각(세로줄, 마디) 구분</td></tr>
+              <tr><td><span class="key">|</span></td><td>정간(칸, 1박) 구분</td></tr>
+              <tr><td>칸 안 공백</td><td>분박 — 칸 안에서 위→아래로 줄 나눔</td></tr>
+              <tr><td>이어 쓰기</td><td>붙임 — 한 줄 안에서 왼→오른쪽 배치</td></tr>
+              <tr><td>청·배 접두어</td><td>옥타브 위(청황)·아래(배임)</td></tr>
+              <tr><td><span class="key">-</span></td><td>이음 — 앞 음을 지속</td></tr>
+              <tr><td>쉼</td><td>쉼표(무음)</td></tr>
+              <tr><td>음 뒤 <span class="key">&lt;</span></td><td>숨표</td></tr>
+              <tr><td><span class="key">황{미는표}</span></td><td>음 뒤 괄호로 시김새 삽입</td></tr>
+            </table>
+            <p style="margin-top:8px;">• 더 자세한 규칙은 각 입력창 머리의 <b>? 버튼</b>에 있습니다.</p>
+          </section>
+
+          <section class="help-pane" data-help="keys">
+            <h4>단축키 모음</h4>
+            <table>
+              <tr><th>키</th><th>동작</th></tr>
+              <tr><td><span class="key">⌘/Ctrl+Z</span> / <span class="key">⌘/Ctrl+⇧+Z</span></td><td>실행 취소 / 다시 실행</td></tr>
+              <tr><td><span class="key">Enter</span> / <span class="key">Tab</span></td><td>다음 정간(직접 입력 카드)</td></tr>
+              <tr><td>방향키</td><td>인접 정간 이동(직접 입력 카드)</td></tr>
+              <tr><td><span class="key">Esc</span></td><td>입력 카드 닫기</td></tr>
+              <tr><td><span class="key">1</span>~<span class="key">0</span></td><td>시김새 고르기(직접 입력, 팔레트 배지)</td></tr>
+              <tr><td><span class="key">Backspace</span>/<span class="key">Delete</span></td><td>선택한 시김새 삭제(미세조정 모드)</td></tr>
+              <tr><td><span class="key">Enter</span></td><td>각 나누기(선율 에디터, 커서 위치)</td></tr>
+              <tr><td><span class="key">⌘/Ctrl+Enter</span></td><td>각 추가(선율 에디터)</td></tr>
+              <tr><td><span class="key">→</span></td><td>다음 정간으로 커서 이동(텍스트 에디터)</td></tr>
+            </table>
+          </section>
+
+        </div>
+      </div>
+      <div class="help-foot">
+        <button type="button" id="helpTourBtn">둘러보기 다시 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 첫 방문 환영 카드 — 저장된 작업도, 방문 기록도 전혀 없는 진짜 첫 방문에만 한 번 뜬다
+       (app.js firstVisit 판정). 어떤 버튼을 눌러도 결국 새 문서 마법사로 이어진다. -->
+  <div id="welcomeModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box welcome-box">
+      <h3>정간보 생성기</h3>
+      <p class="welcome-sub">전통 정간보 악보를 화면에서 만들고<br>인쇄·저장할 수 있습니다.</p>
+      <div class="welcome-btns">
+        <button type="button" id="wcTour">둘러보기 시작</button>
+        <button type="button" id="wcHelp" class="secondary">도움말 열기</button>
+        <button type="button" id="wcSkip" class="secondary">바로 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 둘러보기(투어) — 화면을 어둡게 덮고(#tourHole의 거대 box-shadow 컷아웃) 실제 UI를
+       하나씩 밝혀 가며 말풍선(#tourCard)으로 설명. 단계 정의·위치 계산은 app.js TOUR_STEPS. -->
+  <div id="tourLayer" style="display:none;">
+    <div id="tourHole"></div>
+    <div id="tourCard">
+      <div id="tourStepNum"></div>
+      <h4 id="tourTitle"></h4>
+      <p id="tourBody"></p>
+      <div class="tour-btns">
+        <button type="button" id="tourSkip" class="secondary">건너뛰기</button>
+        <button type="button" id="tourPrev" class="secondary">이전</button>
+        <button type="button" id="tourNext">다음</button>
       </div>
     </div>
   </div>

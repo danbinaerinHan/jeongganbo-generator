@@ -4441,6 +4441,152 @@
     });
   })();
 
+  // ---------- 도움말 센터 · 둘러보기 · 첫 방문 환영 ----------
+  // 상단바 ? 버튼(#btnHelp) → 도움말 모달(4탭), 그 안의 버튼 → 둘러보기(투어),
+  // 진짜 첫 방문에만 환영 카드. 세 흐름 모두 마지막엔 새 문서 마법사로 수렴한다.
+  const WELCOME_LS_KEY = "jgb_welcome_v1";
+
+  // -- 도움말 센터 --
+  // onClose: 첫 방문 흐름에서 "도움말을 닫으면 마법사"를 잇기 위한 1회용 콜백
+  let helpOnClose = null;
+  function showHelpPane(name) {
+    // #helpModal 스코프 안에서만 토글 — 전역 .tab/.tabpanel(사이드바)과 절연
+    document.querySelectorAll("#helpModal .help-tab").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-help") === name);
+    });
+    document.querySelectorAll("#helpModal .help-pane").forEach(function (p) {
+      p.classList.toggle("active", p.getAttribute("data-help") === name);
+    });
+  }
+  function openHelpModal(opts) {
+    helpOnClose = (opts && opts.onClose) || null;
+    $("helpModal").style.display = "flex";
+  }
+  function closeHelpModal() {
+    $("helpModal").style.display = "none";
+    const cb = helpOnClose; helpOnClose = null;
+    if (cb) cb();
+  }
+  $("btnHelp").addEventListener("click", function () { openHelpModal(); });
+  $("helpClose").addEventListener("click", closeHelpModal);
+  $("helpModal").addEventListener("click", function (e) {
+    if (e.target === $("helpModal")) closeHelpModal();
+  });
+  document.querySelectorAll("#helpModal .help-tab").forEach(function (btn) {
+    btn.addEventListener("click", function () { showHelpPane(btn.getAttribute("data-help")); });
+  });
+  $("helpTourBtn").addEventListener("click", function () {
+    // closeHelpModal()을 쓰면 onClose(마법사)가 즉시 실행돼 버림 — 콜백을 투어 끝으로 넘긴다
+    const cb = helpOnClose; helpOnClose = null;
+    $("helpModal").style.display = "none";
+    startTour(cb);
+  });
+
+  // -- 둘러보기(투어) --
+  // 대상은 두 입력 모드에 공통으로 존재(리본은 모드에 따라 위치만 이동 — 매번 셀렉터로 재탐색)
+  const TOUR_STEPS = [
+    { sel: ".topbar-doc-actions", title: "문서 관리",
+      body: "새 문서 만들기, 실행 취소·다시 실행, 전체 초기화를 여기서 합니다." },
+    { sel: "#melInputSeg", title: "입력 방식",
+      body: "직접 입력은 악보의 정간을 클릭해 그 자리에서 입력하고, 에디터는 곡 전체를 텍스트로 편집합니다. 언제든 바꿀 수 있습니다." },
+    { sel: "#melodyRibbon", title: "기능바",
+      body: "율명·시김새 팔레트 열기, 각 추가·삭제, 셀 서식, 율명 크기 조절을 여기서 합니다." },
+    { sel: "#sheetArea", title: "악보",
+      body: "정간보는 전통 방식대로 오른쪽에서 왼쪽으로 읽습니다. 정간을 클릭하면 바로 입력할 수 있습니다." },
+    { sel: "#sidebar", title: "설정",
+      body: "문서·레이아웃·출력 탭에서 제목, 정간 수, 인쇄와 저장을 설정합니다.",
+      skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
+    { sel: "#btnHelp", title: "도움말",
+      body: "궁금할 때는 언제든 이 버튼으로 도움말을 열 수 있습니다. 둘러보기도 거기서 다시 시작할 수 있습니다." }
+  ];
+  let tourIdx = -1, tourOnEnd = null;
+  function tourRect(step) {
+    const el = document.querySelector(step.sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return (r.width || r.height) ? r : null;   // rect 0 = 화면에 없음 → 그 단계는 건너뜀
+  }
+  function stepAvailable(i) {
+    const s = TOUR_STEPS[i];
+    return !(s.skipIf && s.skipIf()) && !!tourRect(s);
+  }
+  function positionTour() {
+    if (tourIdx < 0) return;
+    const r = tourRect(TOUR_STEPS[tourIdx]);
+    if (!r) { endTour(); return; }
+    const pad = 6;
+    const hole = $("tourHole");
+    hole.style.left = (r.left - pad) + "px";
+    hole.style.top = (r.top - pad) + "px";
+    hole.style.width = (r.width + pad * 2) + "px";
+    hole.style.height = (r.height + pad * 2) + "px";
+    // 말풍선은 대상 아래 우선, 공간이 없으면 위, 그래도 없으면 화면 안으로 클램핑
+    const card = $("tourCard");
+    const cw = card.offsetWidth, ch = card.offsetHeight, gap = 12;
+    let top = r.bottom + pad + gap;
+    if (top + ch > window.innerHeight - 8) top = r.top - pad - gap - ch;
+    if (top < 8) top = Math.max(8, Math.min(window.innerHeight - ch - 8, r.top));
+    let left = r.left + r.width / 2 - cw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - cw - 8));
+    card.style.left = left + "px";
+    card.style.top = top + "px";
+  }
+  function tourGo(i, dir) {
+    while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
+    if (i < 0 || i >= TOUR_STEPS.length) { endTour(); return; }
+    tourIdx = i;
+    const s = TOUR_STEPS[i];
+    $("tourStepNum").textContent = (i + 1) + " / " + TOUR_STEPS.length;
+    $("tourTitle").textContent = s.title;
+    $("tourBody").textContent = s.body;
+    $("tourPrev").style.display = i === 0 ? "none" : "";
+    $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
+    positionTour();
+  }
+  function startTour(onEnd) {
+    // 겹침 방지 — 모달(z 500)들이 투어(z 800) 밑에 깔린 채 남지 않게 먼저 닫는다
+    $("helpModal").style.display = "none";
+    $("welcomeModal").style.display = "none";
+    tourOnEnd = onEnd || null;
+    $("tourLayer").style.display = "block";
+    tourGo(0, 1);
+  }
+  function endTour() {
+    // 건너뛰기·Escape·완료 모두 이 경로 — onEnd(첫 방문이면 마법사)는 딱 한 번
+    tourIdx = -1;
+    $("tourLayer").style.display = "none";
+    const cb = tourOnEnd; tourOnEnd = null;
+    if (cb) cb();
+  }
+  $("tourNext").addEventListener("click", function () { tourGo(tourIdx + 1, 1); });
+  $("tourPrev").addEventListener("click", function () { tourGo(tourIdx - 1, -1); });
+  $("tourSkip").addEventListener("click", endTour);
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (tourIdx >= 0) { endTour(); return; }
+    if ($("helpModal").style.display !== "none") closeHelpModal();
+  });
+  window.addEventListener("resize", function () { if (tourIdx >= 0) positionTour(); });
+
+  // -- 첫 방문 환영 카드 --
+  function showWelcome() {
+    $("welcomeModal").style.display = "flex";
+    // 표시하는 순간 기록 — 어떤 버튼을 누르든, 새로고침하든 다시 뜨지 않는다
+    try { localStorage.setItem(WELCOME_LS_KEY, "1"); } catch (e) {}
+  }
+  $("wcSkip").addEventListener("click", function () {
+    $("welcomeModal").style.display = "none";
+    openNewDocWizard(applyNewDocAnswers);
+  });
+  $("wcTour").addEventListener("click", function () {
+    $("welcomeModal").style.display = "none";
+    startTour(function () { openNewDocWizard(applyNewDocAnswers); });
+  });
+  $("wcHelp").addEventListener("click", function () {
+    $("welcomeModal").style.display = "none";
+    openHelpModal({ onClose: function () { openNewDocWizard(applyNewDocAnswers); } });
+  });
+
   // 이전 작업 복구(localStorage) — 저장된 게 없어도(첫 방문) 입력 모드 힌트 문구는 채워야 한다
   let restored = false;
   try { const raw = localStorage.getItem(LS_KEY); if (raw) { applyState(JSON.parse(raw)); restored = true; } } catch (e) {}
@@ -4452,8 +4598,16 @@
     const pendingRaw = localStorage.getItem(NEWDOC_PENDING_KEY);
     if (pendingRaw) { newDocPending = JSON.parse(pendingRaw); localStorage.removeItem(NEWDOC_PENDING_KEY); }
   } catch (e) {}
+  // 진짜 첫 방문 판정 — 저장된 작업도, 환영 카드를 본 기록도, 옛 가이드 기록(jgb_guide_seen_v1,
+  // 레거시 사용자 표식으로 읽기만 유지)도 전혀 없을 때만. 첫 방문이면 마법사 대신 환영 카드가 먼저.
+  let firstVisit = false;
+  try {
+    firstVisit = !restored && !newDocPending
+      && !localStorage.getItem(WELCOME_LS_KEY)
+      && !localStorage.getItem("jgb_guide_seen_v1");
+  } catch (e) {}
   if (newDocPending) applyNewDocAnswers(newDocPending);
-  else if (!restored) openNewDocWizard(applyNewDocAnswers);
+  else if (!restored && !firstVisit) openNewDocWizard(applyNewDocAnswers);
 
   buildPalette();
   buildJangdanPalette();
@@ -4465,12 +4619,7 @@
   refreshEditorSlices();
   renderTextList();
 
-  // 처음 방문했을 때만 입력 방법 가이드를 자동으로 한 번 열어줌(이후엔 ? 버튼으로 직접 확인)
-  const GUIDE_LS_KEY = "jgb_guide_seen_v1";
-  try {
-    if (!localStorage.getItem(GUIDE_LS_KEY)) {
-      toggleMelodyGuide(true);
-      localStorage.setItem(GUIDE_LS_KEY, "1");
-    }
-  } catch (e) {}
+  // 첫 방문이면 환영 카드 — 옛 "선율 가이드 자동 열기"를 대체(가이드는 ? 버튼으로 여전히 사용).
+  // 둘러보기/도움말/바로 시작 중 무엇을 골라도 마지막엔 새 문서 마법사로 이어진다.
+  if (firstVisit) showWelcome();
 })();

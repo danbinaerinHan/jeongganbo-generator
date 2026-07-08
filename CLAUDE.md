@@ -36,15 +36,25 @@
 - 한글 IME keydown 핸들러엔 `e.isComposing || e.keyCode === 229` 가드 필수.
 - 선율/가사 데이터에서 빈 정간은 반드시 `" | "` 꼴 (`||`는 옛 각-구분으로 파싱됨).
   가사는 각·줄 단위로 선율과 1:1 — 줄 넣고 뺄 때 같이 밀고 당겨야 함(insertGakBelow 참고).
+- 도움말/둘러보기/환영 카드: 상단바 #btnHelp → #helpModal(4탭, 전용 .help-tab/.help-pane —
+  전역 .tab/.tabpanel은 사이드바가 문서 전체를 토글하므로 절대 혼용 금지), 투어는 #tourLayer
+  (TOUR_STEPS, app.js "도움말 센터" 섹션). 진짜 첫 방문(`jgb_welcome_v1`·`jgb_guide_seen_v1`·
+  상태 전부 없음)에만 환영 카드 → 어떤 선택이든 새 문서 마법사로 수렴.
 
 ## 프리뷰 검증 (.claude/launch.json의 "jgb")
 
+- iCloud 폴더라 프리뷰 서버 프로세스가 직접 못 읽음 — launch.json은 /tmp/jgb-mirror-wt를
+  서빙하고, 파일 수정 후엔 Bash에서 rsync로 미러 갱신 + 리로드해야 반영됨:
+  `rsync -a --delete --exclude .git --exclude .claude "<워크트리>/" /tmp/jgb-mirror-wt/`
 - 첫 로드에 새 문서 모달이 뜸 → `document.getElementById('ndCancel').click()`.
+  localStorage가 완전히 비어 있으면 대신 환영 카드(#welcomeModal)가 뜸 → `#wcSkip` 클릭.
 - 직접 입력 전환: `document.querySelector('#melInputSeg .seg-btn[data-mode="direct"]').click()`.
 - preview_eval에서 DOMRect는 `{}`로 직렬화됨 — `[left,top,right,bottom]` 배열로 손수 변환.
 - 뷰포트가 0×0으로 측정되면 preview_resize 후 다시 측정.
 - requestAnimationFrame·scrollIntoView(smooth)는 실행 안 됨 — setTimeout 사용.
-- 테스트 후 `localStorage.clear()`로 원상복구(키: jgb_state_v1, jgb_guide_seen_v1).
+- 실제 클릭(preview_click)은 뷰포트 리사이즈 후 좌표가 어긋나 `<html>`에 떨어질 수 있음 —
+  preview_eval에서 `.click()`으로 대신할 것.
+- 테스트 후 `localStorage.clear()`로 원상복구(키: jgb_state_v1, jgb_guide_seen_v1, jgb_welcome_v1).
 
 ## 관례
 
