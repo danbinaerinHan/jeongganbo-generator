@@ -4703,6 +4703,14 @@
   document.querySelectorAll("#helpModal .help-tab").forEach(function (btn) {
     btn.addEventListener("click", function () { showHelpPane(btn.getAttribute("data-help")); });
   });
+  // 도해 2(정간 해부)의 시김새 표식 — 손그림 곡선 대신 실제 시김새 이미지(미는표)를 끼운다.
+  (function () {
+    const fig = $("helpFigSigim"), url = symURL("push");
+    if (fig && url) {
+      fig.setAttribute("href", url);
+      fig.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", url);
+    }
+  })();
   $("helpTourBtn").addEventListener("click", function () {
     // closeHelpModal()을 쓰면 onClose(마법사)가 즉시 실행돼 버림 — 콜백을 투어 끝으로 넘긴다
     const cb = helpOnClose; helpOnClose = null;

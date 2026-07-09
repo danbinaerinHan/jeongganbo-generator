@@ -1069,7 +1069,9 @@
               <rect x="48" y="14" width="108" height="120" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
               <line x1="48" y1="74" x2="156" y2="74" stroke="var(--line)"></line>
               <text x="96" y="54" font-size="26" fill="var(--ink)" text-anchor="middle">黃</text>
-              <path d="M118 34 q7 -8 14 0" fill="none" stroke="var(--accent)" stroke-width="2"></path>
+              <!-- 시김새 표식 — 손그림 대신 실제 시김새 이미지(미는표)를 JS가 끼운다(app.js 도움말 센터).
+                   다크모드에선 검은 잉크가 안 보이므로 .help-sigim을 반전(css). -->
+              <image id="helpFigSigim" class="help-sigim" x="120" y="24" width="22" height="22" preserveAspectRatio="xMidYMid meet"></image>
               <text x="102" y="116" font-size="26" fill="var(--ink)" text-anchor="middle">太</text>
               <g font-size="11" fill="var(--muted)">
                 <line x1="134" y1="30" x2="196" y2="24" stroke="var(--line)"></line>
@@ -1083,7 +1085,7 @@
             </svg>
             <h4>함께 적는 것들</h4>
             <ul>
-              <li><b>시김새</b> — 음을 밀거나 흔드는 꾸밈을 나타내는 작은 기호로, 음 곁에 붙습니다. 이 앱은 59종을 지원합니다.</li>
+              <li><b>시김새</b> — 음을 밀거나 흔드는 꾸밈을 나타내는 작은 기호로, 음 곁에 붙습니다. 이 앱은 79종을 지원합니다.</li>
               <li><b>장단</b> — 장구 구음(덩·덕·쿵 등)을 선율 곁 장단 칸에 적습니다.</li>
               <li><b>가사</b> — 노랫말을 각 정간에 1:1로 맞춰 가사 칸에 적습니다.</li>
             </ul>

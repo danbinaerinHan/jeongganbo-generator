@@ -1176,6 +1176,8 @@
      팔레트 안에서만 반전해 흰 선으로 그린다. 악보(흰 종이)의 기호는 #sheet svg image라
      이 규칙에 안 걸려 그대로 검정으로 남는다(인쇄·PNG도 안 바뀜). */
   body.dark .palette img { filter: invert(1); }
+  /* 도움말 도해의 시김새 이미지도 같은 이유로 다크에선 흰 선으로 반전 */
+  body.dark .help-sigim { filter: invert(1); }
   /* 상단바 다크모드 토글 — '누르면 갈 모드' 아이콘: 라이트=달(→다크), 다크=해(→라이트) */
   #darkToggle .sun { display: none; }
   body.dark #darkToggle .moon { display: none; }
