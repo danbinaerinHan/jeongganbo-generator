@@ -1059,7 +1059,8 @@
             <h4>읽는 순서</h4>
             <ul>
               <li>세로 한 줄을 <b>각</b>(마디)이라 부르고, 전통 방식 그대로 <b>오른쪽에서 왼쪽으로</b> 읽어 나갑니다.</li>
-              <li>한 각 안에서는 <b>위에서 아래로</b>, 한 칸이 나뉘어 있으면 그 안에서도 위에서 아래로 읽습니다.</li>
+              <li>한 각 안에서는 <b>위에서 아래로</b>, 한 칸이 나뉘어 있으면(분박) 그 안에서도 위에서 아래로 읽습니다.</li>
+              <li>한 정간(칸) 안에 음이 이어 붙어 있으면(붙임) 그 줄은 <b>왼쪽에서 오른쪽으로</b> 읽습니다.</li>
             </ul>
             <h4>12율명 — 음이름</h4>
             <p>서양의 도레미 대신 12개의 율명을 씁니다: <b>황·대·태·협·고·중·유·임·이·남·무·응</b>. 한 옥타브 위 음은 앞에 <b>청</b>(예: 청황), 아래 음은 <b>배</b>(탁)를 붙입니다. 악보에는 한자(黃·太…) 또는 한글로 표기할 수 있습니다.</p>
@@ -1106,6 +1107,49 @@
               <li>악보의 정간을 클릭하면 <b>입력 카드</b>가 열립니다. <span class="key">Enter</span>/<span class="key">Tab</span>으로 다음 정간, 방향키로 옆 정간 이동.</li>
               <li>기능바의 입력 그룹(율명·시김새·장단·가사·텍스트)으로 뜬 도구창을 열고, 팔레트를 클릭하면 지금 열린 칸에 바로 들어갑니다.</li>
             </ul>
+
+            <h4>정간 안에 어떻게 들어가나 — 붙임과 분박</h4>
+            <p>한 정간(칸) 안에서 <b>띄어쓰기 없이 이어 쓰면</b> 한 줄에 <b>왼→오른쪽</b>으로 나란히(붙임), <b>띄어 쓰면</b> 칸 안에서 줄이 나뉘어 <b>위→아래</b>로(분박) 들어갑니다.</p>
+            <!-- 정간예시① 붙임 vs 분박 -->
+            <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="붙임과 분박 예시">
+              <text x="82" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">이어 쓰기 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">황태</tspan></text>
+              <rect x="44" y="24" width="76" height="70" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <text x="70" y="68" font-size="22" fill="var(--ink)" text-anchor="middle">黃</text>
+              <text x="96" y="68" font-size="22" fill="var(--ink)" text-anchor="middle">太</text>
+              <line x1="56" y1="83" x2="104" y2="83" stroke="var(--accent)" stroke-width="1.3"></line>
+              <path d="M100 80 L106 83 L100 86 Z" fill="var(--accent)"></path>
+              <text x="82" y="114" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">붙임 · 왼→오른쪽</text>
+              <text x="82" y="129" font-size="9.5" fill="var(--muted)" text-anchor="middle">한 줄에 나란히</text>
+              <text x="238" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">띄어 쓰기 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">황 태</tspan></text>
+              <rect x="200" y="24" width="76" height="70" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <line x1="200" y1="59" x2="276" y2="59" stroke="var(--line)"></line>
+              <text x="238" y="49" font-size="19" fill="var(--ink)" text-anchor="middle">黃</text>
+              <text x="238" y="86" font-size="19" fill="var(--ink)" text-anchor="middle">太</text>
+              <line x1="286" y1="31" x2="286" y2="87" stroke="var(--accent)" stroke-width="1.3"></line>
+              <path d="M283 81 L286 89 L289 81 Z" fill="var(--accent)"></path>
+              <text x="238" y="114" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">분박 · 위→아래</text>
+              <text x="238" y="129" font-size="9.5" fill="var(--muted)" text-anchor="middle">칸 안에서 줄바꿈</text>
+            </svg>
+
+            <h4>직접 입력에서 정간 이동 — Enter</h4>
+            <p>정간을 클릭해 쓰고 <span class="key">Enter</span>(또는 <span class="key">Tab</span>)를 누르면 <b>다음 정간</b>으로 넘어갑니다 — 각(세로 줄) 안에서는 위에서 아래로 이동합니다.</p>
+            <!-- 정간예시② 직접 입력 Enter -->
+            <svg class="help-fig" viewBox="0 0 320 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="직접 입력에서 Enter로 다음 정간 이동">
+              <text x="150" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">직접 입력 — 칸을 클릭해 쓰고 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">Enter</tspan></text>
+              <rect x="110" y="26" width="80" height="38" fill="var(--accent-soft)"></rect>
+              <g stroke="var(--ink)" fill="none" stroke-width="1.5">
+                <rect x="110" y="26" width="80" height="38"></rect>
+                <rect x="110" y="64" width="80" height="38"></rect>
+                <rect x="110" y="102" width="80" height="38"></rect>
+              </g>
+              <text x="150" y="52" font-size="20" fill="var(--ink)" text-anchor="middle">黃</text>
+              <line x1="202" y1="45" x2="202" y2="85" stroke="var(--accent)" stroke-width="1.5"></line>
+              <path d="M199 79 L202 87 L205 79 Z" fill="var(--accent)"></path>
+              <text x="210" y="66" font-size="10.5" font-weight="700" fill="var(--accent)">Enter</text>
+              <text x="210" y="80" font-size="9.5" fill="var(--muted)">다음 정간</text>
+              <text x="150" y="154" font-size="9.5" fill="var(--muted)" text-anchor="middle">각(세로 줄) 안에서는 위→아래로 이동</text>
+            </svg>
+
             <h4>에디터 — 곡 전체를 텍스트로</h4>
             <ul>
               <li>반복 구절 복사·붙여넣기, 대량 수정에 강합니다. 악보 칸을 클릭하면 에디터의 해당 위치로 커서가 이동합니다(양방향 동기화).</li>
