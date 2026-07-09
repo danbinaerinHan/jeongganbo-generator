@@ -1440,7 +1440,7 @@
     { s: "staccato", k: "끊는표", c: "wo" }, { s: "accent", k: "특강표", c: "wo" },
     { s: "fermata", k: "늘임표", c: "wo" }, { s: "len-double", k: "덧길이표", c: "wo" },
     { s: "len-half", k: "반길이표", c: "wo" },
-    // 이름 미상 추가 시김새(symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
+    // 이름 미상 추가 시김새(assets/symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
     // 파일 번호 그대로 s00~s25로 부른다(토큰도 {s01} 꼴). 이름이 정해지면 k만 바꾸면 됨.
     { s: "sigimsae-00", k: "s00", c: "wo" }, { s: "sigimsae-01", k: "s01", c: "wo" },
     { s: "sigimsae-02", k: "s02", c: "wo" }, { s: "sigimsae-03", k: "s03", c: "wo" },
@@ -1731,7 +1731,7 @@
 
   // ---------- 가사 기호 팔레트 (special SVG) ----------
   // 클릭하면 편집 중인 가사 칸/커서에 {기호} 토큰이 들어가고, 악보엔 이미지로 표시된다.
-  // stem = symbols-data.js(SYM_DATA)의 키(= symbol_svgs/special 파일명).
+  // stem = symbols-data.js(SYM_DATA)의 키(= assets/symbol_svgs/special 파일명).
   const LYRIC_SYMS = ["가로막대", "세로막대", "늘임표", "뜰", "모지", "장지", "튕김", "연튕김"];
   // 가사 칸 이미지 크기 배율 — 막대류는 0.8, 나머지(가야금주법·늘임표)는 0.4로 줄여 그린다.
   const LYRIC_SYM_SCALE = { "가로막대": 0.8, "세로막대": 0.8 };

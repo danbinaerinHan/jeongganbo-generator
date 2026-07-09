@@ -5,17 +5,24 @@
 
 ## 파일 구조
 
-- `index.html` (~950줄) — 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
-- `app.js` (~4100줄) — 단일 IIFE. **섹션 마커로 탐색**: `grep -n "// ----------" app.js`
+폴더 정리됨 — 루트엔 진입점 `index.html`(마크업)·`CLAUDE.md`·`.gitignore`만 두고, 나머지는
+기능별 폴더로 묶었다. **index.html이 `css/styles.css`·`js/*.js`를 상대경로로 로드**하므로 파일을
+옮기면 이 script/link 태그도 같이 고쳐야 한다.
+
+- `index.html` (~950줄, 루트) — 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
+- `js/app.js` (~4100줄) — 단일 IIFE. **섹션 마커로 탐색**: `grep -n "// ----------" js/app.js`
   가 목차 역할을 한다 (렌더/에디터/팔레트/재생/저장/되돌리기 등 30여 섹션).
-- `styles.css` (~940줄) — 위→아래 순서가 화면 구성 순서와 대체로 일치
+- `css/styles.css` (~940줄) — 위→아래 순서가 화면 구성 순서와 대체로 일치
   (상단바 → 사이드바 → 리본 → 독/팔레트 → 툴팁 → 인쇄).
-- `notes-data.js`·`symbols-data.js`·`janggu-data.js` — 생성된 데이터(데이터 URL 포함).
-  직접 수정 금지. symbol_svgs/ 원본을 바꿔도 앱은 symbols-data.js를 읽으므로 재생성 필요.
-  `symbols-data.js`(window.SYM_DATA)는 `tools/gen-symbols-data.mjs`로 생성 —
-  `symbol_svgs/{symbols,tempo,special}` 세 폴더를 스캔한다(폴더 간 파일명 중복 금지).
+- `js/notes-data.js`·`js/symbols-data.js`·`js/janggu-data.js` — 생성된 데이터(데이터 URL 포함).
+  직접 수정 금지. `assets/symbol_svgs/` 원본을 바꿔도 앱은 `js/symbols-data.js`를 읽으므로 재생성 필요.
+  `js/symbols-data.js`(window.SYM_DATA)는 `tools/gen-symbols-data.mjs`로 생성 —
+  `assets/symbol_svgs/{symbols,tempo,special}` 세 폴더를 스캔한다(폴더 간 파일명 중복 금지).
   재생성: `node tools/gen-symbols-data.mjs` (리포 루트). 키 = 확장자 없는 파일명.
-- `기능-정리.md` — 사용자용 기능 설명서.
+- `assets/symbol_svgs/`·`assets/janggu_svgs/` — 데이터 JS 생성용 SVG 원본(빌드 입력, 브라우저는 안 읽음).
+- `tools/gen-symbols-data.mjs` — 위 생성기. `docs/기능-정리.md` — 사용자용 기능 설명서.
+- `references/` — 참고 자료(가야금주법·장구 시김새·악보 예시·정악보·legacies, git 미추적/이미지 무시).
+  `_보관/`은 gitignore. `paper/`는 논문(코드와 별개).
 
 ## 핵심 구조 요약
 
@@ -41,16 +48,16 @@
   — 정식 이름이 정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s01}` 꼴도 같이 바뀜에 유의).
   파일 stem은 그대로, 표시 이름(k)·순서만 조정 가능. (파일 09·10·11·17·18·19는 없음.
   sigimsae-01은 표시명 s01 그대로 — 예전 s11 별칭은 폐기, s11이라는 별도 SVG는 존재한 적 없음.)
-  이 SVG들은 원래 viewBox 안 여백이 커 잉크가 박스의 ~45%만 채워 작게 보였음 → symbol_svgs
+  이 SVG들은 원래 viewBox 안 여백이 커 잉크가 박스의 ~45%만 채워 작게 보였음 → assets/symbol_svgs
   원본의 viewBox를 잉크 경계로 크롭(여백 3%)해 다른 기호처럼 꽉 채우게 만듦(다시 다듬으려면
-  같은 방식으로 재크롭 후 symbols-data.js 재생성). 그래서 크기 보정 코드는 없음.
-- 빠르기(tempo) 시김새 5종(symbol_svgs/tempo, 한글 stem)은 ORN_LIST에 `c:"tempo"`로 등록되고
+  같은 방식으로 재크롭 후 js/symbols-data.js 재생성). 그래서 크기 보정 코드는 없음.
+- 빠르기(tempo) 시김새 5종(assets/symbol_svgs/tempo, 한글 stem)은 ORN_LIST에 `c:"tempo"`로 등록되고
   buildOrnPalette의 세 번째 그룹 "빠르기"에 나온다. **토큰에 공백 금지**(drawCell이 content를 공백으로
   분박 분할하므로 k=stem 그대로 공백 없이). 렌더는 숨표(<)처럼 칸 배치에서 빼고(rowToks 필터·
   buildAudioEvents 필터) 정간 **바깥 오른쪽**에 세로로 그린다 — `drawSymImageRect`(세로 박스, meet).
   가사가 켜져 있으면 가사 줄 폭(lyGap+lyW)만큼 더 바깥에 놓아 겹치지 않게 함(drawCell의 lyPad 인자,
   호출부에서 전달). 빠르기는 붙임표 시김새 아니라 숫자단축키(ORN_ADD_ALL=wo/both)에서 자연 제외.
-- 가사 특수기호: symbol_svgs/special 8종(가로막대·세로막대·늘임표·뜰·모지·장지·튕김·연튕김)을
+- 가사 특수기호: assets/symbol_svgs/special 8종(가로막대·세로막대·늘임표·뜰·모지·장지·튕김·연튕김)을
   가사 도구창(#lyricsArea)의 팔레트 #lyricsSymRow(buildLyricSymPal, LYRIC_SYMS)에서 클릭 →
   `insertLyricToken`이 편집 중인 가사 칸/커서에 `{stem}` 토큰 삽입. drawLyricCell이 행 문자열이
   `{stem}`(공백 없어야 한 분박)이고 symURL 있으면 글자 대신 이미지로 그린다. setLyricText는 `{}`를
@@ -78,8 +85,9 @@
 
 - iCloud 폴더라 프리뷰 서버 프로세스가 직접 못 읽음 — launch.json은 /tmp/jgb-mirror-wt를
   서빙하고, 파일 수정 후엔 Bash에서 rsync로 미러 갱신 + 리로드해야 반영됨:
-  `rsync -a --delete --exclude .git --exclude .claude --exclude paper --exclude legacies "<워크트리>/" /tmp/jgb-mirror-wt/`
-  (paper/ 안 일부 한글 파일명이 rsync에서 Illegal byte sequence를 내므로 반드시 제외)
+  `rsync -a --delete --exclude .git --exclude .claude --exclude paper --exclude references --exclude _보관 "<워크트리>/" /tmp/jgb-mirror-wt/`
+  (paper/ 안 일부 한글 파일명이 rsync에서 Illegal byte sequence를 내므로 반드시 제외. 앱은 index.html·
+  css/·js/ 만 있으면 돌아가므로 references/·_보관/·assets/·tools/는 제외해도 무방)
 - 첫 로드에 새 문서 모달이 뜸 → `document.getElementById('ndCancel').click()`.
   localStorage가 완전히 비어 있으면 대신 환영 카드(#welcomeModal)가 뜸 → `#wcSkip` 클릭.
 - 직접 입력 전환: `const s=document.getElementById('melInputSelect'); s.value='direct'; s.dispatchEvent(new Event('change'))` (입력 방식은 #modeBox 안 드롭다운).
