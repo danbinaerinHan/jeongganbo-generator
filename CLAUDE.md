@@ -12,6 +12,9 @@
   (상단바 → 사이드바 → 리본 → 독/팔레트 → 툴팁 → 인쇄).
 - `notes-data.js`·`symbols-data.js`·`janggu-data.js` — 생성된 데이터(데이터 URL 포함).
   직접 수정 금지. symbol_svgs/ 원본을 바꿔도 앱은 symbols-data.js를 읽으므로 재생성 필요.
+  `symbols-data.js`(window.SYM_DATA)는 `tools/gen-symbols-data.mjs`로 생성 —
+  `symbol_svgs/{symbols,tempo,special}` 세 폴더를 스캔한다(폴더 간 파일명 중복 금지).
+  재생성: `node tools/gen-symbols-data.mjs` (리포 루트). 키 = 확장자 없는 파일명.
 - `기능-정리.md` — 사용자용 기능 설명서.
 
 ## 핵심 구조 요약
@@ -34,12 +37,24 @@
 - 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
   머리줄(.melody-head) 오른쪽 끝(`.mh-right`/`.mh-reset`)으로 이전. 끌기 그립도 머리줄 안
   `.bar-grip.dock-panel-grip`으로 옮겨 플로팅 끌기 유지(attachBarDrag가 첫 .bar-grip 사용).
-- 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00·s02~s08·s11·s12~s25(임시 이름)로 등록
-  — 정식 이름이 정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s11}` 꼴도 같이 바뀜에 유의).
-  파일 stem은 그대로, 표시 이름(k)·순서만 조정 가능(예: sigimsae-01→표시 s11).
+- 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00~s08·s12~s16·s20~s25(임시 이름=파일번호)로 등록
+  — 정식 이름이 정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s01}` 꼴도 같이 바뀜에 유의).
+  파일 stem은 그대로, 표시 이름(k)·순서만 조정 가능. (파일 09·10·11·17·18·19는 없음.
+  sigimsae-01은 표시명 s01 그대로 — 예전 s11 별칭은 폐기, s11이라는 별도 SVG는 존재한 적 없음.)
   이 SVG들은 원래 viewBox 안 여백이 커 잉크가 박스의 ~45%만 채워 작게 보였음 → symbol_svgs
   원본의 viewBox를 잉크 경계로 크롭(여백 3%)해 다른 기호처럼 꽉 채우게 만듦(다시 다듬으려면
   같은 방식으로 재크롭 후 symbols-data.js 재생성). 그래서 크기 보정 코드는 없음.
+- 빠르기(tempo) 시김새 5종(symbol_svgs/tempo, 한글 stem)은 ORN_LIST에 `c:"tempo"`로 등록되고
+  buildOrnPalette의 세 번째 그룹 "빠르기"에 나온다. **토큰에 공백 금지**(drawCell이 content를 공백으로
+  분박 분할하므로 k=stem 그대로 공백 없이). 렌더는 숨표(<)처럼 칸 배치에서 빼고(rowToks 필터·
+  buildAudioEvents 필터) 정간 **바깥 오른쪽**에 세로로 그린다 — `drawSymImageRect`(세로 박스, meet).
+  가사가 켜져 있으면 가사 줄 폭(lyGap+lyW)만큼 더 바깥에 놓아 겹치지 않게 함(drawCell의 lyPad 인자,
+  호출부에서 전달). 빠르기는 붙임표 시김새 아니라 숫자단축키(ORN_ADD_ALL=wo/both)에서 자연 제외.
+- 가사 특수기호: symbol_svgs/special 8종(가로막대·세로막대·늘임표·뜰·모지·장지·튕김·연튕김)을
+  가사 도구창(#lyricsArea)의 팔레트 #lyricsSymRow(buildLyricSymPal, LYRIC_SYMS)에서 클릭 →
+  `insertLyricToken`이 편집 중인 가사 칸/커서에 `{stem}` 토큰 삽입. drawLyricCell이 행 문자열이
+  `{stem}`(공백 없어야 한 분박)이고 symURL 있으면 글자 대신 이미지로 그린다. setLyricText는 `{}`를
+  안 지워서 토큰이 보존됨. special의 늘임표 stem은 시김새 늘임표(k)→fermata(s)와 별개 키.
 - 색은 전부 styles.css `:root`의 역할별 변수(`--bg/--panel/--soft/--hover/--track/--line/
   --ink/--muted/--accent/--accent-soft/--accent-tint/--overlay/--danger*` 등)를 통한다.
   새 색을 하드코딩하지 말고 이 변수를 쓸 것 — 다크모드(`body.dark`, 파일 끝)가 변수 값만

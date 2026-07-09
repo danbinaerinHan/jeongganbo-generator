@@ -1442,12 +1442,11 @@
     { s: "len-half", k: "반길이표", c: "wo" },
     // 이름 미상 추가 시김새(symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
     // 파일 번호 그대로 s00~s25로 부른다(토큰도 {s01} 꼴). 이름이 정해지면 k만 바꾸면 됨.
-    { s: "sigimsae-00", k: "s00", c: "wo" },
+    { s: "sigimsae-00", k: "s00", c: "wo" }, { s: "sigimsae-01", k: "s01", c: "wo" },
     { s: "sigimsae-02", k: "s02", c: "wo" }, { s: "sigimsae-03", k: "s03", c: "wo" },
     { s: "sigimsae-04", k: "s04", c: "wo" }, { s: "sigimsae-05", k: "s05", c: "wo" },
     { s: "sigimsae-06", k: "s06", c: "wo" }, { s: "sigimsae-07", k: "s07", c: "wo" },
-    // sigimsae-01 파일은 s11로 이름·순서를 옮김(파일 stem은 그대로, 토큰은 {s11})
-    { s: "sigimsae-08", k: "s08", c: "wo" }, { s: "sigimsae-01", k: "s11", c: "wo" },
+    { s: "sigimsae-08", k: "s08", c: "wo" },
     { s: "sigimsae-12", k: "s12", c: "wo" },
     { s: "sigimsae-13", k: "s13", c: "wo" }, { s: "sigimsae-14", k: "s14", c: "wo" },
     { s: "sigimsae-15", k: "s15", c: "wo" }, { s: "sigimsae-16", k: "s16", c: "wo" },
@@ -1463,7 +1462,14 @@
     { s: "nineurani", k: "니느라니", c: "with" }, { s: "neunanina", k: "느나니나", c: "with" },
     { s: "neunareunani", k: "느나르나니", c: "with" }, { s: "shake", k: "요성표", c: "with" },
     { s: "shake-rep", k: "겹요성표", c: "with" }, { s: "repeat", k: "같은음표", c: "with" },
-    { s: "bend-down", k: "퇴성", c: "both" }, { s: "bend-up", k: "추성", c: "both" }
+    { s: "bend-down", k: "퇴성", c: "both" }, { s: "bend-up", k: "추성", c: "both" },
+    // 빠르기(tempo) — 정간에 넣으면 칸 안이 아니라 정간 오른쪽(가사 바깥)에 세로로 표시된다.
+    // 토큰에 공백이 들어가면 drawCell이 분박으로 쪼개므로 k(표시명)도 공백 없는 파일 stem 그대로 쓴다.
+    { s: "본래속도로", k: "본래속도로", c: "tempo" },
+    { s: "점점느리게", k: "점점느리게", c: "tempo" },
+    { s: "점점속하게", k: "점점속하게", c: "tempo" },
+    { s: "조금느리게", k: "조금느리게", c: "tempo" },
+    { s: "조금속하게", k: "조금속하게", c: "tempo" }
   ];
   const ORN_CAT = {};
   ORN_LIST.forEach(function (o) { ORN_CAT[o.s] = o.c; });
@@ -1536,6 +1542,7 @@
   // 계산해서, 팔레트에서도 실제로 그려질 때와 비슷한 비중으로 보이게 한다(칸은 균일해도
   // 아이콘 크기만 종류별로 차이가 남 — 뒤죽박죽이 아니라 의도된 크기 차이가 되게).
   function ornRelSize(o) {
+    if (o.c === "tempo") return 0.7;   // 빠르기 — 팔레트 아이콘은 중간 크기로 통일
     if (o.c === "wo") {
       const scale = ATT_SCALE_KEEP.has(o.s) ? 1 : ATT_EXTRA_SCALE;
       return 0.55 * scale * (ATT_SYM_SCALE[o.s] || 1);
@@ -1702,6 +1709,58 @@
     ta.dispatchEvent(new Event("input"));
   }
 
+  // 가사 커서/편집 중인 칸에 기호 토큰({뜰} 등) 삽입 — insertToken(선율)과 같은 방식.
+  function insertLyricToken(txt) {
+    if (cellEditInput && cellEditDomain === "ly") {   // 직접 입력 — 지금 열린 가사 정간 카드에 삽입
+      const inp = cellEditInput;
+      const s = inp.selectionStart != null ? inp.selectionStart : inp.value.length;
+      const e = inp.selectionEnd != null ? inp.selectionEnd : s;
+      inp.value = inp.value.slice(0, s) + txt + inp.value.slice(e);
+      const pos = s + txt.length;
+      inp.setSelectionRange(pos, pos);
+      inp.focus();
+      inp.dispatchEvent(new Event("input"));
+      return;
+    }
+    const ta = $("lyrics");
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    ta.setRangeText(txt, s, e, "end");
+    ta.focus();
+    ta.dispatchEvent(new Event("input"));
+  }
+
+  // ---------- 가사 기호 팔레트 (special SVG) ----------
+  // 클릭하면 편집 중인 가사 칸/커서에 {기호} 토큰이 들어가고, 악보엔 이미지로 표시된다.
+  // stem = symbols-data.js(SYM_DATA)의 키(= symbol_svgs/special 파일명).
+  const LYRIC_SYMS = ["가로막대", "세로막대", "늘임표", "뜰", "모지", "장지", "튕김", "연튕김"];
+  // 가사 칸 이미지 크기 배율 — 막대류는 0.8, 나머지(가야금주법·늘임표)는 0.4로 줄여 그린다.
+  const LYRIC_SYM_SCALE = { "가로막대": 0.8, "세로막대": 0.8 };
+  const LYRIC_SYM_SCALE_DEFAULT = 0.4;
+  function buildLyricSymPal() {
+    const wrap = $("lyricsSymRow");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    LYRIC_SYMS.forEach(function (stem) {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "lsp-btn";
+      item.title = stem;
+      item.dataset.sym = stem;
+      const url = symURL(stem);
+      if (url) {
+        const img = document.createElement("img");
+        img.src = url; img.alt = stem;
+        item.appendChild(img);
+      }
+      const cap = document.createElement("span");
+      cap.className = "lsp-cap"; cap.textContent = stem;
+      item.appendChild(cap);
+      item.addEventListener("mousedown", function (e) { e.preventDefault(); });
+      item.addEventListener("click", function () { insertLyricToken("{" + stem + "}"); });
+      wrap.appendChild(item);
+    });
+  }
+
   // ---------- 장단 팔레트 (장구 구음 7종) ----------
   // 장단 텍스트는 스페이스를 분박 구분자로 쓰므로, 타이핑/저장/화면 표기 모두
   // 공백 없는 이름으로 통일한다(예: '작은덩').
@@ -1778,7 +1837,8 @@
     // 퇴성·추성(both)은 음표에 붙여 쓰는 게 기본이라 붙임표 그룹에 함께 담는다
     const groups = [
       { title: "붙임표", sub: "음표 오른쪽에 작게 · 퇴성·추성 포함", cats: ["wo", "both"] },
-      { title: "독립 기호", sub: "한 칸 차지", cats: ["with"] }
+      { title: "독립 기호", sub: "한 칸 차지", cats: ["with"] },
+      { title: "빠르기", sub: "정간 오른쪽에 세로로 표시", cats: ["tempo"] }
     ];
     groups.forEach(function (grp) {
       const head = document.createElement("div");
@@ -2110,8 +2170,17 @@
     // 무관하게 고정인 것과 같은 규칙(행이 많으면 촘촘해질 뿐 줄어들지 않는다).
     // 여기에 '가사 크기' 슬라이더 배율만 곱한다(여러 글자 행의 넘침 방지 캡은 배율과 무관).
     const fs = Math.min(width * 0.86, cellH * 0.7) * lyricsScaleCur;
+    const rowH = cellH / rows.length;
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
+      // {기호} 토큰이면 글자 대신 special 이미지를 한 글자처럼 그린다(원본 비율 유지).
+      const symM = /^\{(.+)\}$/.exec(str);
+      if (symM && symURL(symM[1])) {
+        const sc = (symM[1] in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[symM[1]] : LYRIC_SYM_SCALE_DEFAULT;
+        const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
+        drawSymImageRect(svg, symM[1], x + width / 2 - bw / 2, centers[i] - bh / 2, bw, bh);
+        return;
+      }
       // 한 행에 여러 글자('더지' 등)면 옆을 침범하지 않게 맞추되, 글자 크기는 조금만
       // 줄이고 나머지는 자간 압축(textLength)으로 해결 — 등분 축소보다 글자가 훨씬 크다
       const len = Array.from(str).length;
@@ -2128,7 +2197,7 @@
   }
 
   // 한 칸(정간) 그리기: 공백=줄바꿈(행, 위→아래 / 2분박·3분박…), 붙임=가로 배치(왼→오른쪽)
-  function drawCell(svg, x, yTop, cell, content, gakIdx, cellIdx, pageIdx) {
+  function drawCell(svg, x, yTop, cell, content, gakIdx, cellIdx, pageIdx, lyPad) {
     const rows = content.split(/\s+/).filter(Boolean);
     if (!rows.length) return;
     const nRows = rows.length;
@@ -2137,7 +2206,15 @@
     // 숨표(<)는 음표처럼 자리를 차지하지 않고 이 정간 오른쪽-아래 모서리에 한 번만 고정 표시된다.
     // 어느 행에 섞여 있든 상관없이 감지만 하고, 배치 계산에서는 제외한다.
     const hasBreath = rawRowToks.some(function (toks) { return toks.some(function (tk) { return tk.breath; }); });
-    const rowToks = rawRowToks.map(function (toks) { return toks.filter(function (tk) { return !tk.breath; }); });
+    // 빠르기(tempo) 시김새도 칸 안 자리를 차지하지 않고 정간 오른쪽(가사 바깥)에 세로로 표시된다.
+    // 숨표와 같은 방식으로 감지만 하고 배치 계산(분박·칸 수)에서는 제외한다.
+    const tempoSyms = [];
+    rawRowToks.forEach(function (toks) {
+      toks.forEach(function (tk) { if (tk.sym && ORN_CAT[tk.sym] === "tempo") tempoSyms.push(tk.sym); });
+    });
+    const rowToks = rawRowToks.map(function (toks) {
+      return toks.filter(function (tk) { return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo"); });
+    });
     // 붙임 시김새(음표 오른쪽에 작게 붙는 것)는 별도 칸을 차지하지 않으므로
     // 그룹핑(groupRowTokens) 후의 칸 수로 넓힘 여부를 판단한다 — 그래야 시김새가
     // 붙어도 음표 글자 자체 크기가 줄어들지 않는다.
@@ -2245,6 +2322,20 @@
       bt.textContent = "<";
       svg.appendChild(bt);
     }
+
+    // 빠르기(tempo) — 정간 오른쪽(가사가 켜져 있으면 가사 줄 바깥)에 세로로 꽉 차게.
+    // 세로 긴 이미지라 정사각 drawSymImage 대신 세로 박스(drawSymImageRect)로 그린다.
+    if (tempoSyms.length) {
+      const tmH = cell * 0.92;               // 정간 높이 대비 세로 크기
+      const tmW = cell * 0.4;                // 세로 이미지라 가로는 좁게(meet로 원본 비율 유지)
+      const tmLeft = x + cell + (lyPad || 0) + cell * 0.08;   // 정간(+가사) 바깥 오른쪽
+      // 여러 개면 세로로 나눠 배치(보통 1개)
+      tempoSyms.forEach(function (sym, ti) {
+        const h = tmH / tempoSyms.length;
+        const yT = yTop + cell / 2 - tmH / 2 + h * ti;
+        drawSymImageRect(svg, sym, tmLeft, yT, tmW, h);
+      });
+    }
   }
 
   // 주 글자 하나(음표 / 독립 기호 / 글자)를 (cx,cyc) 중심, size 크기로 그림
@@ -2315,6 +2406,17 @@
       x: cx - box / 2, y: cyc - box / 2, width: box, height: box,
       preserveAspectRatio: "xMidYMid meet"
     });
+    im.setAttribute("href", href);
+    im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
+    svg.appendChild(im);
+  }
+
+  // 이미지 한 개를 (x,y) 좌상단 · w×h 박스 안에 원본 비율 유지(meet)로 그림.
+  // 세로로 긴 빠르기·가사 기호처럼 정사각이 아닌 이미지를 위한 헬퍼.
+  function drawSymImageRect(svg, key, x, y, w, h) {
+    const href = symURL(key) || (NOTE_DIR + key + ".png");
+    const im = el("image", { x: x, y: y, width: w, height: h,
+      preserveAspectRatio: "xMidYMid meet" });
     im.setAttribute("href", href);
     im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
     svg.appendChild(im);
@@ -2906,7 +3008,9 @@
           }
           for (let j = 0; j < filled; j++) {
             const content = gakCells && gakCells[j] ? gakCells[j].text : "";
-            if (content) drawCell(svg, x, gridTop + j * cell, cell, content, melIdx, j, pageIdx);
+            // 빠르기 기호는 정간 오른쪽에 그려지므로, 가사가 켜져 있으면 가사 줄 폭만큼 더 바깥에 놓는다.
+            if (content) drawCell(svg, x, gridTop + j * cell, cell, content, melIdx, j, pageIdx,
+              wantLyrics ? (lyGap + lyW) : 0);
           }
           // 세로선·정간 구분 가로선 — 항상 전체 높이. 위/아래 마감은 밴드 통줄이, 대강선은 아래
           // 밴드 통줄과 같은 방식으로 각 사이 간격까지 끊기지 않게 따로 그린다(굵게, 밴드 전체 폭).
@@ -3369,7 +3473,10 @@
         if (!rows.length) { extend(secPerBeat, g, j); continue; }
         const rowDur = secPerBeat / rows.length;
         for (let r = 0; r < rows.length; r++) {
-          const toks = tokenizeNotes(rows[r]).filter(function (tk) { return !tk.breath; });   // 숨표는 재생에 영향 없음
+          // 숨표(<)·빠르기(tempo) 기호는 재생에 영향 없음 — 배치·소리 계산에서 제외
+          const toks = tokenizeNotes(rows[r]).filter(function (tk) {
+            return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
+          });
           const groups = groupRowTokens(toks);
           if (!groups.length) { extend(rowDur, g, j); continue; }
           const slotDur = rowDur / groups.length;
@@ -4717,6 +4824,7 @@
 
   buildPalette();
   buildJangdanPalette();
+  buildLyricSymPal();
   fillDaegangPreset();
   reconcileMelody();
   reconcileJangdan();

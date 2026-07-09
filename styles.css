@@ -906,10 +906,21 @@
              font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
              border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
 
-  /* 가사 입력 (선율 입력과 같은 구조, 팔레트 없이 자유 텍스트)
-     — 헤더의 스위치를 꺼두면 입력창·버튼은 숨기고 스위치·안내만 남긴다 */
+  /* 가사 입력 (선율 입력과 같은 구조, 글자는 자유 텍스트 + special 기호 팔레트)
+     — 헤더의 스위치를 꺼두면 입력창·버튼·기호 팔레트는 숨기고 스위치·안내만 남긴다 */
   body:not(.want-lyrics) #lyricsArea #lyricsRow,
+  body:not(.want-lyrics) #lyricsArea #lyricsSymPal,
   body:not(.want-lyrics) #lyricsArea .mh-right { display: none; }
+  /* 가사 기호 팔레트 — special SVG를 클릭해 가사 칸에 이미지로 넣는다 */
+  .lyric-sym-pal { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .lyric-sym-pal .lsp-label { font-size: 11px; color: var(--muted); flex: 0 0 auto; }
+  .lyric-sym-pal .lsp-row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .lyric-sym-pal .lsp-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
+    width: 44px; padding: 4px 2px; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; color: var(--ink); }
+  .lyric-sym-pal .lsp-btn:hover { background: var(--hover); }
+  .lyric-sym-pal .lsp-btn img { width: 22px; height: 22px; object-fit: contain; }
+  .lyric-sym-pal .lsp-cap { font-size: 8px; color: var(--muted); white-space: nowrap; }
   #lyricsRow { display: flex; gap: 12px; height: 140px; align-items: stretch; }
   #lyricsEditorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
   #lyrics { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
