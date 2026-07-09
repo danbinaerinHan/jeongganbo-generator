@@ -2124,9 +2124,20 @@
     // 예전엔 rowH(=cellH/행수)에 비례해 분박이 생기면 확 작아졌다.
     const box0 = Math.min(width * 0.6, cellH * 0.46);
     rows.forEach(function (name, i) {
+      const cy = yTop + rowH * (i + 0.5);
+      // 이음(-)은 장구 기호가 아니라 앞 박을 이어가는 표시 — 예전엔 data["-"]가 없어 그냥
+      // 사라졌다. 선율(drawGlyph)처럼 가로로 늘인 대시(-)로 보이게 그린다.
+      if (name === "-") {
+        const cx = x + width / 2, fs = box0;
+        const t = el("text", { x: cx, y: cy + fs * 0.28, "text-anchor": "middle",
+          "font-size": fs, "font-family": NOTE_FONT, fill: "#111" });
+        t.textContent = "-";
+        t.setAttribute("transform", "translate(" + cx + " 0) scale(" + TIE_STRETCH + " 1) translate(" + (-cx) + " 0)");
+        svg.appendChild(t);
+        return;
+      }
       const href = data[name];
       if (!href) return;
-      const cy = yTop + rowH * (i + 0.5);
       const box = box0 * (JANGGU_DRAW_SCALE[name] || 1);
       const im = el("image", { x: x + (width - box) / 2, y: cy - box / 2, width: box, height: box,
         preserveAspectRatio: "xMidYMid meet" });
