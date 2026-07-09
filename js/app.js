@@ -2119,11 +2119,15 @@
     if (!rows.length) return;
     const data = window.JANGGU_DATA || {};
     const rowH = cellH / rows.length;
+    // 기호 크기는 분박(행) 수와 무관하게 한 가지로 고정 — 율명(drawCell)·가사(drawLyricCell)가
+    // 행 수와 무관하게 같은 크기를 쓰는 것과 같은 규칙(행이 많아지면 촘촘해질 뿐 줄어들지 않는다).
+    // 예전엔 rowH(=cellH/행수)에 비례해 분박이 생기면 확 작아졌다.
+    const box0 = Math.min(width * 0.6, cellH * 0.46);
     rows.forEach(function (name, i) {
       const href = data[name];
       if (!href) return;
       const cy = yTop + rowH * (i + 0.5);
-      const box = Math.min(width * 0.6, rowH * 0.6) * (JANGGU_DRAW_SCALE[name] || 1);
+      const box = box0 * (JANGGU_DRAW_SCALE[name] || 1);
       const im = el("image", { x: x + (width - box) / 2, y: cy - box / 2, width: box, height: box,
         preserveAspectRatio: "xMidYMid meet" });
       im.setAttribute("href", href);
