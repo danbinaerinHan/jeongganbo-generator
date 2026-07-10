@@ -2733,11 +2733,12 @@
       * (wantLyrics ? 0.7 : 1);
     const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0) * sizeScale;
     const desiredTitle = Math.max(1, parseFloat($("titleSize").value) || 10);
-    const desiredTitleOff = parseFloat($("titleOffset").value) || 0;
+    // 상하는 직관대로 '양수 = 위로' — 렌더 좌표는 아래가 +라서 여기서 부호를 뒤집는다
+    const desiredTitleOff = -(parseFloat($("titleOffset").value) || 0);
     const desiredTitleOffX = parseFloat($("titleOffsetX").value) || 0;
     const desiredTitleSpacing = parseFloat($("titleSpacing").value) || 0;
     const desiredSub = Math.max(1, parseFloat($("subSize").value) || 5);
-    const desiredSubOff = parseFloat($("subOffset").value) || 0;
+    const desiredSubOff = -(parseFloat($("subOffset").value) || 0);
     const desiredSubOffX = parseFloat($("subOffsetX").value) || 0;
     const desiredSubSpacing = parseFloat($("subSpacing").value) || 0;
     const titleFontFam = $("titleFont").value || CJK;
@@ -3230,7 +3231,9 @@
         svg.appendChild(tt.g);
         if (subTxt) {
           const subFont = Math.min(desiredSub * scale, (panelRight - panelX) * 0.72);
-          const subStart = tt.endY + titleFont * 0.5 + subFont + desiredSubOff * scale;
+          // tt.endY에는 제목의 상하 이동이 포함돼 있으므로 그만큼 되돌린다 —
+          // 제목 상하는 제목만, 부제 상하는 부제만 움직이게(따로 조절)
+          const subStart = tt.endY - desiredTitleOff * scale + titleFont * 0.5 + subFont + desiredSubOff * scale;
           if (subStart < pBottom) {
             const st = verticalText(cx + desiredSubOffX * scale, subStart, subTxt, subFont, 400, "#333", titleFontFam, desiredSubSpacing * scale);
             svg.appendChild(st.g);
@@ -3250,8 +3253,9 @@
         t.textContent = titleTxt;
         svg.appendChild(t);
         if (subTxt) {
+          // titleBase의 제목 상하 이동분은 빼고 시작 — 부제는 부제 상하로만 움직인다
           const st = el("text", { x: cx + desiredSubOffX * scale,
-            y: titleBase + titleTopSubFont * 1.45 + desiredSubOff * scale,
+            y: titleBase - desiredTitleOff * scale + titleTopSubFont * 1.45 + desiredSubOff * scale,
             "text-anchor": "middle", "font-size": titleTopSubFont, "font-family": titleFontFam,
             "font-weight": 400, fill: "#333", "letter-spacing": desiredSubSpacing * scale });
           st.textContent = subTxt;

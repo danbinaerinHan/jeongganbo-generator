@@ -160,8 +160,9 @@
         <div class="mini">
           <span>크기</span>
           <span class="num-unit"><input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"><span class="unit">mm</span></span>
-          <span title="양수 = 아래로, 음수 = 위로">상하</span>
-          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="3"><span class="unit">mm</span></span>
+          <span title="양수 = 위로, 음수 = 아래로">상하</span>
+          <!-- 기본 -3 = 예전 '아래로 3mm'과 같은 자리 — 상하 부호를 직관(양수=위)으로 뒤집으면서 유지 -->
+          <span class="num-unit"><input type="number" id="titleOffset" step="1" value="-3"><span class="unit">mm</span></span>
           <span title="양수 = 오른쪽으로, 음수 = 왼쪽으로">좌우</span>
           <span class="num-unit"><input type="number" id="titleOffsetX" step="1" value="0"><span class="unit">mm</span></span>
           <span>자간</span>
@@ -174,7 +175,7 @@
         <div class="mini">
           <span>크기</span>
           <span class="num-unit"><input type="number" id="subSize" min="1" max="20" step="0.5" value="5"><span class="unit">mm</span></span>
-          <span title="양수 = 아래로, 음수 = 위로">상하</span>
+          <span title="양수 = 위로, 음수 = 아래로">상하</span>
           <span class="num-unit"><input type="number" id="subOffset" step="1" value="0"><span class="unit">mm</span></span>
           <span title="양수 = 오른쪽으로, 음수 = 왼쪽으로">좌우</span>
           <span class="num-unit"><input type="number" id="subOffsetX" step="1" value="0"><span class="unit">mm</span></span>
