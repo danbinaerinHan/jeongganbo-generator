@@ -628,6 +628,9 @@
     flex: 1 1 auto; min-height: 0; overflow-y: auto;
     flex-direction: column; flex-wrap: nowrap;
     width: auto; margin: 0;
+    /* 내용이 길어 스크롤바가 생길 때만 열이 ~15px 넓어지며 널뛰던 것 방지 —
+       스크롤바 자리를 늘 예약(오버레이 스크롤바 환경에선 원래 자리 안 차지해 무해) */
+    scrollbar-gutter: stable;
   }
   /* 세로 배치에선 그룹 구분선도 가로줄로 눕힌다 */
   body.ribbon-left #melodyRibbon .ribbon-sep { width: auto; height: 1px; }
@@ -672,6 +675,18 @@
     background: none; border: none; box-shadow: none; border-radius: 0;
     padding: 8px 2px 2px; margin: 2px 0 4px; zoom: 0.85;
   }
+  /* 도킹된 시김새·장단·가사 창은 폭을 고정해 창을 바꿔 켤 때마다 왼쪽 열 너비가
+     널뛰지 않게 한다 — 기준: 팔레트 기호 6개가 한 줄(율명 창은 표 구조라 제외).
+     장단 칩(54px+간격 4px) 6개 = 344px에 창·팔레트 안쪽 여백을 더해 380px. */
+  body.ribbon-left #melodyRibbon > #ornWinWrap.win-open,
+  body.ribbon-left #melodyRibbon > #jangdanArea.win-open,
+  body.ribbon-left #melodyRibbon > #lyricsArea.win-open { width: 380px; }
+  /* 시김새 격자는 auto-fill이라 폭이 넓으면 한 줄 7개+로 늘어난다 — 도킹에선 6열로 못박음 */
+  body.ribbon-left #melodyRibbon #ornWinWrap .ornrow { grid-template-columns: repeat(6, 1fr); }
+  /* 가사 기호(flex 나열, 칩 44px+간격 4px)도 6개 폭에서 줄바꿈되게 최대 폭을 건다 */
+  body.ribbon-left #melodyRibbon #lyricsSymRow { max-width: 284px; }
+  /* 장단 구음(칩 54px+간격 4px)도 같은 규칙 — 6개 = 344px에서 줄바꿈 */
+  body.ribbon-left #melodyRibbon #jangdanPalette .ornrow { max-width: 344px; }
   /* 도킹된 창은 제자리에 붙어 있으니 끌기 그립을 숨긴다(끌면 relative 좌표가 어긋남) */
   body.ribbon-left #melodyRibbon .dock-panel-grip,
   body.ribbon-left #melodyRibbon .bar-grip { display: none; }
