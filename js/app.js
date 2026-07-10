@@ -3,6 +3,11 @@
   const NS = "http://www.w3.org/2000/svg";
   const CJK = "'Apple SD Gothic Neo','Noto Sans KR',sans-serif";
 
+  // 익명 사용 통계(js/analytics.js) — 래퍼가 없거나 실패해도 앱은 그대로 돌게 안전 호출만 한다
+  const track = function (name, props) {
+    try { if (window.jgbTrack) window.jgbTrack(name, props); } catch (e) { /* 통계는 앱 동작에 영향 주지 않음 */ }
+  };
+
   const PAGE_W = 210, PAGE_H = 297;
   // MARGIN_BASE: '페이지 채움' 0%일 때 기본 페이지 여백 / MARGIN_MIN: 100%여도 남기는 최소 여백(mm)
   // — 예시 악보처럼 테두리가 페이지 끝에 닿지 않고 항상 여백을 조금 둔다
@@ -900,6 +905,7 @@
         wantJangdan: $("ndWantJangdan").checked
       };
       modal.style.display = "none";
+      track("doc_new", { v: answers.beats + "beats" });
       onCreate(answers);
     };
     $("ndCancel").onclick = function () { modal.style.display = "none"; };
@@ -3404,6 +3410,7 @@
   function downloadPng() {
     const svgs = $("sheet").querySelectorAll(".page svg");
     if (!svgs.length) return;
+    track("export_png", { v: svgs.length + "p" });
     const base = $("title").value.trim() || "정간보";
     const multi = svgs.length > 1;
     svgs.forEach(function (svg, idx) {
@@ -3581,6 +3588,7 @@
     const built = buildAudioEvents();
     const events = built.events, marks = built.marks;
     if (!events.length) return;
+    track("play");
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx = ctx;
     const startAt = ctx.currentTime + 0.15;
@@ -3770,6 +3778,7 @@
   });
 
   function exportFile() {
+    track("export_file");
     const blob = new Blob([JSON.stringify(collectState(), null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -3783,6 +3792,7 @@
     fr.onload = function () {
       try {
         restoreFromState(JSON.parse(fr.result));   // 불러오기도 한 단계로 쌓여 되돌릴 수 있음
+        track("import_file");
       } catch (e) { alert("불러오기 실패: 올바른 정간보 파일이 아닙니다."); }
     };
     fr.readAsText(file);
@@ -3805,6 +3815,7 @@
       + " " + p(d.getHours()) + ":" + p(d.getMinutes());
   }
   function snapSave() {
+    track("save_snapshot");
     const list = loadSnaps();
     const now = new Date().toISOString();
     const name = $("snapName").value.trim()
@@ -4500,6 +4511,7 @@
   let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
   $("melInputSelect").addEventListener("change", function () {
     inputMode = $("melInputSelect").value === "editor" ? "editor" : "direct";
+    track("input_mode", { v: inputMode });
     applyInputMode();
     saveState();
   });
@@ -4576,7 +4588,7 @@
     }
   });
   $("btnPng").addEventListener("click", downloadPng);
-  $("btnPrint").addEventListener("click", () => window.print());
+  $("btnPrint").addEventListener("click", () => { track("export_print"); window.print(); });
   $("btnExport").addEventListener("click", exportFile);
   $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
@@ -4688,6 +4700,7 @@
   }
   function openHelpModal(opts) {
     helpOnClose = (opts && opts.onClose) || null;
+    track("help_open");
     $("helpModal").style.display = "flex";
   }
   function closeHelpModal() {
@@ -4784,6 +4797,7 @@
     $("helpModal").style.display = "none";
     $("welcomeModal").style.display = "none";
     tourOnEnd = onEnd || null;
+    track("tour_start");
     $("tourLayer").style.display = "block";
     tourGo(0, 1);
   }

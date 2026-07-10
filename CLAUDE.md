@@ -12,6 +12,9 @@
 - `index.html` (~950줄, 루트) — 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
 - `js/app.js` (~4100줄) — 단일 IIFE. **섹션 마커로 탐색**: `grep -n "// ----------" js/app.js`
   가 목차 역할을 한다 (렌더/에디터/팔레트/재생/저장/되돌리기 등 30여 섹션).
+- `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
+  호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
+  로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
 - `css/styles.css` (~940줄) — 위→아래 순서가 화면 구성 순서와 대체로 일치
   (상단바 → 사이드바 → 리본 → 독/팔레트 → 툴팁 → 인쇄).
 - `js/notes-data.js`·`js/symbols-data.js`·`js/janggu-data.js` — 생성된 데이터(데이터 URL 포함).
