@@ -573,6 +573,12 @@
                 <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
                   <input type="checkbox" id="palSound" checked> 소리
                 </label>
+                <!-- 시김새 보기(.orn-active)에서만 보이는 크기/위치 미세조정 — 직접 입력
+                     모드의 #ornEditToggle과 같은 기능(같은 ornEditMode)을 에디터 모드에서도
+                     쓸 수 있게 한다. 공유 클래스 .orn-edit-toggle로 두 버튼을 함께 동기화. -->
+                <button type="button" id="ornEditToggleEd" class="ribbon-btn tip orn-edit-toggle orn-only-tool"
+                  data-tip="켜면: 악보의 시김새 클릭 → 크기·위치 조절
+(조절 가능한 시김새 = 옅은 네모 표시)">⌖<span>크기/위치 미세조정</span></button>
                 <span class="tool-inline size-ctl" title="율명 팔레트 크기 — 시김새와 따로 조절됩니다">
                   <span class="size-lab">크기</span>
                   <button type="button" id="palSizeDown">−</button>
@@ -683,7 +689,7 @@
           </span>
           <span class="pal-top-right">
             <div class="orn-win-modes">
-              <button type="button" id="ornEditToggle" class="ribbon-btn tip"
+              <button type="button" id="ornEditToggle" class="ribbon-btn tip orn-edit-toggle"
                 data-tip="켜면: 악보의 시김새 클릭 → 크기·위치 조절
 (조절 가능한 시김새 = 옅은 네모 표시)">⌖<span>크기/위치 미세조정</span></button>
               <button type="button" id="ornMapToggle" class="ribbon-btn tip"

@@ -293,6 +293,11 @@
   /* 입력·소리 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
   .pal-head .sound-tool, .pal-head .insert-tool { font-weight: 600; }
   #paletteCol.orn-active .sound-tool, #paletteCol.orn-active .insert-tool { display: none; }
+  /* 크기/위치 미세조정(에디터 모드) — 시김새 보기(.orn-active)에서만 보인다.
+     그 밖(율명 보기)에선 숨겨 자리를 차지하지 않게. #paletteCol을 앞에 붙여
+     특이도를 올린다 — 안 그러면 뒤에 오는 .ribbon-btn{display:flex}가 이겨 늘 보인다. */
+  #paletteCol .orn-only-tool { display: none; }
+  #paletteCol.orn-active .orn-only-tool { display: inline-flex; }
   /* 율명 전용 설정 묶음(표·건반/조/표기/황음고) — 옅은 상자로 한 덩어리임을 표시.
      입력·소리·크기 ±는 팔레트 공통이라 이 묶음 밖(첫 줄 오른쪽)에 따로 둔다.
      간격·패딩은 기본 폭(≈395px)에서 네 컨트롤이 한 줄에 들어가게 빠듯하게. */
@@ -709,19 +714,19 @@
   .mel-btn:disabled { opacity: .45; cursor: default; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
      아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornMapToggle, #rangeClearToggle, #winToggleCellStyle {
+  #ornEditToggle, #ornEditToggleEd, #ornMapToggle, #rangeClearToggle, #winToggleCellStyle {
                    flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: var(--accent-soft); font-weight: 700; }
-  #ornEditToggle span, #ornMapToggle span, #rangeClearToggle span, #winToggleCellStyle span {
+  #ornEditToggle span, #ornEditToggleEd span, #ornMapToggle span, #rangeClearToggle span, #winToggleCellStyle span {
                    font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornMapToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
+  #ornEditToggle:hover, #ornEditToggleEd:hover, #ornMapToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
                    background: var(--accent-soft); }
-  #ornEditToggle.on, #ornMapToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
+  #ornEditToggle.on, #ornEditToggleEd.on, #ornMapToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
                    background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornMapToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
+  #ornEditToggle.on span, #ornEditToggleEd.on span, #ornMapToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
                    color: #fff; }
   #ornMapToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
                    opacity: .4; cursor: default; background: var(--accent-soft); color: var(--accent); }

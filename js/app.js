@@ -1678,6 +1678,7 @@
 
   // 커서 위치에 토큰(율명 텍스트) 삽입
   function insertToken(txt) {
+    exitOrnEditMode();   // 팔레트로 뭔가를 넣는 건 '다른 입력' — 미세조정 모드를 끈다
     if (cellEditInput && cellEditDomain === "mel") {   // 선율 정간 인라인 편집 중이면 그 칸에 삽입
       const inp = cellEditInput;
       const s = inp.selectionStart != null ? inp.selectionStart : inp.value.length;
@@ -3956,6 +3957,7 @@
   // 팔레트 보기 전환 (율명 / 시김새)
   document.querySelectorAll(".pal-view").forEach(function (b) {
     b.addEventListener("click", function () {
+      exitOrnEditMode();   // 율명/시김새 보기를 바꾸는 것도 '다른 조작' — 미세조정 끔
       palView = b.getAttribute("data-view");
       document.querySelectorAll(".pal-view").forEach(function (x) { x.classList.toggle("active", x === b); });
       buildPalette();
@@ -4063,6 +4065,7 @@
   // 직접 입력 모드에선 이 탭이 숨고 대신 아래 .win-toggle로 여러 도구창을 동시에 연다.
   document.querySelectorAll(".domain-tab").forEach(function (b) {
     b.addEventListener("click", function () {
+      exitOrnEditMode();   // 선율/장단/가사/… 탭 전환 시 미세조정 끔
       const panelId = b.getAttribute("data-panel");
       document.querySelectorAll(".domain-tab").forEach(function (x) {
         x.classList.toggle("active", x.getAttribute("data-panel") === panelId);
@@ -4089,6 +4092,7 @@
   }
   document.querySelectorAll(".win-toggle").forEach(function (b) {
     b.addEventListener("click", function () {
+      exitOrnEditMode();   // 도구창(율명/시김새/장단/…) 전환 시 미세조정 끔
       const tid = b.getAttribute("data-target");
       const t = $(tid);
       activateDirectPanel(t && t.classList.contains("win-open") ? null : tid);
@@ -4270,12 +4274,22 @@
   attachGakGridGuard("lyrics", syncLyricsFromCursor);
   $("lyricsReset").addEventListener("click", resetLyrics);
 
-  // 시김새 수정 모드 토글 + 조정 패널
-  $("ornEditToggle").addEventListener("click", function () {
-    ornEditMode = !ornEditMode;
-    $("ornEditToggle").classList.toggle("on", ornEditMode);
+  // 시김새 크기/위치 미세조정 모드 — 직접 입력 모드(#ornEditToggle)와 에디터 모드
+  // (#ornEditToggleEd) 두 버튼이 같은 ornEditMode를 공유한다. 어느 쪽을 눌러도 두 버튼의
+  // 켜짐 표시(.on)를 함께 맞춘다.
+  function setOrnEditMode(on) {
+    ornEditMode = on;
+    document.querySelectorAll(".orn-edit-toggle").forEach(function (b) {
+      b.classList.toggle("on", on);
+    });
     if (!ornEditMode) { ornSel = null; hideOrnPanel(); }
     render();
+  }
+  // 다른 입력 동작(팔레트 클릭·탭 전환 등)을 하면 미세조정 모드를 저절로 끈다 —
+  // 켜둔 걸 깜빡하고 엉뚱한 데를 만지는 실수를 막는다. 켜져 있지 않으면 아무 일도 안 함.
+  function exitOrnEditMode() { if (ornEditMode) setOrnEditMode(false); }
+  document.querySelectorAll(".orn-edit-toggle").forEach(function (b) {
+    b.addEventListener("click", function () { setOrnEditMode(!ornEditMode); });
   });
   // 시김새 숫자 단축키(1~0)는 직접 입력 모드에서 늘 살아 있다(별도 켜기 없음) —
   // 이 버튼은 번호마다 어떤 시김새를 배정할지 바꾸는 줄(#ornAddMapBar)만 열고 닫는다.
@@ -4510,6 +4524,7 @@
   }
   let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
   $("melInputSelect").addEventListener("change", function () {
+    exitOrnEditMode();   // 입력 방식(에디터↔직접) 전환 시 미세조정 끔
     inputMode = $("melInputSelect").value === "editor" ? "editor" : "direct";
     track("input_mode", { v: inputMode });
     applyInputMode();
