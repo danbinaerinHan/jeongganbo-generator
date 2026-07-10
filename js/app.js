@@ -4608,6 +4608,15 @@
   });
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => { track("export_print"); window.print(); });
+  // 인쇄 → 'PDF로 저장'의 기본 파일명은 탭 제목(document.title)에서 오므로, 인쇄하는
+  // 동안만 곡 제목으로 바꿨다가 되돌린다. beforeprint/afterprint 이벤트를 쓰므로
+  // 인쇄 버튼뿐 아니라 브라우저 메뉴·Cmd/Ctrl+P로 인쇄할 때도 똑같이 적용된다.
+  const APP_DOC_TITLE = document.title;
+  window.addEventListener("beforeprint", function () {
+    const t = $("title").value.trim();
+    if (t) document.title = t;
+  });
+  window.addEventListener("afterprint", function () { document.title = APP_DOC_TITLE; });
   $("btnExport").addEventListener("click", exportFile);
   $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
