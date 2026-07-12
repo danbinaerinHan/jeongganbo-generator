@@ -32,6 +32,7 @@
   let playHi = [];                          // 페이지별 재생 하이라이트 사각형
   let pageSvgs = [];                        // 페이지별 svg
   let cellEditor = null, cellEditInput = null;  // 정간 옆 직접 입력 카드
+  let yulAutoOpened = false;                // 첫 정간 입력 때 율명 팔레트 1회 자동 열기용
   let cellEditDomain = null;                // 카드가 선율/장단/가사 중 어디서 열렸는지("mel"/"jd"/"ly")
   let cellEditGi = -1, cellEditCi = -1;     // 카드가 열려 있는 정간 좌표 (전역 커서와 별개로 기억)
   let keepCellEditor = false;               // true면 render()가 직접 입력 카드를 닫지 않음(실시간 반영용)
@@ -1238,6 +1239,13 @@
     const dom = CELL_EDIT[domain];
     const cg = dom.geom(gi, ci);
     if (!cg) return;
+    // 선율 정간을 클릭해 입력을 '맨 처음' 시작할 때 한 번만 율명 팔레트를 자동으로
+    // 열어준다(새로고침 기준 1회, 다른 도구창이 이미 열려 있으면 건드리지 않음).
+    // 그 뒤로는 사용자의 선택 존중 — 닫으면(X) 닫힌 대로, 시김새를 열면 연 대로.
+    if (domain === "mel" && !yulAutoOpened) {
+      yulAutoOpened = true;
+      if (!document.querySelector(".direct-win.win-open")) activateDirectPanel("paletteCol");
+    }
     const svg = pageSvgs[cg.page]; if (!svg) return;
     // 에디터 커서도 같은 정간으로 — 각 추가·삭제가 늘 클릭한 각 기준으로 동작하게
     dom.setCursor(gi, ci, false);
@@ -4591,7 +4599,7 @@
   // 왼쪽 도킹에선 도구창(.direct-win)도 악보 위에 띄우는 대신 #leftDock 안(기능바 아래)에
   // 도킹한다 — dockDirectWins()가 열린 창을 옮기고, 닫히거나 위쪽 배치로 돌아가면
   // 원래 자리(placeholder 주석 노드)로 되돌린다.
-  let ribbonPos = "top";   // "top" | "left"
+  let ribbonPos = "left";   // "top" | "left" — 직접 입력 기본은 왼쪽 세로 도킹(저장된 문서는 저장값 따름)
   const DIRECT_WIN_HOME = new Map();   // 창 → 원래 자리 표시용 주석 노드
   document.querySelectorAll(".direct-win").forEach(function (w) {
     const ph = document.createComment("win-home:" + w.id);
