@@ -3277,9 +3277,10 @@
           const subCols = Math.max(1, subParts.length);
           const subFont = Math.min(desiredSub * scale,
             subCols > 1 ? panelW * 0.92 / (1.18 * subCols) : panelW * 0.72);
-          // tt.endY에는 제목의 상하 이동이 포함돼 있으므로 그만큼 되돌린다 —
-          // 제목 상하는 제목만, 부제 상하는 부제만 움직이게(따로 조절)
-          const subStart = tt.endY - desiredTitleOff * scale + titleFont * 0.5 + subFont + desiredSubOff * scale;
+          // 부제 기준점은 '상황에 맞게' — 제목이 부제 쪽(아래)으로 내려오면 겹치지 않게
+          // 따라 밀리고, 위로 올라가면 따라가지 않고 제자리(따로 조절 유지).
+          // tt.endY에는 제목 상하 이동이 포함돼 있으므로 위로 간 만큼만 되돌린다.
+          const subStart = tt.endY - Math.min(desiredTitleOff * scale, 0) + titleFont * 0.5 + subFont + desiredSubOff * scale;
           if (subStart < pBottom) {
             const st = verticalTextML(cx + desiredSubOffX * scale, subStart, subTxt, subFont, 400, "#333", titleFontFam, desiredSubSpacing * scale);
             svg.appendChild(st.g);
@@ -3308,9 +3309,10 @@
           svg.appendChild(t);
         });
         if (subParts.length) {
-          // titleBase의 제목 상하 이동분은 빼고 시작 — 부제는 부제 상하로만 움직인다
+          // 부제 기준점은 '상황에 맞게' — 제목이 아래(부제 쪽)로 내려오면 겹치지 않게
+          // 따라 밀리고, 위로 올라가면 따라가지 않는다(부제 상하는 부제만 움직임).
           const titleLastY = titleBase + (Math.max(1, titleParts.length) - 1) * titleLineH;
-          const subFirstY = titleLastY - desiredTitleOff * scale
+          const subFirstY = titleLastY - Math.min(desiredTitleOff * scale, 0)
             + titleTopSubFont * 1.45 + desiredSubOff * scale;
           subParts.forEach(function (ln, i) {
             const st = el("text", { x: cx + desiredSubOffX * scale, y: subFirstY + i * subLineH,
