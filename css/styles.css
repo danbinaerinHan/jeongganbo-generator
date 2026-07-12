@@ -451,9 +451,22 @@
                      transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%;
                      background: transparent; }
   body.want-jangdan .rail-btn[data-panel="jangdanArea"]::after,
-  body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after { background: #3f9d63; }
+  body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after,
+  body.has-texts .rail-btn[data-panel="textArea"]::after { background: #3f9d63; }
   body.want-jangdan .rail-btn.active[data-panel="jangdanArea"]::after,
-  body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after { background: var(--panel); }
+  body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after,
+  body.has-texts .rail-btn.active[data-panel="textArea"]::after { background: var(--panel); }
+  /* 직접 입력 '입력' 그룹 버튼에도 같은 표시 — 문서에서 실제로 쓰는 레이어에 초록 점
+     (장단·가사 = 스위치 켜짐, 텍스트 = 주석이 하나라도 있음). 열린 창(.on) 위에선 흰 점 */
+  .win-toggle { position: relative; }
+  .win-toggle::after { content: ""; position: absolute; top: 4px; right: 5px;
+                       width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  body.want-jangdan #winToggleJangdan::after,
+  body.want-lyrics #winToggleLyrics::after,
+  body.has-texts #winToggleText::after { background: #3f9d63; }
+  body.want-jangdan #winToggleJangdan.on::after,
+  body.want-lyrics #winToggleLyrics.on::after,
+  body.has-texts #winToggleText.on::after { background: #fff; }
   /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
   .rail-shortcuts-wrap { display: block; }
   .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;

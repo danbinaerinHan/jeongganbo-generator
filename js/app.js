@@ -2751,6 +2751,8 @@
     document.body.classList.toggle("want-jangdan", wantJangdan);
     const wantLyrics = $("wantLyrics").checked;
     document.body.classList.toggle("want-lyrics", wantLyrics);
+    // 텍스트(자유 주석)는 켜짐 스위치가 없어 '하나라도 있음'을 레이어 사용 표시(초록 점)에 쓴다
+    document.body.classList.toggle("has-texts", customTexts.length > 0);
     const wantTempo = $("wantTempo").checked;
     const gakNumMode = $("gakNumMode").value;   // 각 번호: none | screen(화면에만) | all(출력 포함)
     document.body.classList.toggle("gaknum-screen", gakNumMode === "screen");
