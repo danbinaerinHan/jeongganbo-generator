@@ -2852,8 +2852,9 @@
     if (edPage >= pages.length) edPage = pages.length - 1;
     updateEdPagers();
 
-    // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨
-    const desiredLyGap = wantLyrics ? desiredGapBase * 0.18 : 0;
+    // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨.
+    // 가사 칸은 정간(각) 오른쪽에 딱 붙인다(간격 0) — 남는 간격은 전부 다음 각과의 사이로
+    const desiredLyGap = 0;
     const desiredLyW = wantLyrics ? desiredCell * 0.4 : 0;
     const desiredLyExtra = desiredLyGap + desiredLyW;
     // 가사 줄은 각 사이 간격 '안'에 들어간다 — 가사를 켜도 (남는 간격 + 가사 줄) 합이
