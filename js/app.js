@@ -130,6 +130,25 @@
     return { g, endY: y };
   }
 
+  // 제목·부제용 세로쓰기 여러 줄 — '//'가 줄바꿈. 전통 세로쓰기 흐름대로 첫 줄이 맨
+  // 오른쪽, 다음 줄이 그 왼쪽으로 나가며, 줄 묶음 전체가 cx를 중심으로 좌우 대칭이 된다.
+  function verticalTextML(cx, startY, str, font, weight, color, family, spacing) {
+    const parts = String(str).split("//").map(function (s) { return s.trim(); }).filter(Boolean);
+    if (parts.length <= 1) {
+      return verticalText(cx, startY, parts[0] || "", font, weight, color, family, spacing);
+    }
+    const colGap = font * 1.18;
+    const g = el("g", {});
+    let endY = startY;
+    parts.forEach(function (part, i) {
+      const x = cx + ((parts.length - 1) / 2 - i) * colGap;
+      const tt = verticalText(x, startY, part, font, weight, color, family, spacing);
+      g.appendChild(tt.g);
+      if (tt.endY > endY) endY = tt.endY;
+    });
+    return { g, endY: endY };
+  }
+
   // 가로쓰기 자유 텍스트 — verticalText와 같은 꼴로 {g} 반환 (cx가 가로 중심)
   function horizontalText(cx, y, str, font, weight, color, family, spacing) {
     const g = el("g", {});
@@ -2707,6 +2726,9 @@
 
     const titleTxt = $("title").value.trim();
     const subTxt = $("subtitle").value.trim();
+    // '//' = 줄바꿈 — 세로 칸 제목은 새 세로줄(오른쪽→왼쪽), 가로 제목은 아랫줄
+    const titleParts = titleTxt ? titleTxt.split("//").map(function (s) { return s.trim(); }).filter(Boolean) : [];
+    const subParts = subTxt ? subTxt.split("//").map(function (s) { return s.trim(); }).filter(Boolean) : [];
     const wantHeader = $("header").checked;
     const wantFrame = $("frame").checked;
     const wantJangdan = $("wantJangdan").checked;
@@ -2858,8 +2880,11 @@
     // 가로 제목(맨 위 밴드 위 중앙) — 첫 페이지 위쪽에 제목(+부제) 높이를 예약한다
     const titleTopFont = desiredTitle * scale;
     const titleTopSubFont = desiredSub * scale;
+    // '//' 줄바꿈으로 늘어난 줄 수만큼 예약 높이도 같이 늘린다 — 안 그러면 격자와 겹침
+    const titleTopExtraH = Math.max(0, titleParts.length - 1) * titleTopFont * 1.15
+      + Math.max(0, subParts.length - 1) * titleTopSubFont * 1.2;
     const titleTopH = titleTopMode
-      ? (titleTopFont * 1.35 + (subTxt ? titleTopSubFont * 1.5 : 0)) : 0;
+      ? (titleTopFont * 1.35 + (subTxt ? titleTopSubFont * 1.5 : 0) + titleTopExtraH) : 0;
     // 가로(폭)는 이미 꽉 차서 더 못 키워도, 세로에 남는 여유는 '페이지 채움' 비율만큼
     // (위 여백 + 밴드 사이 간격들 + 아래 여백)에 고르게 나눠 넣는다 — 밴드 사이만
     // 무작정 벌어지지 않고 전체가 비율 있게 넓어진다. 남은 몫은 가운데 정렬 여백이 된다.
@@ -3105,6 +3130,13 @@
           if (wantJangdan && melIdx === 0) {
             // 가사가 켜져 있으면 각들의 선 끝(가사 자리만큼 안쪽)에 맞춰 장단 칸도 같이 당김
             const jdRight = musicRightEdge - (wantLyrics ? lyExtraFull : 0), jdLeft = jdRight - jdW;
+            // 어느 칸이 장단인지 화면에서만 알려주는 회색 라벨 — .no-print라
+            // 인쇄에서 숨고 PNG 저장에서도 빠진다(둘 다 .no-print를 제거함)
+            const jdLabel = el("text", { x: (jdLeft + jdRight) / 2, y: gridTop - cell * 0.22,
+              "text-anchor": "middle", "font-size": cell * 0.34, "font-family": CJK,
+              "font-weight": 600, fill: "#9a978f", class: "no-print" });
+            jdLabel.textContent = "장단";
+            svg.appendChild(jdLabel);
             // 장단 에디터 커서 하이라이트용 칸 좌표 (내용 유무와 무관하게 전체 박)
             for (let j = 0; j < beats; j++) {
               jdGeom[j] = { page: pageIdx, x: jdLeft, y: gridTop + j * cell, w: jdW, h: cell };
@@ -3225,17 +3257,23 @@
         const pBottom = wantFrame ? boxBottom
           : gridY + (usedBands - 1) * (bandH + bandGap) + headH + beats * cell;
         const cx = (panelX + panelRight) / 2;
-        const titleFont = Math.min(desiredTitle * scale, (panelRight - panelX) * 0.78);
+        const panelW = panelRight - panelX;
+        // '//'로 여러 세로줄이면 줄 묶음 전체가 제목 칸 폭에 들어가게 글자를 줄인다
+        const titleCols = Math.max(1, titleParts.length);
+        const titleFont = Math.min(desiredTitle * scale,
+          titleCols > 1 ? panelW * 0.92 / (1.18 * titleCols) : panelW * 0.78);
         const startY = gridY + headH + titleFont * 1.05 + desiredTitleOff * scale;
-        const tt = verticalText(cx + desiredTitleOffX * scale, startY, titleTxt, titleFont, 700, "#000", titleFontFam, desiredTitleSpacing * scale);
+        const tt = verticalTextML(cx + desiredTitleOffX * scale, startY, titleTxt, titleFont, 700, "#000", titleFontFam, desiredTitleSpacing * scale);
         svg.appendChild(tt.g);
         if (subTxt) {
-          const subFont = Math.min(desiredSub * scale, (panelRight - panelX) * 0.72);
+          const subCols = Math.max(1, subParts.length);
+          const subFont = Math.min(desiredSub * scale,
+            subCols > 1 ? panelW * 0.92 / (1.18 * subCols) : panelW * 0.72);
           // tt.endY에는 제목의 상하 이동이 포함돼 있으므로 그만큼 되돌린다 —
           // 제목 상하는 제목만, 부제 상하는 부제만 움직이게(따로 조절)
           const subStart = tt.endY - desiredTitleOff * scale + titleFont * 0.5 + subFont + desiredSubOff * scale;
           if (subStart < pBottom) {
-            const st = verticalText(cx + desiredSubOffX * scale, subStart, subTxt, subFont, 400, "#333", titleFontFam, desiredSubSpacing * scale);
+            const st = verticalTextML(cx + desiredSubOffX * scale, subStart, subTxt, subFont, 400, "#333", titleFontFam, desiredSubSpacing * scale);
             svg.appendChild(st.g);
           }
         }
@@ -3245,21 +3283,34 @@
       if (titleTopMode && pageIdx === 0) {
         const cx = gridX + visibleW / 2;
         const baseBottom = gridY - INNER_PAD - pageTempoH;
-        const titleBase = baseBottom - (subTxt ? titleTopSubFont * 1.5 : 0)
+        // '//' 줄바꿈 — 제목·부제 각각 여러 가로줄로 쌓는다(첫 줄이 맨 위).
+        // 격자 위 공간에 아래 기준으로 붙이므로 줄 수만큼 시작점을 위로 올린다.
+        const titleLineH = titleTopFont * 1.15;
+        const subLineH = titleTopSubFont * 1.2;
+        const subBlockH = subParts.length
+          ? titleTopSubFont * 1.5 + (subParts.length - 1) * subLineH : 0;
+        const titleBase = baseBottom - subBlockH
+          - (Math.max(1, titleParts.length) - 1) * titleLineH
           - titleTopFont * 0.3 + desiredTitleOff * scale;
-        const t = el("text", { x: cx + desiredTitleOffX * scale, y: titleBase, "text-anchor": "middle",
-          "font-size": titleTopFont, "font-family": titleFontFam, "font-weight": 700, fill: "#000",
-          "letter-spacing": desiredTitleSpacing * scale });
-        t.textContent = titleTxt;
-        svg.appendChild(t);
-        if (subTxt) {
+        titleParts.forEach(function (ln, i) {
+          const t = el("text", { x: cx + desiredTitleOffX * scale, y: titleBase + i * titleLineH,
+            "text-anchor": "middle", "font-size": titleTopFont, "font-family": titleFontFam,
+            "font-weight": 700, fill: "#000", "letter-spacing": desiredTitleSpacing * scale });
+          t.textContent = ln;
+          svg.appendChild(t);
+        });
+        if (subParts.length) {
           // titleBase의 제목 상하 이동분은 빼고 시작 — 부제는 부제 상하로만 움직인다
-          const st = el("text", { x: cx + desiredSubOffX * scale,
-            y: titleBase - desiredTitleOff * scale + titleTopSubFont * 1.45 + desiredSubOff * scale,
-            "text-anchor": "middle", "font-size": titleTopSubFont, "font-family": titleFontFam,
-            "font-weight": 400, fill: "#333", "letter-spacing": desiredSubSpacing * scale });
-          st.textContent = subTxt;
-          svg.appendChild(st);
+          const titleLastY = titleBase + (Math.max(1, titleParts.length) - 1) * titleLineH;
+          const subFirstY = titleLastY - desiredTitleOff * scale
+            + titleTopSubFont * 1.45 + desiredSubOff * scale;
+          subParts.forEach(function (ln, i) {
+            const st = el("text", { x: cx + desiredSubOffX * scale, y: subFirstY + i * subLineH,
+              "text-anchor": "middle", "font-size": titleTopSubFont, "font-family": titleFontFam,
+              "font-weight": 400, fill: "#333", "letter-spacing": desiredSubSpacing * scale });
+            st.textContent = ln;
+            svg.appendChild(st);
+          });
         }
       }
 
