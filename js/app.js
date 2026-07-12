@@ -2758,9 +2758,9 @@
     lyricsScaleCur = Math.max(0.5, parseFloat($("lyricsScale").value) || 1);
     $("lyricsScaleVal").textContent = lyricsScaleCur.toFixed(2).replace(/0$/, "") + "×";
     const desiredCell = Math.max(2, parseFloat($("cellSize").value) || 11) * sizeScale;
-    // 가사를 켜면 각 오른쪽에 가사 칸이 붙어 이미 사이가 벌어지므로, 원래 각 간격은 0.7배로 줄인다
-    const desiredGap = Math.max(0, parseFloat($("gakGap").value) || 0) * sizeScale
-      * (wantLyrics ? 0.7 : 1);
+    // 각 사이 간격의 '총량' — 가사를 켜면 가사 줄이 이 간격 안에 들어가고(아래 desiredGap
+    // 계산에서 가사 줄 폭만큼 상쇄), 각 기둥 사이 거리는 가사 여부와 무관하게 유지된다
+    const desiredGapBase = Math.max(0, parseFloat($("gakGap").value) || 0) * sizeScale;
     const desiredBandGap = Math.max(0, parseFloat($("bandGap").value) || 0) * sizeScale;
     const desiredTitle = Math.max(1, parseFloat($("titleSize").value) || 10);
     // 상하는 직관대로 '양수 = 위로' — 렌더 좌표는 아래가 +라서 여기서 부호를 뒤집는다
@@ -2847,9 +2847,13 @@
     updateEdPagers();
 
     // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨
-    const desiredLyGap = wantLyrics ? desiredGap * 0.18 : 0;
+    const desiredLyGap = wantLyrics ? desiredGapBase * 0.18 : 0;
     const desiredLyW = wantLyrics ? desiredCell * 0.4 : 0;
     const desiredLyExtra = desiredLyGap + desiredLyW;
+    // 가사 줄은 각 사이 간격 '안'에 들어간다 — 가사를 켜도 (남는 간격 + 가사 줄) 합이
+    // 원래 간격과 같아 각 기둥 위치·전체 폭이 안 바뀐다. 간격이 가사 줄보다 좁으면
+    // 겹치지 않게 0까지만 줄인다(그때만 전체가 가사 줄 몫만큼 넓어짐).
+    const desiredGap = wantLyrics ? Math.max(0, desiredGapBase - desiredLyExtra) : desiredGapBase;
     // 모든 페이지 공통 스케일(가장 꽉 찬 페이지 기준) → 페이지끼리 크기 일치.
     // 폭은 밴드마다 실제로 그려지는 구성(각 + 각별 가사 칸 + 장단 칸(가사 자리 포함) +
     // 제목 칸)을 그대로 합산해 가장 넓은 밴드를 기준으로 잡는다 — 예전 근사식은
