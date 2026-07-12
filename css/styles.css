@@ -683,6 +683,10 @@
   body.ribbon-left #melodyRibbon > #lyricsArea.win-open { width: 380px; }
   /* 시김새 격자는 auto-fill이라 폭이 넓으면 한 줄 7개+로 늘어난다 — 도킹에선 6열로 못박음 */
   body.ribbon-left #melodyRibbon #ornWinWrap .ornrow { grid-template-columns: repeat(6, 1fr); }
+  /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,
+     커진 표는 #paletteWrap 안에서 가로 스크롤로 본다(세로는 열 전체 스크롤에 맡김) */
+  body.ribbon-left #melodyRibbon > #paletteCol.win-open { width: 450px; }
+  body.ribbon-left #melodyRibbon #paletteWrap { overflow-x: auto; }
   /* 가사 기호(flex 나열, 칩 44px+간격 4px)도 6개 폭에서 줄바꿈되게 최대 폭을 건다 */
   body.ribbon-left #melodyRibbon #lyricsSymRow { max-width: 284px; }
   /* 장단 구음(칩 54px+간격 4px)도 같은 규칙 — 6개 = 344px에서 줄바꿈 */
