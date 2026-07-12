@@ -1767,7 +1767,12 @@
   // ---------- 가사 기호 팔레트 (special SVG) ----------
   // 클릭하면 편집 중인 가사 칸/커서에 {기호} 토큰이 들어가고, 악보엔 이미지로 표시된다.
   // stem = symbols-data.js(SYM_DATA)의 키(= assets/symbol_svgs/special 파일명).
-  const LYRIC_SYMS = ["가로막대", "세로막대", "늘임표", "뜰", "모지", "장지", "튕김", "연튕김"];
+  const LYRIC_SYMS = ["가로막대", "세로막대", "늘임표", "뜰", "모지", "장지", "튕김", "연튕김",
+                      "전성", "퇴성", "추성"];
+  // 시김새에서 빌려 쓰는 기호 — 가사 토큰은 한글 이름({전성} 꼴)을 쓰고,
+  // 그림은 시김새 SVG(영문 stem)를 그대로 재사용한다
+  const LYRIC_SYM_ALIAS = { "전성": "roll-str", "퇴성": "bend-down", "추성": "bend-up" };
+  function lyricSymStem(name) { return LYRIC_SYM_ALIAS[name] || name; }
   // 가사 칸 이미지 크기 배율 — 막대류는 0.8, 나머지(가야금주법·늘임표)는 0.4로 줄여 그린다.
   const LYRIC_SYM_SCALE = { "가로막대": 0.8, "세로막대": 0.8 };
   const LYRIC_SYM_SCALE_DEFAULT = 0.4;
@@ -1781,7 +1786,7 @@
       item.className = "lsp-btn";
       item.title = stem;
       item.dataset.sym = stem;
-      const url = symURL(stem);
+      const url = symURL(lyricSymStem(stem));
       if (url) {
         const img = document.createElement("img");
         img.src = url; img.alt = stem;
@@ -2223,12 +2228,14 @@
     const rowH = cellH / rows.length;
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
-      // {기호} 토큰이면 글자 대신 special 이미지를 한 글자처럼 그린다(원본 비율 유지).
+      // {기호} 토큰이면 글자 대신 이미지를 한 글자처럼 그린다(원본 비율 유지).
+      // 한글 별칭(전성·퇴성·추성)은 시김새 SVG stem으로 바꿔서 찾는다.
       const symM = /^\{(.+)\}$/.exec(str);
-      if (symM && symURL(symM[1])) {
+      const symStem = symM ? lyricSymStem(symM[1]) : null;
+      if (symM && symURL(symStem)) {
         const sc = (symM[1] in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[symM[1]] : LYRIC_SYM_SCALE_DEFAULT;
         const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
-        drawSymImageRect(svg, symM[1], x + width / 2 - bw / 2, centers[i] - bh / 2, bw, bh);
+        drawSymImageRect(svg, symStem, x + width / 2 - bw / 2, centers[i] - bh / 2, bw, bh);
         return;
       }
       // 한 행에 여러 글자('더지' 등)면 옆을 침범하지 않게 맞추되, 글자 크기는 조금만
