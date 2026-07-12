@@ -192,7 +192,8 @@
     let titleGak = 0;
     // 가로(맨 위) 제목은 오른쪽 제목 칸을 쓰지 않으므로 각 자리를 차지하지 않는다
     if ($("title").value.trim() && $("titleLayout").value !== "top") {
-      titleGak = gakPerRow >= 6 ? 2 : 1;
+      // 칸 폭 옵션 — 자동(6각 이상이면 2각) / 좁게(1각)
+      titleGak = $("titleGakWidth").value === "1" ? 1 : (gakPerRow >= 6 ? 2 : 1);
       if (gakPerRow - titleGak < 1) titleGak = Math.max(0, gakPerRow - 1);
     }
     // 제목 칸은 첫 페이지 전체 높이를 차지하므로 모든 밴드가 제목 자리만큼 좁아지고,
@@ -2795,8 +2796,13 @@
     const titleTopMode = !!titleTxt && $("titleLayout").value === "top";
     let titleGak = 0;
     if (titleTxt && !titleTopMode) {
-      titleGak = gakPerRow >= 6 ? 2 : 1;
+      // 칸 폭 옵션 — 자동(6각 이상이면 2각) / 좁게(1각). formStructure()와 같은 규칙
+      titleGak = $("titleGakWidth").value === "1" ? 1 : (gakPerRow >= 6 ? 2 : 1);
       if (gakPerRow - titleGak < 1) titleGak = Math.max(0, gakPerRow - 1);
+    }
+    // 칸 폭 옵션은 세로 칸 제목에만 의미 — '가로 위'를 고르면 컨트롤을 숨긴다
+    if ($("titleGakWidthWrap")) {
+      $("titleGakWidthWrap").style.display = $("titleLayout").value === "top" ? "none" : "";
     }
 
     // 멜로디(내용) 파싱 — 에디터 조각이 아니라 곡 전체 원본을 그린다
@@ -3694,7 +3700,7 @@
   const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
-    "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout",
+    "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode"];
   const LS_KEY = "jgb_state_v1";
 
@@ -4010,7 +4016,7 @@
    "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
    "subSize", "subOffset", "subOffsetX", "subSpacing"].forEach(id => wireConfirm($(id), render));
   // 체크박스·셀렉트·제목 텍스트는 예전처럼 즉시 반영
-  ["stackAuto", "title", "titleLayout", "wantJangdan", "wantLyrics"].forEach(id => {
+  ["stackAuto", "title", "titleLayout", "titleGakWidth", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
     $(id).addEventListener("change", onFormChange);
   });

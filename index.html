@@ -167,6 +167,13 @@
           <span class="num-unit"><input type="number" id="titleOffsetX" step="1" value="0"><span class="unit">mm</span></span>
           <span>자간</span>
           <span class="num-unit"><input type="number" id="titleSpacing" min="-5" max="30" step="0.5" value="0"><span class="unit">mm</span></span>
+          <!-- 칸 폭 — 세로 칸 제목이 첫 페이지에서 차지하는 각 수. '가로 위' 제목엔 의미가
+               없어 render()가 숨긴다. 각 단위로만 움직여 격자 정렬이 유지된다. -->
+          <span class="tool-inline" id="titleGakWidthWrap" title="세로 칸 제목이 차지하는 각 수 — 좁게(1각)를 고르면 그 자리에 각이 하나 더 들어갑니다">칸 폭
+            <select id="titleGakWidth">
+              <option value="auto" selected>자동</option>
+              <option value="1">좁게(1각)</option>
+            </select></span>
         </div>
       </div>
       <div class="field">
@@ -241,7 +248,7 @@
       <div class="field">
         <label for="gakPerRow">한 줄에 놓을 각 수</label>
         <input type="number" id="gakPerRow" min="1" max="40" value="10">
-        <div class="hint">• 제목을 '세로 칸'일 경우 첫 페이지에서 제목이 각 2개 자리를 차지합니다.</div>
+        <div class="hint">• 제목을 '세로 칸'일 경우 첫 페이지에서 제목이 각 2개 자리(자동, 각 수가 적으면 1개)를 차지합니다. '칸 폭: 좁게'를 고르면 1각만 씁니다.</div>
       </div>
 
       <div class="field">
