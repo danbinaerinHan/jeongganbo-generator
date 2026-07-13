@@ -1257,7 +1257,7 @@
     body { display: block; height: auto; overflow: visible; background: #fff; }
     /* 직접 입력 모드에선 기능바(#melodyRibbon)가 #leftDock 안에 있어(왼쪽 도킹이면 왼쪽 세로 열)
        인쇄 첫 장에 사이드바처럼 찍혔다 — #leftDock·기능바·뜬 도구창까지 모두 숨긴다. */
-    #topBar, #sidebar, #editorDock, #leftDock, #melodyRibbon, .direct-win,
+    #topBar, #sidebar, #editorDock, #leftDock, #leftDockResizer, #melodyRibbon, .direct-win,
     .float-bar, .side-open, #helpModal, #welcomeModal, #tourLayer { display: none !important; }
     #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
     #sheet { transform: none !important; display: block; gap: 0; }
