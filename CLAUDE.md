@@ -47,6 +47,11 @@
 - 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
   머리줄(.melody-head) 오른쪽 끝(`.mh-right`/`.mh-reset`)으로 이전. 끌기 그립도 머리줄 안
   `.bar-grip.dock-panel-grip`으로 옮겨 플로팅 끌기 유지(attachBarDrag가 첫 .bar-grip 사용).
+- 각 이름(#gakNameArea, 입력 그룹 '章 각 이름'): 특정 각 '위'에 붙는 라벨(대여음·1장 등).
+  데이터는 gakNames(각 번호 0부터 → 원문), 표기만 한자 변환(gakNameDisplay: N장→N章 +
+  GAK_NAME_HANJA 사전). 각 삽입/삭제 시 shiftGakNames로 같이 밀림(가사 밀기와 같은 규칙).
+  악보에서 각 위 빈 곳 클릭 → 입력 카드(openGakNameCard), 도구창엔 번호+이름 목록.
+  위 공간이 좁으면 글자 자동 축소(ascent 포함). 인쇄·PNG에 포함(악보 내용, no-print 아님).
 - 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00~s08·s12~s16·s20~s25(임시 이름=파일번호)로 등록
   — 정식 이름이 정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s01}` 꼴도 같이 바뀜에 유의).
   파일 stem은 그대로, 표시 이름(k)·순서만 조정 가능. (파일 09·10·11·17·18·19는 없음.

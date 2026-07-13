@@ -33,6 +33,7 @@
   let pageSvgs = [];                        // 페이지별 svg
   let cellEditor = null, cellEditInput = null;  // 정간 옆 직접 입력 카드
   let yulAutoOpened = false;                // 첫 정간 입력 때 율명 팔레트 1회 자동 열기용
+  let gakNames = {};                        // 각 이름(각 위 라벨): 각 번호(0부터) → 입력 원문("1장"·"대여음" 등)
   let cellEditDomain = null;                // 카드가 선율/장단/가사 중 어디서 열렸는지("mel"/"jd"/"ly")
   let cellEditGi = -1, cellEditCi = -1;     // 카드가 열려 있는 정간 좌표 (전역 커서와 별개로 기억)
   let keepCellEditor = false;               // true면 render()가 직접 입력 카드를 닫지 않음(실시간 반영용)
@@ -407,6 +408,9 @@
       lLines.splice.apply(lLines, [g + 1, 0].concat(new Array(split ? 1 : n).fill(emptyGak)));
       lyricsFull = lLines.join("\n");
     }
+    // 각 이름도 같은 자리에서 같이 민다 — 나뉜 각의 이름은 앞쪽(g)에 남는다
+    shiftGakNames(g + 1, split ? 1 : n);
+    renderGakNameList();
     afterGakStructureChange(g + 1);
   }
   // 하이라이트된 각을 삭제 (마지막 남은 각이면 내용만 비움). 가사도 같은 줄을 지운다.
@@ -415,9 +419,11 @@
     const g = structureTargetGak();
     const mLines = melodyFull.split("\n");
     if (g >= mLines.length) return;
-    if (mLines.length <= 1) mLines[0] = "";
+    const gakRemoved = mLines.length > 1;   // 마지막 하나면 내용만 비움(이름은 유지)
+    if (!gakRemoved) mLines[0] = "";
     else mLines.splice(g, 1);
     melodyFull = mLines.join("\n");
+    if (gakRemoved) { shiftGakNames(g, -1); renderGakNameList(); }
     if (lyricsHasContent()) {
       const lLines = lyricsFull.split("\n");
       if (g < lLines.length) {
@@ -895,7 +901,7 @@
     if (!confirm("선율·장단·가사·텍스트·셀 서식 등 내용을 모두 지웁니다(레이아웃은 그대로 둠). 계속할까요?")) return;
     melodyFull = ""; $("jangdan").value = ""; lyricsFull = "";
     customTexts = []; nextTextId = 1; textSel = null;
-    cellStyles = {};
+    cellStyles = {}; gakNames = {}; renderGakNameList();
     reconcileMelody(); reconcileJangdan(); reconcileLyrics();
     refreshEditorSlices();
     syncActiveFromCursor();
@@ -1816,6 +1822,100 @@
       item.addEventListener("click", function () { insertLyricToken("{" + stem + "}"); });
       wrap.appendChild(item);
     });
+  }
+
+  // ---------- 각 이름 (각 위 라벨: 대여음·중여음·1장 등) ----------
+  // 각 번호(0부터)에 소속되어 각 삽입/삭제·페이지 이동을 따라다닌다. 입력은 한글 원문
+  // 그대로 저장하고, 악보 '표기'만 한자로 바꾼다 — 모르는 단어는 쓴 그대로 표시.
+  const GAK_NAME_HANJA = { "대여음": "大餘音", "중여음": "中餘音", "여음": "餘音",
+                           "환입": "還入", "초장": "初章", "종장": "終章" };
+  function gakNameDisplay(raw) {
+    raw = String(raw).trim();
+    if (GAK_NAME_HANJA[raw]) return GAK_NAME_HANJA[raw];
+    const m = /^(\d+)장$/.exec(raw);
+    if (m) return numToHanja(parseInt(m[1])) + "章";
+    return raw;
+  }
+  // 각 삽입/삭제 때 이름이 같은 각에 붙어 있게 민다. delta<0이면 [from, from-delta) 구간의 이름은 버림
+  function shiftGakNames(from, delta) {
+    const next = {};
+    Object.keys(gakNames).forEach(function (k) {
+      const gi = +k;
+      if (delta < 0 && gi >= from && gi < from - delta) return;
+      next[gi >= from ? gi + delta : gi] = gakNames[k];
+    });
+    gakNames = next;
+  }
+  function setGakName(gi, raw) {
+    raw = String(raw || "").trim();
+    if (raw) gakNames[gi] = raw; else delete gakNames[gi];
+    renderGakNameList();
+    render();
+    saveState();
+  }
+  // 도구창의 이름 목록 — 타이핑 중 포커스를 잃지 않게 render()에서는 부르지 않고,
+  // 값이 확정될 때(setGakName·상태 복원)만 다시 그린다.
+  function renderGakNameList() {
+    const list = $("gakNameList");
+    if (!list) return;
+    list.innerHTML = "";
+    const keys = Object.keys(gakNames).map(Number).sort(function (a, b) { return a - b; });
+    if (!keys.length) {
+      const empty = document.createElement("div");
+      empty.className = "tx-empty";
+      empty.textContent = "아직 없습니다. 악보에서 각 위 빈 곳을 클릭하거나, 위 칸에 각 번호와 이름을 적고 '추가'를 누르세요.";
+      list.appendChild(empty);
+      return;
+    }
+    keys.forEach(function (gi) {
+      const row = document.createElement("div");
+      row.className = "tx-item";
+      const lab = document.createElement("span");
+      lab.className = "gn-gak";
+      lab.textContent = (gi + 1) + "번 각";
+      const txt = document.createElement("input");
+      txt.type = "text"; txt.value = gakNames[gi]; txt.title = "이름 (예: 1장, 대여음)";
+      txt.addEventListener("change", function () { setGakName(gi, txt.value); });
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "mel-btn"; del.textContent = "✕"; del.title = "이 이름 삭제";
+      del.addEventListener("click", function () { setGakName(gi, ""); });
+      row.appendChild(lab); row.appendChild(txt); row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+  // 악보에서 각 위 빈 곳을 클릭하면 그 자리에 뜨는 작은 입력 카드 (Enter/바깥 클릭=확정, Esc=취소)
+  let gakNameCard = null;
+  function closeGakNameCard() {
+    if (gakNameCard) { gakNameCard.remove(); gakNameCard = null; }
+  }
+  function openGakNameCard(gi, pageIdx, cx, topY) {
+    closeGakNameCard();
+    const svg = pageSvgs[pageIdx]; if (!svg) return;
+    const area = $("sheetArea");
+    const sr = svg.getBoundingClientRect(), ar = area.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    const px = sr.left - ar.left + area.scrollLeft + cx * (sr.width / vb.width);
+    const py = sr.top - ar.top + area.scrollTop + topY * (sr.height / vb.height);
+    const card = document.createElement("div");
+    card.className = "cell-editor";
+    card.style.cssText = "position:absolute;left:" + Math.max(2, px - 60) + "px;top:" + Math.max(2, py - 40) + "px;z-index:7;";
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.value = gakNames[gi] || "";
+    inp.placeholder = "예: 1장, 대여음";
+    inp.style.cssText = "width:120px;font-size:13px;padding:5px 7px;font-family:inherit;border:1px solid var(--accent);border-radius:6px;";
+    card.appendChild(inp);
+    area.appendChild(card);
+    gakNameCard = card;
+    let done = false;
+    function commit() { if (done) return; done = true; const v = inp.value; closeGakNameCard(); setGakName(gi, v); }
+    function cancel() { if (done) return; done = true; closeGakNameCard(); }
+    inp.addEventListener("keydown", function (e) {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === "Enter") { e.preventDefault(); commit(); }
+      else if (e.key === "Escape") { e.preventDefault(); cancel(); }
+    });
+    inp.addEventListener("blur", commit);
+    inp.focus(); inp.select();
   }
 
   // ---------- 장단 팔레트 (장구 구음 7종) ----------
@@ -2788,6 +2888,7 @@
     document.body.classList.toggle("want-lyrics", wantLyrics);
     // 텍스트(자유 주석)는 켜짐 스위치가 없어 '하나라도 있음'을 레이어 사용 표시(초록 점)에 쓴다
     document.body.classList.toggle("has-texts", customTexts.length > 0);
+    document.body.classList.toggle("has-gaknames", Object.keys(gakNames).length > 0);
     const wantTempo = $("wantTempo").checked;
     const gakNumMode = $("gakNumMode").value;   // 각 번호: none | screen(화면에만) | all(출력 포함)
     document.body.classList.toggle("gaknum-screen", gakNumMode === "screen");
@@ -3187,6 +3288,42 @@
             const startY = frameTopY - tempoGap - (chars.length - 1) * tempoLineH - tempoFont * 0.15;
             const tt = verticalText(x + cell / 2, startY, tempoStr, tempoFont, 600, "#000", NOTE_FONT);
             svg.appendChild(tt.g);
+          }
+
+          // 각 이름(대여음·一章 등) — 그 각 위 여백에 세로쓰기. 첫 각의 템포 표시와
+          // 겹칠 수 있는 유일한 자리(첫 각)에서만 왼쪽으로 반 칸 비킨다.
+          {
+            const gnTop = bandTop - INNER_PAD;
+            const gnRaw = gakNames[melIdx];
+            if (gnRaw) {
+              const disp = gakNameDisplay(gnRaw);
+              const gnChars = Array.from(disp);
+              // 위로 쓸 수 있는 공간에 맞춰 글자를 줄인다 — 맨 위 밴드는 페이지 위
+              // 가장자리(1mm 여유)까지, 아래 밴드는 밴드 사이 간격 안. 안 줄이면
+              // 긴 이름(大餘音 등)의 첫 글자가 페이지/윗 밴드에 잘린다.
+              const gnAvail = b === 0 ? Math.max(2, gnTop - 1) : Math.max(2, bandGap * 0.9);
+              // 글자 크기 1당 필요한 높이 — 첫 글자 잉크가 기준선 위로 뻗는 만큼(ascent≈0.85)까지 포함
+              const gnNeed = 1.4 + 1.12 * (gnChars.length - 1);
+              const gnFont = Math.min(cell * 0.5, gnAvail / gnNeed);
+              const gnLineH = gnFont * 1.12;
+              const gnX = x + cell / 2
+                - ((wantTempo && pageIdx === 0 && melIdx === 0) ? cell * 0.75 : 0);
+              const gnStartY = gnTop - gnFont * 0.4 - (gnChars.length - 1) * gnLineH - gnFont * 0.15;
+              svg.appendChild(verticalText(gnX, gnStartY, disp, gnFont, 600, "#000", titleFontFam).g);
+            }
+            // 각 위 클릭 영역(투명) — 누르면 그 자리에서 이름 입력 카드가 열린다
+            const gnZoneH = cell * 1.4;
+            const gnHit = rect(x, gnTop - gnZoneH, cell, gnZoneH, 0,
+              { fill: "transparent", stroke: "none", "pointer-events": "all" });
+            gnHit.style.cursor = "text";
+            (function (gi, cxv, topv, pg) {
+              gnHit.addEventListener("mousedown", function (e) {
+                e.preventDefault();
+                if (cellEditInput) commitCellEditor(false);
+                openGakNameCard(gi, pg, cxv, topv);
+              });
+            })(melIdx, x + cell / 2, gnTop - gnZoneH, pageIdx);
+            svg.appendChild(gnHit);
           }
 
           // 장단 줄(악곡 맨 처음 자리, 가장 오른쪽) — 켜져 있고, 악곡 맨 처음 각일 때만
@@ -3760,7 +3897,8 @@
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
-             melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, cellStyles: cellStyles };
+             melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, cellStyles: cellStyles,
+             gakNames: gakNames };
   }
 
   function applyState(s) {
@@ -3784,6 +3922,8 @@
     nextTextId = customTexts.reduce(function (m, t) { return Math.max(m, (t.id || 0) + 1); }, 1);
     textSel = null;
     cellStyles = (s.cellStyles && typeof s.cellStyles === "object") ? s.cellStyles : {};
+    gakNames = (s.gakNames && typeof s.gakNames === "object") ? s.gakNames : {};
+    renderGakNameList();
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
     ornPalZoom = typeof s.ornPalZoom === "number" ? Math.max(0.6, Math.min(2, s.ornPalZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
@@ -4549,6 +4689,18 @@
     if (e.isComposing || e.keyCode === 229) return;
     if (e.key === "Enter") { e.preventDefault(); $("textAddBtn").click(); }
   });
+  // 각 이름 도구창 — 각 번호(1부터)와 이름으로 추가 (악보에서 각 위를 직접 클릭해도 됨)
+  $("gakNameAddBtn").addEventListener("click", function () {
+    const num = parseInt($("gakNameAddGak").value);
+    if (!num || num < 1) { $("gakNameAddGak").focus(); return; }
+    setGakName(num - 1, $("gakNameAddInput").value);
+    $("gakNameAddInput").value = "";
+    $("gakNameAddInput").focus();
+  });
+  $("gakNameAddInput").addEventListener("keydown", function (e) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === "Enter") { e.preventDefault(); $("gakNameAddBtn").click(); }
+  });
   $("textPanelClose").addEventListener("click", function () { textSel = null; hideTextPanel(); render(); });
   $("textPanelDelete").addEventListener("click", function () { if (textSel != null) deleteCustomText(textSel); });
   document.querySelectorAll("#textPanel .orn-row button").forEach(function (b) {
@@ -4786,6 +4938,7 @@
   makeGuideToggle("jangdanGuide", "jangdanGuideToggle");
   makeGuideToggle("lyricsGuide", "lyricsGuideToggle");
   makeGuideToggle("textGuide", "textGuideToggle");
+  makeGuideToggle("gakNameGuide", "gakNameGuideToggle");
   makeGuideToggle("shortcutsGuide", "shortcutsGuideToggle");
 
   // 버튼 호버 설명(.tip + data-tip) — 모두 body 바로 아래 뜬 공유 말풍선(#ribbonTipFloat)

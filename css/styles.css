@@ -452,10 +452,12 @@
                      background: transparent; }
   body.want-jangdan .rail-btn[data-panel="jangdanArea"]::after,
   body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after,
-  body.has-texts .rail-btn[data-panel="textArea"]::after { background: #3f9d63; }
+  body.has-texts .rail-btn[data-panel="textArea"]::after,
+  body.has-gaknames .rail-btn[data-panel="gakNameArea"]::after { background: #3f9d63; }
   body.want-jangdan .rail-btn.active[data-panel="jangdanArea"]::after,
   body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after,
-  body.has-texts .rail-btn.active[data-panel="textArea"]::after { background: var(--panel); }
+  body.has-texts .rail-btn.active[data-panel="textArea"]::after,
+  body.has-gaknames .rail-btn.active[data-panel="gakNameArea"]::after { background: var(--panel); }
   /* 직접 입력 '입력' 그룹 버튼에도 같은 표시 — 문서에서 실제로 쓰는 레이어에 초록 점
      (장단·가사 = 스위치 켜짐, 텍스트 = 주석이 하나라도 있음). 열린 창(.on) 위에선 흰 점 */
   .win-toggle { position: relative; }
@@ -463,10 +465,15 @@
                        width: 6px; height: 6px; border-radius: 50%; background: transparent; }
   body.want-jangdan #winToggleJangdan::after,
   body.want-lyrics #winToggleLyrics::after,
-  body.has-texts #winToggleText::after { background: #3f9d63; }
+  body.has-texts #winToggleText::after,
+  body.has-gaknames #winToggleGakName::after { background: #3f9d63; }
   body.want-jangdan #winToggleJangdan.on::after,
   body.want-lyrics #winToggleLyrics.on::after,
-  body.has-texts #winToggleText.on::after { background: #fff; }
+  body.has-texts #winToggleText.on::after,
+  body.has-gaknames #winToggleGakName.on::after { background: #fff; }
+  /* 각 이름 도구창 — 추가 줄의 각 번호 칸은 좁게, 목록 줄의 각 번호 라벨은 회색 */
+  #gakNameRow .tx-add input[type="number"] { flex: 0 0 84px; }
+  #gakNameList .gn-gak { flex: 0 0 auto; font-size: 12px; color: var(--muted); font-weight: 600; }
   /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
   .rail-shortcuts-wrap { display: block; }
   .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;
@@ -693,7 +700,8 @@
      장단 칩(54px+간격 4px) 6개 = 344px에 창·팔레트 안쪽 여백을 더해 380px. */
   body.ribbon-left #melodyRibbon > #ornWinWrap.win-open,
   body.ribbon-left #melodyRibbon > #jangdanArea.win-open,
-  body.ribbon-left #melodyRibbon > #lyricsArea.win-open { width: 380px; }
+  body.ribbon-left #melodyRibbon > #lyricsArea.win-open,
+  body.ribbon-left #melodyRibbon > #gakNameArea.win-open { width: 380px; }
   /* 시김새 격자는 auto-fill이라 폭이 넓으면 한 줄 7개+로 늘어난다 — 도킹에선 6열로 못박음 */
   body.ribbon-left #melodyRibbon #ornWinWrap .ornrow { grid-template-columns: repeat(6, 1fr); }
   /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,
