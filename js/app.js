@@ -2361,7 +2361,7 @@
             const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
             return { stem: stem, bw: bw, bh: bh, ink: Math.min(bh, bw * symAspect(stem)) };
           });
-          const gapY = width * 0.08;   // 기호(잉크) 사이 아주 좁은 틈
+          const gapY = width * 0.18;   // 기호(잉크) 사이 틈 — 빡붙지 않게 아주 약간만
           const total = items.reduce(function (a, it) { return a + it.ink; }, 0)
             + gapY * (items.length - 1);
           let yCur = centers[i] - total / 2;
@@ -3238,7 +3238,7 @@
           if (gakNumMode !== "none") {
             const gnFont = cell * 0.26;
             const gn = el("text", { x: x + cell / 2, y: gridBottom + gnFont * 1.25,
-              "text-anchor": "middle", "font-size": gnFont, fill: "#b3b3b3", "class": "gak-num" });
+              "text-anchor": "middle", "font-size": gnFont, fill: "#c9c9c9", "class": "gak-num" });
             gn.textContent = String(melIdx + 1);
             svg.appendChild(gn);
           }
@@ -3339,7 +3339,7 @@
             // 인쇄에서 숨고 PNG 저장에서도 빠진다(둘 다 .no-print를 제거함)
             const jdLabel = el("text", { x: (jdLeft + jdRight) / 2, y: gridTop - cell * 0.22,
               "text-anchor": "middle", "font-size": cell * 0.34, "font-family": CJK,
-              "font-weight": 600, fill: "#9a978f", class: "no-print" });
+              "font-weight": 600, fill: "#bdbab2", class: "no-print" });
             jdLabel.textContent = "장단";
             svg.appendChild(jdLabel);
             // 장단 에디터 커서 하이라이트용 칸 좌표 (내용 유무와 무관하게 전체 박)

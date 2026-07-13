@@ -726,16 +726,11 @@
   body.ribbon-left.leftdock-custom #melodyRibbon > #textArea.win-open,
   body.ribbon-left.leftdock-custom #melodyRibbon > #gakNameArea.win-open,
   body.ribbon-left.leftdock-custom #melodyRibbon > #paletteCol.win-open { width: auto; }
-  /* 시김새 격자는 auto-fill이라 폭이 넓으면 한 줄 7개+로 늘어난다 — 도킹에선 6열로 못박음 */
-  body.ribbon-left #melodyRibbon #ornWinWrap .ornrow { grid-template-columns: repeat(6, 1fr); }
+  /* 시김새 격자는 공통 격자(minmax 66px)가 알아서 줄바꿈 — 기본 폭 6개/줄, 폭 따라 가변 */
   /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,
      커진 표는 #paletteWrap 안에서 가로 스크롤로 본다(세로는 열 전체 스크롤에 맡김) */
   body.ribbon-left #melodyRibbon > #paletteCol.win-open { width: 450px; }
   body.ribbon-left #melodyRibbon #paletteWrap { overflow-x: auto; }
-  /* 가사 기호(flex 나열, 칩 44px+간격 4px)도 6개 폭에서 줄바꿈되게 최대 폭을 건다 */
-  body.ribbon-left #melodyRibbon #lyricsSymRow { max-width: 284px; }
-  /* 장단 구음(칩 54px+간격 4px)도 같은 규칙 — 6개 = 344px에서 줄바꿈 */
-  body.ribbon-left #melodyRibbon #jangdanPalette .ornrow { max-width: 344px; }
   /* 도킹된 창은 제자리에 붙어 있으니 끌기 그립을 숨긴다(끌면 relative 좌표가 어긋남) */
   body.ribbon-left #melodyRibbon .dock-panel-grip,
   body.ribbon-left #melodyRibbon .bar-grip { display: none; }
@@ -934,12 +929,13 @@
      (auto-fill): 좁으면 줄어들고 넓으면 빽빽하게 채운다. 칸 높이는 고정해 표처럼
      가지런히. 이미지 자체 크기는 JS에서 실제 악보에 그려지는 상대 크기(붙임표/독립
      기호 배율)를 반영해 정함(ornIconPx). */
-  .palette .ornrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  /* 시김새·장단·가사 기호 팔레트 공통 격자 — 트랙 최소 66px·간격 3px로 통일해
+     기본 열 폭(450px)에선 6개/줄, 열을 좁히거나 넓히면 그에 맞게 줄바꿈된다 */
+  .palette .ornrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
                      gap: 3px; margin-bottom: 8px; }
-  /* 장단 팔레트(칩 6개)는 폭이 내용에 맞춰지는(max-content) 상자라 auto-fill 격자가
-     1열로 계산돼 세로로 무너진다 — 원래대로 가로 flex 나열 유지 */
-  #jangdanPalette .ornrow { display: flex; flex-wrap: wrap; gap: 4px; }
-  #jangdanPalette .ornchip { flex: 0 0 54px; width: 54px; }
+  /* 장단 창은 내용 폭(max-content)으로 잡히는 상자라 auto-fill 격자가 1열로 무너질 수
+     있어 뜬 창일 때 폭을 명시한다(도킹은 열 폭이 정해져 있어 무관) */
+  body.input-direct #jangdanArea.win-open { width: min(460px, calc(100% - 28px)); }
   .palette .ornchip { flex: none; width: auto; height: 50px; box-sizing: border-box;
                       flex-direction: column; gap: 2px; padding: 2px; }
   .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
@@ -983,12 +979,15 @@
   /* 가사 기호 팔레트 — special SVG를 클릭해 가사 칸에 이미지로 넣는다 */
   .lyric-sym-pal { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
   .lyric-sym-pal .lsp-label { font-size: 11px; color: var(--muted); flex: 0 0 auto; }
-  .lyric-sym-pal .lsp-row { display: flex; flex-wrap: wrap; gap: 4px; }
-  .lyric-sym-pal .lsp-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
-    width: 44px; padding: 4px 2px; background: var(--soft); border: 1px solid var(--line);
-    border-radius: 8px; cursor: pointer; color: var(--ink); }
+  /* 기호 나열은 시김새 팔레트와 같은 격자·칩 스타일로 통일 */
+  .lyric-sym-pal .lsp-row { flex: 1 1 auto; min-width: 0; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 3px; }
+  .lyric-sym-pal .lsp-btn { display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2px; width: auto; height: 50px; padding: 2px;
+    background: none; border: none; border-radius: 5px; cursor: pointer; color: var(--ink);
+    font-family: inherit; transition: background .1s ease; }
   .lyric-sym-pal .lsp-btn:hover { background: var(--hover); }
-  .lyric-sym-pal .lsp-btn img { width: 22px; height: 22px; object-fit: contain; }
+  .lyric-sym-pal .lsp-btn img { width: 26px; height: 26px; object-fit: contain; }
   .lyric-sym-pal .lsp-cap { font-size: 8px; color: var(--muted); white-space: nowrap; }
   #lyricsRow { display: flex; gap: 12px; height: 140px; align-items: stretch; }
   #lyricsEditorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
