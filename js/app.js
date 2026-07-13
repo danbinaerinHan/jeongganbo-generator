@@ -1773,6 +1773,23 @@
   // 그림은 시김새 SVG(영문 stem)를 그대로 재사용한다
   const LYRIC_SYM_ALIAS = { "전성": "roll-str", "퇴성": "bend-down", "추성": "bend-up" };
   function lyricSymStem(name) { return LYRIC_SYM_ALIAS[name] || name; }
+  // 기호 SVG의 세로/가로 비율(viewBox에서) — 쌓을 때 실제 잉크 높이를 추정하는 용도.
+  // data URL(base64)을 한 번만 풀어 보고 stem별로 캐시한다. 못 읽으면 정사각형(1) 간주.
+  const symAspectCache = {};
+  function symAspect(stem) {
+    if (stem in symAspectCache) return symAspectCache[stem];
+    let a = 1;
+    try {
+      const m = /base64,(.+)$/.exec(symURL(stem) || "");
+      const vb = m ? /viewBox="([\d.\s-]+)"/.exec(atob(m[1])) : null;
+      if (vb) {
+        const p = vb[1].trim().split(/\s+/).map(Number);
+        if (p[2] > 0 && p[3] > 0) a = p[3] / p[2];
+      }
+    } catch (e) { /* 비율을 모르면 1로 둔다 */ }
+    symAspectCache[stem] = a;
+    return a;
+  }
   // 가사 칸 이미지 크기 배율 — 막대류는 0.8, 나머지(가야금주법·늘임표)는 0.4로 줄여 그린다.
   const LYRIC_SYM_SCALE = { "가로막대": 0.8, "세로막대": 0.8 };
   const LYRIC_SYM_SCALE_DEFAULT = 0.4;
@@ -2231,17 +2248,27 @@
       // {기호} 토큰이면 글자 대신 이미지를 한 글자처럼 그린다(원본 비율 유지).
       // 한글 별칭(전성·퇴성·추성)은 시김새 SVG stem으로 바꿔서 찾는다.
       // 한 행에 토큰이 여럿({모지}{퇴성})이면 옆이 아니라 위아래로 쌓고, 각각의
-      // 크기는 단독일 때와 똑같이 유지한다(글자처럼 개수 때문에 줄어들지 않게).
+      // 크기는 단독일 때와 똑같이 유지한다. 간격은 그리기 박스가 아니라 '실제 잉크
+      // 높이'(viewBox 비율로 추정) 기준으로 바짝 붙인다 — 박스엔 meet 정렬 여백이
+      // 커서 박스 간격으로 쌓으면 실제 기호끼리는 멀어 보인다.
       const symTokens = str.match(/\{[^}]+\}/g);
       if (symTokens && symTokens.join("") === str) {
         const names = symTokens.map(function (t) { return t.slice(1, -1); });
         if (names.every(function (nm) { return symURL(lyricSymStem(nm)); })) {
-          names.forEach(function (nm, k) {
+          const items = names.map(function (nm) {
             const sc = (nm in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[nm] : LYRIC_SYM_SCALE_DEFAULT;
+            const stem = lyricSymStem(nm);
             const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
-            // 행 중심(centers[i]) 기준으로 위아래 등간격 배치(사이 여백 10%)
-            const cy = centers[i] + (k - (names.length - 1) / 2) * bh * 1.1;
-            drawSymImageRect(svg, lyricSymStem(nm), x + width / 2 - bw / 2, cy - bh / 2, bw, bh);
+            return { stem: stem, bw: bw, bh: bh, ink: Math.min(bh, bw * symAspect(stem)) };
+          });
+          const gapY = width * 0.08;   // 기호(잉크) 사이 아주 좁은 틈
+          const total = items.reduce(function (a, it) { return a + it.ink; }, 0)
+            + gapY * (items.length - 1);
+          let yCur = centers[i] - total / 2;
+          items.forEach(function (it) {
+            const inkCy = yCur + it.ink / 2;   // 잉크는 박스 세로 중앙에 그려진다(meet)
+            drawSymImageRect(svg, it.stem, x + width / 2 - it.bw / 2, inkCy - it.bh / 2, it.bw, it.bh);
+            yCur += it.ink + gapY;
           });
           return;
         }
