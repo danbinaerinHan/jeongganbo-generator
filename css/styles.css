@@ -1,0 +1,1239 @@
+  /* 색은 전부 역할별 변수로 정의 — 라이트 값은 예전 하드코딩과 동일하게 두고,
+     다크모드(body.dark, 파일 끝)는 이 변수 값만 갈아끼운다. 악보(종이)는 별도 흰색
+     SVG라 다크에서도 그대로 흰 종이로 남는다(인쇄·PNG 출력이 안 바뀜). */
+  :root {
+    --bg: #f4f4f2;          /* 앱 바탕 */
+    --panel: #ffffff;       /* 카드·입력·버튼 등 표면(흰색) */
+    --soft: #faf8f3;        /* 리본·안내·읽기창 등 은은한 따뜻한 바탕 */
+    --hover: #f0ece3;       /* 버튼·항목 호버 바탕 */
+    --track: #e4e0d6;       /* 토글 스위치 꺼짐 트랙 */
+    --line: #d9d6cf;        /* 테두리·구분선 */
+    --ink: #1c1b19;         /* 본문 글자 */
+    --muted: #6b6a66;       /* 보조 글자 */
+    --accent: #8a6d3b;      /* 강조(라이트=갈색, 다크=파랑) */
+    --accent-soft: #faf3e7; /* 강조 옅은 바탕(켜진 토글 등) */
+    --accent-tint: #f4e2c2; /* 선택된 옵션 바탕 */
+    --accent-glow: rgba(138,109,59,.15);  /* 입력 포커스 글로우 */
+    --overlay: rgba(255,255,255,.97);   /* 악보 위에 뜨는 도구창 바탕 */
+    --danger: #b23b3b;      /* 경고·지우기 빨강 */
+    --danger-2: #b3463c;    /* 지우기 버튼 빨강 */
+    --danger-soft: #fbeeec; /* 지우기 옅은 바탕 */
+    --danger-line: #ddb0aa; /* 지우기 테두리 */
+    --tip-bg: #2b2b2b;      /* 호버 말풍선(원래도 어두움) */
+    --tip-ink: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  button, select, input, textarea { transition: border-color .12s ease, background .12s ease; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  /* 체크박스 = 토글 스위치 하나로 통일 (기본 브라우저 체크박스 대체) */
+  input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: 0 0 auto;
+    width: 30px; height: 18px; border-radius: 999px;
+    background: var(--track); border: 1px solid var(--line); position: relative; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  input[type="checkbox"]::after {
+    content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px;
+    /* 손잡이는 트랙(꺼짐)·강조색(켜짐) 어느 쪽 위에서도 보이게 늘 밝게 — 실물 스위치처럼 */
+    border-radius: 50%; background: #f5f4f1; box-shadow: 0 1px 2px rgba(0,0,0,.28);
+    transition: transform .15s ease;
+  }
+  input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  input[type="checkbox"]:checked::after { transform: translateX(12px); }
+  /* 폼 컨트롤 기본 바탕·글자색 — 배경을 안 정한 입력칸이 다크모드에서 브라우저 기본
+     흰색으로 남지 않게 한다(라이트에선 var(--panel)=흰색이라 겉보기 변화 없음). */
+  input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
+  select, textarea { background-color: var(--panel); color: var(--ink); }
+  textarea::placeholder, input::placeholder { color: var(--muted); opacity: .8; }
+
+  /* 셀렉트 = 화살표 아이콘 통일 (기본 브라우저 화살표 대체) */
+  select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6a66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center; background-size: 12px;
+  }
+
+  /* 아이콘 버튼 하나로 통일(⚙ · ? · ✕ · ▾ 등 텍스트 이모지 대신 같은 획 굵기의 SVG) */
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; padding: 0; border: none; background: transparent;
+    border-radius: 6px; color: var(--muted); cursor: pointer; flex: 0 0 auto;
+    transition: background .12s ease, color .12s ease, transform .12s ease;
+  }
+  .icon-btn svg { width: 15px; height: 15px; stroke-width: 2; }
+  .icon-btn:hover { background: var(--hover); color: var(--ink); }
+  .icon-btn.on { background: var(--accent); color: #fff; }
+  .icon-btn.collapsed svg.chev { transform: rotate(-90deg); }
+
+  /* 숫자 입력 + 단위 접미(mm) 한 부품으로 */
+  .num-unit { position: relative; display: inline-flex; }
+  .num-unit input[type="number"] { padding-right: 22px; }
+  .num-unit .unit { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 9px; color: var(--muted); pointer-events: none; user-select: none; }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* 입력 방식(에디터/직접 입력) — 화면 맨 위, 사이드바·악보 어느 쪽에도 속하지 않는
+     전역 공용 자리. 가장 먼저 정하는 선택이라 여기서만은 사이드 레일의 축소판이 아니라
+     제대로 된 크기로 보여준다. */
+  /* 맨 위 바는 자주 안 바뀌는 전역 선택(입력 방식)·문서 단위 액션만 담아서 예전보다
+     낮고 조용하게 — 늘 떠 있어야 하는 도구들(기능바)은 그 아래 자리에 고정해서 둔다. */
+  #topBar {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    /* 좁으면 기능바처럼 줄바꿈 — 안 그러면 라벨 글자가 세로로 짜부라진다 */
+    flex-wrap: wrap;
+    padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  /* 상단바 그룹 — 테두리 상자 대신 평평한 툴바 문법: 그룹은 투명하고 사이를 가는 세로
+     구분선(.topbar-sep)으로만 나눈다. 통일감은 버튼들의 같은 호버 알약(7px)에서 나온다. */
+  .topbar-box { display: flex; align-items: center; gap: 3px; }
+  .topbar-sep { width: 1px; height: 22px; background: var(--line); flex: 0 0 auto; }
+  /* '입력 방식'은 이름표(작고 옅게), 그 옆 드롭다운 값이 본문 — 같은 굵기면 뭐가 값인지 안 읽힌다 */
+  #topBar .mode-lab { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .5px;
+                      margin: 0 0 0 4px; white-space: nowrap; }
+  #modeBox select { border: none; background-color: transparent; font-size: 12.5px; font-weight: 700;
+                    color: var(--ink); font-family: inherit; cursor: pointer; border-radius: 7px;
+                    padding: 6px 24px 6px 8px; background-position: right 6px center; }
+  #modeBox select:hover { background-color: var(--hover); }
+  /* 문서 단위 액션(새 문서/실행취소/다시실행/전체 초기화) — 다른 프로그램의 File 메뉴처럼 맨 왼쪽 */
+  .topbar-doc-actions { gap: 4px; }
+  /* 상단바 명령 버튼 — 리본 버튼(.ribbon-btn)과 같은 '기호 + 아래 작은 글씨' 한 가지 꼴로 통일
+     (새 문서/실행취소/다시실행/전체 초기화/재생/정지/재생 설정/다크·라이트/설정 열기).
+     입력 방식 세그먼트·확대축소 스테퍼는 컨트롤 종류가 달라 제외한다. */
+  .topbar-cmd { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; min-width: 46px; padding: 4px 7px 3px; border: 1px solid transparent;
+                border-radius: 7px; background: none; cursor: pointer; font-family: inherit;
+                color: var(--ink); font-size: 15px; line-height: 1; flex: 0 0 auto; }
+  .topbar-cmd .lbl { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .topbar-cmd svg { width: 15px; height: 15px; }
+  .topbar-cmd:hover { background: var(--hover); }
+  .topbar-cmd:disabled { opacity: .35; cursor: default; background: none; }
+  /* 전체 초기화 — 평상시엔 글자색만 위험색, 호버에서만 옅은 배경(상시 분홍 상자는 시끄러움) */
+  .topbar-btn-danger { color: var(--danger-2); }
+  .topbar-btn-danger:hover { background: var(--danger-soft); }
+  .topbar-btn-danger .lbl { color: var(--danger-2); }
+  /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
+  #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
+
+  /* ---------- 사이드바 ---------- */
+  #sidebar {
+    width: 330px;
+    flex: 0 0 330px;
+    order: 2;                       /* 오른쪽 배치 */
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    padding: 20px;
+    overflow-y: auto;
+  }
+  #sidebar h1 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  /* 안내 문구 — 사이드바 전역 공통(예전엔 .field .hint만 걸려 .field 밖 안내는
+     기본 16px 큰 글씨로 튀었음). .hint 자체에 걸어 어디 있든 같은 톤으로. */
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .hint b { color: var(--ink); font-weight: 600; }
+  .field input[type="number"],
+  .field input[type="text"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .field input:disabled { background: var(--soft); color: var(--muted); }
+  .field input[type="range"] { width: 100%; padding: 0; accent-color: var(--accent); cursor: pointer; }
+  .field select {
+    width: 100%; padding: 8px 26px 8px 10px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 14px; font-family: inherit; background-color: var(--panel); cursor: pointer;
+  }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .two { display: flex; gap: 10px; }
+  .two .field { flex: 1; margin-bottom: 16px; }
+  .chk { display: flex; gap: 7px; align-items: center; font-size: 12px; font-weight: 400;
+         white-space: nowrap; margin: 0; cursor: pointer; }
+  /* 관련 옵션(장단/가사/템포)은 바짝 붙이고, 다음 그룹과는 확실히 띄움 */
+  .chk-cluster { margin-bottom: 26px; }
+  .chk-cluster .field { margin-bottom: 2px; padding: 6px 0; }
+  .chk-cluster .field + .field { border-top: 1px solid var(--line); }
+  .chk-cluster .field select { margin: 6px 0 2px 37px; width: calc(100% - 37px); }
+  .chk-row { display: flex; align-items: center; gap: 6px; }
+  .mini { display: flex; align-items: center; gap: 6px; margin-top: 7px;
+          font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+  .mini input[type="number"] { width: 60px; padding: 4px 6px; font-size: 12px;
+                border: 1px solid var(--line); border-radius: 5px; font-family: inherit; }
+  .mini .num-unit input[type="number"] { width: 62px; padding-right: 22px; }
+  .mini .num-unit .unit { font-size: 9px; }
+
+  .sec { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent);
+         text-transform: uppercase; margin: 6px 0 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+
+  details.adv { margin: 4px 0 18px; }
+  details.adv > summary {
+    cursor: pointer; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: var(--soft); border: 1px solid var(--accent); border-radius: 8px;
+    padding: 11px 13px; margin-bottom: 14px; transition: background .15s ease;
+  }
+  details.adv > summary:hover { background: var(--soft); }
+  details.adv > summary::-webkit-details-marker { display: none; }
+  details.adv > summary .lbl { display: flex; align-items: baseline; gap: 8px;
+    font-size: 13px; font-weight: 700; color: var(--accent); }
+  details.adv > summary .lbl small { font-weight: 400; font-size: 11px; color: var(--muted); }
+  details.adv > summary .chev { font-size: 11px; color: var(--accent); transition: transform .15s ease; }
+  details.adv[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 12px; }
+  details.adv[open] > summary .chev { transform: rotate(180deg); }
+
+  /* 율명 팔레트 — 음역(행) × 음계(열) 매트릭스 */
+  .palette { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
+             width: max-content; min-width: 100%; }
+  /* 시김새 뷰: 폭을 컬럼에 맞춰 줄바꿈 → 세로(위아래) 스크롤 */
+  .palette.orn-view { width: auto; min-width: 0; }
+  .palette .prow { display: flex; align-items: center; gap: 1px; margin-bottom: 3px; }
+  .palette .prow:last-child { margin-bottom: 0; }
+  .palette .prow.headrow { margin-bottom: 4px; }
+  .palette .prow.symrow { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 4px; }
+  .palette .plabel { flex: 0 0 32px; font-size: 10px; font-weight: 700; color: var(--accent);
+                     text-align: center; letter-spacing: .5px; }
+  /* 표 안 글씨체를 전부 하나로 통일(악보 음표 서체 NOTE_FONT와 동일 목록) —
+     헤더(황대태…)만 다른 서체를 쓰면 같은 표 안에서 글씨체가 뒤섞여 보인다. */
+  .palette .phead,
+  .palette .pi .pch,
+  .palette .pi .pch-cap { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif; }
+  .palette .phead { flex: 0 0 31px; text-align: center; font-size: 11px; font-weight: 700;
+                    color: var(--muted); line-height: 1; }
+  /* 칸 높이를 글자 내용과 무관하게 고정해야 위아래 행(하배·배·중성·청)의 가로줄이
+     맞는다 — height:auto면 서체 메트릭에 따라 행마다 높이가 미묘하게 달라진다. */
+  .palette .pi { flex: 0 0 31px; height: 40px; display: flex; align-items: center;
+                 justify-content: center; border-radius: 5px; cursor: pointer;
+                 transition: background .1s ease; }
+  .palette .pi:hover { background: var(--hover); }
+  .palette .pi img { width: 24px; height: 24px; object-fit: contain; }
+  .palette .pi .pch { display: flex; align-items: center; justify-content: center;
+                      font-size: 19px; line-height: 1; color: var(--ink); white-space: nowrap; }
+  .palette .pi.nofile .pch { color: var(--muted); }
+  .palette .pi.has-cap { flex-direction: column; justify-content: center; height: 40px;
+                         padding: 0; gap: 2px; }
+  .palette .pi .pch-cap { font-size: 8px; color: var(--muted); line-height: 1; white-space: nowrap; }
+  .palette .pmsg { width: 100%; font-size: 12px; padding: 4px 2px; }
+  .palette .pmsg.err { color: var(--danger); }
+
+  /* 피아노 팔레트 — 건반 위에 율명 표기, 팔레트 폭 안에서 옆으로 스크롤 */
+  /* 건반 높이는 JS(fitPianoHeight)가 팔레트 영역에 맞춰 갱신 — 위아래 스크롤 없이 채움 */
+  .piano-kb { position: relative; display: flex; align-items: flex-start; height: 190px; }
+  .pkey-w { position: relative; width: 34px; height: 100%; flex: 0 0 34px;
+            border: 1px solid #8f8d88; border-radius: 0 0 4px 4px; background: #fff;
+            cursor: pointer; transition: background .1s ease; }
+  .pkey-w:hover { background: #f0ece3; }
+  .pkey-w:active { background: #faf8f3; }
+  .pkey-w.pk-ghost { background: #faf8f3; cursor: default; pointer-events: none; }
+  .pkey-b { position: absolute; top: 0; width: 21px; height: 62%; z-index: 2;
+            background: #2f2c28; border: 1px solid #1c1b19; border-radius: 0 0 3px 3px;
+            cursor: pointer; transition: background .1s ease; }
+  .pkey-b:hover { background: #4d463c; }
+  .pkey-b:active { background: #5c5346; }
+  .pk-yul { position: absolute; left: 50%; transform: translateX(-50%); bottom: 16px;
+            writing-mode: vertical-rl; text-orientation: upright;
+            font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
+            color: #333; pointer-events: none; white-space: nowrap; line-height: 1; }
+  .pkey-b .pk-yul { color: #fff; bottom: 12px; }
+  .pk-west { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center;
+             font-size: 8px; color: #999; pointer-events: none; }
+  .pkey-b .pk-west { color: #bbb; font-size: 7px; bottom: 2px; }
+
+  /* 율명 탭 안 입력 방식 전환 [표 ⧸ 건반] — 둘 다 '음 입력'이라 같은 탭 아래에 묶음 */
+  .pal-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+             flex: 0 0 auto; }
+  /* 팔레트 보기(율명/시김새) — 책에 라벨(북마크 탭)을 붙인 것처럼: 고르지 않은 건
+     작고 옅게 뒤로 겹쳐 있고, 고른 것만 크고 진하게 앞으로 튀어나와 있어 뭘 고를
+     수 있는지·뭘 골랐는지 한눈에 보이게 한다. */
+  .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
+  .pal-views { display: inline-flex; align-items: flex-end; overflow: visible;
+               border: none; background: none; gap: 0; }
+  .pal-view {
+    position: relative; border: 1px solid var(--line); border-bottom: none;
+    border-radius: 6px 6px 0 0; background: var(--soft); color: var(--muted);
+    font-size: 12px; font-weight: 600; padding: 4px 11px; margin-right: -7px;
+    z-index: 1; cursor: pointer; font-family: inherit; white-space: nowrap;
+    transition: all .15s ease;
+  }
+  .pal-view:last-child { margin-right: 0; }
+  .pal-view:hover { color: var(--ink); background: var(--soft); }
+  .pal-view.active {
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 15px;
+    padding: 6px 16px; z-index: 3; transform: translateY(-3px);
+    box-shadow: 0 3px 7px rgba(31,26,18,.28);
+  }
+  /* 입력 방식(에디터/직접 입력)은 #topBar로 옮겨졌다 — 이 레일에 남은 안내(단축키)만
+     쓰는 규칙. 안내 패널이 좁은 레일 밖 오른쪽으로 펼쳐지게 한다. */
+  #dockRail .melody-guide { top: 0; left: calc(100% + 8px); }
+  #dockRail .rail-sep { height: 1px; background: var(--line); margin: 2px 4px 8px; }
+  .pal-seg .seg-btn { padding: 4px 10px; border: none; background: var(--panel); font-size: 12px;
+                      white-space: nowrap;
+                      font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
+                      transition: background .12s ease, color .12s ease; }
+  .pal-seg .seg-btn + .seg-btn { border-left: 1px solid var(--line); }
+  .pal-seg .seg-btn:hover { color: var(--ink); }
+  .pal-seg .seg-btn.active { background: var(--accent); color: #fff; }
+  #paletteCol.orn-active .pal-seg { display: none; }
+
+  /* 팔레트 헤더 도구: 표기(한자/한글)는 표 보기 전용, 황 음고(E♭/C)·크기 ±는 표·건반 공통 */
+  #paletteCol.piano-active .tool-inline:not(.size-ctl):not(.pitch-tool) { display: none; }
+  /* 입력·소리 토글 — 표/건반 공통, 시김새 탭에서만 숨김 */
+  .pal-head .sound-tool, .pal-head .insert-tool { font-weight: 600; }
+  #paletteCol.orn-active .sound-tool, #paletteCol.orn-active .insert-tool { display: none; }
+  /* 크기/위치 미세조정(에디터 모드) — 시김새 보기(.orn-active)에서만 보인다.
+     그 밖(율명 보기)에선 숨겨 자리를 차지하지 않게. #paletteCol을 앞에 붙여
+     특이도를 올린다 — 안 그러면 뒤에 오는 .ribbon-btn{display:flex}가 이겨 늘 보인다. */
+  #paletteCol .orn-only-tool { display: none; }
+  #paletteCol.orn-active .orn-only-tool { display: inline-flex; }
+  /* 율명 전용 설정 묶음(표·건반/조/표기/황음고) — 옅은 상자로 한 덩어리임을 표시.
+     입력·소리·크기 ±는 팔레트 공통이라 이 묶음 밖(첫 줄 오른쪽)에 따로 둔다.
+     간격·패딩은 기본 폭(≈395px)에서 네 컨트롤이 한 줄에 들어가게 빠듯하게. */
+  .yul-tools { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap;
+               padding: 4px 7px; border: 1px solid var(--line); border-radius: 8px;
+               background: var(--soft); }
+  #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
+  .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
+                        white-space: nowrap; margin-right: 2px; }
+
+  /* 크기 카드: 전체 배율 + 세부 조정을 하나로 묶음 */
+  .sizebox { border: 1px solid var(--line); border-radius: 10px;
+             background: var(--soft); padding: 14px 14px 6px; margin-bottom: 18px; }
+  .sizebox .slider-field { margin-bottom: 12px; }
+  .sizebox label small { font-weight: 400; font-size: 11px; color: var(--muted); }
+  .sizebox details.adv { margin: 0; }
+  .sizebox details.adv > summary { margin-bottom: 0; }
+  .sizebox details.adv[open] > summary { margin-bottom: 12px; }
+
+  .readout {
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  .readout b { color: var(--ink); }
+  .warn { color: var(--danger); font-size: 11px; margin-top: 6px; }
+  /* 선율↔장단·가사 각/정간 수 어긋남 경고 — 타이핑 중엔 조용히 안 맞다가 다음 구조
+     변경 때 넘치는 내용이 말없이 잘리는 걸 막기 위해, 해당 탭 바로 위에서 바로 알려준다 */
+  .gak-warn { display: none; font-size: 11px; line-height: 1.5; color: var(--danger);
+              background: var(--danger-soft); border: 1px solid var(--danger-line); border-radius: 7px;
+              padding: 6px 10px; margin-bottom: 8px; }
+  .gak-warn.on { display: block; }
+
+  /* 새 문서 마법사 — 화면 전체를 덮는 반투명 오버레이 + 가운데 상자. .field/.row/.chk/.btns는
+     레이아웃 탭에서 쓰던 스타일을 그대로 재사용한다. */
+  .modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(28,27,25,.4);
+                    display: flex; align-items: center; justify-content: center; }
+  .modal-box { background: var(--panel); border-radius: 12px; padding: 22px 24px;
+               width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px);
+               overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .modal-box h3 { margin: 0 0 16px; font-size: 16px; }
+
+  .btns { display: flex; gap: 8px; margin-top: 8px; }
+  .btns button {
+    flex: 1; padding: 10px;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .btns button.secondary { background: var(--panel); color: var(--accent); }
+  .btns button:hover { opacity: .9; }
+
+  /* ---------- 미리보기 + 멜로디 에디터 ---------- */
+  /* 떠 있는 바(.float-bar)·패널들의 기준점을 스크롤되는 #sheetArea가 아니라 #main으로 둬서
+     악보를 스크롤해도 그 자리에 그대로 떠 있게 한다 */
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+          position: relative; }
+  #sheetArea { flex: 1 1 auto; min-height: 0; display: flex;
+               align-items: flex-start; justify-content: center; padding: 16px; overflow: auto;
+               background: var(--soft); position: relative; }
+  #sheet { transform-origin: top center; transition: transform .08s ease;
+           display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .page { background: var(--panel); box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+  .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
+
+  /* 보기 배율·재생 바는 상단바로 옮겨 고정 — 아래 그립은 직접 입력 도구창들이 쓴다 */
+  /* 바 왼쪽 이동 손잡이 — 끌어서 바 위치를 옮김 */
+  .bar-grip { display: flex; align-items: center; justify-content: center; width: 16px;
+              align-self: stretch;
+              background: var(--overlay); border: 1px solid var(--line); border-radius: 8px;
+              box-shadow: 0 2px 8px rgba(0,0,0,.1); color: var(--muted); cursor: grab;
+              touch-action: none; user-select: none; }
+  .bar-grip:hover { color: var(--ink); background: var(--hover); }
+  .bar-grip:active { cursor: grabbing; }
+  .bar-grip svg { width: 10px; height: 16px; }
+  /* 보기 배율 바 — 상단바 오른쪽에 고정(재생 바가 auto 마진으로 먼저 밀어줌).
+     상자 자체는 .topbar-box 공통 문법, 여기선 간격만 촘촘하게. */
+  #zoomBar { gap: 2px; }
+  #zoomBar button { min-width: 24px; height: 26px; border: none; background: transparent;
+                    font-size: 13px; line-height: 1; cursor: pointer; border-radius: 7px;
+                    color: var(--muted); font-family: inherit; }
+  #zoomBar button:hover { background: var(--hover); color: var(--ink); }
+  #zoomBar .zval { font-size: 12px; min-width: 40px; text-align: center; color: var(--muted); }
+  #zoomBar .fit { font-size: 12px; padding: 0 8px; white-space: nowrap; }
+  #zoomBar button:disabled { opacity: .35; cursor: default; }
+  #zoomBar button:disabled:hover { background: transparent; }
+
+  /* 재생 컨트롤 — 보기 배율 바처럼 상단바 오른쪽에 고정(auto 마진으로 오른쪽 무리의 시작).
+     상자 자체는 .topbar-box 공통, 재생 설정 팝오버의 기준점만 여기서 잡는다. */
+  #playBar { position: relative; margin-left: auto; }
+  /* 재생만 강조색 배경 — 그 위 글자는 테마 무관 흰색 고정 */
+  #btnPlay { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #btnPlay .lbl { color: #fff; }
+  #btnPlay:hover { background: var(--accent); border-color: var(--accent); opacity: .92; }
+
+  /* 재생 설정 팝오버 — 상단바의 재생 바 바로 아래, 오른쪽 끝에 맞춰 뜬다(화면 밖으로 안 나가게) */
+  .play-pop { position: absolute; top: calc(100% + 10px); right: 0; left: auto; z-index: 20; display: none;
+              background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
+              padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 224px; font-size: 12px; }
+  .play-pop.on { display: block; }
+  .play-pop .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
+  .play-pop select, .play-pop input { width: 96px; padding: 3px 5px; border: 1px solid var(--line);
+                                       border-radius: 5px; font-family: inherit; font-size: 12px; }
+  .play-pop select { padding-right: 20px; background-position: right 6px center; background-size: 10px; }
+  .play-pop .hint { color: var(--muted); line-height: 1.4; }
+  @media print { .play-pop { display: none !important; } }
+
+  /* 시김새 수정 패널 */
+  .orn-panel { position: absolute; top: 12px; right: 14px; z-index: 6; display: none;
+               background: var(--overlay); border: 1px solid var(--accent); border-radius: 10px;
+               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 156px; font-size: 12px; }
+  .orn-panel.on { display: block; }
+  .orn-title { display: flex; justify-content: space-between; align-items: center;
+               font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .orn-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+  .orn-row span { flex: 0 0 34px; color: var(--muted); }
+  .orn-row button { flex: 1; padding: 4px 0; border: 1px solid var(--line); background: var(--panel);
+                    border-radius: 5px; cursor: pointer; font-size: 13px; font-family: inherit; }
+  .orn-row button:hover { background: var(--hover); }
+  .orn-reset { width: 100%; margin-top: 4px; padding: 5px; border: 1px solid var(--line);
+               background: var(--panel); border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .orn-reset:hover { background: var(--hover); }
+  @media print { .orn-panel { display: none !important; } }
+  /* 각 번호 '화면에만' 모드 — 인쇄에서는 숨김 (PNG는 저장 시 따로 뺌) */
+  @media print { body.gaknum-screen .gak-num { display: none !important; } }
+  /* 자유 텍스트 주석 크기·삭제 패널 — 시김새 패널과 같은 자리에 겹치지 않게 아래로 내림 */
+  #textPanel { top: 64px; }
+  #textPanel .text-panel-del { color: var(--danger); border-color: var(--danger-line); }
+  #textPanel .text-panel-del:hover { background: var(--danger-soft); }
+  /* 텍스트 탭 '추가' 버튼 */
+  .at-add { padding: 5px 10px; border: 1px solid var(--accent); background: var(--accent);
+            color: #fff; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .at-add:hover { opacity: .9; }
+  /* 아래 편집 독 — 왼쪽 세로 탭(선율/장단/가사)으로 편집기 하나씩만 표시 */
+  #editorDock { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); }
+  .dock-body { display: flex; align-items: stretch; }
+  #dockRail { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px;
+              padding: 12px 8px; border-right: 1px solid var(--line); background: var(--soft); }
+  .rail-btn { padding: 9px 16px; border: none; background: none; border-radius: 8px;
+              cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700;
+              color: var(--muted); text-align: left; position: relative;
+              transition: background .12s ease, color .12s ease; }
+  .rail-btn:hover { background: var(--hover); color: var(--ink); }
+  .rail-btn.active { background: var(--accent); color: #fff; }
+  /* 레이어가 켜져 있으면 탭에 점 표시 */
+  .rail-btn::after { content: ""; position: absolute; right: 6px; top: 50%;
+                     transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%;
+                     background: transparent; }
+  body.want-jangdan .rail-btn[data-panel="jangdanArea"]::after,
+  body.want-lyrics .rail-btn[data-panel="lyricsArea"]::after,
+  body.has-texts .rail-btn[data-panel="textArea"]::after { background: #3f9d63; }
+  body.want-jangdan .rail-btn.active[data-panel="jangdanArea"]::after,
+  body.want-lyrics .rail-btn.active[data-panel="lyricsArea"]::after,
+  body.has-texts .rail-btn.active[data-panel="textArea"]::after { background: var(--panel); }
+  /* 직접 입력 '입력' 그룹 버튼에도 같은 표시 — 문서에서 실제로 쓰는 레이어에 초록 점
+     (장단·가사 = 스위치 켜짐, 텍스트 = 주석이 하나라도 있음). 열린 창(.on) 위에선 흰 점 */
+  .win-toggle { position: relative; }
+  .win-toggle::after { content: ""; position: absolute; top: 4px; right: 5px;
+                       width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  body.want-jangdan #winToggleJangdan::after,
+  body.want-lyrics #winToggleLyrics::after,
+  body.has-texts #winToggleText::after { background: #3f9d63; }
+  body.want-jangdan #winToggleJangdan.on::after,
+  body.want-lyrics #winToggleLyrics.on::after,
+  body.has-texts #winToggleText.on::after { background: #fff; }
+  /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
+  .rail-shortcuts-wrap { display: block; }
+  .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;
+                        padding: 6px 10px; border: none; background: none; border-radius: 8px;
+                        cursor: pointer; font-family: inherit; font-size: 11px; font-weight: 600;
+                        color: var(--muted); transition: background .12s ease, color .12s ease; }
+  .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: var(--hover); color: var(--ink); }
+  .rail-shortcuts-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
+  /* 단축키 버튼이 사이드바 맨 아래라 안내 패널이 기본값(아래로 펼침)대로 뜨면 화면 아래로
+     넘어가 잘려 보인다 — 버튼 오른쪽에서 위로 펼친다. #dockRail .melody-guide의 top:0보다
+     특이도를 높여야 top/bottom이 동시에 걸려 상자가 짜부라지는 일이 없다. */
+  #dockRail #shortcutsGuide, #shortcutsGuide {
+    top: auto; bottom: 0; left: calc(100% + 8px);
+    max-height: 74vh; overflow: auto;
+  }
+  .dock-panels { flex: 1 1 auto; min-width: 0; }
+  .dock-panel { display: none; padding: 8px 14px 14px; }
+  .dock-panel.active { display: block; }
+  /* 탭이 접기/펼치기를 대신하므로 섹션별 접기 화살표는 숨김 */
+  .mini-toggle { display: none !important; }
+
+  #melodyResizer { height: 12px; margin: -6px 0 -2px; cursor: ns-resize;
+                   display: flex; align-items: center; justify-content: center;
+                   touch-action: none; }
+  #melodyResizer::before { content: ""; width: 46px; height: 4px; border-radius: 2px;
+                           background: var(--line); transition: background .12s ease; }
+  #melodyResizer:hover::before { background: var(--accent); }
+  /* 선율 팔레트 ↔ 텍스트 에디터 사이 좌우 나눔 손잡이 */
+  #melodySplit { flex: 0 0 12px; margin: 0 -8px; cursor: ew-resize; align-self: stretch;
+                 display: flex; align-items: center; justify-content: center; touch-action: none; }
+  #melodySplit::before { content: ""; height: 46px; width: 4px; border-radius: 2px;
+                         background: var(--line); transition: background .12s ease; }
+  #melodySplit:hover::before { background: var(--accent); }
+  /* 리본 툴바(피날레·시벨리우스 참고) — 되돌리기·초기화·각 추가/삭제·율명 크기처럼
+     내용과 무관하게 늘 같은 자리에 있어야 하는 '문서 편집' 동작을 한데 모아
+     맨 위에 고정 배치. 아이콘 위·설명 아래 두 줄 버튼을 그룹으로 묶고 구분선으로 나눈다.
+     창이 좁으면 그룹 단위로 줄바꿈해 전부 보이게 한다 — overflow 스크롤로 가리면
+     직접 입력 모드(입력 그룹이 추가돼 더 넓음)에서 오른쪽 그룹이 잘려 안 보였음. */
+  .ribbon { display: flex; flex-wrap: wrap; align-items: stretch; gap: 2px; padding: 5px 8px;
+            margin-bottom: 10px;
+            background: var(--soft); border: 1px solid var(--line); border-radius: 8px; }
+  /* 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹을 숨긴다 */
+  .ribbon-collapse-btn { flex: 0 0 auto; }
+  .ribbon-collapse-btn svg { transition: transform .12s ease; }
+  /* 접기·도킹 전환 묶음 — 가로 배치에선 앞쪽 아이콘 두 개, 세로 도킹에선 맨 위 한 줄 */
+  .ribbon-topctl { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+  .ribbon.collapsed { overflow: hidden; }
+  .ribbon.collapsed > *:not(.bar-grip):not(.ribbon-topctl) { display: none !important; }
+  .ribbon.collapsed .ribbon-collapse-btn svg { transform: rotate(-90deg); }
+  /* 그룹은 2단 — 위에 얇은 이름표(.rb-cap), 아래에 실제 컨트롤(.rb-items) */
+  .ribbon-group { display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+                  padding: 0 4px; flex: 0 0 auto; }
+  .rb-cap { font-size: 9px; font-weight: 700; color: var(--muted); text-align: center;
+            letter-spacing: .03em; line-height: 1; padding-top: 2px; white-space: nowrap; }
+  .rb-cap label { cursor: inherit; }
+  .rb-items { display: flex; align-items: center; justify-content: center; gap: 3px;
+              flex: 1 1 auto; }
+  .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
+  .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; width: 52px; padding: 5px 2px 4px; border: 1px solid transparent;
+                border-radius: 6px; background: none; cursor: pointer; font-family: inherit;
+                color: var(--ink); font-size: 17px; line-height: 1; flex: 0 0 auto; }
+  .ribbon-btn span { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-btn:hover { background: var(--hover); border-color: var(--line); }
+  .ribbon-btn:disabled { opacity: .4; cursor: default; background: none; }
+  .ribbon-num { width: 34px; padding: 3px 2px; border: 1px solid var(--line); border-radius: 5px;
+                font-family: inherit; font-size: 11px; text-align: center; align-self: center; }
+  .ribbon-slider-group { display: flex; align-items: center; gap: 7px; font-size: 11px;
+                         font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-slider-group input[type="range"] { width: 88px; margin: 0; }
+  .ribbon-slider-group #noteScaleVal,
+  .ribbon-slider-group #lyricsScaleVal { font-weight: 400; min-width: 32px; }
+  /* 가사 크기 슬라이더 — 가사를 켰을 때만 나타남(render가 body.want-lyrics를 관리) */
+  body:not(.want-lyrics) #lyricsScaleGroup { display: none; }
+  .ribbon-select-group { display: flex; align-items: center; gap: 6px; font-size: 11px;
+                        font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .ribbon-select-group select { padding: 4px 20px 4px 7px; border: 1px solid var(--line);
+                                border-radius: 5px; font-family: inherit; font-size: 11px;
+                                background-color: var(--panel); cursor: pointer; }
+  .ribbon .bar-grip { display: none; margin-right: 2px; }
+  /* 에디터 모드에서 기능바가 아래 독 맨 위로 들어갈 때 — 독 가장자리에서 살짝 띄움 */
+  #editorDock > #melodyRibbon { margin: 2px 10px 6px; }
+  /* 직접 입력 모드 — 기능바(#melodyRibbon)는 악보 바로 위(#main 자식)에 항상 고정되고
+     (JS의 applyInputMode가 옮김), 도구창(팔레트)들은 예전 Finale 스타일처럼 악보 위에
+     뜬다. 단, 여러 개를 동시에 띄우던 방식은 버리고 한 번에 하나만 — 다른 탭을 누르면
+     이전 창이 자동으로 닫힌다(JS의 activateDirectPanel). */
+  /* 직접 입력 모드에선 편집 레일(선율/장단/… 탭)을 안 쓴다 — 예전엔 .rail-btn만 숨겨서
+     '단축키' 버튼이 빈 독에 홀로 떠 보였다(위쪽 배치=왼쪽 아래, 왼쪽 도킹=오른쪽 위).
+     레일 자체를 통째로 숨긴다. 단축키 안내는 상단바 도움말(도움말 → 단축키 탭)에 그대로 있다. */
+  body.input-direct #dockRail { display: none; }
+  body.input-direct #melodyResizer { display: none; }
+
+  /* #melodyArea는 이제 도구창이 아니라 뜬 팔레트 둘(율명·시김새)을 담는 투명한 그릇일
+     뿐이라 시각적 흔적을 없앤다 — .dock-panel.active 여부와 무관하게 늘 보여야
+     자식 팔레트가 뜰 수 있다(에디터 모드 탭 로직은 안 건드림). */
+  body.input-direct #melodyArea {
+    display: block; position: static; background: none; border: none;
+    box-shadow: none; padding: 0; margin: 0;
+  }
+  body.input-direct .win-toggle-group, body.input-direct .win-toggle-sep { display: flex; }
+  .win-toggle-group, .win-toggle-sep { display: none; }
+  .win-toggle.on { background: var(--accent); color: #fff; }
+  .win-toggle.on span { color: #fff; }
+  /* 마우스 모드 버튼(선택/이동) — 아이콘은 SVG라 크기를 직접 준다. 켜진 쪽만 강조색. */
+  .cursor-btn .cur-ico { width: 17px; height: 17px; }
+  .cursor-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cursor-btn.on span { color: #fff; }
+  /* 이동(팬) 모드 — 악보를 잡고 끌어 화면을 움직인다. 악보(#sheet)의 클릭·드래그
+     상호작용은 꺼서(pointer-events:none) 편집이 안 일어나게 하고, 스크롤 컨테이너
+     (#sheetArea)에서 끌기로 스크롤을 옮긴다(JS). 커서는 손 모양. */
+  body.pan-mode #sheet { pointer-events: none; }
+  body.pan-mode #sheetArea { cursor: grab; }
+  body.pan-mode.panning #sheetArea { cursor: grabbing; }
+  /* 셀 서식 뜬 도구창 여닫기 버튼 — 직접 입력 전용(에디터 모드에선 대신 레일 탭 '셀 서식' 사용) */
+  body:not(.input-direct) #winToggleCellStyle { display: none; }
+  /* 시김새 창(#ornWinWrap)은 melodyArea 안에 있어서, 에디터 모드에선 .direct-win 숨김 규칙이
+     안 걸려(그 규칙 자체가 input-direct 전용) 선율 탭 아래로 그대로 새어 보였다(크기/위치
+     미세조정·단축키 모드 버튼 등 — 전부 직접 입력 전용 기능이라 에디터 모드엔 필요 없음).
+     에디터 모드의 시김새 팔레트는 이미 '율명/시김새' 보기 전환(palView)으로 따로 제공된다. */
+  body:not(.input-direct) #ornWinWrap { display: none; }
+
+  /* 직접 입력 모드에서만 뜬 창을 끌 수 있는 그립 표시 */
+  body.input-direct .dock-panel-grip { display: flex; }
+  .dock-panel-grip { display: none; margin-bottom: 6px; }
+  /* 도구창 오른쪽 위 닫기(X) — JS가 각 .direct-win에 붙이고, 직접 입력 모드에서 열린
+     창에만 보인다. 창은 position:absolute라 이 버튼이 오른쪽 위 모서리에 고정된다
+     (그립은 왼쪽·별도 줄이라 겹치지 않음). */
+  .direct-win-close { display: none; }
+  body.input-direct .direct-win.win-open .direct-win-close {
+    display: inline-flex; position: absolute; top: 8px; right: 9px; z-index: 4;
+    width: 22px; height: 22px; align-items: center; justify-content: center;
+    padding: 0; border: none; background: none; border-radius: 6px;
+    color: var(--muted); cursor: pointer; transition: background .12s ease, color .12s ease;
+  }
+  body.input-direct .direct-win.win-open .direct-win-close:hover { background: var(--hover); color: var(--ink); }
+  .direct-win-close svg { width: 15px; height: 15px; stroke-width: 2.2; }
+  /* 맨 윗줄(장단·가사·텍스트의 melody-head, 율명·시김새의 pal-top)이면 오른쪽 끝의
+     안내(?)·크기 스테퍼 등이 닫기(X)와 겹친다 — 오른쪽에 X 자리만큼 여백을 확보한다. */
+  body.input-direct .direct-win.win-open > .melody-head,
+  body.input-direct .direct-win.win-open > .pal-head,
+  body.input-direct .direct-win.win-open > .pal-top { padding-right: 30px; }
+
+  /* 도구창(팔레트) — 열렸을 때(.win-open)만 악보 위에 뜬다(한 번에 하나).
+     top/left 기본값을 명시해야 한다 — 안 주면 position:absolute가 원래 문서 흐름상의
+     위치(정간 편집 독 훨씬 아래)를 그대로 써서 화면 밖으로 나가버린다. 기능바가 이제
+     #main 맨 위의 일반 흐름에 있으므로 그 높이(약 66px + 아래 여백)만큼 내려서 시작.
+     #paletteCol은 자기 ID 규칙(width:450px 등)이 있어 명시적으로 함께 걸어 덮는다. */
+  body.input-direct .direct-win:not(.win-open) { display: none !important; }
+  body.input-direct .direct-win.win-open,
+  body.input-direct #paletteCol.win-open {
+    display: flex; flex-direction: column; position: absolute; top: 84px; left: 14px; z-index: 6;
+    max-width: min(460px, calc(100% - 28px)); max-height: 62vh; overflow: auto;
+    background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
+  }
+
+  /* ---------- 기능바 왼쪽 세로 도킹 (직접 입력 전용, #ribbonPosToggle로 전환) ----------
+     body.ribbon-left는 JS(applyRibbonPos)가 '직접 입력 + 왼쪽' 조합일 때만 붙인다.
+     #leftDock은 위쪽 배치에선 display:contents(없는 셈)이고, 왼쪽 도킹에서만 진짜
+     세로 열이 되어 기능바(위)와 열린 도구창(아래)을 함께 담는다 — 도구창이 악보 위에
+     떠서 옆으로 넓게 벌어지는 대신 왼쪽 한 줄로 정리된다. */
+  #leftDock { display: contents; }
+  body.ribbon-left #main { flex-direction: row; }
+  body.ribbon-left #leftDock {
+    display: flex; flex-direction: column; flex: 0 0 auto;
+    min-height: 0; max-width: 42%; margin-right: 10px;
+  }
+  /* 기능바 — 그룹이 세로로 한 줄로 쌓이고, 열 전체를 채우며 내부에서 스크롤한다.
+     열린 도구창(팔레트)이 이 기능바 '안'으로 들어와(입력 그룹 바로 아래) 함께 스크롤되므로
+     한 몸처럼 보인다. 옆 열로 감기(wrap)는 금지 — 팔레트가 끼면 폭 계산이 깨진다. */
+  body.ribbon-left #melodyRibbon {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    flex-direction: column; flex-wrap: nowrap;
+    width: auto; margin: 0;
+    /* 내용이 길어 스크롤바가 생길 때만 열이 ~15px 넓어지며 널뛰던 것 방지 —
+       스크롤바 자리를 늘 예약(오버레이 스크롤바 환경에선 원래 자리 안 차지해 무해) */
+    scrollbar-gutter: stable;
+  }
+  /* 세로 배치에선 그룹 구분선도 가로줄로 눕힌다 */
+  body.ribbon-left #melodyRibbon .ribbon-sep { width: auto; height: 1px; }
+  body.ribbon-left #editorDock { border-top: none; }
+  /* 입력 그룹(율명·시김새·장단·가사·텍스트 5개)을 3:2로 감싸 중앙정렬 — 한 줄(5개)이
+     열 폭을 넓게 잡던 걸 좁힌다. 버튼 52px×3 + gap 3px×2 = 162px에서 4번째가 다음 줄로. */
+  body.ribbon-left .win-toggle-group { align-items: center; }
+  body.ribbon-left .win-toggle-group .rb-items {
+    flex-wrap: wrap; justify-content: center; max-width: 162px;
+  }
+
+  /* --- 왼쪽 도킹 꾸밈(밋밋함 완화) --- */
+  /* 접기·도킹 되돌리기 버튼을 열 맨 위 한 줄(헤더)로 — 세로로 안 쌓이고 나란히, 아래 구분선. */
+  body.ribbon-left #melodyRibbon > .ribbon-topctl {
+    width: 100%; justify-content: flex-start; gap: 4px;
+    padding: 1px 2px 7px; margin-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  /* 세로 도킹에선 섹션 이름표(.rb-cap)를 강조색 소제목처럼 — 회색 잔글씨보다 구획이 또렷하고
+     밋밋함이 줄어든다. 각 그룹엔 옅은 강조 배경 카드를 깔아 시각 리듬을 준다. */
+  body.ribbon-left #melodyRibbon > .ribbon-group {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 5px 8px 7px; margin: 0 2px;
+  }
+  body.ribbon-left #melodyRibbon > .ribbon-group .rb-cap {
+    color: var(--accent); font-size: 9.5px; letter-spacing: .05em; padding-bottom: 4px;
+  }
+  /* 그룹 카드가 이미 구획을 나눠주므로 그 사이 구분선(가로줄)은 지운다 */
+  body.ribbon-left #melodyRibbon > .ribbon-sep { display: none; }
+
+  /* 팔레트를 '입력' 그룹(.win-toggle-group) 바로 아래에 오게 한다 — flex order로 정렬:
+     입력 그룹까지는 기본(order 0), 도구창은 order 2, 그 뒤 그룹들(각 삽입/셀 서식/크기)은
+     order 3으로 밀어 도구창 아래로 보낸다. DOM 순서와 무관하게 JS는 그냥 기능바에 붙인다. */
+  body.ribbon-left #melodyRibbon > .win-toggle-group ~ * { order: 3; }
+  body.ribbon-left #melodyRibbon > .direct-win.win-open { order: 2; }
+  /* 기능바 안에 녹아든 도구창 — 뜬 창의 카드(배경·테두리·그림자·absolute)를 벗겨
+     기능바와 한 구역처럼 보이게 하고, 폭은 zoom으로 살짝 줄인다(율명 표 450px → ~380px). */
+  body.ribbon-left #melodyRibbon > .direct-win.win-open,
+  body.ribbon-left #melodyRibbon > #paletteCol.win-open {
+    position: relative; top: auto; left: auto;
+    flex: 0 0 auto; width: auto; max-width: none; max-height: none; overflow: visible;
+    background: none; border: none; box-shadow: none; border-radius: 0;
+    padding: 8px 2px 2px; margin: 2px 0 4px; zoom: 0.85;
+  }
+  /* 도킹된 시김새·장단·가사 창은 폭을 고정해 창을 바꿔 켤 때마다 왼쪽 열 너비가
+     널뛰지 않게 한다 — 기준: 팔레트 기호 6개가 한 줄(율명 창은 표 구조라 제외).
+     장단 칩(54px+간격 4px) 6개 = 344px에 창·팔레트 안쪽 여백을 더해 380px. */
+  body.ribbon-left #melodyRibbon > #ornWinWrap.win-open,
+  body.ribbon-left #melodyRibbon > #jangdanArea.win-open,
+  body.ribbon-left #melodyRibbon > #lyricsArea.win-open { width: 380px; }
+  /* 시김새 격자는 auto-fill이라 폭이 넓으면 한 줄 7개+로 늘어난다 — 도킹에선 6열로 못박음 */
+  body.ribbon-left #melodyRibbon #ornWinWrap .ornrow { grid-template-columns: repeat(6, 1fr); }
+  /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,
+     커진 표는 #paletteWrap 안에서 가로 스크롤로 본다(세로는 열 전체 스크롤에 맡김) */
+  body.ribbon-left #melodyRibbon > #paletteCol.win-open { width: 450px; }
+  body.ribbon-left #melodyRibbon #paletteWrap { overflow-x: auto; }
+  /* 가사 기호(flex 나열, 칩 44px+간격 4px)도 6개 폭에서 줄바꿈되게 최대 폭을 건다 */
+  body.ribbon-left #melodyRibbon #lyricsSymRow { max-width: 284px; }
+  /* 장단 구음(칩 54px+간격 4px)도 같은 규칙 — 6개 = 344px에서 줄바꿈 */
+  body.ribbon-left #melodyRibbon #jangdanPalette .ornrow { max-width: 344px; }
+  /* 도킹된 창은 제자리에 붙어 있으니 끌기 그립을 숨긴다(끌면 relative 좌표가 어긋남) */
+  body.ribbon-left #melodyRibbon .dock-panel-grip,
+  body.ribbon-left #melodyRibbon .bar-grip { display: none; }
+  /* 도킹으로 창이 #melodyArea 밖(기능바 안)으로 나가면 조상 선택자(#melodyArea.mel-direct …)
+     규칙이 안 걸린다 — 시김새 팔레트 본문과 창 제목('율명'/'시김새'/'셀 서식')만 재적용. */
+  body.ribbon-left #melodyRibbon #directOrnWrap { display: block; }
+  body.ribbon-left #melodyRibbon .pal-col-title {
+    display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
+    color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
+  /* 도킹 전환 버튼 — 직접 입력에서만 보이고, 아이콘은 '누르면 갈 곳'(왼쪽/위쪽 패널) */
+  body:not(.input-direct) .ribbon-pos-btn { display: none; }
+  .ribbon-pos-btn .rp-top { display: none; }
+  body.ribbon-left .ribbon-pos-btn .rp-left { display: none; }
+  body.ribbon-left .ribbon-pos-btn .rp-top { display: block; }
+
+  .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+                 font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
+                 white-space: nowrap; }
+  /* 머리줄 그룹 구분선 — 제목·입력 방식·팔레트 탭 사이 시각적 여백 */
+  .head-sep { flex: 0 0 auto; width: 1px; height: 16px; background: var(--line); }
+  /* 머리줄 오른쪽 끝 묶음(장단·가사의 글씨체·초기화) — 닫기(X)와 안 겹치게 오른쪽으로 몰되,
+     X 자리(padding-right:30)는 .direct-win 공통 규칙이 확보한다. 좁으면 다음 줄로 내려간다. */
+  .mh-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+  /* 머리줄 안 끌기 그립 — 세로 여백(원래 별도 줄용)을 없애 한 줄에 가지런히 */
+  .melody-head > .dock-panel-grip { margin-bottom: 0; }
+  .mh-reset { margin-left: auto; }
+  .mh-right .mh-reset { margin-left: 0; }
+  .mh-reset, .mh-right .ribbon-select-group { font-weight: 400; }
+  .melody-head .mono { color: var(--muted); font-weight: 400;
+                       font-family: ui-monospace, Menlo, monospace; }
+  /* 텍스트 에디터 페이지 넘김 — 에디터(텍스트창) 바로 위, 여러 페이지일 때만 표시 */
+  .ed-pager { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+  .ed-pager .ed-plabel { font-size: 12px; font-weight: 600; color: var(--accent);
+                         min-width: 74px; text-align: center; }
+  .ed-pager button:disabled { opacity: .35; cursor: default; }
+  .mel-btn { padding: 4px 10px; border: 1px solid var(--line); background: var(--panel);
+             border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; color: var(--ink);
+             white-space: nowrap; }
+  .mel-btn:hover { background: var(--hover); }
+  .mel-btn:disabled { opacity: .45; cursor: default; }
+  /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
+     아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
+  #ornEditToggle, #ornEditToggleEd, #ornMapToggle, #rangeClearToggle, #winToggleCellStyle {
+                   flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
+                   font-size: 15px; color: var(--accent); border-color: var(--accent);
+                   background: var(--accent-soft); font-weight: 700; }
+  #ornEditToggle span, #ornEditToggleEd span, #ornMapToggle span, #rangeClearToggle span, #winToggleCellStyle span {
+                   font-size: 11px; font-weight: 700; }
+  #ornEditToggle:hover, #ornEditToggleEd:hover, #ornMapToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
+                   background: var(--accent-soft); }
+  #ornEditToggle.on, #ornEditToggleEd.on, #ornMapToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
+                   background: var(--accent); color: #fff; }
+  /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
+     상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
+  #ornEditToggle.on span, #ornEditToggleEd.on span, #ornMapToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
+                   color: #fff; }
+  #ornMapToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
+                   opacity: .4; cursor: default; background: var(--accent-soft); color: var(--accent); }
+  /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
+  #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
+  #lyricsToTextBtn span { font-size: 10px; font-weight: 600; }
+
+  /* 시김새 추가 모드 — 붙임표 칩 위에 숫자 배지(피날레의 붙임표 단축키처럼) */
+  .palette .pi.ornchip { position: relative; }
+  .ornchip .orn-key-badge {
+    position: absolute; top: 1px; left: 2px; min-width: 12px; height: 12px; padding: 0 2px;
+    display: none; align-items: center; justify-content: center;
+    background: var(--accent); color: #fff; border-radius: 4px;
+    font-size: 8px; font-weight: 700; line-height: 1;
+  }
+  body.orn-add-on .ornchip:not(.orn-no-key) .orn-key-badge { display: inline-flex; }
+  .ornchip.orn-armed { background: var(--accent-tint); outline: 1.5px solid var(--accent); border-radius: 6px; }
+
+  /* 시김새 창 안의 모드 버튼(미세조정/추가 모드) — 전역 도구바가 아니라 이 팔레트 설정임을
+     보여주려고 시김새 창 안에 둔다. .pal-top 한 줄 안에 들어가므로 아래 마진을 주면
+     줄 높이보다 커져 위아래로 삐져나오고, 바로 아래 점선 안내 상자와 선이 겹쳐 보인다. */
+  .orn-win-modes { display: flex; gap: 6px; }
+
+  /* 셀 서식 창 — "설정"(무엇을 그릴지: 프리셋·변·굵기·선종류·색)과 "실행"(칠하기/지우기 —
+     지금 드래그하면 바로 적용되는 도구)을 서로 다른 생김새로 분리해서 한눈에 구분되게 한다. */
+  .cell-style-sec { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .cell-style-sec:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .cell-style-sec-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+  .cell-style-body { display: flex; align-items: center; gap: 6px; padding: 2px; flex-wrap: wrap; }
+  .cell-style-body input[type="color"] { width: 34px; height: 26px; padding: 2px; border: 1px solid var(--line);
+                                          border-radius: 6px; background: var(--panel); cursor: pointer; }
+  .cell-style-body select { font-size: 12px; padding: 5px 20px 5px 8px; border: 1px solid var(--line);
+                             border-radius: 6px; font-family: inherit; background-color: var(--panel); cursor: pointer; }
+
+  /* 설정 칩(테두리 프리셋 3개 + 변 직접 선택 4개) — 조용한 톤. 선택돼도 살짝만 강조해서
+     "지금 켜진 도구"(아래 실행 버튼)와 구분되게 한다. */
+  .cell-border-sides { display: inline-flex; gap: 2px; }
+  /* 프리셋 아이콘('8'자 두 칸) — 검은(currentColor) 부분이 그려질 선, 회색은 안 건드리는 선.
+     색을 currentColor로 둬서 켜짐(.on)·비활성 상태의 글자색 변화를 그대로 따라간다. */
+  .cbp-ico { width: 13px; height: 18px; flex: 0 0 auto; display: block; color: var(--ink); }
+  .cell-style-option.on .cbp-ico { color: var(--accent); }
+  .cell-style-option { flex-direction: row; width: auto; gap: 4px; padding: 5px 9px; font-size: 12px; font-weight: 600;
+                       color: var(--muted); border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+  .cell-style-option span { font-size: 10px; font-weight: 600; color: var(--muted); }
+  .cell-style-option:hover { background: var(--hover); }
+  .cell-style-option.on { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); }
+  .cell-style-option.on span { color: var(--accent); }
+  .cell-style-option:disabled { opacity: .4; cursor: default; background: var(--panel); color: var(--muted); }
+
+  /* 실행 버튼(칠하기/지우기) — 지금 드래그하면 바로 적용된다는 걸 강조하는 둥근 필. 배경색·
+     테두리 두 섹션에서 재사용. 칠하기=강조색, 지우기=옅은 붉은색으로 톤을 갈라 서로 헷갈리지 않게. */
+  .cell-style-action { flex-direction: row; width: auto; gap: 5px; padding: 7px 14px; font-size: 14px; font-weight: 700;
+                        border-radius: 999px; }
+  .cell-style-action span { font-size: 11px; font-weight: 700; }
+  .cell-style-action.paint { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .cell-style-action.paint:hover { background: var(--accent-soft); }
+  .cell-style-action.paint.on { background: var(--accent); color: #fff; }
+  .cell-style-action.paint.on span { color: #fff; }
+  .cell-style-action.erase { color: var(--danger-2); border-color: var(--danger-line); background: var(--danger-soft); }
+  .cell-style-action.erase:hover { background: var(--danger-soft); }
+  .cell-style-action.erase.on { background: var(--danger-2); border-color: var(--danger-2); color: #fff; }
+  .cell-style-action.erase.on span { color: #fff; }
+  .cell-style-action:disabled { opacity: .4; cursor: default; }
+
+  /* 시김새 괄호 문법 상시 안내 — 팔레트 바로 위 한 줄. ? 안내 속에만 있으면 모르는 채
+     지나치기 쉬운 내용이라 늘 보이게 둔다. 율명 팔레트(#paletteCol) 쪽 사본은
+     에디터 모드 시김새 보기(palView=orn → .orn-active)일 때만 보인다. */
+  .orn-syntax-hint { flex: 0 0 auto; font-size: 11px; color: var(--muted); line-height: 1.5;
+                     background: var(--soft); border: 1px dashed var(--line); border-radius: 7px;
+                     padding: 4px 9px; margin-bottom: 6px; }
+  .orn-syntax-hint .mono { font-family: ui-monospace, Menlo, monospace; color: var(--ink); }
+  /* 시김새 도구창(직접 입력)에선 위 제목 줄의 모드 버튼들과 맞닿지 않게 사이를 띄운다 */
+  #ornWinWrap .orn-syntax-hint { margin-top: 8px; }
+  #paletteCol .orn-syntax-hint { display: none; }
+  #paletteCol.orn-active .orn-syntax-hint { display: block; }
+
+  /* 시김새 숫자키 배정 줄(시김새 팔레트 바로 위) — 숫자 단축키 자체는 직접 입력에서
+     항상 살아 있고, 이 줄은 '단축키 변환' 버튼을 눌렀을 때만 보인다 */
+  .orn-add-map-bar { display: none; flex-wrap: wrap; gap: 4px; padding: 6px 7px; margin-bottom: 6px;
+                      border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+  .orn-add-map-bar.open { display: flex; }
+  .orn-add-map-bar .oam-slot { display: inline-flex; align-items: center; gap: 3px; }
+  .orn-add-map-bar .oam-key { flex: 0 0 auto; min-width: 14px; height: 14px; padding: 0 2px;
+                              display: inline-flex; align-items: center; justify-content: center;
+                              background: var(--accent); color: #fff; border-radius: 4px;
+                              font-size: 9px; font-weight: 700; line-height: 1; }
+  .orn-add-map-bar select { font-size: 11px; padding: 2px 18px 2px 5px; border: 1px solid var(--line);
+                             border-radius: 5px; font-family: inherit; background-color: var(--panel); cursor: pointer; }
+
+  /* 버튼 설명 호버 툴팁(.tip + data-tip) — 전부 JS가 띄우는 #ribbonTipFloat 하나로 통일.
+     CSS ::after 말풍선은 (1) overflow 있는 조상(리본·도구창) 안에서 잘리고 (2) 화면
+     가장자리 버튼(예: 맨 왼쪽 '새 문서' +)에선 가운데 정렬 때문에 창 밖으로 나갔다.
+     뜬 말풍선은 뷰포트에 맞춰 좌우를 밀어 넣고 위아래도 뒤집으므로 예외가 없다. */
+  .tip { position: relative; }
+  .ribbon-tip-float {
+    position: fixed; z-index: 9999; background: var(--tip-bg); color: #fff; font-size: 11px;
+    font-weight: 400; line-height: 1.45; padding: 6px 9px; border-radius: 7px;
+    width: max-content; max-width: 240px; white-space: pre-line; text-align: left;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25); opacity: 0; visibility: hidden;
+    transition: opacity .12s ease; pointer-events: none;
+  }
+  .ribbon-tip-float.on { opacity: 1; visibility: visible; }
+  .ribbon-tip-float::after {
+    content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+    border: 5px solid transparent;
+  }
+  .ribbon-tip-float.dir-up::after { top: 100%; border-top-color: var(--tip-bg); }
+  .ribbon-tip-float.dir-down::after { bottom: 100%; border-bottom-color: var(--tip-bg); }
+  /* 숫자 입력 확정 버튼 — 값을 바꾼 칸의 오른쪽 끝에 떠서(JS가 위치 계산) 누르면 적용.
+     확정 없이 칸을 벗어나면 원래 값으로 되돌아간다(타이핑 중간값 적용 사고 방지). */
+  #numConfirmBtn {
+    display: none; position: fixed; z-index: 9999;
+    padding: 4px 9px; border: none; border-radius: 5px;
+    background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
+    font-family: inherit; line-height: 1; cursor: pointer;
+    box-shadow: 0 1px 5px rgba(0,0,0,.3);
+  }
+  #numConfirmBtn.on { display: inline-flex; }
+  #numConfirmBtn:hover { opacity: .9; }
+  /* 하단: 팔레트(왼쪽) + 편집창(오른쪽) 좌우 배치 */
+  #melodyRow { display: flex; gap: 16px; height: 330px; align-items: stretch; }
+  /* 폭을 고정해 율명/시김새 탭을 전환해도 팔레트 너비가 똑같이 유지되도록 함 */
+  #paletteCol { flex: 0 0 auto; width: 450px; max-width: 60%; display: flex; flex-direction: column;
+                min-height: 0; }
+  /* 팔레트 머리: 한 줄(표·건반, 조, 표기, 소리 + 크기 ±) — 율명/시김새 탭은 위 선율 입력 머리로 이동 */
+  .pal-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  /* .pal-views·.pal-view 자체 모양은 팔레트 섹션 앞쪽(.pal-views/.pal-view)에서 정의 */
+  .melody-head .pal-views { margin-left: 6px; }
+  /* 팔레트 머리 두 줄 — 첫 줄(.pal-top): 제목 + 오른쪽 입력·소리·크기(팔레트 전체 공통),
+     둘째 줄(.pal-tools): 율명 전용 설정 묶음. 시김새 탭에선 둘째 줄이 통째로 숨어
+     첫 줄 하나만 남는다(세로 최소화). */
+  /* flex:0 0 auto — 세로 flex 도구창(시김새 창 등)이 max-height에 눌릴 때 이 줄까지
+     min-height로 짜부라지면 안의 버튼이 위아래로 삐져나와 아래 안내 상자와 겹쳐 보인다 */
+  .pal-top { display: flex; align-items: center; gap: 12px; min-height: 24px; flex: 0 0 auto; }
+  .pal-top-right { margin-left: auto; display: inline-flex; align-items: center; gap: 12px; }
+  .pal-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 5px; }
+  #paletteCol.orn-active .pal-tools { display: none; }
+  /* 표기(한자/한글)는 율명 팔레트에서만 의미가 있으므로 시김새 탭에서는 숨김 (크기 ±는 항상 표시) */
+  #paletteCol.orn-active .tool-inline:not(.size-ctl) { display: none; }
+  /* 시김새 칩 (이미지 + 한글 이름) — 컨테이너 폭에 맞춰 칸 수가 자동으로 변하는 격자
+     (auto-fill): 좁으면 줄어들고 넓으면 빽빽하게 채운다. 칸 높이는 고정해 표처럼
+     가지런히. 이미지 자체 크기는 JS에서 실제 악보에 그려지는 상대 크기(붙임표/독립
+     기호 배율)를 반영해 정함(ornIconPx). */
+  .palette .ornrow { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+                     gap: 3px; margin-bottom: 8px; }
+  /* 장단 팔레트(칩 6개)는 폭이 내용에 맞춰지는(max-content) 상자라 auto-fill 격자가
+     1열로 계산돼 세로로 무너진다 — 원래대로 가로 flex 나열 유지 */
+  #jangdanPalette .ornrow { display: flex; flex-wrap: wrap; gap: 4px; }
+  #jangdanPalette .ornchip { flex: 0 0 54px; width: 54px; }
+  .palette .ornchip { flex: none; width: auto; height: 50px; box-sizing: border-box;
+                      flex-direction: column; gap: 2px; padding: 2px; }
+  .palette .ornchip img { object-fit: contain; max-width: 30px; max-height: 30px; }
+  /* '다'는 원본 svg가 거의 정사각형이라 object-fit:contain 상자를 다른(세로로 긴) 기호들보다
+     꽉 채워서 유독 커 보였음 — 기본 크기(30px)의 0.2배로 줄임 */
+  #jangdanPalette .ornchip img[alt="다"] { max-width: 6px; max-height: 6px; }
+  .palette .ornchip .ocap { font-size: 8px; color: var(--muted); white-space: normal;
+                            text-align: center; line-height: 1.1; word-break: keep-all; }
+  /* 시김새 그룹 제목(붙임표/독립 기호) — 악보 서체로 크게, 오른쪽으로 가는 괘선과 함께 */
+  .palette .orn-sec { display: flex; align-items: baseline; gap: 8px; margin: 12px 2px 7px; }
+  .palette .orn-sec:first-child { margin-top: 2px; }
+  .palette .orn-sec b { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif;
+                        font-size: 16px; font-weight: 700; color: var(--accent);
+                        letter-spacing: 2px; white-space: nowrap; }
+  .palette .orn-sec span { font-size: 10px; color: var(--muted); white-space: nowrap; }
+  .palette .orn-sec::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--line); }
+  #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  #editorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  #melody { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px;
+            -moz-tab-size: 8; tab-size: 8; }
+
+  /* 장단 입력 (선율 입력과 같은 구조, 6개짜리라 팔레트만 간소화)
+     — 헤더의 스위치를 꺼두면 입력창·버튼은 숨기고 스위치·안내만 남긴다 */
+  body:not(.want-jangdan) #jangdanArea #jangdanRow,
+  body:not(.want-jangdan) #jangdanArea .mh-reset { display: none; }
+  #jangdanRow { display: flex; gap: 12px; height: 140px; align-items: stretch; }
+  #jangdanPaletteWrap { flex: 0 0 auto; max-width: 45%; overflow: auto; }
+  #jangdanPalette.palette { height: 100%; align-content: flex-start; }
+  #jangdanEditorCol { flex: 1 1 auto; min-width: 0; display: flex; }
+  #jangdan { width: 100%; height: 100%; resize: none; box-sizing: border-box;
+             font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+             border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+  /* 가사 입력 (선율 입력과 같은 구조, 글자는 자유 텍스트 + special 기호 팔레트)
+     — 헤더의 스위치를 꺼두면 입력창·버튼·기호 팔레트는 숨기고 스위치·안내만 남긴다 */
+  body:not(.want-lyrics) #lyricsArea #lyricsRow,
+  body:not(.want-lyrics) #lyricsArea #lyricsSymPal,
+  body:not(.want-lyrics) #lyricsArea .mh-right { display: none; }
+  /* 가사 기호 팔레트 — special SVG를 클릭해 가사 칸에 이미지로 넣는다 */
+  .lyric-sym-pal { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .lyric-sym-pal .lsp-label { font-size: 11px; color: var(--muted); flex: 0 0 auto; }
+  .lyric-sym-pal .lsp-row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .lyric-sym-pal .lsp-btn { display: flex; flex-direction: column; align-items: center; gap: 2px;
+    width: 44px; padding: 4px 2px; background: var(--soft); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; color: var(--ink); }
+  .lyric-sym-pal .lsp-btn:hover { background: var(--hover); }
+  .lyric-sym-pal .lsp-btn img { width: 22px; height: 22px; object-fit: contain; }
+  .lyric-sym-pal .lsp-cap { font-size: 8px; color: var(--muted); white-space: nowrap; }
+  #lyricsRow { display: flex; gap: 12px; height: 140px; align-items: stretch; }
+  #lyricsEditorCol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  #lyrics { width: 100%; flex: 1 1 auto; min-height: 0; resize: none; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+            border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+  /* 텍스트(자유 텍스트 주석) 탭 — 추가 입력줄 + 텍스트별 조절 목록 */
+  #textRow { height: 140px; overflow-y: auto; }
+  .tx-add { display: flex; gap: 6px; max-width: 340px; margin-bottom: 4px; }
+  .tx-add input { flex: 1; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px;
+                  font-family: inherit; font-size: 13px; }
+  .tx-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+             padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .tx-item input[type="text"] { width: 150px; padding: 5px 7px; border: 1px solid var(--line);
+                                border-radius: 6px; font-family: inherit; font-size: 13px; }
+  .tx-item label { display: flex; align-items: center; gap: 5px;
+                   font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .tx-item select, .tx-item input[type="number"] { padding: 4px 6px; border: 1px solid var(--line);
+                   border-radius: 6px; font-family: inherit; font-size: 12px; background: var(--panel); }
+  .tx-item input[type="number"] { width: 58px; }
+  .tx-item .tx-del { border: none; background: none; color: var(--danger); cursor: pointer;
+                     font-size: 16px; line-height: 1; padding: 2px 6px; }
+  .tx-item input[type="color"] { width: 28px; height: 22px; padding: 1px 2px; border: 1px solid var(--line);
+                                 border-radius: 5px; cursor: pointer; background: var(--panel); }
+  .tx-empty { font-size: 12px; color: var(--muted); padding: 8px 0; }
+
+  /* 임시 저장(이 컴퓨터) 슬롯 목록 */
+  /* 임시저장 버튼 — 출력 탭 다른 동작 버튼(.btns button: 13px·600)과 글자 굵기·크기를
+     맞추고, 옆 입력칸(패딩 8px)과 같은 높이가 되도록 세로 패딩을 준다 */
+  #snapSaveBtn { flex: 0 0 auto; padding: 8px 14px; font-size: 13px; font-weight: 600; }
+  #snapList { margin-top: 8px; }
+  .snap-item { display: flex; align-items: center; gap: 8px; padding: 6px 0;
+               border-top: 1px solid var(--line); font-size: 12px; }
+  .snap-item:first-child { border-top: none; }
+  .snap-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; font-weight: 600; }
+  .snap-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .snap-item .snap-load { border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+                          border-radius: 6px;
+                          padding: 3px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .snap-item .snap-load:hover { border-color: var(--accent); color: var(--accent); }
+  .snap-item .snap-del { border: none; background: none; color: var(--danger); cursor: pointer;
+                         font-size: 14px; line-height: 1; padding: 2px 4px; }
+  .snap-empty { font-size: 12px; color: var(--muted); padding: 6px 0; }
+
+  /* 팔레트 표·에디터 글자 크기 조절 (− / + 미니 버튼) */
+  .size-ctl { display: inline-flex; align-items: center; gap: 3px; }
+  .size-ctl button { width: 20px; height: 20px; border: 1px solid var(--line); background: var(--panel);
+                     border-radius: 5px; cursor: pointer; font-size: 13px; line-height: 1;
+                     color: var(--ink); padding: 0; }
+  .size-ctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .ed-font-ctl { position: absolute; top: 6px; right: 16px; z-index: 2; opacity: .45; }
+  .ed-font-ctl:hover { opacity: 1; }
+
+  /* 에디터 머리 — 팔레트 머리(.pal-head)와 같은 한 줄·밑줄 구조로 좌우 컬럼을 나란히 맞춤 */
+  .ed-head { margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .ed-top { display: flex; align-items: center; gap: 10px; min-height: 28px; flex-wrap: wrap; }
+  /* 컬럼 제목(텍스트 에디터/시김새) — 주변 도구 글씨(11~12px)보다 확실히 크게 해 섹션이 눈에 띄게 */
+  .ed-title { padding: 3px 1px 6px; font-size: 15px; font-weight: 700; color: var(--accent);
+              border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
+  .ed-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+  /* 직접 입력 모드 — 텍스트 에디터(칸)는 필요 없으므로 통째로 숨기고, 율명·시김새는
+     각자 독립된 도구창(#paletteCol, #ornWinWrap)이 되어 .direct-win 공통 규칙을 따른다. */
+  #directOrnWrap { display: none; }
+  #melodyArea.mel-direct #editorCol,
+  #melodyArea.mel-direct #melodySplit,
+  #melodyArea.mel-direct .melody-head { display: none !important; }
+  #melodyArea.mel-direct #directOrnWrap { display: block; }
+  /* #melodyRow의 고정 height(330px)는 자식(팔레트)이 도킹돼 있던 시절 것 — 이제 자식들이
+     전부 position:absolute라 이 박스가 빈 채로 330px를 그대로 차지해 사이드바 전체가
+     안 줄어드는 문제가 있었다. 높이를 없애 빈 상자가 자리만 차지하지 않게 한다. */
+  #melodyArea.mel-direct #melodyRow { height: 0; }
+  /* 도구창 제목('율명'/'시김새') — 직접 입력 모드에서만 */
+  .pal-col-title { display: none; }
+  #melodyArea.mel-direct .pal-col-title {
+    display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
+    color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
+
+  /* 직접 입력 모드 — 장단·가사도 선율과 마찬가지로 악보의 정간을 클릭해 입력한다.
+     텍스트 에디터(칸)는 통째로 필요 없으므로 숨긴다. #jangdanPaletteWrap은 원래
+     max-width:45%로 옆의 에디터 칸과 자리를 나눠 쓰던 값이라, 그 칸이 없어진 지금은
+     명시적으로 폭을 꽉 채우게(flex:1 1 auto) 다시 잡아줘야 한다(안 그러면 반만
+     쓰고 나머지는 빈 자리로 남아 팔레트가 잘려 보인다). */
+  body.input-direct #jangdanEditorCol,
+  body.input-direct #lyricsEditorCol { display: none; }
+  body.input-direct #jangdanPaletteWrap { flex: 1 1 auto; max-width: none; }
+
+  /* 선율 에디터 오탈자 표시 — 텍스트영역 뒤에 같은 글씨 배치로 빨간 배경만 비쳐 보이게 */
+  #melodyHlWrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+  #melodyHlBack { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+                  font-family: ui-monospace, Menlo, monospace; font-size: 14px; line-height: 1.7;
+                  padding: 10px; border: 1px solid transparent; border-radius: 8px;
+                  white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+                  color: transparent; box-sizing: border-box; -moz-tab-size: 8; tab-size: 8; }
+  #melodyHlBack mark { background: rgba(224, 73, 73, .3); color: transparent;
+                       border-radius: 2px; padding: 0; }
+  #melodyHlWrap #melody { position: relative; background: transparent; }
+
+  /* 모드 탭 */
+  .tabs { display: flex; gap: 2px; margin: 12px 0 16px; border-bottom: 1px solid var(--line); }
+  .tab { flex: 1; padding: 9px 4px; border: none; background: none; cursor: pointer;
+         font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+         border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
+  .tabpanel .sec:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  /* 사이드바 접기/펼치기 */
+  .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  /* 설정 폼 열기 — 상단바 흐름 안의 맨 오른쪽 자리(.topbar-cmd 꼴). 접혀 있을 때만 나타난다.
+     예전엔 화면 위에 fixed(right:52px)로 떠 있어서 확대축소 바의 가로맞춤 버튼과 겹쳤다. */
+  .side-open { display: none; }
+  body.sidebar-collapsed #sidebar { display: none; }
+  body.sidebar-collapsed .side-open { display: flex; }
+
+  /* 율명 표기 셀렉트 */
+  .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+  .tool-inline select { padding: 5px 24px 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+                        font-size: 12px; font-family: inherit; background-color: var(--panel); cursor: pointer;
+                        background-position: right 7px center; background-size: 10px; }
+
+  /* 편집창 접기 */
+  .mini-toggle { margin-right: 2px; transition: transform .12s ease; }
+  #melodyArea.editor-collapsed #melodyRow { display: none; }
+  #melodyArea.editor-collapsed .mini-toggle { transform: rotate(-90deg); }
+
+  /* 입력 방법 가이드 (?) 토글 — 다른 아이콘 버튼과 같은 부품(.icon-btn) 사용 */
+  .guide-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+  .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
+                  background: var(--overlay); border: 1px solid var(--accent); border-radius: 10px;
+                  padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
+                  font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6;
+                  white-space: normal; }   /* .melody-head의 nowrap을 되돌림 — 안 그러면 문장이 박스 밖으로 넘침 */
+  .melody-guide.on { display: block; }
+  /* 화면 아래로 넘칠 때 JS(makeGuideToggle)가 붙이는 위로 펼침 상태 */
+  .melody-guide.up { top: auto; bottom: calc(100% + 8px); }
+  .melody-guide b { color: var(--accent); font-size: 11px; letter-spacing: .5px; }
+  .melody-guide .mg-sec { margin-top: 8px; }
+  .melody-guide .mg-sec:first-child { margin-top: 0; }
+
+  /* ---------- 도움말 센터 · 환영 카드 · 둘러보기 ---------- */
+  /* 색은 전부 역할별 변수만 사용 — 다크 모드에 추가할 것이 없게 유지한다.
+     dim 배경(오버레이·투어 그늘)만 .modal-overlay처럼 고정 rgba 허용. */
+
+  /* 도움말 센터 — 새 문서 마법사와 같은 .modal-overlay 위에 뜨는 넓은 상자.
+     머리(제목)·본문(왼쪽 탭 기둥 + 내용)·발(둘러보기 버튼) 세로 3단 구조 */
+  .help-box { width: 720px; max-width: calc(100vw - 32px);
+              max-height: min(600px, calc(100vh - 48px));
+              padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .help-head { display: flex; align-items: center; justify-content: space-between;
+               padding: 14px 18px 10px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
+  .help-head h3 { margin: 0; }
+  .help-body { display: flex; flex: 1; min-height: 0; }
+  /* 사이드바 탭과 클래스가 겹치면 안 됨(.tab/.tabpanel은 app.js가 문서 전체를 토글) —
+     도움말 전용 .help-tab/.help-pane을 쓴다 */
+  .help-tabs { flex: 0 0 118px; display: flex; flex-direction: column; gap: 2px;
+               padding: 12px 8px; border-right: 1px solid var(--line); background: var(--soft); }
+  .help-tab { text-align: left; border: none; background: none; color: var(--muted);
+              font-family: inherit; font-size: 12px; font-weight: 600;
+              padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+  .help-tab:hover { background: var(--hover); color: var(--ink); }
+  .help-tab.active { color: var(--accent); background: var(--accent-soft); }
+  .help-panes { flex: 1; min-width: 0; display: flex; }
+  .help-pane { display: none; flex: 1; min-width: 0; overflow-y: auto;
+               padding: 16px 20px; font-size: 12.5px; line-height: 1.7; color: var(--ink); }
+  .help-pane.active { display: block; }
+  .help-pane h4 { margin: 14px 0 6px; font-size: 12px; color: var(--accent); letter-spacing: .5px; }
+  .help-pane h4:first-child { margin-top: 0; }
+  .help-pane p, .help-pane ul, .help-pane ol { margin: 0 0 8px; }
+  .help-pane ul, .help-pane ol { padding-left: 18px; }
+  .help-pane li { margin-bottom: 3px; }
+  .help-pane table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  .help-pane th, .help-pane td { border-bottom: 1px solid var(--line); padding: 5px 8px;
+                                 text-align: left; vertical-align: top; }
+  .help-pane th { color: var(--muted); font-size: 11px; font-weight: 600; }
+  .key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
+         background: var(--soft); border: 1px solid var(--line); border-radius: 4px;
+         padding: 1px 5px; white-space: nowrap; }
+  .help-fig { display: block; margin: 10px auto; max-width: 320px; width: 100%; height: auto; }
+  .help-foot { padding: 10px 18px; border-top: 1px solid var(--line); text-align: right;
+               flex: 0 0 auto; }
+  .help-foot button { border: 1px solid var(--accent); background: var(--panel); color: var(--accent);
+                      border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 600;
+                      cursor: pointer; font-family: inherit; }
+  .help-foot button:hover { opacity: .9; }
+
+  /* 환영 카드 — 진짜 첫 방문에만 한 번. 버튼 3개가 세로로 쌓인 작은 카드 */
+  .welcome-box { width: 380px; text-align: center; }
+  .welcome-sub { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin: 0 0 4px; }
+  .welcome-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .welcome-btns button { padding: 10px; border: 1px solid var(--accent); background: var(--accent);
+                         color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600;
+                         cursor: pointer; font-family: inherit; }
+  .welcome-btns button.secondary { background: var(--panel); color: var(--accent); }
+  .welcome-btns button:hover { opacity: .9; }
+
+  /* 둘러보기(투어) — 화면 전체를 덮는 레이어(z 800: 모달 500 위, 툴팁 9999 아래).
+     구멍(#tourHole)은 거대한 box-shadow로 주변만 어둡게 하는 컷아웃 트릭 —
+     레이어 자체가 포인터를 삼켜 아래 UI 클릭·호버를 막는다. */
+  #tourLayer { position: fixed; inset: 0; z-index: 800; overflow: hidden; }
+  #tourHole { position: absolute; border-radius: 10px; pointer-events: none;
+              box-shadow: 0 0 0 9999px rgba(20,18,14,.55);
+              outline: 2px solid var(--accent);
+              transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
+  #tourCard { position: absolute; width: 300px; max-width: calc(100vw - 24px);
+              background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+              border-radius: 10px; padding: 14px 16px;
+              box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+  #tourStepNum { font-size: 11px; color: var(--muted); }
+  #tourCard h4 { margin: 2px 0 6px; font-size: 13px; color: var(--accent); }
+  #tourCard p { margin: 0 0 12px; font-size: 12px; line-height: 1.65; }
+  .tour-btns { display: flex; gap: 6px; }
+  .tour-btns #tourSkip { margin-right: auto; }
+  .tour-btns button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
+                      border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+                      cursor: pointer; font-family: inherit; }
+  .tour-btns button.secondary { background: var(--panel); color: var(--accent); }
+  .tour-btns button:hover { opacity: .9; }
+
+  /* ============ 다크 모드 ============ */
+  /* 색은 전부 위의 역할별 변수를 통하므로, 여기서 그 값만 어둡게 갈아끼우면 UI 전체가
+     따라온다. 악보(종이)는 별도 흰색 SVG라 그대로 흰 종이로 남는다 — #sheetArea만
+     어두워져 종이가 어두운 캔버스 위에 놓인 모양(피그마·워드 다크모드 방식). */
+  body.dark {
+    --bg: #16150f;          /* 앱 바탕 (짙은 먹색) */
+    --panel: #26241d;       /* 카드·입력·버튼 표면 */
+    --soft: #201e18;        /* 은은한 바탕 */
+    --hover: #34302a;       /* 호버 */
+    --track: #3a362e;       /* 토글 꺼짐 트랙 */
+    --line: #423d34;        /* 테두리 */
+    --ink: #eee9dd;         /* 본문 글자 */
+    --muted: #a8a293;       /* 보조 글자 */
+    /* 다크 시그니처 색은 파랑 — 어두운 바탕에서 갈색보다 가시성이 훨씬 높다 */
+    --accent: #4d96ec;      /* 강조(파랑) */
+    --accent-soft: #182a41; /* 강조 옅은 바탕(켜진 토글 등) */
+    --accent-tint: #1f3a5c; /* 선택된 옵션 바탕 */
+    --accent-glow: rgba(77,150,236,.32);  /* 입력 포커스 글로우 */
+    --overlay: rgba(38,36,29,.97);  /* 악보 위 뜨는 도구창 */
+    --danger: #e2857b;      /* 경고 글자 — 어두운 바탕용 밝은 빨강 */
+    --danger-2: #e2857b;
+    --danger-soft: #3a201d; /* 지우기 옅은 바탕 */
+    --danger-line: #6b423d; /* 지우기 테두리 */
+  }
+  /* 셀렉트 화살표 아이콘은 CSS 안 data-URI라 변수로 안 바뀜 — 다크에선 밝은 획으로 교체 */
+  body.dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a293' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  }
+  /* 악보를 둘러싼 캔버스는 더 짙게 해서 흰 종이가 도드라지게 */
+  body.dark #sheetArea { background: #0d0c09; }
+  /* 시김새·장단 팔레트 기호는 검은 선 그림(이미지)이라 어두운 팔레트에서 안 보인다 —
+     팔레트 안에서만 반전해 흰 선으로 그린다. 악보(흰 종이)의 기호는 #sheet svg image라
+     이 규칙에 안 걸려 그대로 검정으로 남는다(인쇄·PNG도 안 바뀜). */
+  body.dark .palette img { filter: invert(1); }
+  /* 도움말 도해의 시김새 이미지도 같은 이유로 다크에선 흰 선으로 반전 */
+  body.dark .help-sigim { filter: invert(1); }
+  /* 상단바 다크모드 토글 — '누르면 갈 모드' 아이콘: 라이트=달(→다크), 다크=해(→라이트) */
+  #darkToggle .sun { display: none; }
+  body.dark #darkToggle .moon { display: none; }
+  body.dark #darkToggle .sun { display: block; }
+
+  @media print {
+    /* 인쇄는 다크모드여도 항상 흰 종이 — 테마 변수를 라이트로 되돌리고 배경도 흰색 고정 */
+    :root, body.dark { --bg:#fff; --panel:#fff; --soft:#fff; --ink:#000; --line:#d9d6cf; }
+    body { display: block; height: auto; overflow: visible; background: #fff; }
+    /* 직접 입력 모드에선 기능바(#melodyRibbon)가 #leftDock 안에 있어(왼쪽 도킹이면 왼쪽 세로 열)
+       인쇄 첫 장에 사이드바처럼 찍혔다 — #leftDock·기능바·뜬 도구창까지 모두 숨긴다. */
+    #topBar, #sidebar, #editorDock, #leftDock, #melodyRibbon, .direct-win,
+    .float-bar, .side-open, #helpModal, #welcomeModal, #tourLayer { display: none !important; }
+    #main, #sheetArea { display: block; padding: 0; overflow: visible; background: #fff; }
+    #sheet { transform: none !important; display: block; gap: 0; }
+    .page { box-shadow: none; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .page svg { width: 210mm; height: 297mm; }
+    body.landscape .page svg { width: 297mm; height: 210mm; }
+    /* 편집·재생 하이라이트는 화면 확인용이라 인쇄에는 나오지 않아야 한다 */
+    .no-print { display: none !important; }
+  }

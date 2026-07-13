@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Claude / 로컬 도구 설정
+.claude/
+
+# 악보 · 이미지 · 논문 (코드만 커밋)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+정악보/
+symbol_samples/
+
+# 로컬 보관 폴더 · 참고 자료(이미지 등은 위 규칙으로 이미 제외)
+_보관/
+
+# 예외: 논문 그림은 커밋 (paper/가 자체 완결로 컴파일되도록)
+!paper/figures/*.png

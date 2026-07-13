@@ -1,0 +1,99 @@
+\section{정간보 텍스트 문법}
+\label{sec:grammar}
+
+\subsection{설계 목표}
+
+문법 설계의 목표는 네 가지다.
+(1) \textbf{가독성}: 국악 전공자가 문서만 보고 5분 안에 익힐 수 있을 것.
+(2) \textbf{구조 동형성}: 텍스트의 시각적 배열이 악보 지면의 격자 구조와
+일대일로 대응할 것 --- 줄이 곧 각이고, 구분자가 곧 정간선이다.
+(3) \textbf{완전성}: 율명·옥타브·분박·붙임·이음·쉼표·숨표·시김새와
+그 미세 조정값까지 지면에 나타나는 모든 정보를 잃지 않고 담을 것.
+(4) \textbf{도구 친화성}: 일반 텍스트이므로 복사·붙여넣기, 차이 비교(diff),
+버전 관리, 프로그램 처리에 그대로 쓸 수 있을 것.
+
+\subsection{문법 정의}
+
+% JDCS: 표 캡션은 표 위, 국문(표 n.)+영문(Table n.) 병기, 표 내부는 영문
+\begin{table}[t]
+\centering\small
+\caption{선율 텍스트 문법 요약\\
+Table~\thetable. Summary of the melody text grammar}
+\label{tab:grammar}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\toprule
+Notation & Meaning \\
+\midrule
+Line break & Gak (vertical column) boundary \\
+\code{|} & Jeonggan (one-beat cell) boundary \\
+Space inside a cell & Bunbak --- vertical subdivision of the cell \\
+Juxtaposition (no space) & Buchim --- horizontal grouping within a row \\
+황·대·태$\cdots$응* & Twelve yulmyeong pitch names (Hangul) \\
+청·중청·배·하배* & Octave prefixes ($+1,+2,-1,-2$) \\
+\code{-} & Sustain of the previous note \\
+\code{쉼}* & Rest (silence) \\
+\code{<} after a note & Breath mark (lower-right corner of the cell) \\
+\code{\{name\}} & Attach a sigimsae (e.g., \code{황\{미는표\}}) \\
+\code{\{name@$s$,$x$,$y$\}} & Sigimsae scale $s$ \% and offset $x$, $y$ \\
+\bottomrule
+\end{tabularx}
+
+\smallskip
+\raggedright\scriptsize *Korean tokens are unavoidable here: they are the
+literal input vocabulary of the notation itself.
+\end{table}
+
+표~\ref{tab:grammar}이 문법 전체다. 형식적으로 문서는 다음과 같이 정의된다.
+
+\begin{quote}\footnotesize\ttfamily
+문서\ \ := 각 (줄바꿈 각)* \\
+각\ \ \ \ := 정간 ("|" 정간)* \\
+정간\ \ := 분박 (" " 분박)* \\
+분박\ \ := 음표+ \\
+음표\ \ := (옥타브? 율명 | "-" | "쉼")\\
+\hspace*{3.4em}시김새* "<"?
+\end{quote}
+
+핵심 규칙은 두 가지다. 첫째, 정간 안의 \emph{공백}이 칸을 세로로 등분하고
+(2분박·3분박$\cdots$), 공백 없이 이어 쓴 음은 그 분박 행 안에서 가로로
+배치된다. 예컨대 \code{황 태협}은 첫 행에 황, 둘째 행에 태·협이 놓인
+3음 구조로, 위치가 곧 시가라는 정간보 원리가 텍스트에도 그대로 성립한다.
+둘째, 격자는 입력된 \code{|}의 개수가 아니라 문서 설정(한 각의 정간 수)을
+기준으로 항상 온전히 그려지므로, 빈 정간(\code{ | })은 빈 채 유지되어
+입력 도중의 불완전한 텍스트도 언제나 유효한 악보로 렌더링된다.
+
+그림~\ref{fig:mapping}에 이 문법과 조판 결과의 실제 대응을 보였다.
+
+가사와 장단(장구 구음)도 동일한 문법을 공유한다. 가사는 정간마다 한 음절을
+적으면 해당 정간 오른쪽에 병기되고, 장단은 덩·기덕·궁·덕·더러러러 등
+구음 7종을 같은 구분자 규칙으로 적어 곡 첫머리에 한 각 폭으로 표시된다.
+세 계층(선율·장단·가사)은 각·정간 단위로 1:1 정렬되며, 각을 삽입·삭제하면
+가사 계층이 함께 밀리고 당겨져 정렬이 깨지지 않는다.
+
+\subsection{시김새의 텍스트 직렬화}
+
+시김새는 이름 기반으로 \code{\{미는표\}}처럼 부가하며, 그래픽 사용자
+인터페이스(GUI; graphical user interface)에서 개별 기호의
+크기·위치를 미세 조정하면 그 값이 \code{\{미는표@120,5,-5\}}(120 \% 크기,
+오른쪽 5, 위 5) 형태로 같은 텍스트에 직렬화된다. 기본값(100,0,0)이면 이름만
+남는다. 이로써 ``문법으로 표현 못 하는 시각 조정''이 생기지 않으며,
+텍스트 하나가 문서의 완전한 원천(single source of truth)이 된다.
+
+\subsection{XML 기술 방식과의 간결성 비교}
+
+기존 XML DTD 방식~\cite{lee2013xml}에서 음 하나는 최소한
+여는 태그·속성·닫는 태그를 요구한다. 예를 들어 한 정간에서
+황과 태를 2분박으로 나누는 경우를 개념적으로 비교하면 다음과 같다.
+
+\begin{quote}\small
+제안 문법: \code{황 태} (3자)\\[2pt]
+XML 방식: \code{<jeonggan><bunbak><note pitch="황"/>}\allowbreak
+\code{</bunbak><bunbak><note pitch="태"/></bunbak></jeonggan>} (수십 자)
+\end{quote}
+
+\TODO{lee2013xml 원문의 실제 태그 구조를 확인해 위 예시를 원문 표기로
+교체하고, 취타 1곡 전체를 양 방식으로 인코딩한 문자 수·구문 요소 수를
+표로 제시할 것}
+
+물론 XML은 스키마 검증·범용 파서라는 장점이 있으므로, 제안 시스템은
+문서 교환 시 텍스트 문법을 JSON 컨테이너에 담는 절충을 취했다(4-8절).

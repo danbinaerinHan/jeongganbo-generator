@@ -1,0 +1,70 @@
+\section{결과 및 논의}
+\label{sec:discussion}
+
+\subsection{기존 도구·연구와의 기능 비교}
+
+% JDCS: 표 내부는 영문, 캡션은 표 위 국문+영문 병기
+\begin{table*}[t]
+\centering\scriptsize\setlength{\tabcolsep}{3pt}
+\caption{정간보 관련 도구·연구와의 기능 비교
+(\(\bullet\)=지원, \(\circ\)=부분 지원, ---=미지원)\\
+Table~\thetable. Feature comparison with existing jeongganbo tools and
+studies (\(\bullet\)=supported, \(\circ\)=partial, ---=unsupported)}
+\label{tab:compare}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & Ours & XML encoding~\cite{lee2013xml} & Web design~\cite{jkca2022web}
+ & Web editor~\cite{jeongganbo-editor-web} & HWP tables & MuseScore~\cite{musescore} \\
+\midrule
+Human-readable text grammar      & \(\bullet\) & --- & --- & --- & --- & --- \\
+WYSIWYG editing                  & \(\bullet\) & --- & \(\circ\) & \(\bullet\) & \(\bullet\) & \(\bullet\) \\
+Positional duration (subdivision) & \(\bullet\) & \(\bullet\) & \TODO{확인} & \(\circ\) & \(\circ\) & --- \\
+Sigimsae ornaments               & \(\bullet\)(59) & \(\circ\) & \TODO{확인} & --- & \(\circ\)(manual) & --- \\
+Rhythm and lyric layers          & \(\bullet\) & \(\circ\) & \TODO{확인} & --- & \(\circ\)(manual) & --- \\
+Right-to-left layout with daegang & \(\bullet\) & \(\circ\) & \TODO{확인} & \(\circ\) & \(\circ\)(manual) & --- \\
+Playback                         & \(\bullet\) & \(\circ\) & --- & --- & --- & \(\bullet\)(staff) \\
+Print/PDF/PNG export             & \(\bullet\) & --- & --- & \(\circ\)(PNG) & \(\bullet\) & \(\bullet\) \\
+Structured interchange           & \(\bullet\)(JSON) & \(\bullet\)(XML) & \TODO{확인} & \(\circ\)(JSON) & --- & \(\bullet\)(MusicXML) \\
+Serverless offline use           & \(\bullet\) & N/A & \TODO{확인} & --- & \(\bullet\) & \(\bullet\) \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+표~\ref{tab:compare}에 정간보 관련 도구·연구와의 기능 비교를 정리했다.
+본 시스템은 텍스트 문법과 WYSIWYG을 겸비하고 시김새·장단·가사·조판·출력·
+재생을 한 도구에서 지원한다는 점에서, 인코딩 제안에 머문 연구나 기본
+격자 입력만 제공하는 기존 편집기와 구별된다.
+\TODO{비교표의 각 칸을 해당 도구를 직접 실행/원문 확인 후 재검증할 것 ---
+특히 jkca2022web 열은 현재 추정임}
+
+\subsection{사례 연구: 간행 악보 재현}
+
+본문 그림들(그림~\ref{fig:ui}--\ref{fig:mapping})의 문서는 문법 요소를
+고루 포함하도록 구성한 예시 악보이다. 간행 악보 재현의 사례 연구로는
+해금정악보의 군악(12정간, 대강 3·3·3·3)을 대상으로 원본 지면과 동일한
+배치(세로 제목 칸·장단 열·시김새 포함)를 재현하고 원본 스캔과 나란히
+비교할 계획이다.
+\TODO{저자 직접 작업 필요: `악보 예시/예시 이미지-12박(대강3333).png'
+(해금정악보 68쪽 군악)를 채보해 재현하고 --- 해금 활대 방향 표시 등
+관악보 고유 기호의 처리 방식 결정 포함 --- 원본/출력 비교 그림, 입력
+소요 시간, 텍스트 소스 길이, \code{.jgb.json} 파일 크기 등 정량 정보를
+기입할 것. 원본 스캔 게재 시 저작권 확인 필요}
+전 과정에 서버 통신이 없고, 완성 문서는 수십 KB 수준의
+\code{.jgb.json} 하나로 보존·공유된다.
+
+\subsection{한계}
+
+현재 구현의 한계는 다음과 같다.
+첫째, 재생이 사인파 단선율에 그치며 시김새·장단이 소리에 반영되지 않는다.
+시김새는 본질적으로 미분음적 음높이 굴곡이므로, 기호별 음고 궤적
+모델링이 필요하다.
+둘째, 셀 서식(배경색·테두리)이 선율 정간에만 적용되고 장단·가사 칸은
+지원하지 않는다.
+셋째, MusicXML·MEI 등 표준 포맷과의 상호 변환이 없어 오선보 병기나
+서양 도구 연계가 수동이다.
+넷째, 사용성 평가를 아직 수행하지 않았다. 국악 전공자·교사를 대상으로
+과제 기반 평가(기존 HWP 조판 대비 작성 시간·오류율·SUS(system usability
+scale) 점수)를 수행하는
+것이 후속 과제다. \TODO{투고 전 소규모라도 사용자 평가를 실시해 Ⅴ장을
+평가 결과 중심으로 재구성하는 것을 강력 권장 --- JDCS 심사에서 평가 부재가
+지적될 가능성이 높음}
