@@ -78,10 +78,7 @@
         <div class="pp-row"><span>템포 (BPM)</span>
           <input type="number" id="tempoBpm" min="20" max="240" value="60">
         </div>
-        <div class="pp-row"><span>악보에 템포 표시</span>
-          <label class="chk" title="켜면 맨 처음 각 위에 一分・三十井 식으로 표시됩니다"><input type="checkbox" id="wantTempo"></label>
-        </div>
-        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 템포 표시를 켜면 맨 처음 각 위에 一分・三十井 식으로 한자로 표시됩니다.</div>
+        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 악보에 템포를 표시하려면 '각/장' 창의 <b>템포</b> 체크를 켜세요(숫자는 여기 BPM을 따름).</div>
       </div>
     </div>
     <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
@@ -993,11 +990,16 @@
               • '1장'·'2장'처럼 쓰면 악보엔 一章·二章 꼴 한자로 표시됩니다.<br>
               • 대여음·중여음·여음·환입·초장·종장도 한자로 표시됩니다.<br>
               • 오른쪽 크기·간격으로 모든 이름을 한꺼번에 조절합니다 — 간격은
-                각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.
+                각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.<br>
+              • <b>템포</b>를 켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井
+                식으로 표시됩니다 — 숫자는 재생 설정(⚙)의 BPM, 크기·간격은 여기 설정을 따릅니다.
             </div>
           </div>
         </span>
         <span class="mh-right">
+          <label class="chk" title="켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井 식으로 표시합니다 — 숫자는 재생 설정(⚙)의 BPM을 따릅니다">
+            <input type="checkbox" id="wantTempo"> 템포
+          </label>
           <label class="chk" title="켜면 '1장'→一章, 대여음→大餘音처럼 한자로 표시합니다. 끄면 쓴 그대로">
             <input type="checkbox" id="gakNameHanja" checked> 한자
           </label>

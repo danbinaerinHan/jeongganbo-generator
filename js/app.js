@@ -3289,13 +3289,21 @@
             svg.appendChild(hit);
           }
 
-          // 템포 표시(一分・XX井) — 첫 페이지 맨 처음 각 위에만
-          if (wantTempo && pageIdx === 0 && melIdx === 0) {
+          // 템포 표기(一分・N井) — 각/장 라벨과 같은 크기·간격 규칙(맨 아래 글자 기준,
+          // 각/장 창의 크기·간격 설정을 그대로 따름). 장단이 있으면 장단 칸 위에서
+          // 그리므로 여기(첫 각 위)는 장단이 없을 때만.
+          function drawTempoLabel(cx, topY) {
             const chars = Array.from(tempoStr);
-            const frameTopY = bandTop - INNER_PAD;
-            const startY = frameTopY - tempoGap - (chars.length - 1) * tempoLineH - tempoFont * 0.15;
-            const tt = verticalText(x + cell / 2, startY, tempoStr, tempoFont, 600, "#000", NOTE_FONT);
-            svg.appendChild(tt.g);
+            const mul = Math.max(0.3, parseFloat($("gakNameSize").value) || 1);
+            const gap = Math.max(0, parseFloat($("gakNameGap").value) || 0) * scale;
+            const avail = (b === 0 ? Math.max(2, topY - 1) : Math.max(2, bandGap * 0.9)) - gap;
+            const need = 0.85 + 1.12 * (chars.length - 1);
+            const f = Math.min(cell * 0.38 * mul, Math.max(1, avail) / need);
+            const startY = topY - gap + f * 0.06 - (chars.length - 1) * f * 1.12;
+            svg.appendChild(verticalText(cx, startY, tempoStr, f, 400, "#000", NOTE_FONT).g);
+          }
+          if (wantTempo && pageIdx === 0 && melIdx === 0 && !wantJangdan) {
+            drawTempoLabel(x + cell / 2, bandTop);
           }
 
           // 각 이름(대여음·一章 등) — 그 각 위 여백에 세로쓰기. 첫 각의 템포 표시와
@@ -3321,7 +3329,7 @@
               const gnFont = Math.min(cell * 0.38 * gnMul, Math.max(1, gnAvail) / gnNeed);
               const gnLineH = gnFont * 1.12;
               const gnX = x + cell / 2
-                - ((wantTempo && pageIdx === 0 && melIdx === 0) ? cell * 0.75 : 0);
+                - ((wantTempo && pageIdx === 0 && melIdx === 0 && !wantJangdan) ? cell * 0.75 : 0);
               // 마지막 글자 기준선 — 한자·한글 잉크가 기준선 위에서 끝나는 몫(≈0.06)을
               // 보태 간격 0mm이면 잉크 밑이 각 위쪽 선에 딱 닿는다
               const gnStartY = gnTop - gnGap + gnFont * 0.06 - (gnChars.length - 1) * gnLineH;
@@ -3346,6 +3354,8 @@
           if (wantJangdan && melIdx === 0) {
             // 가사가 켜져 있으면 각들의 선 끝(가사 자리만큼 안쪽)에 맞춰 장단 칸도 같이 당김
             const jdRight = musicRightEdge - (wantLyrics ? lyExtraFull : 0), jdLeft = jdRight - jdW;
+            // 템포 표기 — 장단이 있으면 첫 각 대신 장단 칸 위에(같은 각/장 규칙)
+            if (wantTempo && pageIdx === 0) drawTempoLabel((jdLeft + jdRight) / 2, bandTop);
             // 어느 칸이 장단인지 알려주는 회색 '장단' 라벨 — 각 번호와 한 세트:
             // 같은 자리(각 아래)·같은 회색·같은 표시 설정(각 번호를 끄면 같이 꺼지고,
             // '화면에만'이면 gak-num 클래스로 인쇄·PNG에서도 각 번호와 같이 빠진다)
