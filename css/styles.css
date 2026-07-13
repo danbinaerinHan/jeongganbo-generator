@@ -731,6 +731,15 @@
      커진 표는 #paletteWrap 안에서 가로 스크롤로 본다(세로는 열 전체 스크롤에 맡김) */
   body.ribbon-left #melodyRibbon > #paletteCol.win-open { width: 450px; }
   body.ribbon-left #melodyRibbon #paletteWrap { overflow-x: auto; }
+  /* 도킹된 창 머리줄 — 열을 좁히면 컨트롤(악기·미세조정·크기±·닫기 ✕)이 서로 겹치는
+     대신 다음 줄로 접히게 한다. 오른쪽 묶음도 자체 줄바꿈 + 남는 폭에서 줄어들 수 있게 */
+  body.ribbon-left #melodyRibbon .pal-top,
+  body.ribbon-left #melodyRibbon .pal-head,
+  body.ribbon-left #melodyRibbon .melody-head { flex-wrap: wrap; row-gap: 5px; }
+  body.ribbon-left #melodyRibbon .pal-top-right,
+  body.ribbon-left #melodyRibbon .mh-right {
+    flex-wrap: wrap; row-gap: 5px; min-width: 0; justify-content: flex-end;
+  }
   /* 도킹된 창은 제자리에 붙어 있으니 끌기 그립을 숨긴다(끌면 relative 좌표가 어긋남) */
   body.ribbon-left #melodyRibbon .dock-panel-grip,
   body.ribbon-left #melodyRibbon .bar-grip { display: none; }
