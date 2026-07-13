@@ -702,15 +702,21 @@
   body.ribbon-left #melodyRibbon > #lyricsArea.win-open,
   body.ribbon-left #melodyRibbon > #textArea.win-open,
   body.ribbon-left #melodyRibbon > #gakNameArea.win-open { width: 450px; }
-  /* 도크 폭 끌기 손잡이 — 왼쪽 도킹에서만 열 사이에 나타난다(더블클릭 = 자동 폭) */
+  /* 도크 폭 끌기 손잡이 — 왼쪽 도킹에서만 열 사이에 나타난다(더블클릭 = 자동 폭).
+     다른 리사이저(#melodyResizer·#melodySplit)와 같은 언어: 가운데 알약 그립이
+     항상 보이고, 올리면 강조색 — '끌 수 있다'가 눈에 보이게. */
   #leftDockResizer { display: none; }
   body.ribbon-left #leftDockResizer {
-    display: block; flex: 0 0 6px; align-self: stretch; cursor: col-resize;
-    border-radius: 3px; margin-right: 4px; background: transparent;
-    transition: background .12s ease;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 10px; align-self: stretch; cursor: col-resize;
+    margin-right: 2px; touch-action: none;
   }
-  body.ribbon-left #leftDockResizer:hover,
-  body.ribbon-left #leftDockResizer.dragging { background: var(--accent-tint); }
+  body.ribbon-left #leftDockResizer::before {
+    content: ""; width: 4px; height: 46px; border-radius: 2px;
+    background: var(--line); transition: background .12s ease, height .12s ease;
+  }
+  body.ribbon-left #leftDockResizer:hover::before,
+  body.ribbon-left #leftDockResizer.dragging::before { background: var(--accent); height: 72px; }
   /* 사용자가 폭을 정한(leftdock-custom) 동안엔 고정 450px 대신 열 폭을 그대로 따른다 —
      내용이 더 넓으면 율명 표는 #paletteWrap 가로 스크롤로 본다 */
   body.ribbon-left.leftdock-custom #leftDock { max-width: none; }
