@@ -3346,13 +3346,17 @@
           if (wantJangdan && melIdx === 0) {
             // 가사가 켜져 있으면 각들의 선 끝(가사 자리만큼 안쪽)에 맞춰 장단 칸도 같이 당김
             const jdRight = musicRightEdge - (wantLyrics ? lyExtraFull : 0), jdLeft = jdRight - jdW;
-            // 어느 칸이 장단인지 화면에서만 알려주는 회색 라벨 — .no-print라
-            // 인쇄에서 숨고 PNG 저장에서도 빠진다(둘 다 .no-print를 제거함)
-            const jdLabel = el("text", { x: (jdLeft + jdRight) / 2, y: gridTop - cell * 0.22,
-              "text-anchor": "middle", "font-size": cell * 0.34, "font-family": CJK,
-              "font-weight": 600, fill: "#bdbab2", class: "no-print" });
-            jdLabel.textContent = "장단";
-            svg.appendChild(jdLabel);
+            // 어느 칸이 장단인지 알려주는 회색 '장단' 라벨 — 각 번호와 한 세트:
+            // 같은 자리(각 아래)·같은 회색·같은 표시 설정(각 번호를 끄면 같이 꺼지고,
+            // '화면에만'이면 gak-num 클래스로 인쇄·PNG에서도 각 번호와 같이 빠진다)
+            if (gakNumMode !== "none") {
+              const jdLabelFont = cell * 0.26;
+              const jdLabel = el("text", { x: (jdLeft + jdRight) / 2, y: gridBottom + jdLabelFont * 1.25,
+                "text-anchor": "middle", "font-size": jdLabelFont, "font-family": CJK,
+                fill: "#c9c9c9", "class": "gak-num" });
+              jdLabel.textContent = "장단";
+              svg.appendChild(jdLabel);
+            }
             // 장단 에디터 커서 하이라이트용 칸 좌표 (내용 유무와 무관하게 전체 박)
             for (let j = 0; j < beats; j++) {
               jdGeom[j] = { page: pageIdx, x: jdLeft, y: gridTop + j * cell, w: jdW, h: cell };
