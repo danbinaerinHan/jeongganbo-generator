@@ -1811,7 +1811,7 @@
     const wrap = $("lyricsSymRow");
     if (!wrap) return;
     wrap.innerHTML = "";
-    LYRIC_SYMS.forEach(function (stem) {
+    sortByInstrument(LYRIC_SYMS.slice(), function (n) { return n; }).forEach(function (stem) {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "lsp-btn";
@@ -1831,6 +1831,61 @@
       wrap.appendChild(item);
     });
   }
+
+  // ---------- 악기별 시김새 우선순위 ----------
+  // 악기를 고르면 그 악기에서 자주 쓰는 기호가 '각 그룹 안에서' 맨 앞으로 올라온다
+  // (붙임표/독립/운지 그룹 구분은 유지 — 그룹마다 입력 동작이 달라 섞지 않는다).
+  // 이름은 표시 이름(시김새 k·가사 기호 이름) 기준이고, 시김새·가사 팔레트가 각자
+  // 자기한테 있는 이름만 골라 쓴다 — 팔레트에 없는 이름은 조용히 무시된다.
+  // 요성표·겹요성표는 농음표를 뜻하므로 농음표로 적음(사용자 확인).
+  const INSTRUMENT_PRIORITY = {
+    "가야금": ["모지", "장지", "튕김", "연튕김", "뜰", "싸랭", "슬기둥1", "슬기둥2", "슬기둥3",
+              "전성", "퇴성", "흘림표", "추성", "미는표"],
+    "거문고": ["슬기둥1", "슬기둥2", "슬기둥3", "싸랭", "뜰", "자출", "추성", "퇴성", "전성",
+              "s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08",
+              "s12", "s13", "s14", "s15", "s16"],
+    "대금": ["미는표", "흘림표", "니레", "니라", "니로", "노네", "너녜", "노니로", "노리노",
+            "네로네", "느네느", "나니로", "로니로", "느로니르", "느니르", "니루니",
+            "나니르노니르", "노", "니", "로", "리", "니나", "느나", "노라", "느니",
+            "나니나", "나느나", "니레나", "네로나", "니로나", "니느라니", "느나니나",
+            "느나르나니", "농음표", "풀어내림표", "떠이어표", "같은음표"],
+    "피리": ["미는표", "흘림표", "서침표", "시루표", "루러표", "농음표", "덧길이표", "반길이표",
+            "늘임표", "니레", "니라", "노니노", "나니르", "나니나니르", "느로니르", "로", "니",
+            "니나", "느라", "느니", "니레나", "느나", "나니나", "나느나", "낮게", "니로나",
+            "느니라", "s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08"],
+    "해금": ["미는표", "흘림표", "노", "나", "니나", "노라", "느니", "니레나", "느나", "나니나",
+            "루러표", "낮게", "니레", "니라", "나니로", "농음표", "노네", "덧길이표", "반길이표",
+            "늘임표", "가로표", "세로표"],
+    "아쟁": ["미는표", "흘림표", "니레", "농음표", "늘임표"]
+  };
+  let ornInstrument = "all";   // "all" | INSTRUMENT_PRIORITY의 키
+  function ornInstrumentRank() {
+    const rank = new Map();
+    (INSTRUMENT_PRIORITY[ornInstrument] || []).forEach(function (name) {
+      if (!rank.has(name)) rank.set(name, rank.size);
+    });
+    return rank;
+  }
+  // 우선순위로 안정 정렬 — 목록에 없는 항목은 원래 순서 그대로 뒤에 온다
+  function sortByInstrument(items, nameOf) {
+    const rank = ornInstrumentRank();
+    return items
+      .map(function (it, i) {
+        const r = rank.has(nameOf(it)) ? rank.get(nameOf(it)) : Infinity;
+        return { it: it, i: i, r: r };
+      })
+      .sort(function (a, b) { return (a.r - b.r) || (a.i - b.i); })
+      .map(function (x) { return x.it; });
+  }
+  function setOrnInstrument(v, opts) {
+    ornInstrument = INSTRUMENT_PRIORITY[v] ? v : "all";
+    document.querySelectorAll(".orn-instrument").forEach(function (s) { s.value = ornInstrument; });
+    buildOrnPalette($("directOrnPalette"));
+    if (palView === "orn") buildPalette();
+    buildLyricSymPal();
+    if (!opts || !opts.silent) saveState();
+  }
+
 
   // ---------- 각 이름 (각 위 라벨: 대여음·중여음·1장 등) ----------
   // 각 번호(0부터)에 소속되어 각 삽입/삭제·페이지 이동을 따라다닌다. 입력은 한글 원문
@@ -2017,7 +2072,7 @@
       wrap.appendChild(head);
       const g = document.createElement("div");
       g.className = "ornrow";
-      ORN_LIST.filter(function (o) { return grp.cats.indexOf(o.c) >= 0; }).forEach(function (o) {
+      sortByInstrument(ORN_LIST.filter(function (o) { return grp.cats.indexOf(o.c) >= 0; }), function (o) { return o.k; }).forEach(function (o) {
         const item = document.createElement("div");
         item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
         item.dataset.stem = o.s;
@@ -3937,7 +3992,7 @@
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
              melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, cellStyles: cellStyles,
-             gakNames: gakNames, leftDockW: leftDockW };
+             gakNames: gakNames, leftDockW: leftDockW, ornInstrument: ornInstrument };
   }
 
   function applyState(s) {
@@ -3963,6 +4018,10 @@
     cellStyles = (s.cellStyles && typeof s.cellStyles === "object") ? s.cellStyles : {};
     gakNames = (s.gakNames && typeof s.gakNames === "object") ? s.gakNames : {};
     renderGakNameList();
+    ornInstrument = (typeof s.ornInstrument === "string" && INSTRUMENT_PRIORITY[s.ornInstrument])
+      ? s.ornInstrument : "all";
+    document.querySelectorAll(".orn-instrument").forEach(function (el2) { el2.value = ornInstrument; });
+    buildLyricSymPal();
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
     ornPalZoom = typeof s.ornPalZoom === "number" ? Math.max(0.6, Math.min(2, s.ornPalZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
@@ -4261,6 +4320,10 @@
   $("noteMode").addEventListener("change", buildPalette);
   // 조(악조) 선택 → 표 팔레트를 그 조의 구성음만으로 다시 그림
   $("joPreset").addEventListener("change", function () { buildPalette(); saveState(); });
+  // 악기 선택(시김새·가사 기호 팔레트 우선순위) — 두 군데(직접 입력 창·에디터 팔레트) 셀렉트 동기화
+  document.querySelectorAll(".orn-instrument").forEach(function (sel) {
+    sel.addEventListener("change", function () { setOrnInstrument(sel.value); });
+  });
   // 팔레트 보기 전환 (율명 / 시김새)
   document.querySelectorAll(".pal-view").forEach(function (b) {
     b.addEventListener("click", function () {

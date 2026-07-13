@@ -587,6 +587,17 @@
                 <!-- 시김새 보기(.orn-active)에서만 보이는 크기/위치 미세조정 — 직접 입력
                      모드의 #ornEditToggle과 같은 기능(같은 ornEditMode)을 에디터 모드에서도
                      쓸 수 있게 한다. 공유 클래스 .orn-edit-toggle로 두 버튼을 함께 동기화. -->
+                <label class="tool-inline orn-only-tool" title="악기를 고르면 그 악기에서 자주 쓰는 시김새가 각 그룹 맨 앞으로 올라옵니다 (가사 기호 팔레트에도 적용)">악기
+                  <select class="orn-instrument">
+                    <option value="all" selected>전체</option>
+                    <option value="가야금">가야금</option>
+                    <option value="거문고">거문고</option>
+                    <option value="대금">대금</option>
+                    <option value="피리">피리</option>
+                    <option value="해금">해금</option>
+                    <option value="아쟁">아쟁</option>
+                  </select>
+                </label>
                 <button type="button" id="ornEditToggleEd" class="ribbon-btn tip orn-edit-toggle orn-only-tool"
                   data-tip="켜면: 악보의 시김새 클릭 → 크기·위치 조절
 (조절 가능한 시김새 = 옅은 네모 표시)">⌖<span>크기/위치 미세조정</span></button>
@@ -699,6 +710,19 @@
             </div>
           </span>
           <span class="pal-top-right">
+            <!-- 악기별 우선순위 — 고르면 그 악기에서 자주 쓰는 기호가 각 그룹 맨 앞으로
+                 (가사 기호 팔레트에도 같이 적용). 에디터 팔레트의 셀렉트와 동기화됨 -->
+            <label class="tool-inline" title="악기를 고르면 그 악기에서 자주 쓰는 시김새가 각 그룹 맨 앞으로 올라옵니다 (가사 기호 팔레트에도 적용)">악기
+              <select class="orn-instrument">
+                <option value="all" selected>전체</option>
+                <option value="가야금">가야금</option>
+                <option value="거문고">거문고</option>
+                <option value="대금">대금</option>
+                <option value="피리">피리</option>
+                <option value="해금">해금</option>
+                <option value="아쟁">아쟁</option>
+              </select>
+            </label>
             <div class="orn-win-modes">
               <button type="button" id="ornEditToggle" class="ribbon-btn tip orn-edit-toggle"
                 data-tip="켜면: 악보의 시김새 클릭 → 크기·위치 조절
