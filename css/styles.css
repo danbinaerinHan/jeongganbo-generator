@@ -695,13 +695,13 @@
     background: none; border: none; box-shadow: none; border-radius: 0;
     padding: 8px 2px 2px; margin: 2px 0 4px; zoom: 0.85;
   }
-  /* 도킹된 시김새·장단·가사 창은 폭을 고정해 창을 바꿔 켤 때마다 왼쪽 열 너비가
-     널뛰지 않게 한다 — 기준: 팔레트 기호 6개가 한 줄(율명 창은 표 구조라 제외).
-     장단 칩(54px+간격 4px) 6개 = 344px에 창·팔레트 안쪽 여백을 더해 380px. */
+  /* 도킹된 도구창은 폭을 전부 율명 표의 설계 폭(450px)으로 통일 — 어떤 창을 켜도
+     왼쪽 열 너비가 바뀌지 않는다. 기호 6개/줄 규칙은 아래 격자·max-width가 지킨다. */
   body.ribbon-left #melodyRibbon > #ornWinWrap.win-open,
   body.ribbon-left #melodyRibbon > #jangdanArea.win-open,
   body.ribbon-left #melodyRibbon > #lyricsArea.win-open,
-  body.ribbon-left #melodyRibbon > #gakNameArea.win-open { width: 380px; }
+  body.ribbon-left #melodyRibbon > #textArea.win-open,
+  body.ribbon-left #melodyRibbon > #gakNameArea.win-open { width: 450px; }
   /* 시김새 격자는 auto-fill이라 폭이 넓으면 한 줄 7개+로 늘어난다 — 도킹에선 6열로 못박음 */
   body.ribbon-left #melodyRibbon #ornWinWrap .ornrow { grid-template-columns: repeat(6, 1fr); }
   /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,

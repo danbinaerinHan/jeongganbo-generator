@@ -4156,7 +4156,11 @@
     const r = numConfirmCur.el.getBoundingClientRect();
     numConfirmBtn.classList.add("on");
     const bw = numConfirmBtn.offsetWidth, bh = numConfirmBtn.offsetHeight;
-    numConfirmBtn.style.left = (r.right - bw - 3) + "px";
+    // 칸 오른쪽 '바깥'에 띄운다 — 예전처럼 칸 안 오른쪽에 겹치면 스피너(▲▼)를 가려서
+    // 화살표를 누르려다 [확인]이 눌리는(두 번 눌러야 하는) 문제가 있었다.
+    let left = r.right + 4;
+    if (left + bw > window.innerWidth - 4) left = r.left - bw - 4;   // 화면 밖이면 왼쪽 바깥으로
+    numConfirmBtn.style.left = left + "px";
     numConfirmBtn.style.top = (r.top + (r.height - bh) / 2) + "px";
   }
   function numConfirmHide() { numConfirmBtn.classList.remove("on"); numConfirmCur = null; }

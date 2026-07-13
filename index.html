@@ -409,7 +409,7 @@
           <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
             data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
           <button type="button" id="winToggleGakName" class="ribbon-btn win-toggle tip" data-target="gakNameArea"
-            data-tip="각 위에 이름(대여음·1장 등)을 붙입니다">章<span>각 이름</span></button>
+            data-tip="각 위에 장 이름(대여음·1장 등)을 붙입니다">章<span>장 이름</span></button>
         </div>
       </div>
       <div class="ribbon-sep win-toggle-sep"></div>
@@ -498,7 +498,7 @@
           <button type="button" class="rail-btn domain-tab" data-panel="jangdanArea">장단</button>
           <button type="button" class="rail-btn domain-tab" data-panel="lyricsArea">가사</button>
           <button type="button" class="rail-btn domain-tab" data-panel="textArea">텍스트</button>
-          <button type="button" class="rail-btn domain-tab" data-panel="gakNameArea">각 이름</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="gakNameArea">장 이름</button>
           <button type="button" class="rail-btn domain-tab" data-panel="cellStyleWin">셀 서식</button>
           <div class="rail-sep"></div>
           <!-- 전역 단축키 안내 — 어느 탭에서든 늘 보이는 자리라 여기 둔다 -->
@@ -979,13 +979,13 @@
         <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
       </div>
       <div class="melody-head">
-        각 이름
+        장 이름
         <span class="guide-wrap">
           <button type="button" id="gakNameGuideToggle" class="icon-btn" title="입력 방법 안내">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
           </button>
           <div id="gakNameGuide" class="melody-guide">
-            <div class="mg-sec"><b>각 이름</b><br>
+            <div class="mg-sec"><b>장 이름</b><br>
               • 악보에서 각(마디) 위의 빈 부분을 클릭해 바로 입력할 수 있습니다.<br>
               • 각에 소속되어 각을 따라다니고, 인쇄·PNG에도 표시됩니다.<br>
               • '1장'·'2장'처럼 쓰면 악보엔 一章·二章 꼴 한자로 표시됩니다.<br>
@@ -996,11 +996,11 @@
           </div>
         </span>
         <span class="mh-right">
-          <span class="tool-inline" title="모든 각 이름의 글자 크기 배율">크기
+          <span class="tool-inline" title="모든 장 이름의 글자 크기 배율">크기
             <span class="num-unit"><input type="number" id="gakNameSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
           </span>
           <span class="tool-inline" title="각 위쪽 선과 이름 맨 아래 글자 사이 간격">간격
-            <span class="num-unit"><input type="number" id="gakNameGap" min="0" max="20" step="0.5" value="1"><span class="unit">mm</span></span>
+            <span class="num-unit"><input type="number" id="gakNameGap" min="0" max="20" step="0.5" value="0.5"><span class="unit">mm</span></span>
           </span>
         </span>
       </div>
