@@ -1,6 +1,0 @@
-# 로컬에서 latexmk로 빌드할 때 XeLaTeX을 쓰게 하는 설정.
-#   latexmk main.tex  →  xelatex + bibtex 자동 실행
-# ※ Overleaf는 이 파일로 컴파일러를 바꿀 수 없다 —
-#   반드시 Menu → Settings → Compiler → XeLaTeX 으로 설정할 것.
-$pdf_mode = 5;    # 5 = xelatex
-$bibtex_use = 2;  # bib 변경 시 bibtex 자동 실행
