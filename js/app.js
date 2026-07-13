@@ -3904,7 +3904,7 @@
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
              melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, cellStyles: cellStyles,
-             gakNames: gakNames };
+             gakNames: gakNames, leftDockW: leftDockW };
   }
 
   function applyState(s) {
@@ -3943,6 +3943,8 @@
     rebuildOrnAddKeyMap();
     inputMode = s.melInput === "direct" ? "direct" : "editor";
     ribbonPos = s.ribbonPos === "left" ? "left" : "top";
+    leftDockW = typeof s.leftDockW === "number" ? Math.max(LEFTDOCK_MIN, s.leftDockW) : null;
+    applyLeftDockW();
     applyInputMode();
     $("pianoBase").value = $("hwangPitch").value;   // 황 음고 셀렉트는 기준음과 한 값
   }
@@ -4820,6 +4822,45 @@
   // 도킹한다 — dockDirectWins()가 열린 창을 옮기고, 닫히거나 위쪽 배치로 돌아가면
   // 원래 자리(placeholder 주석 노드)로 되돌린다.
   let ribbonPos = "left";   // "top" | "left" — 직접 입력 기본은 왼쪽 세로 도킹(저장된 문서는 저장값 따름)
+  // 왼쪽 도킹 열의 사용자 지정 폭(px). null = 자동(내용 폭 450px 기준).
+  // 손잡이(#leftDockResizer)를 끌면 정해지고, 더블클릭하면 자동으로 돌아간다.
+  let leftDockW = null;
+  const LEFTDOCK_MIN = 240;   // 최소 가로폭 보장
+  function applyLeftDockW() {
+    const ld = $("leftDock");
+    if (!ld) return;
+    if (typeof leftDockW === "number") {
+      document.body.classList.add("leftdock-custom");
+      ld.style.width = leftDockW + "px";
+    } else {
+      document.body.classList.remove("leftdock-custom");
+      ld.style.width = "";
+    }
+  }
+  (function () {
+    const rz = $("leftDockResizer");
+    if (!rz) return;
+    rz.addEventListener("mousedown", function (e) {
+      e.preventDefault();
+      rz.classList.add("dragging");
+      const startX = e.clientX;
+      const startW = $("leftDock").getBoundingClientRect().width;
+      function move(ev) {
+        const maxW = Math.max(LEFTDOCK_MIN, window.innerWidth * 0.6);
+        leftDockW = Math.round(Math.max(LEFTDOCK_MIN, Math.min(maxW, startW + (ev.clientX - startX))));
+        applyLeftDockW();
+      }
+      function up() {
+        rz.classList.remove("dragging");
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        saveState();
+      }
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    });
+    rz.addEventListener("dblclick", function () { leftDockW = null; applyLeftDockW(); saveState(); });
+  })();
   const DIRECT_WIN_HOME = new Map();   // 창 → 원래 자리 표시용 주석 노드
   document.querySelectorAll(".direct-win").forEach(function (w) {
     const ph = document.createComment("win-home:" + w.id);
