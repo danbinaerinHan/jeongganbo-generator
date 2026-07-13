@@ -47,8 +47,8 @@
 - 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
   머리줄(.melody-head) 오른쪽 끝(`.mh-right`/`.mh-reset`)으로 이전. 끌기 그립도 머리줄 안
   `.bar-grip.dock-panel-grip`으로 옮겨 플로팅 끌기 유지(attachBarDrag가 첫 .bar-grip 사용).
-- 장 이름(#gakNameArea, 입력 그룹 '章 장 이름' — 코드 식별자는 gakName* 그대로):
-  특정 각 '위'에 붙는 라벨(대여음·1장 등).
+- 각/장(#gakNameArea, 입력 그룹 '章 각/장' — 코드 식별자는 gakName* 그대로):
+  특정 각 '위'에 붙는 라벨(대여음·1장 등). 한자 표시는 #gakNameHanja 체크(기본 켬).
   데이터는 gakNames(각 번호 0부터 → 원문), 표기만 한자 변환(gakNameDisplay: N장→N章 +
   GAK_NAME_HANJA 사전). 각 삽입/삭제 시 shiftGakNames로 같이 밀림(가사 밀기와 같은 규칙).
   악보에서 각 위 빈 곳 클릭 → 입력 카드(openGakNameCard), 도구창엔 번호+이름 목록.
