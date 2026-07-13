@@ -2230,13 +2230,21 @@
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
       // {기호} 토큰이면 글자 대신 이미지를 한 글자처럼 그린다(원본 비율 유지).
       // 한글 별칭(전성·퇴성·추성)은 시김새 SVG stem으로 바꿔서 찾는다.
-      const symM = /^\{(.+)\}$/.exec(str);
-      const symStem = symM ? lyricSymStem(symM[1]) : null;
-      if (symM && symURL(symStem)) {
-        const sc = (symM[1] in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[symM[1]] : LYRIC_SYM_SCALE_DEFAULT;
-        const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
-        drawSymImageRect(svg, symStem, x + width / 2 - bw / 2, centers[i] - bh / 2, bw, bh);
-        return;
+      // 한 행에 토큰이 여럿({모지}{퇴성})이면 옆이 아니라 위아래로 쌓고, 각각의
+      // 크기는 단독일 때와 똑같이 유지한다(글자처럼 개수 때문에 줄어들지 않게).
+      const symTokens = str.match(/\{[^}]+\}/g);
+      if (symTokens && symTokens.join("") === str) {
+        const names = symTokens.map(function (t) { return t.slice(1, -1); });
+        if (names.every(function (nm) { return symURL(lyricSymStem(nm)); })) {
+          names.forEach(function (nm, k) {
+            const sc = (nm in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[nm] : LYRIC_SYM_SCALE_DEFAULT;
+            const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
+            // 행 중심(centers[i]) 기준으로 위아래 등간격 배치(사이 여백 10%)
+            const cy = centers[i] + (k - (names.length - 1) / 2) * bh * 1.1;
+            drawSymImageRect(svg, lyricSymStem(nm), x + width / 2 - bw / 2, cy - bh / 2, bw, bh);
+          });
+          return;
+        }
       }
       // 한 행에 여러 글자('더지' 등)면 옆을 침범하지 않게 맞추되, 글자 크기는 조금만
       // 줄이고 나머지는 자간 압축(textLength)으로 해결 — 등분 축소보다 글자가 훨씬 크다
