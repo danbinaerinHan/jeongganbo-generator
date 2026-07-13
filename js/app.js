@@ -1482,7 +1482,10 @@
     { s: "len-half", k: "반길이표", c: "wo" },
     // 이름 미상 추가 시김새(assets/symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
     // 파일 번호 그대로 s00~s25로 부른다(토큰도 {s01} 꼴). 이름이 정해지면 k만 바꾸면 됨.
-    { s: "sigimsae-00", k: "뜰", c: "wo" }, { s: "sigimsae-01", k: "s01", c: "wo" },
+    { s: "sigimsae-00", k: "뜰", c: "wo" },
+    // 모지 — 가사 기호(special/모지.svg)와 같은 그림을 선율 시김새로도 쓴다(토큰 {모지})
+    { s: "모지", k: "모지", c: "wo" },
+    { s: "sigimsae-01", k: "s01", c: "wo" },
     { s: "sigimsae-02", k: "s02", c: "wo" }, { s: "sigimsae-03", k: "s03", c: "wo" },
     { s: "sigimsae-04", k: "s04", c: "wo" }, { s: "sigimsae-05", k: "s05", c: "wo" },
     { s: "sigimsae-06", k: "s06", c: "wo" }, { s: "sigimsae-07", k: "s07", c: "wo" },
