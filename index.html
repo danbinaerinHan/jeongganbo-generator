@@ -989,9 +989,19 @@
               • 악보에서 각(마디) 위의 빈 부분을 클릭해 바로 입력할 수 있습니다.<br>
               • 각에 소속되어 각을 따라다니고, 인쇄·PNG에도 표시됩니다.<br>
               • '1장'·'2장'처럼 쓰면 악보엔 一章·二章 꼴 한자로 표시됩니다.<br>
-              • 대여음·중여음·여음·환입·초장·종장도 한자로 표시됩니다.
+              • 대여음·중여음·여음·환입·초장·종장도 한자로 표시됩니다.<br>
+              • 오른쪽 크기·간격으로 모든 이름을 한꺼번에 조절합니다 — 간격은
+                각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.
             </div>
           </div>
+        </span>
+        <span class="mh-right">
+          <span class="tool-inline" title="모든 각 이름의 글자 크기 배율">크기
+            <span class="num-unit"><input type="number" id="gakNameSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
+          </span>
+          <span class="tool-inline" title="각 위쪽 선과 이름 맨 아래 글자 사이 간격">간격
+            <span class="num-unit"><input type="number" id="gakNameGap" min="0" max="20" step="0.5" value="1"><span class="unit">mm</span></span>
+          </span>
         </span>
       </div>
       <div id="gakNameRow">

@@ -3298,18 +3298,23 @@
             if (gnRaw) {
               const disp = gakNameDisplay(gnRaw);
               const gnChars = Array.from(disp);
+              // 일괄 조절(도구창 머리줄): 크기 배율 ×, 간격 mm — 기준은 '맨 아래 글자'라
+              // 간격이 각 위쪽 선과 마지막 글자 사이를 정하고, 크기를 키우면 위로만 자란다
+              const gnMul = Math.max(0.3, parseFloat($("gakNameSize").value) || 1);
+              const gnGap = Math.max(0, parseFloat($("gakNameGap").value) || 0) * scale;
               // 위로 쓸 수 있는 공간에 맞춰 글자를 줄인다 — 맨 위 밴드는 페이지 위
               // 가장자리(1mm 여유)까지, 아래 밴드는 밴드 사이 간격 안. 안 줄이면
               // 긴 이름(大餘音 등)의 첫 글자가 페이지/윗 밴드에 잘린다.
-              const gnAvail = b === 0 ? Math.max(2, gnTop - 1) : Math.max(2, bandGap * 0.9);
-              // 글자 크기 1당 필요한 높이 — 첫 글자 잉크가 기준선 위로 뻗는 만큼(ascent≈0.85)까지 포함
-              const gnNeed = 1.4 + 1.12 * (gnChars.length - 1);
-              const gnFont = Math.min(cell * 0.5, gnAvail / gnNeed);
+              const gnAvail = (b === 0 ? Math.max(2, gnTop - 1) : Math.max(2, bandGap * 0.9)) - gnGap;
+              // 글자 크기 1당 마지막 글자 기준선 위로 필요한 높이(첫 글자 ascent≈0.85 포함)
+              const gnNeed = 0.85 + 1.12 * (gnChars.length - 1);
+              const gnFont = Math.min(cell * 0.38 * gnMul, Math.max(1, gnAvail) / gnNeed);
               const gnLineH = gnFont * 1.12;
               const gnX = x + cell / 2
                 - ((wantTempo && pageIdx === 0 && melIdx === 0) ? cell * 0.75 : 0);
-              const gnStartY = gnTop - gnFont * 0.4 - (gnChars.length - 1) * gnLineH - gnFont * 0.15;
-              svg.appendChild(verticalText(gnX, gnStartY, disp, gnFont, 600, "#000", titleFontFam).g);
+              // 마지막 글자 기준선 = 각 위쪽 선 - 간격 - 잉크가 기준선 아래로 내려오는 몫
+              const gnStartY = gnTop - gnGap - gnFont * 0.12 - (gnChars.length - 1) * gnLineH;
+              svg.appendChild(verticalText(gnX, gnStartY, disp, gnFont, 400, "#000", titleFontFam).g);
             }
             // 각 위 클릭 영역(투명) — 누르면 그 자리에서 이름 입력 카드가 열린다
             const gnZoneH = cell * 1.4;
@@ -3883,7 +3888,8 @@
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
-    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode"];
+    "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
+    "gakNameSize", "gakNameGap"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -4199,7 +4205,8 @@
   // 모양만 바꾸는 숫자 칸(대강 분절 포함) → 확정 시 렌더만
   ["cellSize", "gakGap", "bandGap", "daegang",
    "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
-   "subSize", "subOffset", "subOffsetX", "subSpacing"].forEach(id => wireConfirm($(id), render));
+   "subSize", "subOffset", "subOffsetX", "subSpacing",
+   "gakNameSize", "gakNameGap"].forEach(id => wireConfirm($(id), render));
   // 체크박스·셀렉트·제목 텍스트는 예전처럼 즉시 반영
   ["stackAuto", "title", "titleLayout", "titleGakWidth", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
