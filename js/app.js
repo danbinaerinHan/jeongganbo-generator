@@ -1831,6 +1831,9 @@
                            "환입": "還入", "초장": "初章", "종장": "終章" };
   function gakNameDisplay(raw) {
     raw = String(raw).trim();
+    // 한자 표시 옵션(장 이름 창 머리줄) — 끄면 쓴 그대로
+    const hanja = $("gakNameHanja");
+    if (hanja && !hanja.checked) return raw;
     if (GAK_NAME_HANJA[raw]) return GAK_NAME_HANJA[raw];
     const m = /^(\d+)장$/.exec(raw);
     if (m) return numToHanja(parseInt(m[1])) + "章";
@@ -3298,7 +3301,9 @@
           // 각 이름(대여음·一章 등) — 그 각 위 여백에 세로쓰기. 첫 각의 템포 표시와
           // 겹칠 수 있는 유일한 자리(첫 각)에서만 왼쪽으로 반 칸 비킨다.
           {
-            const gnTop = bandTop - INNER_PAD;
+            // 간격의 기준은 각의 '실제 윗선'(bandTop) — 예전엔 테두리 여백선(-INNER_PAD)
+            // 기준이라 간격 0mm여도 5mm쯤 떠 보였다
+            const gnTop = bandTop;
             const gnRaw = gakNames[melIdx];
             if (gnRaw) {
               const disp = gakNameDisplay(gnRaw);
@@ -3317,8 +3322,9 @@
               const gnLineH = gnFont * 1.12;
               const gnX = x + cell / 2
                 - ((wantTempo && pageIdx === 0 && melIdx === 0) ? cell * 0.75 : 0);
-              // 마지막 글자 기준선 = 각 위쪽 선 - 간격 - 잉크가 기준선 아래로 내려오는 몫
-              const gnStartY = gnTop - gnGap - gnFont * 0.12 - (gnChars.length - 1) * gnLineH;
+              // 마지막 글자 기준선 — 한자·한글 잉크가 기준선 위에서 끝나는 몫(≈0.06)을
+              // 보태 간격 0mm이면 잉크 밑이 각 위쪽 선에 딱 닿는다
+              const gnStartY = gnTop - gnGap + gnFont * 0.06 - (gnChars.length - 1) * gnLineH;
               svg.appendChild(verticalText(gnX, gnStartY, disp, gnFont, 400, "#000", titleFontFam).g);
             }
             // 각 위 클릭 영역(투명) — 누르면 그 자리에서 이름 입력 카드가 열린다
@@ -3894,7 +3900,7 @@
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
-    "gakNameSize", "gakNameGap"];
+    "gakNameSize", "gakNameGap", "gakNameHanja"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -4224,7 +4230,8 @@
     $(id).addEventListener("change", onFormChange);
   });
   ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
-   "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode"].forEach(id => {
+   "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode",
+   "gakNameHanja"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
