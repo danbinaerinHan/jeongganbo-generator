@@ -66,7 +66,7 @@
   buildAudioEvents 필터) 정간 **바깥 오른쪽**에 세로로 그린다 — `drawSymImageRect`(세로 박스, meet).
   가사가 켜져 있으면 가사 줄 폭(lyGap+lyW)만큼 더 바깥에 놓아 겹치지 않게 함(drawCell의 lyPad 인자,
   호출부에서 전달). 빠르기는 붙임표 시김새 아니라 숫자단축키(ORN_ADD_ALL=wo/both)에서 자연 제외.
-- 가사 특수기호: assets/symbol_svgs/special 8종(가로막대·세로막대·늘임표·뜰·모지·장지·튕김·연튕김)을
+- 가사 특수기호: assets/symbol_svgs/special 8종(가로표·세로표·늘임표·뜰·모지·장지·튕김·연튕김)을
   가사 도구창(#lyricsArea)의 팔레트 #lyricsSymRow(buildLyricSymPal, LYRIC_SYMS)에서 클릭 →
   `insertLyricToken`이 편집 중인 가사 칸/커서에 `{stem}` 토큰 삽입. drawLyricCell이 행 문자열이
   `{stem}`(공백 없어야 한 분박)이고 symURL 있으면 글자 대신 이미지로 그린다. setLyricText는 `{}`를

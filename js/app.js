@@ -1778,11 +1778,13 @@
   // ---------- 가사 기호 팔레트 (special SVG) ----------
   // 클릭하면 편집 중인 가사 칸/커서에 {기호} 토큰이 들어가고, 악보엔 이미지로 표시된다.
   // stem = symbols-data.js(SYM_DATA)의 키(= assets/symbol_svgs/special 파일명).
-  const LYRIC_SYMS = ["가로막대", "세로막대", "늘임표", "뜰", "모지", "장지", "튕김", "연튕김",
+  const LYRIC_SYMS = ["가로표", "세로표", "늘임표", "뜰", "모지", "장지", "튕김", "연튕김",
                       "전성", "퇴성", "추성"];
   // 시김새에서 빌려 쓰는 기호 — 가사 토큰은 한글 이름({전성} 꼴)을 쓰고,
-  // 그림은 시김새 SVG(영문 stem)를 그대로 재사용한다
-  const LYRIC_SYM_ALIAS = { "전성": "roll-str", "퇴성": "bend-down", "추성": "bend-up" };
+  // 그림은 시김새 SVG(영문 stem)를 그대로 재사용한다.
+  // 가로막대·세로막대는 가로표·세로표로 개명된 옛 토큰 호환용 별칭.
+  const LYRIC_SYM_ALIAS = { "전성": "roll-str", "퇴성": "bend-down", "추성": "bend-up",
+                            "가로막대": "가로표", "세로막대": "세로표" };
   function lyricSymStem(name) { return LYRIC_SYM_ALIAS[name] || name; }
   // 기호 SVG의 세로/가로 비율(viewBox에서) — 쌓을 때 실제 잉크 높이를 추정하는 용도.
   // data URL(base64)을 한 번만 풀어 보고 stem별로 캐시한다. 못 읽으면 정사각형(1) 간주.
@@ -1802,7 +1804,8 @@
     return a;
   }
   // 가사 칸 이미지 크기 배율 — 막대류는 0.8, 나머지(가야금주법·늘임표)는 0.4로 줄여 그린다.
-  const LYRIC_SYM_SCALE = { "가로막대": 0.8, "세로막대": 0.8 };
+  // 옛 이름(가로막대·세로막대)도 기존 문서 토큰 호환을 위해 같이 둔다.
+  const LYRIC_SYM_SCALE = { "가로표": 0.8, "세로표": 0.8, "가로막대": 0.8, "세로막대": 0.8 };
   const LYRIC_SYM_SCALE_DEFAULT = 0.4;
   function buildLyricSymPal() {
     const wrap = $("lyricsSymRow");
