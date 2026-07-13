@@ -2358,7 +2358,9 @@
           const items = names.map(function (nm) {
             const sc = (nm in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[nm] : LYRIC_SYM_SCALE_DEFAULT;
             const stem = lyricSymStem(nm);
-            const bw = width * 0.95 * sc, bh = rowH * 0.95 * sc;
+            // 세로 박스는 행 높이가 아니라 '정간 높이' 기준 — 글자 크기가 분박 수와
+            // 무관하게 고정인 것과 같은 규칙. 행이 많으면 촘촘해질 뿐 안 줄어든다.
+            const bw = width * 0.95 * sc, bh = cellH * 0.95 * sc;
             return { stem: stem, bw: bw, bh: bh, ink: Math.min(bh, bw * symAspect(stem)) };
           });
           const gapY = width * 0.18;   // 기호(잉크) 사이 틈 — 빡붙지 않게 아주 약간만
@@ -2592,10 +2594,13 @@
   }
 
   // 이미지(음표/기호) 한 개를 (cx,cyc) 중심, box 크기로 그림
+  // 잉크가 viewBox 안에서 한쪽으로 치우친 기호의 가로 보정(그리는 폭 대비 비율).
+  // 퇴성(bend-down)은 단독으로 쓰든 음에 붙든 살짝 왼쪽으로 보여 오른쪽으로 민다.
+  const SYM_X_NUDGE = { "bend-down": 0.15 };
   function drawSymImage(svg, key, cx, cyc, box) {
     const href = symURL(key) || (NOTE_DIR + key + ".png");
     const im = el("image", {
-      x: cx - box / 2, y: cyc - box / 2, width: box, height: box,
+      x: cx - box / 2 + box * (SYM_X_NUDGE[key] || 0), y: cyc - box / 2, width: box, height: box,
       preserveAspectRatio: "xMidYMid meet"
     });
     im.setAttribute("href", href);
@@ -2607,7 +2612,7 @@
   // 세로로 긴 빠르기·가사 기호처럼 정사각이 아닌 이미지를 위한 헬퍼.
   function drawSymImageRect(svg, key, x, y, w, h) {
     const href = symURL(key) || (NOTE_DIR + key + ".png");
-    const im = el("image", { x: x, y: y, width: w, height: h,
+    const im = el("image", { x: x + w * (SYM_X_NUDGE[key] || 0), y: y, width: w, height: h,
       preserveAspectRatio: "xMidYMid meet" });
     im.setAttribute("href", href);
     im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
