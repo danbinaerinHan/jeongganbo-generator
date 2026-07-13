@@ -1526,6 +1526,8 @@
   const ATT_SYM_SCALE = { vib: 2.5, "vib-long": 2.5, splash: 2.5, "len-half": 0.5,
     // 싸랭·슬기둥1~3은 130%로 키우고, s00(sigimsae-00)은 80%로 줄임(팔레트·악보 공통)
     "diff-str-fast": 1.3, "diff-str-1": 1.3, "diff-str-2": 1.3, "diff-str-3": 1.3,
+    // 추성(bend-up)은 기본이 작아 보여 120%로
+    "bend-up": 1.2,
     "sigimsae-00": 0.8 };
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
