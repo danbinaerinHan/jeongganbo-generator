@@ -20,7 +20,9 @@ function collect(folder) {
     .filter((f) => f.toLowerCase().endsWith(".svg"))
     .sort()
     .map((f) => {
-      const stem = f.slice(0, -4);
+      // macOS 파일명은 NFD(자모 분해)라 그대로 키로 쓰면 코드의 NFC 참조와 안 맞아
+      // symURL 매칭이 실패한다(한글 stem: 빠르기·가사 특수기호) — NFC로 정규화한다.
+      const stem = f.slice(0, -4).normalize("NFC");
       const b64 = readFileSync(join(dir, f)).toString("base64");
       return [stem, "data:image/svg+xml;base64," + b64];
     });

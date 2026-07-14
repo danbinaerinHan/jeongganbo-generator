@@ -1481,7 +1481,8 @@
     { s: "fermata", k: "늘임표", c: "wo" }, { s: "len-double", k: "덧길이표", c: "wo" },
     { s: "len-half", k: "반길이표", c: "wo" },
     // 이름 미상 추가 시김새(assets/symbol_svgs/symbols/sigimsae-XX) — 정식 이름을 알 때까지
-    // 파일 번호 그대로 s00~s25로 부른다(토큰도 {s01} 꼴). 이름이 정해지면 k만 바꾸면 됨.
+    // 파일 번호 그대로 s01·s10 꼴로 부른다(토큰도 {s10} 꼴). 이름이 정해지면 k만 바꾸면 됨
+    // (예: sigimsae-00=뜰). 순서는 파일 번호 순으로 유지.
     { s: "sigimsae-00", k: "뜰", c: "wo" },
     // 모지 — 가사 기호(special/모지.svg)와 같은 그림을 선율 시김새로도 쓴다(토큰 {모지})
     { s: "모지", k: "모지", c: "wo" },
@@ -1489,8 +1490,8 @@
     { s: "sigimsae-02", k: "s02", c: "wo" }, { s: "sigimsae-03", k: "s03", c: "wo" },
     { s: "sigimsae-04", k: "s04", c: "wo" }, { s: "sigimsae-05", k: "s05", c: "wo" },
     { s: "sigimsae-06", k: "s06", c: "wo" }, { s: "sigimsae-07", k: "s07", c: "wo" },
-    { s: "sigimsae-08", k: "s08", c: "wo" },
-    { s: "sigimsae-10", k: "十", c: "wo" }, { s: "sigimsae-11", k: "文", c: "wo" },
+    { s: "sigimsae-08", k: "s08", c: "wo" }, { s: "sigimsae-10", k: "十", c: "wo" },
+    { s: "sigimsae-11", k: "文", c: "wo" },
     { s: "sigimsae-12", k: "s12", c: "wo" },
     { s: "sigimsae-13", k: "s13", c: "wo" }, { s: "sigimsae-14", k: "s14", c: "wo" },
     { s: "sigimsae-15", k: "s15", c: "wo" }, { s: "sigimsae-16", k: "s16", c: "wo" },
@@ -1888,7 +1889,6 @@
     if (!opts || !opts.silent) saveState();
   }
 
-
   // ---------- 각 이름 (각 위 라벨: 대여음·중여음·1장 등) ----------
   // 각 번호(0부터)에 소속되어 각 삽입/삭제·페이지 이동을 따라다닌다. 입력은 한글 원문
   // 그대로 저장하고, 악보 '표기'만 한자로 바꾼다 — 모르는 단어는 쓴 그대로 표시.
@@ -2059,11 +2059,20 @@
   function buildOrnPalette(wrap) {
     wrap.innerHTML = "";
     wrap.classList.add("orn-view");
-    // 퇴성·추성(both)은 음표에 붙여 쓰는 게 기본이라 붙임표 그룹에 함께 담는다
+    // 퇴성·추성(both)은 음표에 붙여 쓰는 게 기본이라 붙임표 그룹에 함께 담는다.
+    // 이름 미정 시김새 s01~s25(sigimsae-01~25)는 동작은 붙임표(wo)지만 팔레트에선
+    // '운지'라는 별도 그룹으로 독립 기호와 빠르기 사이에 모아 보여준다.
+    // 뜰(sigimsae-00)은 이름이 정해졌으니 운지에서 빼고 붙임표에 그대로 둔다.
+    const isUnji = function (o) { return o.s.indexOf("sigimsae-") === 0 && o.s !== "sigimsae-00"; };
     const groups = [
-      { title: "붙임표", sub: "음표 오른쪽에 작게 · 퇴성·추성 포함", cats: ["wo", "both"] },
-      { title: "독립 기호", sub: "한 칸 차지", cats: ["with"] },
-      { title: "빠르기", sub: "정간 오른쪽에 세로로 표시", cats: ["tempo"] }
+      { title: "붙임표", sub: "음표 오른쪽에 작게",
+        match: function (o) { return (o.c === "wo" || o.c === "both") && !isUnji(o); } },
+      { title: "독립 기호", sub: "한 칸 차지",
+        match: function (o) { return o.c === "with"; } },
+      { title: "운지", sub: "음표 오른쪽에 작게 붙음",
+        match: isUnji },
+      { title: "빠르기", sub: "정간 오른쪽에 세로로 표시",
+        match: function (o) { return o.c === "tempo"; } }
     ];
     groups.forEach(function (grp) {
       const head = document.createElement("div");
@@ -2074,7 +2083,7 @@
       wrap.appendChild(head);
       const g = document.createElement("div");
       g.className = "ornrow";
-      sortByInstrument(ORN_LIST.filter(function (o) { return grp.cats.indexOf(o.c) >= 0; }), function (o) { return o.k; }).forEach(function (o) {
+      sortByInstrument(ORN_LIST.filter(grp.match), function (o) { return o.k; }).forEach(function (o) {
         const item = document.createElement("div");
         item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
         item.dataset.stem = o.s;
@@ -5164,9 +5173,9 @@
   document.querySelectorAll("#helpModal .help-tab").forEach(function (btn) {
     btn.addEventListener("click", function () { showHelpPane(btn.getAttribute("data-help")); });
   });
-  // 도해 2(정간 해부)의 시김새 표식 — 손그림 곡선 대신 실제 시김새 이미지(미는표)를 끼운다.
+  // 도해 2(정간 해부)의 시김새 표식 — 손그림 곡선 대신 실제 시김새 이미지(흘림표)를 끼운다.
   (function () {
-    const fig = $("helpFigSigim"), url = symURL("push");
+    const fig = $("helpFigSigim"), url = symURL("flow");
     if (fig && url) {
       fig.setAttribute("href", url);
       fig.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", url);
@@ -5310,6 +5319,7 @@
   buildPalette();
   buildJangdanPalette();
   buildLyricSymPal();
+  renderGakNameList();
   fillDaegangPreset();
   reconcileMelody();
   reconcileJangdan();

@@ -1155,24 +1155,25 @@
               <li>한 정간(칸) 안에 음이 이어 붙어 있으면(붙임) 그 줄은 <b>왼쪽에서 오른쪽으로</b> 읽습니다.</li>
             </ul>
             <h4>12율명 — 음이름</h4>
-            <p>서양의 도레미 대신 12개의 율명을 씁니다: <b>황·대·태·협·고·중·유·임·이·남·무·응</b>. 한 옥타브 위 음은 앞에 <b>청</b>(예: 청황), 아래 음은 <b>배</b>(탁)를 붙입니다. 악보에는 한자(黃·太…) 또는 한글로 표기할 수 있습니다.</p>
-            <!-- 도해 2: 정간 하나 해부 — 분박·율명·시김새 표식의 위치 -->
+            <p>서양의 도레미 대신 12개의 율명을 씁니다: <b>황·대·태·협·고·중·유·임·이·남·무·응</b>. 한 옥타브 위 음은 앞에 <b>청</b>(예: 청황), 아래 음은 <b>배</b>(탁)를 붙이고, 두 옥타브까지는 위는 <b>중청</b>, 아래는 <b>하배</b>로 적어 <b>±2옥타브</b>를 나타냅니다. 전통 악보에서는 한자(黃·太…)로 적습니다.</p>
+            <!-- 도해 2: 정간 하나 해부 — 율명·시김새·분박의 위치. 시김새(붙임표)는 율명 바로 오른쪽에 붙는다. -->
             <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정간 구성 요소 도해">
-              <rect x="48" y="14" width="108" height="120" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
-              <line x1="48" y1="74" x2="156" y2="74" stroke="var(--line)"></line>
-              <text x="96" y="54" font-size="26" fill="var(--ink)" text-anchor="middle">黃</text>
-              <!-- 시김새 표식 — 손그림 대신 실제 시김새 이미지(미는표)를 JS가 끼운다(app.js 도움말 센터).
+              <rect x="44" y="14" width="104" height="120" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <line x1="44" y1="74" x2="148" y2="74" stroke="var(--line)"></line>
+              <!-- 율명은 정간 중앙(x=96), 시김새(붙임표)는 그 오른쪽에 붙는다 -->
+              <text x="96" y="52" font-size="26" fill="var(--ink)" text-anchor="middle">黃</text>
+              <!-- 시김새(붙임표) — 손그림 대신 실제 시김새 이미지를 JS(app.js 도움말 센터)가 끼운다. 율명 바로 오른쪽.
                    다크모드에선 검은 잉크가 안 보이므로 .help-sigim을 반전(css). -->
-              <image id="helpFigSigim" class="help-sigim" x="120" y="24" width="22" height="22" preserveAspectRatio="xMidYMid meet"></image>
-              <text x="102" y="116" font-size="26" fill="var(--ink)" text-anchor="middle">太</text>
+              <image id="helpFigSigim" class="help-sigim" x="112" y="32" width="20" height="20" preserveAspectRatio="xMidYMid meet"></image>
+              <text x="96" y="115" font-size="26" fill="var(--ink)" text-anchor="middle">太</text>
               <g font-size="11" fill="var(--muted)">
-                <line x1="134" y1="30" x2="196" y2="24" stroke="var(--line)"></line>
-                <text x="200" y="28" fill="var(--accent)">시김새(꾸밈음 기호)</text>
-                <line x1="112" y1="46" x2="196" y2="52" stroke="var(--line)"></line>
-                <text x="200" y="56">율명(음)</text>
-                <line x1="156" y1="74" x2="196" y2="80" stroke="var(--line)"></line>
-                <text x="200" y="84">분박 — 한 박을 위→아래로</text>
-                <text x="200" y="98">나눠 2·3분박 등으로 쪼갬</text>
+                <line x1="132" y1="40" x2="190" y2="26" stroke="var(--line)"></line>
+                <text x="194" y="30" fill="var(--accent)">시김새(꾸밈음 기호)</text>
+                <line x1="96" y1="58" x2="190" y2="54" stroke="var(--line)"></line>
+                <text x="194" y="58">율명(음)</text>
+                <line x1="110" y1="76" x2="190" y2="82" stroke="var(--line)"></line>
+                <text x="194" y="86">분박 — 한 박을 위→아래로</text>
+                <text x="194" y="100">나눠 2·3분박 등으로 쪼갬</text>
               </g>
             </svg>
             <h4>함께 적는 것들</h4>
@@ -1181,6 +1182,8 @@
               <li><b>장단</b> — 장구 구음(덩·덕·쿵 등)을 선율 곁 장단 칸에 적습니다.</li>
               <li><b>가사</b> — 노랫말을 각 정간에 1:1로 맞춰 가사 칸에 적습니다.</li>
             </ul>
+            <!-- 출처표시: 시김새 도안의 참조 원전(국립국악원 정악보 7권). 문구 수정 시 논문 각주와 함께 갱신 -->
+            <p class="help-credit">시김새 기호 도안은 국립국악원 발간 『가야금 정악보』·『거문고 정악보』·『피리 정악보』·『해금 정악보』(2015), 『대금 정악보』·『아쟁 정악보』(2016), 『양금 정악보』(2025)의 표기를 참조하여 다시 그린 것으로, 국립국악원의 이용 허락을 받았습니다.</p>
           </section>
 
           <section class="help-pane" data-help="start">
@@ -1196,6 +1199,7 @@
           </section>
 
           <section class="help-pane" data-help="input">
+            <p><b>율명은 한글로 입력합니다</b> — 황·태·협처럼 소리 나는 대로 적으면 됩니다(옥타브는 앞에 <b>청</b>·<b>배</b>). 악보에 <b>한자(黃·太…)</b>로 보일지 <b>한글</b>로 보일지는 율명 팔레트에서 고를 수 있습니다.</p>
             <h4>직접 입력 — 문법을 몰라도 됩니다 (기본)</h4>
             <ul>
               <li>악보의 정간을 클릭하면 <b>입력 카드</b>가 열립니다. <span class="key">Enter</span>/<span class="key">Tab</span>으로 다음 정간, 방향키로 옆 정간 이동.</li>

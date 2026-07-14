@@ -1179,6 +1179,8 @@
          background: var(--soft); border: 1px solid var(--line); border-radius: 4px;
          padding: 1px 5px; white-space: nowrap; }
   .help-fig { display: block; margin: 10px auto; max-width: 320px; width: 100%; height: auto; }
+  .help-pane p.help-credit { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
+                             font-size: 11px; line-height: 1.6; color: var(--muted); }
   .help-foot { padding: 10px 18px; border-top: 1px solid var(--line); text-align: right;
                flex: 0 0 auto; }
   .help-foot button { border: 1px solid var(--accent); background: var(--panel); color: var(--accent);
