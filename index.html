@@ -42,30 +42,31 @@
         <span>정간보 편집기</span>
       </div>
     </div>
-    <div class="topbar-doc-actions topbar-box">
-      <!-- 명령 버튼은 전부 리본 버튼과 같은 '기호 + 아래 작은 글씨' 꼴(.topbar-cmd)로 통일 -->
-      <button type="button" id="btnNewDoc" class="topbar-cmd tip"
-        data-tip="새 문서
-· 지금 작업은 임시저장할지 먼저 물어봄
-· 제목·선율·장단·가사·텍스트·레이아웃 → 처음 상태">＋<span class="lbl">새 문서</span></button>
-      <button type="button" id="btnUndo" class="topbar-cmd tip"
-        data-tip="실행 취소 (⌘/Ctrl+Z)">↶<span class="lbl">실행 취소</span></button>
-      <button type="button" id="btnRedo" class="topbar-cmd tip"
-        data-tip="다시 실행 (⌘/Ctrl+⇧+Z)">↷<span class="lbl">다시 실행</span></button>
-      <!-- 전체 초기화는 여기 있다가 오른쪽 끝 더보기(⋯) 메뉴로 옮김 — 어쩌다 한 번 쓰는
-           파괴적 명령이 자주 쓰는 버튼 옆에 빨간 글씨로 있으면 시끄럽고 오터치 위험 -->
-    </div>
-    <!-- 입력 방식 — 세그먼트 버튼 2개 대신 드롭다운 하나. 이름표(작은 글씨)+값(굵은 글씨)으로
-         구분하고, 두 모드의 자세한 차이는 옆 ? 가이드와 툴팁이 담당한다. -->
+    <!-- 예전엔 여기(문패 바로 옆)에 새 문서·실행 취소·다시 실행이 줄지어 있었다. 지금은:
+         · 실행 취소/다시 실행 → 버튼 없앰. ⌘/Ctrl+Z·⇧Z로 한다(도움말 '단축키' 탭 참고).
+         · 새 문서 → 오른쪽 '파일' 메뉴로(File > New 자리).
+         문패 옆을 비워 브랜드가 살고, 왼쪽엔 곡을 쓰기 전에 정하는 '입력 방식'만 남는다. -->
+
+    <!-- 입력 방식 — 예전엔 '이름표 + <select>'라 상단바에서 혼자 딴 물건처럼 보였다.
+         지금은 다른 명령들과 같은 '기호 + 아래 작은 글씨'(.topbar-cmd) 꼴에, 배율·파일과 같은
+         .tb-menu 드롭다운 문법. 글씨는 배율의 '100%'처럼 **지금 값**(직접 입력/에디터)을 보여준다.
+         기호는 다크 토글(.sun/.moon)과 같은 방식으로 body.input-direct에 따라 CSS가 바꿔치기 —
+         커서(직접 입력: 정간을 클릭해 넣는다) ↔ 글줄(에디터: 텍스트로 편집한다).
+         두 모드의 자세한 차이는 옆 ? 가이드와 툴팁이 담당한다. -->
     <div class="topbar-box" id="modeBox">
-      <span class="mode-lab">입력 방식</span>
-      <select id="melInputSelect" class="tip"
-        data-tip="직접 입력: 정간 클릭 → 그 자리에서 바로 입력
-에디터: 곡 전체를 텍스트로 보며 편집
+      <button type="button" id="modeToggle" class="topbar-cmd tip"
+        data-tip="입력 방식 바꾸기
+· 직접 입력: 정간 클릭 → 그 자리에서 바로 입력
+· 에디터: 곡 전체를 텍스트로 보며 편집
 · 선율·장단·가사 공통 · 언제든 전환">
-        <option value="direct">직접 입력</option>
-        <option value="editor">에디터</option>
-      </select>
+        <svg class="ic-direct" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+        <svg class="ic-editor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="14" y2="12"></line><line x1="4" y1="18" x2="18" y2="18"></line></svg>
+        <span class="lbl" id="modeToggleLbl">직접 입력</span>
+      </button>
+      <div id="modePop" class="tb-menu">
+        <button type="button" id="modeDirect">직접 입력</button>
+        <button type="button" id="modeEditor">에디터</button>
+      </div>
     <span class="guide-wrap">
       <button type="button" id="inputModeGuideToggle" class="icon-btn" title="입력 방식 안내">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -130,6 +131,52 @@
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       <span class="lbl" id="darkToggleLbl">다크</span>
     </button>
+    <!-- 인쇄/PDF — 이 앱의 최종 목적지라 메뉴에 숨기지 않고 1급 버튼으로 꺼내 뒀다.
+         빈도만 보면(곡 하나에 한 번) 아래 '파일' 메뉴로 접는 게 규칙에 맞지만, 위험하지도
+         않고 사람들이 마지막에 반드시 찾는 버튼이라 '찾기 쉬움'을 빈도보다 앞에 뒀다.
+         빈도×위험도 규칙의 의도된 예외 — 규칙대로 메뉴에 도로 집어넣지 말 것. -->
+    <!-- 인쇄·파일은 '내보내기' 한 짝이라 .topbar-box로 묶는다 — 안쪽은 3px, 옆 무리와는
+         #topBar gap 16px로 벌어져 한 덩어리로 읽힌다. 투어가 가리킬 대상이기도 하다. -->
+    <div id="outBox" class="topbar-box">
+      <button type="button" id="btnPrint" class="topbar-cmd tip"
+        data-tip="인쇄 / PDF로 저장
+· 브라우저 인쇄창에서 'PDF로 저장'을 고르면 PDF가 됩니다">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <span class="lbl">인쇄</span>
+      </button>
+      <!-- 파일(⋯) — 인쇄 말고 나머지 문서·출력 명령의 '진짜 집'(예전엔 사이드바 출력 탭
+           버튼을 대신 눌러주는 껍데기였는데, 같은 명령이 두 군데 있는 게 헷갈려 이리로 일원화).
+           이름이 '더보기'였을 땐 열기 전엔 뭐가 든지 알 수 없는 잡동사니 서랍이었다 — 새 문서·
+           저장·불러오기·인쇄는 고전적인 '파일' 메뉴 그 자체라 뜻이 있는 이름으로 바꿨다.
+           사이드바를 접어둔 채로도 부를 수 있어야 해서 상단바에 둔다.
+           전체 초기화도 여기 — 위험하지만 resetAllContent가 confirm()으로 한 번 더 묻고
+           되돌리기(⌘Z)도 먹어서 안전장치가 둘이다. -->
+      <div id="fileBox">
+        <button type="button" id="fileToggle" class="topbar-cmd tip"
+          data-tip="파일 · 새 문서·PNG·파일로 저장·불러오기·초기화">⋯<span class="lbl">파일</span></button>
+        <div id="filePop" class="tb-menu">
+          <!-- 새 문서는 File > New 자리라 맨 위. 예전엔 문패 옆 1급 버튼이었는데, 문패 옆을
+               비우려고(브랜드가 살게) 제 집인 이리로 들어왔다. -->
+          <button type="button" id="btnNewDoc" class="tip"
+            data-tip="새 문서
+· 지금 작업은 임시저장할지 먼저 물어봄
+· 제목·선율·장단·가사·텍스트·레이아웃 → 처음 상태">＋ 새 문서</button>
+          <hr>
+          <button type="button" id="btnPng">PNG 다운로드</button>
+          <button type="button" id="btnExport">파일로 저장</button>
+          <button type="button" id="btnImport">불러오기</button>
+          <!-- 숨은 파일 고르기 입력 — btnImport가 이걸 대신 클릭한다(사이드바 출력 탭에
+               있던 걸 명령과 함께 옮겨 왔다). display:none이라 어디 있든 상관없지만
+               주인 버튼 옆에 둬야 다음 사람이 찾는다. -->
+          <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
+          <hr>
+          <button type="button" id="btnResetContent" class="danger tip"
+            data-tip="전체 초기화
+· 지움: 선율·장단·가사·텍스트·셀 서식
+· 유지: 종이 방향·정간 크기 등 레이아웃">⟲ 전체 초기화</button>
+        </div>
+      </div>
+    </div>
     <!-- 도움말 센터 열기 — 정간보 기초부터 사용법·단축키까지 담은 모달(#helpModal).
          첫 방문 환영 카드·둘러보기(투어)도 여기서 다시 열 수 있다. -->
     <button type="button" id="btnHelp" class="topbar-cmd tip"
@@ -138,27 +185,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
       <span class="lbl">도움말</span>
     </button>
-    <!-- 더보기(⋯) — PPT의 '파일' 메뉴 자리: 인쇄·저장·불러오기(실제 로직은 사이드바 출력
-         탭 버튼에 있고 여기 m* 항목이 대신 눌러줌 — app.js 위임) + 위험한 전체 초기화.
-         사이드바를 접어둔 채로도 출력·보관을 바로 부를 수 있게 한다. -->
-    <div id="moreBox" class="topbar-box">
-      <button type="button" id="moreToggle" class="topbar-cmd tip"
-        data-tip="더보기 · 인쇄·저장·불러오기·초기화">⋯<span class="lbl">더보기</span></button>
-      <div id="morePop" class="tb-menu">
-        <button type="button" id="mPrint">인쇄 / PDF 저장</button>
-        <button type="button" id="mPng">PNG 다운로드</button>
-        <button type="button" id="mExport">파일로 저장</button>
-        <button type="button" id="mImport">불러오기</button>
-        <hr>
-        <button type="button" id="btnResetContent" class="danger tip"
-          data-tip="전체 초기화
-· 지움: 선율·장단·가사·텍스트·셀 서식
-· 유지: 종이 방향·정간 크기 등 레이아웃">⟲ 전체 초기화</button>
-      </div>
-    </div>
-    <!-- 설정 폼 열기 — 사이드바를 접었을 때만 나타난다. 예전엔 화면 위에 fixed로 떠 있어서
-         가로맞춤 버튼과 겹쳤는데, 상단바 흐름 안의 맨 오른쪽 자리로 옮겨 겹칠 일이 없게 했다. -->
-    <button type="button" id="sidebarOpen" class="side-open topbar-cmd" title="설정 폼 열기">
+    <!-- 설정 패널 토글 — 늘 보인다. 예전엔 접었을 때만 나타났는데(그래서 이름도 '열기'),
+         버튼이 사라졌다 나타나면 자리가 흔들리고 '지금 열려 있다'는 것도 안 보였다.
+         이제 다크 토글처럼 켜짐(.on) 표시가 붙는 상시 토글이라 눌러서 열고 닫는다.
+         사이드바 안 ✕(#sidebarToggle)는 닫기 전용으로 그대로 둔다 — 패널을 보고 있을 땐
+         그 자리에서 바로 닫는 게 빠르니까. -->
+    <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
+      data-tip="설정 패널 열기 / 닫기
+· 문서 · 레이아웃 · 보관">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span class="lbl">설정</span>
     </button>
@@ -179,7 +213,11 @@
     <div class="tabs">
       <button type="button" class="tab active" data-tab="doc">문서</button>
       <button type="button" class="tab" data-tab="layout">레이아웃</button>
-      <button type="button" class="tab" data-tab="out">출력</button>
+      <!-- data-tab은 "out"인 채로 둔다 — 저장된 상태(activeTab)에 이 문자열이 들어 있어서
+           바꾸면 '출력' 탭을 보던 사람이 다음 실행에 '문서' 탭으로 튕긴다(applyActiveTab의
+           폴백). 라벨만 '보관'으로: 인쇄·PNG·저장·불러오기는 상단바로 갔고 여기 남은 건
+           임시 저장 관리뿐이라 더는 '출력'이 아니다. -->
+      <button type="button" class="tab" data-tab="out">보관</button>
     </div>
 
     <!-- ===== 문서 ===== -->
@@ -271,6 +309,10 @@
 
     <!-- ===== 레이아웃 ===== -->
     <div class="tabpanel" data-tab="layout">
+      <!-- 현재 짜임 보고(#readout) — 아래 값들을 바꾸면 각 너비·페이지 장수·A4 맞춤 배율이
+           어떻게 나왔는지 여기서 바로 확인한다. 예전엔 '출력' 탭에 있었는데, 인쇄 결과가
+           아니라 '레이아웃 설정의 결과'라 조절하는 값들 바로 위가 제 집이다. -->
+      <div class="readout" id="readout"></div>
       <div class="field">
         <label for="beats">한 각의 정간 수</label>
         <input type="number" id="beats" min="1" max="64" value="12">
@@ -367,20 +409,11 @@
     </div>
 
     <!-- ===== 출력 ===== -->
+    <!-- 보관 — 인쇄·PNG·파일로 저장·불러오기는 상단바(인쇄 버튼 / 파일 메뉴)로 옮겼다.
+         명령은 상단바, 설정·관리는 사이드바로 선을 그은 것. 여기 남은 임시 저장은 목록을
+         띄워놓고 고르는 관리 UI라 드롭다운에 못 들어가서 패널에 남는다. -->
     <div class="tabpanel" data-tab="out">
-      <div class="readout" id="readout"></div>
-
-      <div class="btns">
-        <button id="btnPrint">인쇄 / PDF 저장</button>
-        <button id="btnPng" class="secondary">PNG 다운로드</button>
-      </div>
-      <div class="hint">• 페이지가 여러 장이면 PNG는 한 장씩 각각의 파일로 나뉘어 저장됩니다 (예: 제목-1.png, 제목-2.png…).</div>
-      <div class="btns">
-        <button id="btnExport" class="secondary">파일로 저장</button>
-        <button id="btnImport" class="secondary">불러오기</button>
-        <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
-      </div>
-      <div class="hint" style="margin-top:8px;">• 작업은 자동 저장되어 새로고침해도 유지됩니다.<br>• ‘파일로 저장’으로 곡을 따로 보관/공유할 수 있습니다.</div>
+      <div class="hint">• 인쇄·PNG·파일로 저장·불러오기는 <b>상단바</b>에 있습니다 — 인쇄는 버튼으로, 나머지는 ⋯ <b>파일</b> 메뉴 안에.<br>• 작업은 자동 저장되어 새로고침해도 유지됩니다.</div>
 
       <div class="sec">임시 저장 (이 컴퓨터)</div>
       <div class="field">
@@ -389,7 +422,7 @@
           <button type="button" id="snapSaveBtn" class="at-add">임시저장</button>
         </div>
         <div id="snapList"></div>
-        <div class="hint">• 지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.<br>• 불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.<br>• <b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 위의 ‘파일로 저장’으로 파일을 만들어 전달하세요.</div>
+        <div class="hint">• 지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.<br>• 불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.<br>• <b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 상단바 ⋯ <b>파일</b> 메뉴의 ‘파일로 저장’으로 파일을 만들어 전달하세요.</div>
       </div>
     </div>
   </aside>
@@ -1240,8 +1273,8 @@
               <li><b>새 문서 만들기</b> — 상단바 ＋ 버튼을 누르면 마법사가 열립니다. 한 각의 정간 수(박 수)·총 각 수·제목만 정하면 빈 악보가 만들어집니다.</li>
               <li><b>입력 방식 고르기</b> — 상단바 가운데에서 <b>직접 입력</b>(악보 칸을 클릭해 그 자리에서 입력, 기본)과 <b>에디터</b>(곡 전체를 텍스트로 편집) 중 하나를 고릅니다. 언제든 바꿀 수 있습니다.</li>
               <li><b>선율 입력</b> — 직접 입력이면 정간을 클릭해 입력 카드에 쓰고, 팔레트(율명·시김새)를 열어 클릭으로 넣을 수도 있습니다. 장단·가사도 같은 방식입니다.</li>
-              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 출력 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 <b>파일로 저장</b>(.jgb.json)을 쓰면 됩니다.</li>
-              <li><b>인쇄·내보내기</b> — 사이드바 출력 탭에서 인쇄(PDF 저장)와 PNG 이미지 내보내기를 할 수 있습니다.</li>
+              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 <b>보관</b> 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 상단바 ⋯ <b>파일</b> 메뉴의 <b>파일로 저장</b>(.jgb.json)을 쓰면 됩니다.</li>
+              <li><b>인쇄·내보내기</b> — 상단바의 <b>인쇄</b> 버튼으로 인쇄(PDF 저장)하고, ⋯ <b>파일</b> 메뉴에서 PNG 이미지로 내보냅니다.</li>
             </ol>
             <p>화면 구성이 궁금하면 아래의 <b>둘러보기 다시 시작</b>을 눌러 주요 영역을 하나씩 확인할 수 있습니다.</p>
           </section>

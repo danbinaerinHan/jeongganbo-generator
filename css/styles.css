@@ -106,7 +106,9 @@
      (궁서 20px 워드마크 시절엔 두 줄이 버튼 무리를 밀어내 답답했는데, 워드마크가 16px
      SVG가 되면서 그 제약이 사라졌다 — '두 줄은 답답하다'는 옛 판단을 되살리지 말 것.)
      클릭 대상이 아니라 호버 없음. */
-  #brandBox { display: flex; align-items: center; gap: 9px; padding: 0 2px; margin-right: 8px;
+  /* 오른쪽 여백을 크게 — 브랜드는 '이 앱이 뭔지'고 나머지는 '도구'라, 바짝 붙으면 문패가
+     버튼 무리의 첫 항목처럼 읽힌다. #topBar gap(16px)에 이만큼이 더해져 도구와 벌어진다. */
+  #brandBox { display: flex; align-items: center; gap: 9px; padding: 0 2px; margin-right: 28px;
               flex: 0 0 auto; }
   /* 로고는 위쪽 크롭본(까치+맨 윗 가로획, 가로로 긴 비율) — 높이만 정하고 폭은 비율대로 */
   #brandBox img { height: 32px; width: auto; display: block; }
@@ -131,15 +133,15 @@
                     white-space: nowrap; letter-spacing: .47em; margin-right: -.47em; }
   /* 로고 잉크는 순검정(흰 배경 투명) — 다크모드에선 invert로 순백이 된다 */
   body.dark #brandBox img { filter: invert(1); }
-  /* '입력 방식'은 이름표(작고 옅게), 그 옆 드롭다운 값이 본문 — 같은 굵기면 뭐가 값인지 안 읽힌다 */
-  #topBar .mode-lab { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .5px;
-                      margin: 0 0 0 4px; white-space: nowrap; }
-  #modeBox select { border: none; background-color: transparent; font-size: 12.5px; font-weight: 700;
-                    color: var(--ink); font-family: inherit; cursor: pointer; border-radius: 7px;
-                    padding: 6px 24px 6px 8px; background-position: right 6px center; }
-  #modeBox select:hover { background-color: var(--hover); }
-  /* 문서 단위 액션(새 문서/실행취소/다시실행/전체 초기화) — 다른 프로그램의 File 메뉴처럼 맨 왼쪽 */
-  .topbar-doc-actions { gap: 4px; }
+  /* 입력 방식 — 예전엔 '이름표 + <select>'라 상단바에서 혼자 딴 물건이었다. 지금은 다른
+     명령들과 같은 .topbar-cmd 꼴 + .tb-menu 드롭다운(배율·파일과 같은 문법).
+     relative: 입력 방식 메뉴(#modePop)의 기준점. */
+  #modeBox { position: relative; }
+  /* 기호는 지금 방식을 그린다 — 다크 토글(.sun/.moon)과 같은 바꿔치기.
+     기본(에디터)은 글줄, body.input-direct면 커서. */
+  #modeToggle .ic-direct { display: none; }
+  body.input-direct #modeToggle .ic-editor { display: none; }
+  body.input-direct #modeToggle .ic-direct { display: block; }
   /* 상단바 명령 버튼 — 리본 버튼(.ribbon-btn)과 같은 '기호 + 아래 작은 글씨' 한 가지 꼴로 통일
      (새 문서/실행취소/다시실행/전체 초기화/재생/정지/재생 설정/다크·라이트/설정 열기).
      입력 방식 세그먼트·확대축소 스테퍼는 컨트롤 종류가 달라 제외한다. */
@@ -165,7 +167,7 @@
   /* 위험 명령(전체 초기화) — 글자만 위험색, 호버에서 옅은 위험 배경 */
   .tb-menu .danger { color: var(--danger-2); }
   .tb-menu .danger:hover { background: var(--danger-soft); }
-  #moreBox { position: relative; }
+  #fileBox { position: relative; }   /* relative: 파일 메뉴(.tb-menu)의 기준점 */
   @media print { .tb-menu { display: none !important; } }
   /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
   #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
@@ -303,7 +305,6 @@
   /* 팔레트 보기(율명/시김새) — 책에 라벨(북마크 탭)을 붙인 것처럼: 고르지 않은 건
      작고 옅게 뒤로 겹쳐 있고, 고른 것만 크고 진하게 앞으로 튀어나와 있어 뭘 고를
      수 있는지·뭘 골랐는지 한눈에 보이게 한다. */
-  .mode-lab { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 4px; }
   .pal-views { display: inline-flex; align-items: flex-end; overflow: visible;
                border: none; background: none; gap: 0; }
   .pal-view {
@@ -433,7 +434,7 @@
   /* 배율 숫자 = 메뉴 버튼(▾) — 캐럿은 ::after라 JS가 textContent(%)를 갈아도 안 지워진다 */
   #zoomBar .zval { font-size: 12px; min-width: 52px; text-align: center; color: var(--muted); }
   #zoomBar .zval::after { content: "▾"; font-size: 8px; margin-left: 3px; }
-  #zoomBar .zval.on, #moreToggle.on { background: var(--hover); }
+  #zoomBar .zval.on, #fileToggle.on { background: var(--hover); }
   #zoomBar > button:disabled { opacity: .35; cursor: default; }
   #zoomBar > button:disabled:hover { background: transparent; }
 
@@ -1157,11 +1158,14 @@
 
   /* 사이드바 접기/펼치기 */
   .side-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-  /* 설정 폼 열기 — 상단바 흐름 안의 맨 오른쪽 자리(.topbar-cmd 꼴). 접혀 있을 때만 나타난다.
-     예전엔 화면 위에 fixed(right:52px)로 떠 있어서 확대축소 바의 가로맞춤 버튼과 겹쳤다. */
-  .side-open { display: none; }
+  /* 설정 패널 토글 — 상단바 흐름 안의 맨 오른쪽 자리(.topbar-cmd 꼴).
+     예전엔 화면 위에 fixed(right:52px)로 떠 있어 확대축소 바의 가로맞춤 버튼과 겹쳤고,
+     그 뒤엔 '접혀 있을 때만' 나타났는데(display:none ↔ flex) 버튼이 사라졌다 나타나며
+     옆 버튼들 자리가 흔들리고 '지금 열려 있다'는 것도 안 보였다. 이제 늘 보이는 토글이고,
+     패널이 열려 있으면 다크 토글처럼 켜짐 배경(.on)이 붙는다. */
+  .side-open { display: flex; }
   body.sidebar-collapsed #sidebar { display: none; }
-  body.sidebar-collapsed .side-open { display: flex; }
+  #sidebarOpen.on { background: var(--hover); }
 
   /* 율명 표기 셀렉트 */
   .tool-inline { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }

@@ -966,9 +966,9 @@
     });
   }
   $("btnResetContent").addEventListener("click", resetAllContent);
-  $("btnNewDoc").addEventListener("click", startNewDocument);
-  $("btnUndo").addEventListener("click", function () { undoGlobal(); });
-  $("btnRedo").addEventListener("click", function () { redoGlobal(); });
+  $("btnNewDoc").addEventListener("click", startNewDocument);   // 지금은 파일 메뉴 안
+  // 실행 취소/다시 실행 버튼은 없앴다 — ⌘/Ctrl+Z·⇧Z 단축키로만 한다(문패 옆을 비우려고).
+  // 단축키 배선은 아래 '되돌리기' 절에 그대로 있고, 도움말 '단축키' 탭이 안내한다.
 
   // ---------- 다크 모드 (수동 토글, localStorage에 유지) ----------
   // 색은 전부 CSS 역할 변수라 body.dark 클래스 하나로 UI 전체가 어두워진다.
@@ -4432,8 +4432,19 @@
   });
 
   // 설정 폼 접기/펼치기
-  $("sidebarToggle").addEventListener("click", function () { document.body.classList.add("sidebar-collapsed"); });
-  $("sidebarOpen").addEventListener("click", function () { document.body.classList.remove("sidebar-collapsed"); });
+  // 설정 패널 — 상단바 버튼은 늘 보이는 토글(열려 있으면 .on), 사이드바 안 ✕는 닫기 전용.
+  function applySidebarBtn() {
+    $("sidebarOpen").classList.toggle("on", !document.body.classList.contains("sidebar-collapsed"));
+  }
+  $("sidebarToggle").addEventListener("click", function () {
+    document.body.classList.add("sidebar-collapsed");
+    applySidebarBtn();
+  });
+  $("sidebarOpen").addEventListener("click", function () {
+    document.body.classList.toggle("sidebar-collapsed");
+    applySidebarBtn();
+  });
+  applySidebarBtn();
 
   // 텍스트 에디터 페이지 넘김 (선율/가사 헤더 공용) — 악보 미리보기도 그 페이지로 따라간다
   document.querySelectorAll(".ed-pager .ed-prev").forEach(function (b) {
@@ -4863,8 +4874,9 @@
     "· 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나\n" +
     "예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)";
   function applyInputMode() {
-    if ($("melInputSelect")) $("melInputSelect").value = inputMode;
     const direct = inputMode === "direct";
+    // 상단바 버튼 글씨는 배율의 '100%'처럼 지금 값을 보여준다(기호는 body.input-direct로 CSS가 바꿈)
+    if ($("modeToggleLbl")) $("modeToggleLbl").textContent = direct ? "직접 입력" : "에디터";
     if (!direct && cellEditInput) commitCellEditor(false);   // 에디터 모드로 돌아가면 열린 입력창 정리
     // 선율·장단·가사 리본이 뜬 바로 바뀌는 것도 이 클래스 하나로 같이 처리(CSS 참고)
     document.body.classList.toggle("input-direct", direct);
@@ -4917,13 +4929,19 @@
     lastAppliedInputMode = inputMode;
   }
   let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
-  $("melInputSelect").addEventListener("change", function () {
+  // 입력 방식 메뉴(#modePop) — 예전엔 <select>의 change였다. 메뉴 여닫기는 wireTopMenu가 맡고
+  // (아래 상단바 드롭다운 절), 여기선 두 항목이 각자 모드를 고른다.
+  function setInputMode(mode) {
+    const next = mode === "editor" ? "editor" : "direct";
+    if (next === inputMode) return;   // 같은 걸 다시 고르면 아무 일도 없어야 한다(분석 이벤트도 안 남김)
     exitOrnEditMode();   // 입력 방식(에디터↔직접) 전환 시 미세조정 끔
-    inputMode = $("melInputSelect").value === "editor" ? "editor" : "direct";
+    inputMode = next;
     track("input_mode", { v: inputMode });
     applyInputMode();
     saveState();
-  });
+  }
+  $("modeDirect").addEventListener("click", function () { setInputMode("direct"); });
+  $("modeEditor").addEventListener("click", function () { setInputMode("editor"); });
 
   // ---------- 기능바 도킹 위치 (위쪽 가로 / 왼쪽 세로, 직접 입력 전용) ----------
   // body.ribbon-left 클래스 하나로 CSS가 갈라진다(#main 가로 배치·#leftDock 세로 열).
@@ -5035,7 +5053,7 @@
       $("playSettingsToggle").classList.remove("on");
     }
   });
-  // 상단바 드롭다운(배율 ▾·더보기 ⋯) — 재생 설정 팝오버와 같은 열고닫기 문법.
+  // 상단바 드롭다운(배율 ▾·파일 ⋯) — 재생 설정 팝오버와 같은 열고닫기 문법.
   // 차이 하나: 메뉴는 항목을 고르면 할 일이 끝나므로 안을 클릭해도 닫는다.
   function wireTopMenu(btnId, popId) {
     $(btnId).addEventListener("click", function (e) {
@@ -5055,13 +5073,12 @@
     });
   }
   wireTopMenu("zoomVal", "zoomPop");
-  wireTopMenu("moreToggle", "morePop");
-  // 더보기 메뉴의 인쇄·저장·불러오기 — 실제 로직(과 분석 이벤트)은 사이드바 '출력' 탭
-  // 버튼에 있고, 여기선 그 버튼을 대신 눌러준다(로직 중복 방지).
-  $("mPrint").addEventListener("click", () => $("btnPrint").click());
-  $("mPng").addEventListener("click", () => $("btnPng").click());
-  $("mExport").addEventListener("click", () => $("btnExport").click());
-  $("mImport").addEventListener("click", () => $("btnImport").click());
+  wireTopMenu("fileToggle", "filePop");
+  wireTopMenu("modeToggle", "modePop");
+  // btnPrint(상단바 1급 버튼)·btnPng/btnExport/btnImport(파일 메뉴)는 이제 상단바에 살고
+  // 여기가 유일한 배선이다. 예전엔 사이드바 '출력' 탭에 진짜 버튼이 있고 상단바 더보기의
+  // m* 항목이 그걸 대신 눌러주는 위임 구조였는데, 같은 명령이 두 군데 있는 게 헷갈려
+  // 상단바로 일원화했다(사이드바 '보관' 탭엔 임시 저장만 남음).
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => { track("export_print"); window.print(); });
   // 인쇄 → 'PDF로 저장'의 기본 파일명은 탭 제목(document.title)에서 오므로, 인쇄하는
@@ -5219,17 +5236,17 @@
   // -- 둘러보기(투어) --
   // 대상은 두 입력 모드에 공통으로 존재(리본은 모드에 따라 위치만 이동 — 매번 셀렉터로 재탐색)
   const TOUR_STEPS = [
-    { sel: ".topbar-doc-actions", title: "문서 관리",
-      body: "새 문서 만들기, 실행 취소·다시 실행, 전체 초기화를 여기서 합니다." },
     { sel: "#modeBox", title: "입력 방식",
       body: "직접 입력은 악보의 정간을 클릭해 그 자리에서 입력하고, 에디터는 곡 전체를 텍스트로 편집합니다. 언제든 바꿀 수 있습니다." },
     { sel: "#melodyRibbon", title: "기능바",
       body: "율명·시김새 팔레트 열기, 각 추가·삭제, 셀 서식, 율명 크기 조절을 여기서 합니다." },
     { sel: "#sheetArea", title: "악보",
-      body: "정간보는 전통 방식대로 오른쪽에서 왼쪽으로 읽습니다. 정간을 클릭하면 바로 입력할 수 있습니다." },
+      body: "정간보는 전통 방식대로 오른쪽에서 왼쪽으로 읽습니다. 정간을 클릭하면 바로 입력할 수 있습니다. 잘못 고쳤으면 ⌘/Ctrl+Z로 되돌립니다." },
     { sel: "#sidebar", title: "설정",
-      body: "문서·레이아웃·출력 탭에서 제목, 정간 수, 인쇄와 저장을 설정합니다.",
+      body: "문서·레이아웃 탭에서 제목·정간 수·종이 방향을 정하고, 보관 탭에서 지금 상태를 이름 붙여 저장해둡니다.",
       skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
+    { sel: "#outBox", title: "인쇄 · 파일",
+      body: "다 만들면 인쇄 버튼으로 종이나 PDF로 뽑습니다. 옆 ⋯ 파일 메뉴에는 새 문서, PNG 다운로드, 파일로 저장·불러오기가 있습니다." },
     { sel: "#btnHelp", title: "도움말",
       body: "궁금할 때는 언제든 이 버튼으로 도움말을 열 수 있습니다. 둘러보기도 거기서 다시 시작할 수 있습니다." }
   ];

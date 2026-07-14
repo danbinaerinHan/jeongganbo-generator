@@ -56,12 +56,43 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 
 ## 핵심 구조 요약
 
-- 상단바 드롭다운: 배율 숫자(#zoomVal ▾ → #zoomPop: 100%·세로/가로 맞춤)와 더보기(#moreToggle
-  ⋯ → #morePop: 인쇄/PDF·PNG·파일로 저장·불러오기 + 전체 초기화)는 `.tb-menu` +
-  `wireTopMenu()`(app.js, 재생 설정 팝오버 아래)로 열고닫는다. 더보기의 인쇄·저장 항목(m*)은
-  사이드바 '출력' 탭 버튼을 `.click()`으로 대신 눌러주는 위임 — 로직·분석 이벤트 중복 금지.
-  자주 안 쓰는·위험한 명령은 상단바에 늘어놓지 말고 이 메뉴로 접을 것(빈도×위험도).
+- **명령은 상단바, 설정·관리는 사이드바** — 출력 명령의 집을 정한 선. 예전엔 사이드바 '출력'
+  탭에 진짜 버튼이 있고 상단바 '더보기'의 m* 항목이 그걸 `.click()`으로 대신 눌러주는 위임
+  구조라 같은 명령이 두 군데 있었는데, 상단바로 일원화했다(위임·중복 없음, 배선은 app.js 한 곳).
+  - #btnPrint(인쇄)는 **1급 버튼**. 빈도(곡 하나에 한 번)만 보면 아래 규칙상 메뉴행이지만,
+    이 앱의 최종 목적지고 위험하지도 않아 '찾기 쉬움'을 빈도보다 앞에 뒀다 — **의도된 예외**니
+    규칙대로 메뉴에 도로 넣지 말 것.
+  - 파일 메뉴(#fileToggle ⋯ → #filePop): #btnNewDoc · ── · #btnPng·#btnExport·#btnImport
+    (+숨은 #fileImport) · ── · #btnResetContent. 이름이 '더보기'였을 땐 열기 전엔 뭐가 든지 모르는 잡동사니 서랍이라
+    뜻 있는 '파일'로 바꿨다. 전체 초기화는 위험하지만 resetAllContent가 confirm()으로 한 번
+    더 묻고 ⌘Z도 먹어 안전장치가 둘이라 여기 둔다.
+  - 사이드바 '보관' 탭(**data-tab은 "out"인 채로 둘 것** — 저장된 상태의 activeTab에 이 문자열이
+    들어 있어 바꾸면 그 탭 보던 사람이 '문서'로 튕긴다)엔 임시 저장만 남는다. 목록을 띄워놓고
+    고르는 관리 UI라 드롭다운에 못 넣어서. #readout(각 너비·페이지 수·A4 맞춤 배율)은
+    레이아웃 설정의 결과 보고라 '레이아웃' 탭 맨 위로 옮겼다.
+- 배율 숫자(#zoomVal ▾ → #zoomPop: 100%·세로/가로 맞춤)와 위 파일 메뉴는 `.tb-menu` +
+  `wireTopMenu()`(app.js, 재생 설정 팝오버 아래)로 열고닫는다.
+  자주 안 쓰는·위험한 명령은 상단바에 늘어놓지 말고 메뉴로 접을 것(빈도×위험도).
   #zoomBar 버튼 규칙은 직계(>)만 — 메뉴 항목은 .tb-menu 문법을 따라야 해서.
+- 브랜드(#brandBox)는 margin-right 28px로 도구 무리와 떨어뜨린다(+#topBar gap 16 = 44px).
+  바짝 붙으면 문패가 버튼 무리의 첫 항목처럼 읽힌다.
+- 상단바 순서는 **같은 일끼리 짝지어** 왼→오른쪽으로 성격이 옮겨간다. 새 버튼을 끼울 땐
+  이 짝 안으로 넣을 것(짝 사이를 가르지 말 것 — 예전엔 도움말이 다크와 인쇄 사이에 끼어
+  '보기'와 '내보내기'를 갈라놨다):
+  문패 │ 입력 방식+? │ 재생·정지·재생설정(듣기) │ 배율·다크(화면을 어떻게 볼지)
+  │ #outBox = 인쇄·파일(내보내기) │ 도움말·설정(앱 자체)
+- **문패 옆은 비워 둔다** — 브랜드가 살아야 해서. 예전엔 새 문서·실행취소·다시실행이 문패
+  바로 옆에 줄지어 있었는데 다 치웠다. 왼쪽에 남는 건 곡을 쓰기 전에 정하는 '입력 방식'뿐.
+  새 명령을 문패 옆에 새로 놓지 말 것.
+  - 실행 취소/다시 실행은 **버튼이 없다**. ⌘/Ctrl+Z·⇧Z 단축키뿐(단축키 배선은 '되돌리기'
+    절에 그대로 있고 도움말 '단축키' 탭이 안내한다). 빈도로만 보면 1급 버튼감이지만
+    문패 옆을 비우는 쪽을 골랐다 — 되살리려면 문패 옆이 아닌 오른쪽에 붙일 것.
+  - 새 문서(#btnNewDoc)는 파일 메뉴 맨 위(File > New 자리).
+- 상단바 컨트롤은 **예외 없이 .topbar-cmd 한 꼴**(기호 + 아래 작은 글씨). 값이 있는 것(배율,
+  입력 방식)은 글씨 자리에 **지금 값**을 보여주고 .tb-menu로 고른다. `<select>`나 세그먼트
+  버튼을 새로 들이지 말 것 — 입력 방식이 <select>였을 때 혼자 딴 물건처럼 튀었다.
+  기호가 상태를 말해야 하면 다크 토글(.sun/.moon)처럼 CSS로 바꿔치기(#modeToggle의
+  .ic-direct/.ic-editor ← body.input-direct). 켜짐/눌림은 `.on` 클래스 + var(--hover) 배경.
 - 입력 방식 2가지: 에디터 / 직접 입력. `applyInputMode()`(app.js)가 전환하며
   `body.input-direct` 클래스 하나로 CSS가 갈라진다.
   - 직접 입력: 기능바(#melodyRibbon)가 #main 최상단으로 이동, 도구창(.direct-win)들이
@@ -132,7 +163,8 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   css/·js/ 만 있으면 돌아가므로 references/·_보관/·assets/·tools/는 제외해도 무방)
 - 첫 로드에 새 문서 모달이 뜸 → `document.getElementById('ndCancel').click()`.
   localStorage가 완전히 비어 있으면 대신 환영 카드(#welcomeModal)가 뜸 → `#wcSkip` 클릭.
-- 직접 입력 전환: `const s=document.getElementById('melInputSelect'); s.value='direct'; s.dispatchEvent(new Event('change'))` (입력 방식은 #modeBox 안 드롭다운).
+- 직접 입력 전환: `document.getElementById('modeDirect').click()` (에디터는 `modeEditor`).
+  예전 `melInputSelect` <select>는 없어졌다 — 지금은 #modeToggle ⋯ #modePop 메뉴.
 - preview_eval에서 DOMRect는 `{}`로 직렬화됨 — `[left,top,right,bottom]` 배열로 손수 변환.
 - 뷰포트가 0×0으로 측정되면 preview_resize 후 다시 측정.
 - requestAnimationFrame·scrollIntoView(smooth)는 실행 안 됨 — setTimeout 사용.
