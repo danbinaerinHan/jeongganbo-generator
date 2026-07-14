@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>정간보 생성기</title>
+<title>우물사이 Umulsai | 웹에서 그리는 정간보 편집기</title>
+<meta name="description" content="우물사이는 웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기입니다. 설치 없이 정간보 만들기를 시작하세요. Umulsai is a free web-based editor for Jeongganbo, Korean traditional music notation.">
+<meta property="og:title" content="우물사이 Umulsai — 웹에서 그리는 정간보 편집기">
+<meta property="og:description" content="웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기. 설치 없이 시작하세요.">
+<meta property="og:type" content="website">
+<!-- 파비콘 — assets/brand/favicon-64.png(로고 축소본, 흰 배경 유지 — 어두운 탭에서도 보이게)를
+     데이터 URL로 인라인. 원본 로고: assets/Gemini_Generated_Logo.png -->
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="stylesheet" href="css/styles.css">
 <style id="pageStyle">@page { size: A4 portrait; margin: 0; }</style>
 </head>
@@ -14,6 +21,27 @@
        자세히 풀어둔다 — 선율 입력 자체에 대한 규칙·시김새 넣는 법은 선율 입력 옆
        ?에 따로 있다. -->
   <div id="topBar">
+    <!-- 브랜드(로고+이름) — 상단바 맨 왼쪽, 앱들이 으레 이름을 두는 자리. 로고는 井(정간) 격자에
+         까치가 앉은 그림이라 작아도 정간보 앱임이 읽힌다. assets/brand/umulsai-top-64.png(위쪽 크롭:
+         까치+맨 윗 가로획 — 전체 井은 작게 그리면 새가 안 보여 위쪽만 쓴다)를 데이터 URL로 인라인 — 프리뷰 미러(rsync)가
+         assets/를 제외해도 항상 보이게. 페이지의 h1은 여기 하나뿐(사이드바 머리글은 h2). -->
+    <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
+      <img id="brandLogo" src="data:image/png;base64,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" alt="우물사이 로고">
+      <div class="brand-txt">
+        <!-- 워드마크 "우물사이" — 글씨체는 EBS훈민정음 SB지만 폰트 파일을 싣지 않고
+             글자를 아웃라인 패스로 떠서 넣었다. EBS 라이선스는 웹 임베딩·BI/CI는 허용하나
+             폰트 자체의 변형(서브셋 포함)·재배포는 사전 서면승인 대상이라, 폰트를 안 싣는
+             이 방식이 라이선스를 건드리지 않는다. 덤으로 3KB고 모든 OS에서 동일하게 나온다.
+             다시 뜨려면: python3 tools/gen-wordmark.py (EBS훈민정음SB.otf 설치 필요).
+             fill=currentColor라 다크모드는 --ink 색을 따라간다(로고 img의 invert와 무관). -->
+        <h1><svg id="brandWord" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4011 776" role="img" aria-label="우물사이"><path fill="currentColor" d="M0 553V456H835V553ZM489 650C489 669 482 687 469 700C455 715 438 722 418 722C396 722 380 715 366 700C353 687 346 669 346 650C346 630 353 614 366 599C380 586 396 578 418 578C438 578 455 586 469 599C482 614 489 630 489 650ZM304 199C304 214 307 228 313 240C319 254 326 265 337 274C347 284 359 292 374 297C387 303 402 305 418 305C433 305 448 303 462 297C476 292 487 284 498 274C508 265 516 254 522 240C528 228 531 214 531 199C531 185 528 172 522 158C516 145 508 134 498 124C487 114 476 107 462 101C448 95 433 92 418 92C402 92 387 95 374 101C359 107 347 114 337 124C326 134 319 145 313 158C307 172 304 185 304 199ZM204 199C204 172 210 146 222 121C232 98 248 77 267 58C287 41 309 26 335 15C360 6 388 0 418 0C447 0 474 6 500 15C525 26 548 41 568 58C587 77 603 98 614 121C625 146 631 172 631 199C631 226 625 252 614 275C603 301 587 322 568 339C548 358 525 372 500 382C474 393 447 398 418 398C388 398 360 393 335 382C309 372 287 358 267 339C248 322 232 301 222 275C210 252 204 226 204 199ZM1075 383V291H1910V383H1549C1553 393 1556 401 1556 407C1556 423 1549 436 1535 446H1861V654H1227V689H1861V776H1124V568H1758V533H1124V446H1449C1443 441 1438 435 1435 429C1431 423 1429 415 1429 407C1429 399 1431 391 1436 383ZM1153 247V14H1832V247ZM1256 155H1729V107H1256ZM2878 747H2775V19H2878ZM3056 337C3056 357 3050 373 3037 387C3023 401 3007 407 2987 407C2965 407 2949 401 2936 387C2923 373 2917 357 2917 337C2917 318 2923 302 2936 288C2949 274 2965 268 2987 268C3007 268 3023 274 3037 288C3050 302 3056 318 3056 337ZM2403 68 2684 582 2597 640 2403 271 2218 640 2131 582ZM4011 747H3908V19H4011ZM3225 349C3225 312 3231 277 3245 244C3256 213 3275 185 3298 162C3320 139 3348 120 3380 107C3411 94 3445 87 3482 87C3519 87 3554 94 3586 107C3617 120 3643 139 3667 162C3689 185 3707 213 3721 244C3734 277 3740 312 3740 349C3740 387 3734 422 3721 453C3707 486 3689 513 3667 536C3643 560 3617 578 3586 591C3554 604 3519 611 3482 611C3445 611 3411 604 3380 591C3348 578 3320 560 3298 536C3275 513 3256 486 3245 453C3231 422 3225 387 3225 349ZM3328 349C3328 372 3331 395 3339 414C3345 434 3355 452 3369 466C3382 482 3398 494 3417 501C3436 510 3457 514 3482 514C3506 514 3528 510 3547 501C3566 494 3582 482 3596 466C3610 452 3619 434 3627 414C3634 395 3638 372 3638 349C3638 326 3634 304 3627 284C3619 265 3610 247 3596 232C3582 217 3566 206 3547 197C3528 189 3506 184 3482 184C3457 184 3436 189 3417 197C3398 206 3382 217 3369 232C3355 247 3345 265 3339 284C3331 304 3328 326 3328 349Z"/></svg></h1>
+        <!-- 부제는 워드마크 '아래' — 위=이름, 아래=설명이라는 위계가 위치로 드러나야 부제로
+             읽힌다. 옆에 같은 밑선으로 붙이면 이름의 꼬리처럼 보였다. 로마자 'Umulsai'는
+             여기서 뺐다 — 이름의 로마자 표기와 '뭐 하는 앱인지'는 성격이 달라 `·`로 묶으면
+             둘 다 흐려진다. Umulsai는 탭 제목·meta·#brandBox title(툴팁)에 남아 있다. -->
+        <span>정간보 편집기</span>
+      </div>
+    </div>
     <div class="topbar-doc-actions topbar-box">
       <!-- 명령 버튼은 전부 리본 버튼과 같은 '기호 + 아래 작은 글씨' 꼴(.topbar-cmd)로 통일 -->
       <button type="button" id="btnNewDoc" class="topbar-cmd tip"
@@ -24,12 +52,9 @@
         data-tip="실행 취소 (⌘/Ctrl+Z)">↶<span class="lbl">실행 취소</span></button>
       <button type="button" id="btnRedo" class="topbar-cmd tip"
         data-tip="다시 실행 (⌘/Ctrl+⇧+Z)">↷<span class="lbl">다시 실행</span></button>
-      <button type="button" id="btnResetContent" class="topbar-cmd topbar-btn-danger tip"
-        data-tip="전체 초기화
-· 지움: 선율·장단·가사·텍스트·셀 서식
-· 유지: 종이 방향·정간 크기 등 레이아웃">⟲<span class="lbl">전체 초기화</span></button>
+      <!-- 전체 초기화는 여기 있다가 오른쪽 끝 더보기(⋯) 메뉴로 옮김 — 어쩌다 한 번 쓰는
+           파괴적 명령이 자주 쓰는 버튼 옆에 빨간 글씨로 있으면 시끄럽고 오터치 위험 -->
     </div>
-    <span class="topbar-sep"></span>
     <!-- 입력 방식 — 세그먼트 버튼 2개 대신 드롭다운 하나. 이름표(작은 글씨)+값(굵은 글씨)으로
          구분하고, 두 모드의 자세한 차이는 옆 ? 가이드와 툴팁이 담당한다. -->
     <div class="topbar-box" id="modeBox">
@@ -83,15 +108,18 @@
     </div>
     <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
          늘 같은 자리에 있는 게 편해서 상단바 오른쪽에 고정했다 -->
-    <span class="topbar-sep"></span>
+    <!-- 배율 숫자가 곧 메뉴 버튼(▾) — 세로/가로 맞춤은 매번 쓰는 게 아니라서 PPT의 배율
+         프리셋처럼 숫자 클릭 메뉴 안으로 접었다(빈도 낮은 건 접는다). −/＋만 상시 노출. -->
     <div id="zoomBar" class="topbar-box">
       <button id="zoomOut" title="축소">−</button>
-      <span class="zval" id="zoomVal">100%</span>
+      <button type="button" class="zval" id="zoomVal" title="보기 배율 · 맞춤">100%</button>
       <button id="zoomIn" title="확대">+</button>
-      <button id="zoomFitH" class="fit" title="세로 맞춤 (페이지 높이를 화면에 맞춤)">세로맞춤</button>
-      <button id="zoomFitW" class="fit" title="가로 맞춤 (페이지 너비를 화면에 맞춤)">가로맞춤</button>
+      <div id="zoomPop" class="tb-menu">
+        <button type="button" id="zoom100">100%</button>
+        <button type="button" id="zoomFitH" title="페이지 높이를 화면에 맞춤">세로 맞춤</button>
+        <button type="button" id="zoomFitW" title="페이지 너비를 화면에 맞춤">가로 맞춤</button>
+      </div>
     </div>
-    <span class="topbar-sep"></span>
     <!-- 다크모드 토글 — 상단바 맨 오른쪽. 해(라이트)·달(다크) 아이콘을 CSS로 전환 -->
     <!-- 다크/라이트 전환 — 다른 명령 버튼과 같은 '기호 + 아래 작은 글씨' 꼴.
          글자는 '누르면 갈 모드'(라이트 화면일 땐 "다크")를 보여준다 — JS(applyDark)가 갱신. -->
@@ -110,6 +138,24 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
       <span class="lbl">도움말</span>
     </button>
+    <!-- 더보기(⋯) — PPT의 '파일' 메뉴 자리: 인쇄·저장·불러오기(실제 로직은 사이드바 출력
+         탭 버튼에 있고 여기 m* 항목이 대신 눌러줌 — app.js 위임) + 위험한 전체 초기화.
+         사이드바를 접어둔 채로도 출력·보관을 바로 부를 수 있게 한다. -->
+    <div id="moreBox" class="topbar-box">
+      <button type="button" id="moreToggle" class="topbar-cmd tip"
+        data-tip="더보기 · 인쇄·저장·불러오기·초기화">⋯<span class="lbl">더보기</span></button>
+      <div id="morePop" class="tb-menu">
+        <button type="button" id="mPrint">인쇄 / PDF 저장</button>
+        <button type="button" id="mPng">PNG 다운로드</button>
+        <button type="button" id="mExport">파일로 저장</button>
+        <button type="button" id="mImport">불러오기</button>
+        <hr>
+        <button type="button" id="btnResetContent" class="danger tip"
+          data-tip="전체 초기화
+· 지움: 선율·장단·가사·텍스트·셀 서식
+· 유지: 종이 방향·정간 크기 등 레이아웃">⟲ 전체 초기화</button>
+      </div>
+    </div>
     <!-- 설정 폼 열기 — 사이드바를 접었을 때만 나타난다. 예전엔 화면 위에 fixed로 떠 있어서
          가로맞춤 버튼과 겹쳤는데, 상단바 흐름 안의 맨 오른쪽 자리로 옮겨 겹칠 일이 없게 했다. -->
     <button type="button" id="sidebarOpen" class="side-open topbar-cmd" title="설정 폼 열기">
@@ -121,7 +167,9 @@
   <aside id="sidebar">
     <div class="side-head">
       <div>
-        <h1>정간보 생성기</h1>
+        <!-- 앱 이름(우물사이)은 상단바 브랜드로 옮겼고, 여기는 폼의 성격(설정)만 말한다.
+             h1은 페이지에 하나(상단바 브랜드)라 h2로 내렸다. -->
+        <h2 class="side-title">설정</h2>
       </div>
       <button type="button" id="sidebarToggle" class="icon-btn" title="설정 폼 접기">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1296,7 +1344,7 @@
        (app.js firstVisit 판정). 어떤 버튼을 눌러도 결국 새 문서 마법사로 이어진다. -->
   <div id="welcomeModal" class="modal-overlay" style="display:none;">
     <div class="modal-box welcome-box">
-      <h3>정간보 생성기</h3>
+      <h3>우물사이</h3>
       <p class="welcome-sub">전통 정간보 악보를 화면에서 만들고<br>인쇄·저장할 수 있습니다.</p>
       <div class="welcome-btns">
         <button type="button" id="wcTour">둘러보기 시작</button>

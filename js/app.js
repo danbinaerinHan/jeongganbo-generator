@@ -4380,6 +4380,7 @@
   }
   $("zoomFitH").addEventListener("click", () => { fitZoom("height"); });
   $("zoomFitW").addEventListener("click", () => { fitZoom("width"); });
+  $("zoom100").addEventListener("click", () => setZoom(1));
   applyZoom();
 
   // 떠 있는 창의 이동 손잡이 — 끌어서 원하는 위치에 놓기 (#main 안에서만).
@@ -5034,6 +5035,33 @@
       $("playSettingsToggle").classList.remove("on");
     }
   });
+  // 상단바 드롭다운(배율 ▾·더보기 ⋯) — 재생 설정 팝오버와 같은 열고닫기 문법.
+  // 차이 하나: 메뉴는 항목을 고르면 할 일이 끝나므로 안을 클릭해도 닫는다.
+  function wireTopMenu(btnId, popId) {
+    $(btnId).addEventListener("click", function (e) {
+      e.stopPropagation();
+      $(popId).classList.toggle("on");
+      $(btnId).classList.toggle("on");
+    });
+    $(popId).addEventListener("click", function () {
+      $(popId).classList.remove("on");
+      $(btnId).classList.remove("on");
+    });
+    document.addEventListener("click", function (e) {
+      if ($(popId).classList.contains("on") && !$(popId).contains(e.target) && !$(btnId).contains(e.target)) {
+        $(popId).classList.remove("on");
+        $(btnId).classList.remove("on");
+      }
+    });
+  }
+  wireTopMenu("zoomVal", "zoomPop");
+  wireTopMenu("moreToggle", "morePop");
+  // 더보기 메뉴의 인쇄·저장·불러오기 — 실제 로직(과 분석 이벤트)은 사이드바 '출력' 탭
+  // 버튼에 있고, 여기선 그 버튼을 대신 눌러준다(로직 중복 방지).
+  $("mPrint").addEventListener("click", () => $("btnPrint").click());
+  $("mPng").addEventListener("click", () => $("btnPng").click());
+  $("mExport").addEventListener("click", () => $("btnExport").click());
+  $("mImport").addEventListener("click", () => $("btnImport").click());
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => { track("export_print"); window.print(); });
   // 인쇄 → 'PDF로 저장'의 기본 파일명은 탭 제목(document.title)에서 오므로, 인쇄하는

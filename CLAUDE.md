@@ -3,6 +3,33 @@
 목적: 매 세션 파일 전체를 다시 읽지 않고 바로 해당 위치로 가기 위한 지도.
 큰 리팩토링 없이 빠른 수정을 우선한다.
 
+앱 이름(브랜드)은 **우물사이**(Umulsai) — 정간(井間)이 '우물 정(井) 자 사이 칸'이라는 데서 온 이름.
+상단바 맨 왼쪽 #brandBox(로고+이름, 페이지 유일 h1)·탭 제목·meta description·환영 카드에 쓰인다.
+로고 원본은 `assets/Gemini_Generated_Logo.png`(까치+井 붓글씨), 웹용 가공본(투명화·크롭·축소)은
+`assets/brand/`이며 index.html에는 **데이터 URL로 인라인**(파비콘 포함) — 프리뷰 미러가
+assets/를 제외해도 보이게. 상단바 로고는 **위쪽 크롭본**(umulsai-top-64: 까치+맨 윗 가로획,
+전체 井은 작게 그리면 새가 안 보임), 파비콘은 전체 로고(favicon-64, 흰 배경). 로고를 다시
+가공하면 데이터 URL도 갈아끼워야 한다. 다크모드 로고는 CSS invert(body.dark #brandBox img).
+워드마크(#brandWord)는 **EBS훈민정음 SB를 아웃라인 패스로 뜬 인라인 SVG** — 폰트 파일은
+안 싣는다. EBS 라이선스가 웹 임베딩·BI/CI는 허용하나 폰트 자체의 변형(서브셋 포함)·재배포는
+사전 서면승인 대상이라, '폰트로 만든 로고'인 패스 방식이 그 조항을 안 건드린다(2.6KB, 모든
+OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index.html #brandWord 자리에
+교체(fontTools + ~/Library/Fonts/EBS훈민정음SB.otf 필요, 폰트는 리포에 없음).
+자간은 패스에 구워져 있어 CSS letter-spacing으로 못 벌린다. 잉크 경계로 크롭해서 SVG 아래끝이
+글자 밑선이 아니므로 `transform: translateY(13.66%)`로 내려야 옆 "Umulsai" 글줄과 밑선이 맞는다
+(음수 margin·position:top의 %는 안 먹는다 — styles.css 주석 참고). 색은 fill=currentColor라
+다크모드 자동(로고 img의 invert와 무관).
+문패는 로고 옆 **두 줄**(위=이름, 아래=작은 "정간보 편집기") — 위/아래 자리가 곧 위계라 부제가
+부제로 읽힌다(한 줄로 옆에 붙이면 이름의 꼬리처럼 보였다). 두 줄이어도 텍스트 열이 29px라
+로고(32px) 안에 들어가 상단바는 49px 그대로 — "두 줄은 답답하다"는 궁서 20px 시절 판단이니
+되살리지 말 것. 부제의 `letter-spacing:.47em` + `margin-right:-.47em`은 두 줄의 **오른쪽 끝까지**
+맞춘 값이다(자간이 마지막 글자 뒤에도 붙어 잉크 폭 = 박스 폭 − 자간 1개 → 박스만 맞추면 오른쪽이
+4px 뜬다. 음수 마진은 그 꼬리 여백을 레이아웃에서 걷는 용). svg height나 부제 문구를 바꾸면
+다시 풀어야 한다 — 계산은 styles.css 주석 참고. 로마자 "Umulsai"는 문패에서 뺐다 — 이름의 로마자와
+'뭐 하는 앱인지'는 성격이 달라 `·`로 묶으면 둘 다 흐려진다(탭 제목·meta·#brandBox 툴팁엔 남음).
+상단바 그룹 구분은 세로 구분선 없이 #topBar gap(16px)만으로 — 구분선
+(.topbar-sep)은 제거했고 되살리지 말 것. 사이드바 머리글은 '설정'(h2.side-title).
+
 ## 파일 구조
 
 폴더 정리됨 — 루트엔 진입점 `index.html`(마크업)·`CLAUDE.md`·`.gitignore`만 두고, 나머지는
@@ -29,6 +56,12 @@
 
 ## 핵심 구조 요약
 
+- 상단바 드롭다운: 배율 숫자(#zoomVal ▾ → #zoomPop: 100%·세로/가로 맞춤)와 더보기(#moreToggle
+  ⋯ → #morePop: 인쇄/PDF·PNG·파일로 저장·불러오기 + 전체 초기화)는 `.tb-menu` +
+  `wireTopMenu()`(app.js, 재생 설정 팝오버 아래)로 열고닫는다. 더보기의 인쇄·저장 항목(m*)은
+  사이드바 '출력' 탭 버튼을 `.click()`으로 대신 눌러주는 위임 — 로직·분석 이벤트 중복 금지.
+  자주 안 쓰는·위험한 명령은 상단바에 늘어놓지 말고 이 메뉴로 접을 것(빈도×위험도).
+  #zoomBar 버튼 규칙은 직계(>)만 — 메뉴 항목은 .tb-menu 문법을 따라야 해서.
 - 입력 방식 2가지: 에디터 / 직접 입력. `applyInputMode()`(app.js)가 전환하며
   `body.input-direct` 클래스 하나로 CSS가 갈라진다.
   - 직접 입력: 기능바(#melodyRibbon)가 #main 최상단으로 이동, 도구창(.direct-win)들이

@@ -90,15 +90,47 @@
   /* 맨 위 바는 자주 안 바뀌는 전역 선택(입력 방식)·문서 단위 액션만 담아서 예전보다
      낮고 조용하게 — 늘 떠 있어야 하는 도구들(기능바)은 그 아래 자리에 고정해서 둔다. */
   #topBar {
-    flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+    flex: 0 0 auto; display: flex; align-items: center; gap: 16px;
     /* 좁으면 기능바처럼 줄바꿈 — 안 그러면 라벨 글자가 세로로 짜부라진다 */
     flex-wrap: wrap;
     padding: 6px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
   }
-  /* 상단바 그룹 — 테두리 상자 대신 평평한 툴바 문법: 그룹은 투명하고 사이를 가는 세로
-     구분선(.topbar-sep)으로만 나눈다. 통일감은 버튼들의 같은 호버 알약(7px)에서 나온다. */
+  /* 상단바 그룹 — 테두리 상자도 구분선도 없는 평평한 툴바 문법: 그룹 사이는 #topBar의
+     넉넉한 gap만으로 나눈다(예전 세로 구분선은 브랜드까지 버튼 무리처럼 보이게 해 제거).
+     통일감은 버튼들의 같은 호버 알약(7px)에서 나온다. */
   .topbar-box { display: flex; align-items: center; gap: 3px; }
-  .topbar-sep { width: 1px; height: 22px; background: var(--line); flex: 0 0 auto; }
+  /* 브랜드(로고+이름) — 상단바 맨 왼쪽. 로고 옆에 두 줄 문패: 위=이름, 아래=작은 설명
+     ("정간보 편집기"). 위/아래라는 자리 자체가 위계를 말해줘야 부제가 부제로 읽힌다 —
+     한 줄로 이름 옆에 같은 밑선으로 붙였더니 이름의 꼬리처럼 보였다.
+     두 줄이어도 상단바는 안 커진다: 텍스트 열이 32px로 로고와 같은 높이라서.
+     (궁서 20px 워드마크 시절엔 두 줄이 버튼 무리를 밀어내 답답했는데, 워드마크가 16px
+     SVG가 되면서 그 제약이 사라졌다 — '두 줄은 답답하다'는 옛 판단을 되살리지 말 것.)
+     클릭 대상이 아니라 호버 없음. */
+  #brandBox { display: flex; align-items: center; gap: 9px; padding: 0 2px; margin-right: 8px;
+              flex: 0 0 auto; }
+  /* 로고는 위쪽 크롭본(까치+맨 윗 가로획, 가로로 긴 비율) — 높이만 정하고 폭은 비율대로 */
+  #brandBox img { height: 32px; width: auto; display: block; }
+  .brand-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+  /* 이름은 EBS훈민정음 SB를 아웃라인 패스로 뜬 SVG(index.html에 인라인) — 해례본 판본체라
+     로고의 井 격자와 한 결이고, 폰트 설치 여부와 무관하게 모든 OS에서 똑같이 나온다.
+     자간(원래 letter-spacing 2px)은 패스를 뜰 때 이미 넣어 구웠다 — CSS로 벌릴 수 없음.
+     높이만 정하고 폭은 viewBox 비율(5.169:1)대로. 패스를 잉크 경계로 크롭해둔 덕에
+     SVG 아래끝 = 글자 잉크의 아래끝이라, 위 gap(3px)이 곧 눈에 보이는 간격이 된다. */
+  .brand-txt h1 { margin: 0; line-height: 0; font-size: 0; }
+  .brand-txt h1 svg { height: 16px; width: auto; display: block; }
+  /* 부제 — 두 줄이 왼쪽뿐 아니라 '오른쪽 끝'도 맞아야 문패가 한 덩어리로 묶인다(자간 없이
+     두면 20px 짧게 끝나 밑에 딸린 부스러기처럼 떴다). 넓은 자간 자체도 '이건 부제다'라는
+     흔한 신호라 일석이조.
+     두 값은 눈대중이 아니라 풀어서 맞춘 값이다. letter-spacing은 마지막 글자 '뒤에도'
+     붙으므로 눈에 보이는 잉크 폭 = 박스 폭 − 자간 1개. 글자 7개("정간보 편집기", 공백 포함)의
+     자간 없는 폭이 54.5px이니 잉크 폭 = 54.5 + 6×자간 = 82.7(워드마크 폭) → 자간 4.7px = .47em.
+     그러면 박스만 꼬리 여백 4.7px를 물고 87.4px가 되어 문패 폭을 부풀리므로, 같은 크기의
+     음수 margin-right로 그 꼬리를 레이아웃에서 걷어낸다(박스도 82.7px로 복귀).
+     주의: 위 svg height(16px)나 부제 문구를 바꾸면 82.7·54.5가 달라져 다시 풀어야 한다. */
+  .brand-txt span { font-size: 10px; font-weight: 600; color: var(--muted); line-height: 1;
+                    white-space: nowrap; letter-spacing: .47em; margin-right: -.47em; }
+  /* 로고 잉크는 순검정(흰 배경 투명) — 다크모드에선 invert로 순백이 된다 */
+  body.dark #brandBox img { filter: invert(1); }
   /* '입력 방식'은 이름표(작고 옅게), 그 옆 드롭다운 값이 본문 — 같은 굵기면 뭐가 값인지 안 읽힌다 */
   #topBar .mode-lab { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .5px;
                       margin: 0 0 0 4px; white-space: nowrap; }
@@ -119,10 +151,22 @@
   .topbar-cmd svg { width: 15px; height: 15px; }
   .topbar-cmd:hover { background: var(--hover); }
   .topbar-cmd:disabled { opacity: .35; cursor: default; background: none; }
-  /* 전체 초기화 — 평상시엔 글자색만 위험색, 호버에서만 옅은 배경(상시 분홍 상자는 시끄러움) */
-  .topbar-btn-danger { color: var(--danger-2); }
-  .topbar-btn-danger:hover { background: var(--danger-soft); }
-  .topbar-btn-danger .lbl { color: var(--danger-2); }
+  /* 상단바 드롭다운 메뉴(배율 ▾·더보기 ⋯) — 재생 설정 팝오버(.play-pop)와 같은 열림 문법
+     (.on 토글, 기준점은 position:relative인 부모 그룹). 자주 안 쓰는 명령을 접어두는 자리. */
+  .tb-menu { position: absolute; top: calc(100% + 10px); right: 0; z-index: 20; display: none;
+             background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
+             padding: 5px; box-shadow: 0 2px 10px rgba(0,0,0,.15); min-width: 116px; }
+  .tb-menu.on { display: block; }
+  .tb-menu button { display: block; width: 100%; text-align: left; padding: 7px 12px; border: none;
+                    background: none; border-radius: 6px; font-family: inherit; font-size: 12.5px;
+                    color: var(--ink); cursor: pointer; white-space: nowrap; }
+  .tb-menu button:hover { background: var(--hover); }
+  .tb-menu hr { border: none; border-top: 1px solid var(--line); margin: 4px 6px; }
+  /* 위험 명령(전체 초기화) — 글자만 위험색, 호버에서 옅은 위험 배경 */
+  .tb-menu .danger { color: var(--danger-2); }
+  .tb-menu .danger:hover { background: var(--danger-soft); }
+  #moreBox { position: relative; }
+  @media print { .tb-menu { display: none !important; } }
   /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
   #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
 
@@ -136,7 +180,8 @@
     padding: 20px;
     overflow-y: auto;
   }
-  #sidebar h1 { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
+  /* 사이드바 머리글 — 앱 이름은 상단바 브랜드(#brandBox)로 갔고 여기는 '설정' 제목(h2) */
+  #sidebar .side-title { font-size: 18px; margin: 0 0 18px; letter-spacing: 2px; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
   /* 안내 문구 — 사이드바 전역 공통(예전엔 .field .hint만 걸려 .field 밖 안내는
@@ -379,15 +424,18 @@
   .bar-grip svg { width: 10px; height: 16px; }
   /* 보기 배율 바 — 상단바 오른쪽에 고정(재생 바가 auto 마진으로 먼저 밀어줌).
      상자 자체는 .topbar-box 공통 문법, 여기선 간격만 촘촘하게. */
-  #zoomBar { gap: 2px; }
-  #zoomBar button { min-width: 24px; height: 26px; border: none; background: transparent;
+  #zoomBar { gap: 2px; position: relative; }   /* relative: 배율 메뉴(.tb-menu)의 기준점 */
+  /* 직계(>)만 — 배율 메뉴(#zoomPop) 안 항목은 .tb-menu 문법을 따라야 해서 */
+  #zoomBar > button { min-width: 24px; height: 26px; border: none; background: transparent;
                     font-size: 13px; line-height: 1; cursor: pointer; border-radius: 7px;
                     color: var(--muted); font-family: inherit; }
-  #zoomBar button:hover { background: var(--hover); color: var(--ink); }
-  #zoomBar .zval { font-size: 12px; min-width: 40px; text-align: center; color: var(--muted); }
-  #zoomBar .fit { font-size: 12px; padding: 0 8px; white-space: nowrap; }
-  #zoomBar button:disabled { opacity: .35; cursor: default; }
-  #zoomBar button:disabled:hover { background: transparent; }
+  #zoomBar > button:hover { background: var(--hover); color: var(--ink); }
+  /* 배율 숫자 = 메뉴 버튼(▾) — 캐럿은 ::after라 JS가 textContent(%)를 갈아도 안 지워진다 */
+  #zoomBar .zval { font-size: 12px; min-width: 52px; text-align: center; color: var(--muted); }
+  #zoomBar .zval::after { content: "▾"; font-size: 8px; margin-left: 3px; }
+  #zoomBar .zval.on, #moreToggle.on { background: var(--hover); }
+  #zoomBar > button:disabled { opacity: .35; cursor: default; }
+  #zoomBar > button:disabled:hover { background: transparent; }
 
   /* 재생 컨트롤 — 보기 배율 바처럼 상단바 오른쪽에 고정(auto 마진으로 오른쪽 무리의 시작).
      상자 자체는 .topbar-box 공통, 재생 설정 팝오버의 기준점만 여기서 잡는다. */
