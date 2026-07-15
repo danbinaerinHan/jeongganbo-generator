@@ -117,6 +117,15 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   GAK_NAME_HANJA 사전). 각 삽입/삭제 시 shiftGakNames로 같이 밀림(가사 밀기와 같은 규칙).
   악보에서 각 위 빈 곳 클릭 → 입력 카드(openGakNameCard), 도구창엔 번호+이름 목록.
   위 공간이 좁으면 글자 자동 축소(ascent 포함). 인쇄·PNG에 포함(악보 내용, no-print 아님).
+  - 템포 표기(一分・N井, #wantTempo)는 같은 자리에 붙지만 각에 소속된 이름이 아니라 곡에
+    하나뿐이라 목록 맨 위 **#tempoItem**에 따로 세운다(body.want-tempo로 보임/숨김).
+    **크기는 #tempoSize로 각/장 이름(#gakNameSize)과 따로 논다** — 이름은 여럿을 머리줄
+    '크기'로 한꺼번에 맞추고 템포는 제 항목에서 조절. 간격은 아직 #gakNameGap 공유.
+    #tempoItem은 꺼져 있어도 **마크업에서 지우지 말 것** — collectState가 CTRL_IDS를 돌며
+    `$(id).value`를 널 검사 없이 읽어 #tempoSize가 없으면 저장이 통째로 터진다.
+    높이 예약(tempoFont = cell*0.42*tempoMul)과 그리기(drawTempoLabel)가 **같은 배율**을
+    써야 키운 만큼 진짜 커진다(예약을 안 늘리면 avail에 걸려 잘림). 템포를 키우면 위
+    공간을 먹어 cell이 줄어드는 되먹임이 있어 배율만큼 정비례로 커지진 않는다(정상).
 - 이름 미상 시김새 sigimsae-00~25는 팔레트에 s00~s08·s12~s16·s20~s25(임시 이름=파일번호)로 등록
   — 정식 이름이 정해지면 ORN_LIST의 `k`만 바꾸면 됨(토큰 `{s01}` 꼴도 같이 바뀜에 유의).
   파일 stem은 그대로, 표시 이름(k)·순서만 조정 가능. (파일 09·10·11·17·18·19는 없음.

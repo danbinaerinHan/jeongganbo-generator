@@ -522,7 +522,15 @@
   body.has-gaknames #winToggleGakName.on::after { background: #fff; }
   /* 각 이름 도구창 — 추가 줄의 각 번호 칸은 좁게, 목록 줄의 각 번호 라벨은 회색 */
   #gakNameRow .tx-add input[type="number"] { flex: 0 0 84px; }
-  #gakNameList .gn-gak { flex: 0 0 auto; font-size: 12px; color: var(--muted); font-weight: 600; }
+  #gakNameList .gn-gak, #tempoItem .gn-gak { flex: 0 0 auto; font-size: 12px; color: var(--muted); font-weight: 600; }
+  /* 템포 항목 — 머리줄 '템포'를 끄면 숨는다(지우지 않는다: 마크업 주석 참고).
+     각/장 이름 목록과 한 줄 꼴을 맞추되, 각 이름처럼 고칠 수 있는 게 아니라 재생 설정의
+     BPM을 받아 보여주기만 하는 자리라 미리보기는 글자만(입력칸 아님). */
+  #tempoItem { display: none; }
+  body.want-tempo #tempoItem { display: flex; }
+  #tempoItem .gn-preview { flex: 0 0 auto; font-size: 13px; font-weight: 700; color: var(--ink);
+                           font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif; }
+  #tempoItem input[type="number"] { width: 56px; }
   /* 전역 단축키 안내 — rail-btn과 같은 폭이지만 탭이 아니라 도움말이라 톤을 낮춤 */
   .rail-shortcuts-wrap { display: block; }
   .rail-shortcuts-btn { display: flex; align-items: center; gap: 6px; width: 100%;

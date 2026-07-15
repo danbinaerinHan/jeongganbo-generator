@@ -2976,6 +2976,12 @@
     document.body.classList.toggle("gaknum-screen", gakNumMode === "screen");
     const pageNumPos = $("pageNumPos").value;   // 쪽 번호 위치 — 페이지 루프 밖에서 한 번만 조회
     const tempoStr = "一分・" + numToHanja(Math.max(1, parseInt($("tempoBpm").value) || 60)) + "井";
+    // 각/장 창의 템포 항목 — 켜져 있을 때만 보이고(CSS), 미리보기는 지금 BPM으로 만든 실물 그대로
+    document.body.classList.toggle("want-tempo", wantTempo);
+    if ($("tempoPreview")) $("tempoPreview").textContent = tempoStr;
+    // 템포 글자 크기 배율 — 각/장 이름(gakNameSize)과 따로 논다. 아래 높이 예약과 실제
+    // 그리기가 같은 값을 써야 키운 만큼 진짜로 커진다(예약을 안 늘리면 avail에 걸려 잘린다).
+    const tempoMul = Math.max(0.3, parseFloat($("tempoSize").value) || 1);
     const dg = parseDaegang($("daegang").value, beats);
     noteMode = $("noteMode").value;   // "font" | "hangul"
 
@@ -3119,7 +3125,8 @@
     const gap = desiredGap * scale;
     let bandGap = desiredBandGap * scale;
     // 템포 표시(一分・XX井) — 맨 처음 각 위, 첫 페이지에만. 세로 여유 계산에도 쓰므로 먼저 구한다.
-    const tempoFont = cell * 0.42;
+    // tempoMul을 곱해야 크기를 키운 만큼 위 공간도 같이 늘어난다(안 그러면 그리기가 avail에 걸려 잘림).
+    const tempoFont = cell * 0.42 * tempoMul;
     const tempoLineH = tempoFont * 1.12;
     const tempoGap = tempoFont * 0.45;   // 텍스트와 격자 사이 여백
     const tempoH = wantTempo ? (Array.from(tempoStr).length * tempoLineH + tempoGap) : 0;
@@ -3363,12 +3370,13 @@
             svg.appendChild(hit);
           }
 
-          // 템포 표기(一分・N井) — 각/장 라벨과 같은 크기·간격 규칙(맨 아래 글자 기준,
-          // 각/장 창의 크기·간격 설정을 그대로 따름). 장단이 있으면 장단 칸 위에서
-          // 그리므로 여기(첫 각 위)는 장단이 없을 때만.
+          // 템포 표기(一分・N井) — 각/장 라벨과 같은 간격 규칙(맨 아래 글자 기준)이지만
+          // **크기는 제 것(tempoSize)**을 쓴다: 각/장 이름은 여러 개를 머리줄 '크기'로 한꺼번에
+          // 맞추는 반면 템포는 곡에 하나뿐이라 따로 조절한다(각/장 창의 템포 항목).
+          // 장단이 있으면 장단 칸 위에서 그리므로 여기(첫 각 위)는 장단이 없을 때만.
           function drawTempoLabel(cx, topY) {
             const chars = Array.from(tempoStr);
-            const mul = Math.max(0.3, parseFloat($("gakNameSize").value) || 1);
+            const mul = tempoMul;
             const gap = Math.max(0, parseFloat($("gakNameGap").value) || 0) * scale;
             const avail = (b === 0 ? Math.max(2, topY - 1) : Math.max(2, bandGap * 0.9)) - gap;
             const need = 0.85 + 1.12 * (chars.length - 1);
@@ -3988,7 +3996,7 @@
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
-    "gakNameSize", "gakNameGap", "gakNameHanja"];
+    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -4315,7 +4323,7 @@
   ["cellSize", "gakGap", "bandGap", "daegang",
    "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
    "subSize", "subOffset", "subOffsetX", "subSpacing",
-   "gakNameSize", "gakNameGap"].forEach(id => wireConfirm($(id), render));
+   "gakNameSize", "gakNameGap", "tempoSize"].forEach(id => wireConfirm($(id), render));
   // 체크박스·셀렉트·제목 텍스트는 예전처럼 즉시 반영
   ["stackAuto", "title", "titleLayout", "titleGakWidth", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
