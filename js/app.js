@@ -15,9 +15,14 @@
   const T_THIN = 0.14, T_THICK = 0.32, T_FRAME = 0.63, T_DAEGANG = 0.45;   // 정간·각 선은 아주 살짝 얇게(0.16/0.36에서)
   // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계.
   // 예전엔 {0.3, 0.6, 1.0}으로 '격자선보다 눈에 띄게 굵게'였는데 전반적으로 너무 굵어서
-  // 한 단계씩 낮췄다 — 얇게는 정간 가로줄과 같은 두께(T_THIN), 보통은 예전 얇게,
-  // 굵게는 예전 보통. 얇게가 격자선과 같아진 건 의도한 것(테두리가 격자에 녹아든다).
-  const CELL_BORDER_WIDTH_PX = { thin: T_THIN, medium: 0.3, thick: 0.6 };
+  // 한 단계씩 낮췄고, 굵게는 다시 T_THICK까지 낮췄다 — 악보에 이미 있는 굵은 가로줄
+  // (밴드 위/아래 통줄)과 같은 두께라야 [굵게]가 이 악보의 선처럼 보인다.
+  // **T_THICK을 넘기지 말 것**: line()이 square cap이라 선은 양 끝에서 굵기의 절반만큼 더
+  // 나가는데, 각 세로선(T_THICK)의 바깥 모서리도 딱 T_THICK/2다. 즉 굵기 = T_THICK일 때
+  // 캡 끝이 세로선 바깥 모서리와 정확히 맞아떨어지고, 더 굵으면 그만큼 세로선을 삐져나온다
+  // (0.6일 때 0.3 − 0.16 = 0.14가 튀어나와 '살짝 벗어나 보인다'는 말이 나왔다).
+  // 얇게가 격자선과 같아진 건 의도한 것(테두리가 격자에 녹아든다).
+  const CELL_BORDER_WIDTH_PX = { thin: T_THIN, medium: 0.3, thick: T_THICK };
 
   const DAEGANG_PRESET = { 8: "", 10: "7 3", 12: "3 3 3 3", 16: "3 2 3 3 2 3", 20: "6 4 4 6" };
   let daegangAuto = "";
@@ -63,9 +68,9 @@
   // 선택된 구간이 없으면 '구간 지우기'·셀 서식 실행 버튼들을 비활성화 — 눌러도 아무 일 없는
   // 상태를 미리 보여준다. 렌더마다 호출(선택이 render()로만 바뀌므로).
   // 방향 토글(위/아래)은 뺀다 — 선택과 무관하게 미리 골라둘 수 있는 '설정'이라서.
-  const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle", "cellFillEraseToggle",
-    "cellMergeBtn", "cellUnmergeBtn",
-    "cellBorderShapeThick", "cellBorderShapeDashed", "cellBorderShapeDouble", "cellBorderShapeReset"];
+  const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle",
+    "cellMergeBtn", "cellUnmergeBtn", "cellEraseBtn", "cellStyleResetBtn",
+    "cellBorderShapeThick", "cellBorderShapeDashed", "cellBorderShapeDouble"];
   function refreshMelSelBtns() {
     const on = hasMelSel();
     MEL_SEL_BTN_IDS.forEach(function (id) {
@@ -743,15 +748,20 @@
     render();
   }
   // 드래그로 고른 구간에서, 정간 하나의 순서 위치(seq)에 따라 어느 변을 건드릴지 계산.
-  // 모드 셋뿐이다(예전 프리셋 '전체/바깥쪽'은 좌우를 건드려서 없앴다):
+  // 모드 넷뿐이다(예전 프리셋 '전체/바깥쪽'은 좌우를 건드려서 없앴다):
   //  · "sides": 지금 켠 가로줄 토글(위/아래)만 — 모양 바꾸기용.
   //  · "inner": 고른 구간의 '안쪽' 가로줄만(첫~끝 칸 사이 경계) — 합치기/나누기용.
   //    정간보를 '열이 하나뿐인 표'로 보고 구간 전체를 한 사각형처럼 다룬 것. 칸을 하나만
   //    고르면 안쪽이 없으므로 아무 일도 안 일어난다.
-  //  · "all": 네 변 전부 — [기본](전부 지우기)용. 옛 파일의 좌우 테두리도 이걸로 걷는다.
+  //  · "erase": 좌우 벽 + 안쪽 가로줄 — [없애기]용. 합치기(안쪽만 지움)에 좌우까지 더한 것이라
+  //    구간이 각에서 통째로 도려내진 빈 자리가 된다. 구간의 바깥 가로줄(첫 칸의 위·끝 칸의
+  //    아래)은 일부러 빼둔다 — 그건 위아래 이웃 정간과 공유하는 선이라, 같이 지우면 남의 칸이
+  //    열려버린다. 칸 하나만 골라도 좌우는 지워지므로 [합치기]와 달리 뭔가 일어난다.
+  //  · "all": 네 변 전부 — [초기화]용. 옛 파일의 좌우 테두리도 이걸로 걷는다.
   function sidesForCellInRange(seq, lo, hi, mode) {
     if (mode === "all") return ["top", "right", "bottom", "left"];
     if (mode === "inner") return seq === hi ? [] : ["bottom"];
+    if (mode === "erase") return seq === hi ? ["left", "right"] : ["left", "right", "bottom"];
     return ["top", "bottom"].filter(function (s) { return cellBorderSides[s]; });
   }
   // 드래그로 고른 구간의 정간마다 테두리를 적용(또는 지움).
@@ -790,6 +800,25 @@
   function borderCornerTrim(spec) {
     const w = CELL_BORDER_WIDTH_PX[spec.width] || CELL_BORDER_WIDTH_PX.medium;
     return borderDoubleInset(w) - w / 2;
+  }
+  // 정간 i-1과 i 사이 가로줄이 '없애기'의 세로 마스크에 갉히는지 — 갉히면 마스크 뒤에 다시 그어야 한다.
+  // 없애기의 좌우 마스크는 지운 구간의 바깥 경계 y에서 butt cap으로 끝나는데, 그 y에 놓인 가로줄은
+  // 선 굵기의 '가운데'가 그 y라 아래(또는 위) 반쪽이 마스크에 물린다. 그러면 그 줄은 양 끝에서만
+  // 반 굵기로 남아 '가는 줄 하나 + 가운데만 굵은 줄 하나'처럼 두 줄로 보였다.
+  // 대강선·통줄은 이미 structuralSegs가 마스크 뒤에 다시 그어 멀쩡했고, 평범한 정간 가로줄(T_THIN)만
+  // 한 번 그리고 마는 탓에 이 문제가 났다 — 같은 방식으로 되살린다.
+  function cellBoundaryNibbled(gi, i) {
+    const row = cellStyles[gi];
+    if (!row) return false;
+    const above = row[i - 1] && row[i - 1].border;
+    const below = row[i] && row[i].border;
+    // 이 줄 자체를 숨기는 중이면(합치기·없애기의 안쪽 줄) 되살리면 안 된다
+    if ((above && above.bottom && above.bottom.style === "none") ||
+        (below && below.top && below.top.style === "none")) return false;
+    const erased = function (b) {
+      return !!b && ((b.left && b.left.style === "none") || (b.right && b.right.style === "none"));
+    };
+    return erased(above) || erased(below);
   }
   // '없음'(줄 숨김) 마스크 폭 — 이 스타일만은 위에 선을 새로 그리지 않고 마스크만 남으므로,
   // 숨겨야 할 기존 격자선(각 세로선 T_THICK, 대강선 T_DAEGANG)보다 넉넉해야 말끔히 지워진다.
@@ -3331,7 +3360,11 @@
           svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
           svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
           for (let i = 1; i < beats; i++) {
-            if (!dgSet.has(i)) svg.appendChild(line(x, gridTop + i * cell, x + cell, gridTop + i * cell, T_THIN));
+            if (dgSet.has(i)) continue;          // 대강선은 아래에서 밴드 폭으로 따로(구조선이라 마스크 뒤에 다시 그림)
+            const cy = gridTop + i * cell;
+            svg.appendChild(line(x, cy, x + cell, cy, T_THIN));
+            // 없애기의 세로 마스크가 이 줄의 반쪽을 갉는 자리면 구조선에 얹어 마스크 뒤에 다시 긋는다
+            if (cellBoundaryNibbled(melIdx, i)) structuralSegs.push([x, cy, x + cell, cy, T_THIN]);
           }
           // 정간 커스텀 테두리 — 선분만 모아두고 그리기는 밴드 루프가 끝난 뒤에(위 주석 참고)
           collectCellBorderSegs(cellBorderSegs, melIdx, x, gridTop, cell, beats);
@@ -4726,10 +4759,6 @@
     if (!hasMelSel()) return;
     applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, cellStylePendingColor);
   });
-  $("cellFillEraseToggle").addEventListener("click", function () {
-    if (!hasMelSel()) return;
-    applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, null);
-  });
   // 버튼은 전부 '즉시 실행' — 악보에서 정간을 먼저 드래그로 고른 뒤 누르면 바로 적용된다.
   function applyBorderToSelection(spec, mode) {
     if (!hasMelSel()) return;
@@ -4746,6 +4775,12 @@
   });
   $("cellUnmergeBtn").addEventListener("click", function () {
     applyBorderToSelection(null, "inner");
+  });
+  // 없애기 — 좌우 벽과 사이 줄을 style:"none"으로 덮어 고른 구간을 각에서 도려낸 빈 자리로.
+  // 위아래 이웃과 맞닿는 가로줄은 mode "erase"가 안 고르므로 남는다(그 줄은 이웃 칸의 벽이기도
+  // 해서 같이 지우면 남의 칸이 열린다). 되돌리는 길은 [초기화](네 변을 다 지움).
+  $("cellEraseBtn").addEventListener("click", function () {
+    applyBorderToSelection({ width: "medium", style: "none" }, "erase");
   });
   // 가로줄 방향 토글(위/아래) — 둘 다 끄면 모양 버튼이 할 일이 없으므로, 마지막 하나는
   // 꺼지지 않게 막는다(끄고서 왜 아무 일도 안 일어나는지 헤매지 않도록).
@@ -4765,9 +4800,14 @@
       applyBorderToSelection(CELL_BORDER_SHAPES[key], "sides");
     });
   });
-  // 기본 — 위/아래 토글과 무관하게 네 변을 다 지워 원래 격자로. UI에서 좌우를 뺀 만큼,
-  // 예전 파일이 물고 있는 좌우 테두리를 걷어낼 유일한 길이라 일부러 'all'이다.
-  $("cellBorderShapeReset").addEventListener("click", function () {
+  // 초기화 — 고른 정간에 해둔 걸 전부 물린다: 배경색 + 네 변의 테두리(합치기·없애기가 씌운
+  // style:"none"까지). 예전엔 '색 지우기'와 '기본'(테두리 지우기) 두 버튼이었는데, '이 칸에
+  // 해둔 걸 물리고 싶다'는 하나의 마음에 버튼이 둘이라 매번 어느 쪽인지 생각해야 했다.
+  // 네 변을 다 지우는 건(위/아래 토글 무시) 의도한 것 — UI가 좌우를 못 만드는 만큼, 옛 파일이
+  // 물고 있는 좌우 테두리를 걷어낼 유일한 길이라 일부러 'all'이다.
+  $("cellStyleResetBtn").addEventListener("click", function () {
+    if (!hasMelSel()) return;
+    applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, null);
     applyBorderToSelection(null, "all");
   });
   // 정간 구간 선택 — 드래그(다른 칸으로 번짐)로 확정되면 선택을 유지, 안 번지면(그냥 클릭)

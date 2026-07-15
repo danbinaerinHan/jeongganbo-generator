@@ -106,17 +106,45 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   `order`(입력 그룹 뒤 형제 order:3, 도구창 order:2)로 '입력' 그룹 바로 아래에 오게 한다.
   도킹된 창은 카드 스타일을 벗고(배경·테두리 없음) 기능바와 한 몸처럼 보인다. 닫히거나
   위쪽 배치로 돌아가면 placeholder 주석 노드로 원위치 복원.
-- 셀 서식(#cellStyleWin)은 **하는 일 두 가지뿐**: ① 합치기(#cellMergeBtn/#cellUnmergeBtn) —
-  고른 칸들 '사이' 가로줄만 style:"none"으로 덮어 한 칸처럼 보이게. ② 가로줄 모양
-  (#cellBorderShapeThick/Dashed/Double) — 방향 토글(#cellBorderSideTop/Bottom)이 가리키는 줄에.
-  \+ #cellBorderShapeReset(기본)은 **네 변 전부** 지운다(위/아래 토글 무시).
+- 셀 서식(#cellStyleWin)은 섹션 **둘**: ① **정간** — 배경색(#cellStyleColorPicker로 색만 고르고
+  #cellFillPaintToggle이 칠함) · 합치기/나누기(#cellMergeBtn/#cellUnmergeBtn) · 없애기(#cellEraseBtn).
+  ② **가로줄** — 모양(#cellBorderShapeThick/Dashed/Double)을 방향 토글(#cellBorderSideTop/Bottom)이
+  가리키는 줄에. \+ 맨 아래 #cellStyleResetBtn(초기화)은 배경색과 **네 변 전부**를 함께 지운다
+  (위/아래 토글 무시). 배경색이 '정간' 섹션에 있는 건 그것도 '칸을 어떻게 보이게 할지'라 테두리와
+  성격이 같아서 — 따로 섹션으로 도로 빼지 말 것.
+  - 넷 다 sidesForCellInRange의 mode 하나로 갈린다: 합치기/나누기="inner"(구간 안쪽 가로줄만),
+    없애기="erase"(좌우 벽 + 안쪽 가로줄), 초기화="all"(네 변), 모양="sides"(방향 토글).
+  - **없애기**는 합치기에 좌우까지 더한 것 — 구간이 각에서 도려내진 빈 자리가 된다. 구간의 바깥
+    가로줄(첫 칸의 위·끝 칸의 아래)은 **일부러 남긴다**: 그건 위아래 이웃 정간과 공유하는 선이라
+    같이 지우면 남의 칸이 열린다. 뼈대(통줄·대강선)는 structuralSegs가 마스크 **뒤에** 다시 그어
+    살아남는다(합치기와 같음).
+  - 그 '남기는 가로줄'은 **cellBoundaryNibbled()가 골라 structuralSegs에 얹어야** 온전히 남는다.
+    없애기의 좌우 마스크는 구간 바깥 경계 y에서 butt cap으로 끝나는데, 선은 그 y가 *가운데*라
+    반쪽이 마스크에 물린다 → 양 끝만 반 굵기로 남아 '가는 줄 + 가운데만 굵은 줄' 두 줄로 보였다.
+    대강선·통줄은 이미 structuralSegs라 멀쩡했고 평범한 가로줄(T_THIN)만 한 번 긋고 말아서 난 문제.
+    마스크를 y로 들여 피하려 들지 말 것 — 경계마다 선 굵기가 달라(T_THIN/T_DAEGANG/T_FRAME)
+    들일 양이 하나로 안 정해지고, 각 세로선(T_THICK)이 가로줄 캡보다 넓어 밑에 안 숨는 혹이 남는다.
   - 예전엔 프리셋 3(전체/바깥쪽/안쪽) + 변 4 + 굵기 3 + 종류 4 = 16개 노브였다. 정간보는
     '열이 하나뿐인 표'라 좌우는 각의 벽이고 칸마다 따로 손볼 일이 없어서 UI에서 뺐다 —
-    **되살리지 말 것**. 굵기×종류 조합도 CELL_BORDER_SHAPES 3개로 고정했다.
+    **되살리지 말 것**(없애기는 좌우를 '지우기'만 하지 만들지 않는다). 굵기×종류 조합도
+    CELL_BORDER_SHAPES 3개로 고정했다.
+  - CELL_BORDER_WIDTH_PX의 굵기는 **T_THICK(0.32)을 넘기지 말 것**. line()이 square cap이라 선은
+    양 끝에서 굵기의 절반만큼 더 나가는데 각 세로선(T_THICK)의 바깥 모서리도 딱 T_THICK/2라,
+    굵기 = T_THICK이면 캡 끝이 세로선 바깥 모서리와 정확히 맞고 더 굵으면 그만큼 삐져나온다
+    (thick이 0.6이던 시절 0.14가 튀어나와 '세로선을 살짝 벗어난다'는 말이 나왔다).
+    thick = T_THICK인 건 밴드 위/아래 **통줄과 같은 두께**여서이기도 하다 — [굵게]가 악보에 원래
+    있는 굵은 가로줄처럼 보이게 한 것이니, 눈에 띄게 하겠다고 도로 올리지 말 것.
   - **데이터 모델(border[변]={width,style})은 그대로**라 옛 파일은 그대로 열리고 그려진다.
-    UI가 좌우를 못 만들 뿐이고, 옛 좌우 테두리를 걷을 길이 [기본](mode "all")이다.
+    UI가 좌우를 못 만들 뿐이고, 옛 좌우 테두리를 걷을 길이 [초기화](mode "all")이다.
+  - 지우개는 **초기화 하나뿐**이다. 예전엔 '색 지우기'와 '기본'(테두리 지우기)이 따로였는데,
+    '이 칸에 해둔 걸 물리고 싶다'는 한 가지 마음에 버튼이 둘이라 매번 어느 쪽인지 생각해야 했다
+    — 도로 가르지 말 것.
   - 버튼은 전부 즉시 실행 — 악보에서 정간을 드래그로 먼저 고른 뒤 누른다(칠하기 모드 아님).
     선택이 없으면 MEL_SEL_BTN_IDS로 비활성화된다(방향 토글은 선택과 무관하니 그 목록에서 뺌).
+  - 창 레이아웃은 **폭 하나(--cs-w)로 묶인 3칸 그리드**(.cs-grid) — 버튼이 제 글자 길이대로
+    늘어나던 flex-wrap을 바꾼 것이라, 줄이 달라도 버튼 모서리가 같은 세로선에 선다. 새 버튼을
+    끼울 때 이 그리드 밖에 놓지 말 것. 아이콘의 `.ghost`(var(--muted))는 '사라지는/안 건드리는
+    선', currentColor는 '남는 선' — #cdc5b4로 박아두면 다크에서 둘의 밝기가 붙어 뭉갠다.
 - 도구창 헤더는 창마다 클래스가 다름: 율명=`.pal-head`, 시김새·셀서식=`.pal-top`,
   장단·가사·텍스트=`.melody-head`. 닫기(X) 겹침 방지 padding-right는 이 세 클래스 모두 대상.
 - 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
@@ -189,6 +217,11 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   예전 `melInputSelect` <select>는 없어졌다 — 지금은 #modeToggle ⋯ #modePop 메뉴.
 - preview_eval에서 DOMRect는 `{}`로 직렬화됨 — `[left,top,right,bottom]` 배열로 손수 변환.
 - 뷰포트가 0×0으로 측정되면 preview_resize 후 다시 측정.
+- **치수를 재기 전엔 스크린샷을 한 번 찍을 것** — 탭·모드를 바꾼 직후 eval에서 재면
+  getBoundingClientRect가 낡은 레이아웃(버튼이 죄다 22px 따위)을 돌려준다. 스크린샷이 리플로를
+  강제하므로 그 뒤에 재야 참값이 나온다. 값이 수상하면 눈으로 본 스크린샷을 믿을 것.
+- 악보의 선 하나를 눈으로 확인할 땐 **SVG를 cloneNode해 viewBox를 그 자리로 좁힌 오버레이**를
+  띄우는 게 제일 낫다(앱 배율을 올리는 것보다 정확·간단). Browser 도구의 zoom(region crop)은 안 먹는다.
 - requestAnimationFrame·scrollIntoView(smooth)는 실행 안 됨 — setTimeout 사용.
 - 실제 클릭(preview_click)은 뷰포트 리사이즈 후 좌표가 어긋나 `<html>`에 떨어질 수 있음 —
   preview_eval에서 `.click()`으로 대신할 것.
