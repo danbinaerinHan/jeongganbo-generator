@@ -62,9 +62,10 @@
   }
   // 선택된 구간이 없으면 '구간 지우기'·셀 서식 실행 버튼들을 비활성화 — 눌러도 아무 일 없는
   // 상태를 미리 보여준다. 렌더마다 호출(선택이 render()로만 바뀌므로).
+  // 방향 토글(위/아래)은 뺀다 — 선택과 무관하게 미리 골라둘 수 있는 '설정'이라서.
   const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle", "cellFillEraseToggle",
-    "cellBorderPaintToggle", "cellBorderEraseToggle",
-    "cellBorderPresetAll", "cellBorderPresetOuter", "cellBorderPresetInner"];
+    "cellMergeBtn", "cellUnmergeBtn",
+    "cellBorderShapeThick", "cellBorderShapeDashed", "cellBorderShapeDouble", "cellBorderShapeReset"];
   function refreshMelSelBtns() {
     const on = hasMelSel();
     MEL_SEL_BTN_IDS.forEach(function (id) {
@@ -73,15 +74,19 @@
     });
   }
   let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
-  let cellBorderSides = { top: false, right: false, bottom: false, left: false };  // 테두리 칠할 변(직접 선택)
-  let cellBorderWidth = "medium";            // "thin" | "medium" | "thick"
-  let cellBorderStyle = "solid";             // "solid" | "dashed" | "double"
-  // 정간보는 한 칸씩 세로로 쌓인 '열이 하나뿐인 표'라, 워드/페이지스의 표 테두리 프리셋 중
-  // 바깥쪽/안쪽만 '고른 구간 전체를 하나의 사각형으로 볼 때' 의미가 있다(가로 구분선 개념이 없음).
-  // "custom"이면 cellBorderSides 체크값을 모든 선택 칸에 똑같이 적용, "all"은 칸마다 네 변
-  // 전부(변 버튼 상태와 무관), "outer"/"inner"는 드래그로 고른 범위 안에서 칸의 위치
-  // (첫 칸/마지막 칸/중간)를 따져 계산한다.
-  let cellBorderPreset = "custom";           // "custom" | "all" | "outer" | "inner"
+  // 테두리 모양을 바꿀 가로줄(위/아래) — UI에 이 둘뿐이다. 정간보는 한 칸씩 세로로 쌓인
+  // '열이 하나뿐인 표'라 좌우는 각의 벽이고, 그걸 칸마다 따로 손볼 일이 없다(건드리면 각이
+  // 무너진다). 데이터 모델엔 right/left가 그대로 있어 예전 파일은 계속 그려진다 — 새로
+  // 만들지 못할 뿐이고, [기본]이 네 변을 다 지우므로 옛 좌우 테두리를 걷을 길은 남아 있다.
+  let cellBorderSides = { top: true, bottom: false };
+  // 모양별로 굵기가 정해져 있다 — 예전엔 굵기(3) × 종류(4)를 다 조합하게 뒀는데, 여러 칸을
+  // 한 번에 고르는 도구에서 그만한 경우의 수를 쓸 일이 없었다. '없음'은 여기 없다: 그건
+  // 모양이 아니라 '합치기'라서 제 버튼으로 뺐다.
+  const CELL_BORDER_SHAPES = {
+    thick:  { width: "thick",  style: "solid"  },
+    dashed: { width: "medium", style: "dashed" },
+    double: { width: "medium", style: "double" }
+  };
   // 자유 텍스트 주석(예: '대여음') — 첫 페이지 위에 세로로 표시, 마우스로 위치·크기 조절
   let customTexts = [];                     // { id, text, xf, yf, size } — xf/yf는 페이지 폭/높이 대비 비율(0~1)
   let cellStyles = {};                      // [gi][ci] = { fill: "#rrggbb" } — 정간 배경색(나중에 border 등 확장 가능)
@@ -737,26 +742,21 @@
     });
     render();
   }
-  // 드래그로 고른 구간에서, 정간 하나의 순서 위치(seq)에 따라 어느 변을 적용할지 계산.
-  // "outer"/"inner"는 정간보를 '열이 하나뿐인 표'로 보고, 고른 구간 전체를 하나의 사각형처럼
-  // 다룬다 — outer는 첫 칸 위쪽·마지막 칸 아래쪽·모든 칸 좌우, inner는 칸과 칸 사이 경계선만
-  // (칸을 하나만 고르면 안쪽은 해당 사항 없음).
-  function sidesForCellInRange(seq, lo, hi) {
-    if (cellBorderPreset === "all") return ["top", "right", "bottom", "left"];
-    if (cellBorderPreset === "outer") {
-      const s = ["left", "right"];
-      if (seq === lo) s.push("top");
-      if (seq === hi) s.push("bottom");
-      return s;
-    }
-    if (cellBorderPreset === "inner") {
-      return seq === hi ? [] : ["bottom"];
-    }
-    return ["top", "right", "bottom", "left"].filter(function (s) { return cellBorderSides[s]; });
+  // 드래그로 고른 구간에서, 정간 하나의 순서 위치(seq)에 따라 어느 변을 건드릴지 계산.
+  // 모드 셋뿐이다(예전 프리셋 '전체/바깥쪽'은 좌우를 건드려서 없앴다):
+  //  · "sides": 지금 켠 가로줄 토글(위/아래)만 — 모양 바꾸기용.
+  //  · "inner": 고른 구간의 '안쪽' 가로줄만(첫~끝 칸 사이 경계) — 합치기/나누기용.
+  //    정간보를 '열이 하나뿐인 표'로 보고 구간 전체를 한 사각형처럼 다룬 것. 칸을 하나만
+  //    고르면 안쪽이 없으므로 아무 일도 안 일어난다.
+  //  · "all": 네 변 전부 — [기본](전부 지우기)용. 옛 파일의 좌우 테두리도 이걸로 걷는다.
+  function sidesForCellInRange(seq, lo, hi, mode) {
+    if (mode === "all") return ["top", "right", "bottom", "left"];
+    if (mode === "inner") return seq === hi ? [] : ["bottom"];
+    return ["top", "bottom"].filter(function (s) { return cellBorderSides[s]; });
   }
   // 드래그로 고른 구간의 정간마다 테두리를 적용(또는 지움).
   // 칠하기: spec = { width, style }. 지우기: spec = null (계산된 변만 지움).
-  function applyCellBorderRange(startGi, startCi, endGi, endCi, spec) {
+  function applyCellBorderRange(startGi, startCi, endGi, endCi, spec, mode) {
     const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
     const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
     Object.keys(cellGeom).forEach(function (giKey) {
@@ -765,7 +765,7 @@
         const ci = parseInt(ciKey, 10);
         const seq = melCellSeq(gi, ci);
         if (seq < lo || seq > hi) return;
-        const sides = sidesForCellInRange(seq, lo, hi);
+        const sides = sidesForCellInRange(seq, lo, hi, mode);
         if (!sides.length) return;
         cellStyles[gi] = cellStyles[gi] || {};
         const entry = cellStyles[gi][ci] || {};
@@ -4730,59 +4730,45 @@
     if (!hasMelSel()) return;
     applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, null);
   });
-  function applyBorderToSelection(spec) {
+  // 버튼은 전부 '즉시 실행' — 악보에서 정간을 먼저 드래그로 고른 뒤 누르면 바로 적용된다.
+  function applyBorderToSelection(spec, mode) {
     if (!hasMelSel()) return;
-    applyCellBorderRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, spec);
+    applyCellBorderRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, spec, mode);
   }
-  $("cellBorderPaintToggle").addEventListener("click", function () {
-    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
-  });
-  $("cellBorderEraseToggle").addEventListener("click", function () {
-    applyBorderToSelection(null);
-  });
   $("cellStyleColorPicker").addEventListener("change", function () {
     cellStylePendingColor = $("cellStyleColorPicker").value;
   });
-  // 프리셋(전체/바깥쪽/안쪽)과 변 직접 선택(위/오/아/왼)은 서로 배타 — 프리셋을 누르면
-  // 그 프리셋 버튼만 켜지고 변 버튼 상태는 건드리지 않으며, 변 버튼을 누르면 프리셋이
-  // 꺼지고 '직접 선택'으로 돌아간다.
-  function setBorderPreset(name) {
-    cellBorderPreset = name;
-    $("cellBorderPresetAll").classList.toggle("on", name === "all");
-    $("cellBorderPresetOuter").classList.toggle("on", name === "outer");
-    $("cellBorderPresetInner").classList.toggle("on", name === "inner");
-  }
-  ["Top", "Right", "Bottom", "Left"].forEach(function (Side) {
+  // 합치기 — 고른 칸들 '사이'의 가로줄만 style:"none"으로 덮어 한 칸처럼 보이게 한다.
+  // 바깥(고르지 않은 칸과 맞닿은) 줄은 mode "inner"가 애초에 안 고르므로 그대로 남는다.
+  // 나누기는 그 자리를 지워(spec=null) 원래 격자선으로 되돌린다.
+  $("cellMergeBtn").addEventListener("click", function () {
+    applyBorderToSelection({ width: "medium", style: "none" }, "inner");
+  });
+  $("cellUnmergeBtn").addEventListener("click", function () {
+    applyBorderToSelection(null, "inner");
+  });
+  // 가로줄 방향 토글(위/아래) — 둘 다 끄면 모양 버튼이 할 일이 없으므로, 마지막 하나는
+  // 꺼지지 않게 막는다(끄고서 왜 아무 일도 안 일어나는지 헤매지 않도록).
+  ["Top", "Bottom"].forEach(function (Side) {
     const key = Side.toLowerCase();
     $("cellBorderSide" + Side).addEventListener("click", function () {
-      setBorderPreset("custom");
+      const other = key === "top" ? "bottom" : "top";
+      if (cellBorderSides[key] && !cellBorderSides[other]) return;   // 마지막 하나는 유지
       cellBorderSides[key] = !cellBorderSides[key];
       $("cellBorderSide" + Side).classList.toggle("on", cellBorderSides[key]);
     });
   });
-  $("cellBorderWidthSelect").addEventListener("change", function () {
-    cellBorderWidth = $("cellBorderWidthSelect").value;
+  // 모양 버튼이 곧 실행 버튼 — 고른 정간의 위/아래(토글) 가로줄을 그 모양으로.
+  Object.keys(CELL_BORDER_SHAPES).forEach(function (key) {
+    const id = "cellBorderShape" + key.charAt(0).toUpperCase() + key.slice(1);
+    $(id).addEventListener("click", function () {
+      applyBorderToSelection(CELL_BORDER_SHAPES[key], "sides");
+    });
   });
-  $("cellBorderStyleSelect").addEventListener("change", function () {
-    cellBorderStyle = $("cellBorderStyleSelect").value;
-  });
-  // 테두리 프리셋 3개(전체/바깥쪽/안쪽) — 정간보는 열이 하나뿐인 표라고 보고, 있을 법한 조합만
-  // 빠르게 고르게 함. '없음'(줄 숨김)은 프리셋이 아니라 선 종류 선택지에 있다 — 지우기(원래
-  // 격자로 복귀)와 달리 그 자리 격자선 자체를 흰 마스크로 숨기는 별개 스타일이라서.
-  // 프리셋도 즉시 실행(누르면 바로 지금 선택된 구간에 적용)이라, 골라만 두고 칠하기/지우기를
-  // 따로 눌러도 되고, 프리셋 버튼 자체로 바로 적용해도 된다.
-  // '전체'도 다른 프리셋처럼 자기 상태만 가진다 — 변 버튼 4개를 대신 켜지 않는다.
-  $("cellBorderPresetAll").addEventListener("click", function () {
-    setBorderPreset("all");
-    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
-  });
-  $("cellBorderPresetOuter").addEventListener("click", function () {
-    setBorderPreset("outer");
-    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
-  });
-  $("cellBorderPresetInner").addEventListener("click", function () {
-    setBorderPreset("inner");
-    applyBorderToSelection({ width: cellBorderWidth, style: cellBorderStyle });
+  // 기본 — 위/아래 토글과 무관하게 네 변을 다 지워 원래 격자로. UI에서 좌우를 뺀 만큼,
+  // 예전 파일이 물고 있는 좌우 테두리를 걷어낼 유일한 길이라 일부러 'all'이다.
+  $("cellBorderShapeReset").addEventListener("click", function () {
+    applyBorderToSelection(null, "all");
   });
   // 정간 구간 선택 — 드래그(다른 칸으로 번짐)로 확정되면 선택을 유지, 안 번지면(그냥 클릭)
   // 그 칸을 편집한다. 손을 뗀 위치가 정간 밖이어도 여기서 판가름한다.

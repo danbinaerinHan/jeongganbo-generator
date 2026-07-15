@@ -106,6 +106,17 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   `order`(입력 그룹 뒤 형제 order:3, 도구창 order:2)로 '입력' 그룹 바로 아래에 오게 한다.
   도킹된 창은 카드 스타일을 벗고(배경·테두리 없음) 기능바와 한 몸처럼 보인다. 닫히거나
   위쪽 배치로 돌아가면 placeholder 주석 노드로 원위치 복원.
+- 셀 서식(#cellStyleWin)은 **하는 일 두 가지뿐**: ① 합치기(#cellMergeBtn/#cellUnmergeBtn) —
+  고른 칸들 '사이' 가로줄만 style:"none"으로 덮어 한 칸처럼 보이게. ② 가로줄 모양
+  (#cellBorderShapeThick/Dashed/Double) — 방향 토글(#cellBorderSideTop/Bottom)이 가리키는 줄에.
+  \+ #cellBorderShapeReset(기본)은 **네 변 전부** 지운다(위/아래 토글 무시).
+  - 예전엔 프리셋 3(전체/바깥쪽/안쪽) + 변 4 + 굵기 3 + 종류 4 = 16개 노브였다. 정간보는
+    '열이 하나뿐인 표'라 좌우는 각의 벽이고 칸마다 따로 손볼 일이 없어서 UI에서 뺐다 —
+    **되살리지 말 것**. 굵기×종류 조합도 CELL_BORDER_SHAPES 3개로 고정했다.
+  - **데이터 모델(border[변]={width,style})은 그대로**라 옛 파일은 그대로 열리고 그려진다.
+    UI가 좌우를 못 만들 뿐이고, 옛 좌우 테두리를 걷을 길이 [기본](mode "all")이다.
+  - 버튼은 전부 즉시 실행 — 악보에서 정간을 드래그로 먼저 고른 뒤 누른다(칠하기 모드 아님).
+    선택이 없으면 MEL_SEL_BTN_IDS로 비활성화된다(방향 토글은 선택과 무관하니 그 목록에서 뺌).
 - 도구창 헤더는 창마다 클래스가 다름: 율명=`.pal-head`, 시김새·셀서식=`.pal-top`,
   장단·가사·텍스트=`.melody-head`. 닫기(X) 겹침 방지 padding-right는 이 세 클래스 모두 대상.
 - 장단·가사 창의 초기화(+가사 글씨체)는 예전 상단 별도 리본 박스에 있었으나 X와 겹쳐
