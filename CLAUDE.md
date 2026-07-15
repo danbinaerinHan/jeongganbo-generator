@@ -119,8 +119,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   위 공간이 좁으면 글자 자동 축소(ascent 포함). 인쇄·PNG에 포함(악보 내용, no-print 아님).
   - 템포 표기(一分・N井, #wantTempo)는 같은 자리에 붙지만 각에 소속된 이름이 아니라 곡에
     하나뿐이라 목록 맨 위 **#tempoItem**에 따로 세운다(body.want-tempo로 보임/숨김).
-    **크기는 #tempoSize로 각/장 이름(#gakNameSize)과 따로 논다** — 이름은 여럿을 머리줄
-    '크기'로 한꺼번에 맞추고 템포는 제 항목에서 조절. 간격은 아직 #gakNameGap 공유.
+    **크기·간격 모두 각/장 이름과 따로 논다** — 이름은 여럿을 머리줄
+    '크기'·'간격'으로 한꺼번에 맞추고 템포는 제 항목(#tempoSize·#tempoGap)에서 조절.
+    #tempoGap은 높이 예약(tempoH)과 그리기(drawTempoLabel)가 **같이 쓴다** — 예전엔 예약이
+    tempoFont*0.45, 그리기가 gakNameGap이라 서로 어긋나 있었다.
     #tempoItem은 꺼져 있어도 **마크업에서 지우지 말 것** — collectState가 CTRL_IDS를 돌며
     `$(id).value`를 널 검사 없이 읽어 #tempoSize가 없으면 저장이 통째로 터진다.
     높이 예약(tempoFont = cell*0.42*tempoMul)과 그리기(drawTempoLabel)가 **같은 배율**을

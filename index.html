@@ -1098,7 +1098,7 @@
                 각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.<br>
               • <b>템포</b>를 켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井
                 식으로 표시되고, 아래 목록에 <b>템포 항목</b>이 하나 생깁니다 — 숫자는 재생 설정(⚙)의
-                BPM을 따르고, <b>크기는 그 항목에서 각/장 이름과 따로</b> 조절합니다(간격은 함께 씁니다).
+                BPM을 따르고, <b>크기·간격 모두 그 항목에서 각/장 이름과 따로</b> 조절합니다.
             </div>
           </div>
         </span>
@@ -1129,12 +1129,15 @@
              머리줄 '크기'를 쓰고, 템포는 하나뿐이라 제 항목에서 바로 조절하는 게 자연스럽다.
              **마크업에 늘 있어야 한다**(꺼져 있을 땐 CSS로 숨길 뿐) — collectState가
              CTRL_IDS를 돌며 $(id).value를 널 검사 없이 읽어서, 없으면 저장이 통째로 터진다.
-             간격은 아직 머리줄 '간격'을 각/장 이름과 함께 쓴다. -->
+             간격(#tempoGap)도 마찬가지로 따로 — 높이 예약과 그리기가 이 한 값을 같이 쓴다. -->
         <div id="tempoItem" class="tx-item">
           <span class="gn-gak">템포</span>
           <span id="tempoPreview" class="gn-preview" title="재생 설정(⚙)의 BPM으로 만들어집니다">一分・六十井</span>
           <span class="tool-inline" title="템포 표기의 글자 크기 배율 (각/장 이름과 따로)">크기
             <span class="num-unit"><input type="number" id="tempoSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
+          </span>
+          <span class="tool-inline" title="각(장단 칸) 위쪽 선과 템포 표기 맨 아래 글자 사이 간격 (각/장 이름과 따로)">간격
+            <span class="num-unit"><input type="number" id="tempoGap" min="0" max="20" step="0.5" value="4"><span class="unit">mm</span></span>
           </span>
         </div>
         <div id="gakNameList"></div>

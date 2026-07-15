@@ -13,8 +13,11 @@
   // — 예시 악보처럼 테두리가 페이지 끝에 닿지 않고 항상 여백을 조금 둔다
   const MARGIN_BASE = 12, MARGIN_MIN = 9, INNER_PAD = 5;
   const T_THIN = 0.14, T_THICK = 0.32, T_FRAME = 0.63, T_DAEGANG = 0.45;   // 정간·각 선은 아주 살짝 얇게(0.16/0.36에서)
-  // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계 — 격자선보다 눈에 띄게 조금 더 굵게
-  const CELL_BORDER_WIDTH_PX = { thin: 0.3, medium: 0.6, thick: 1.0 };
+  // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계.
+  // 예전엔 {0.3, 0.6, 1.0}으로 '격자선보다 눈에 띄게 굵게'였는데 전반적으로 너무 굵어서
+  // 한 단계씩 낮췄다 — 얇게는 정간 가로줄과 같은 두께(T_THIN), 보통은 예전 얇게,
+  // 굵게는 예전 보통. 얇게가 격자선과 같아진 건 의도한 것(테두리가 격자에 녹아든다).
+  const CELL_BORDER_WIDTH_PX = { thin: T_THIN, medium: 0.3, thick: 0.6 };
 
   const DAEGANG_PRESET = { 8: "", 10: "7 3", 12: "3 3 3 3", 16: "3 2 3 3 2 3", 20: "6 4 4 6" };
   let daegangAuto = "";
@@ -3128,7 +3131,10 @@
     // tempoMul을 곱해야 크기를 키운 만큼 위 공간도 같이 늘어난다(안 그러면 그리기가 avail에 걸려 잘림).
     const tempoFont = cell * 0.42 * tempoMul;
     const tempoLineH = tempoFont * 1.12;
-    const tempoGap = tempoFont * 0.45;   // 텍스트와 격자 사이 여백
+    // 격자와 템포 글자 사이 여백 — 각/장 이름(#gakNameGap)과 따로 노는 제 값(#tempoGap).
+    // 예약과 그리기(drawTempoLabel)가 이 한 값을 같이 쓴다: 예전엔 예약은 tempoFont*0.45,
+    // 그리기는 gakNameGap이라 서로 어긋나 있었다.
+    const tempoGap = Math.max(0, parseFloat($("tempoGap").value) || 0) * scale;
     const tempoH = wantTempo ? (Array.from(tempoStr).length * tempoLineH + tempoGap) : 0;
     // 가로 제목(맨 위 밴드 위 중앙) — 첫 페이지 위쪽에 제목(+부제) 높이를 예약한다
     const titleTopFont = desiredTitle * scale;
@@ -3370,14 +3376,14 @@
             svg.appendChild(hit);
           }
 
-          // 템포 표기(一分・N井) — 각/장 라벨과 같은 간격 규칙(맨 아래 글자 기준)이지만
-          // **크기는 제 것(tempoSize)**을 쓴다: 각/장 이름은 여러 개를 머리줄 '크기'로 한꺼번에
-          // 맞추는 반면 템포는 곡에 하나뿐이라 따로 조절한다(각/장 창의 템포 항목).
+          // 템포 표기(一分・N井) — 각/장 라벨과 같은 규칙(맨 아래 글자 기준으로 위로 자람)이지만
+          // **크기·간격 모두 제 것(tempoSize·tempoGap)**을 쓴다: 각/장 이름은 여러 개를 머리줄
+          // 값으로 한꺼번에 맞추는 반면 템포는 곡에 하나뿐이라 따로 조절한다(각/장 창의 템포 항목).
           // 장단이 있으면 장단 칸 위에서 그리므로 여기(첫 각 위)는 장단이 없을 때만.
           function drawTempoLabel(cx, topY) {
             const chars = Array.from(tempoStr);
             const mul = tempoMul;
-            const gap = Math.max(0, parseFloat($("gakNameGap").value) || 0) * scale;
+            const gap = tempoGap;   // 위 예약(tempoH)과 같은 값 — 어긋나면 잘리거나 뜬다
             const avail = (b === 0 ? Math.max(2, topY - 1) : Math.max(2, bandGap * 0.9)) - gap;
             const need = 0.85 + 1.12 * (chars.length - 1);
             const f = Math.min(cell * 0.38 * mul, Math.max(1, avail) / need);
@@ -3996,7 +4002,7 @@
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "wantJangdan", "wantLyrics", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
-    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize"];
+    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap"];
   const LS_KEY = "jgb_state_v1";
 
   function collectState() {
@@ -4323,7 +4329,7 @@
   ["cellSize", "gakGap", "bandGap", "daegang",
    "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
    "subSize", "subOffset", "subOffsetX", "subSpacing",
-   "gakNameSize", "gakNameGap", "tempoSize"].forEach(id => wireConfirm($(id), render));
+   "gakNameSize", "gakNameGap", "tempoSize", "tempoGap"].forEach(id => wireConfirm($(id), render));
   // 체크박스·셀렉트·제목 텍스트는 예전처럼 즉시 반영
   ["stackAuto", "title", "titleLayout", "titleGakWidth", "wantJangdan", "wantLyrics"].forEach(id => {
     $(id).addEventListener("input", onFormChange);
