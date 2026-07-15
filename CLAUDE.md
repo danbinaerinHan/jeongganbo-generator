@@ -203,6 +203,15 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   전역 .tab/.tabpanel은 사이드바가 문서 전체를 토글하므로 절대 혼용 금지), 투어는 #tourLayer
   (TOUR_STEPS, app.js "도움말 센터" 섹션). 진짜 첫 방문(`jgb_welcome_v1`·`jgb_guide_seen_v1`·
   상태 전부 없음)에만 환영 카드 → 어떤 선택이든 새 문서 마법사로 수렴.
+  - **`?first=1`**(consumeFirstVisitParam)로 온보딩을 첫 방문처럼 다시 볼 수 있다. 강력
+    새로고침(Cmd+Shift+R)은 HTTP 캐시만 비우고 localStorage는 그대로라 아무리 눌러도 첫 방문이
+    안 되고, 브라우저가 '강력 새로고침인지'를 JS에 알려주지 않아 그 동작을 훅으로 잡을 수도 없어서 둔 것.
+    100% 같은 조건은 시크릿 창이고 이건 '지금 창에서 빠르게' 확인용.
+    지우는 건 온보딩 관문 + 현재 곡뿐 — **보관(jgb_snapshots_v1)·다크(jgb_dark_v1)는 일부러 남긴다**
+    (온보딩과 무관한데 지우면 남의 자료가 날아간다. localStorage.clear()를 쓰지 말 것).
+    현재 곡은 지울 수밖에 없어(남으면 restored라 카드가 안 뜸) confirm()으로 한 번 묻고,
+    파라미터는 쓰자마자 replaceState로 주소에서 뗀다 — 이 주소를 북마크해두고 새로고침할 때마다
+    작업이 날아가는 걸 막는 것이니 그 순서를 바꾸지 말 것.
 
 ## 프리뷰 검증 (.claude/launch.json의 "jgb")
 

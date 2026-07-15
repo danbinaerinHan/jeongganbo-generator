@@ -5286,9 +5286,13 @@
     { sel: "#modeBox", title: "입력 방식",
       body: "직접 입력은 악보의 정간을 클릭해 그 자리에서 입력하고, 에디터는 곡 전체를 텍스트로 편집합니다. 언제든 바꿀 수 있습니다." },
     { sel: "#melodyRibbon", title: "기능바",
-      body: "율명·시김새 팔레트 열기, 각 추가·삭제, 셀 서식, 율명 크기 조절을 여기서 합니다." },
+      body: "율명·시김새·장단·가사·텍스트·각/장 도구창을 열고, 각 추가·삭제, 정간 내용 지우기·셀 서식, 글자 크기 조절을 여기서 합니다." },
     { sel: "#sheetArea", title: "악보",
       body: "정간보는 전통 방식대로 오른쪽에서 왼쪽으로 읽습니다. 정간을 클릭하면 바로 입력할 수 있습니다. 잘못 고쳤으면 ⌘/Ctrl+Z로 되돌립니다." },
+    // 듣기 — 상단바 1급 버튼 셋(재생·정지·재생 설정)인데 예전 투어엔 통째로 빠져 있었다.
+    // 악보 다음에 두는 건 '써 넣었으면 들어본다'는 차례라서(설정·인쇄보다 앞).
+    { sel: "#playBar", title: "들어보기",
+      body: "써 넣은 선율을 소리로 들어볼 수 있습니다(사인파, 시김새는 빼고). 재생 설정에서 기준음(황)과 빠르기를 바꿉니다." },
     { sel: "#sidebar", title: "설정",
       body: "문서·레이아웃 탭에서 제목·정간 수·종이 방향을 정하고, 보관 탭에서 지금 상태를 이름 붙여 저장해둡니다.",
       skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
@@ -5385,6 +5389,31 @@
     $("welcomeModal").style.display = "none";
     openHelpModal({ onClose: function () { openNewDocWizard(applyNewDocAnswers); } });
   });
+
+  // ?first=1 — 온보딩(환영 카드 → 둘러보기)을 '처음 접속한 사람'처럼 다시 보기 위한 뒷문.
+  // Cmd+Shift+R은 HTTP 캐시만 비우고 localStorage는 그대로 두므로 아무리 새로고침해도 첫 방문이
+  // 될 수 없다(브라우저가 '지금 강력 새로고침'인지 JS에 알려주지도 않아 그 동작을 훅으로 잡을 수도
+  // 없다). 진짜 첫 방문과 100% 같은 건 시크릿 창이고, 이건 '지금 창에서 빠르게 확인'용이다.
+  //  · 보관(jgb_snapshots_v1)과 다크(jgb_dark_v1)는 **일부러 남긴다** — 온보딩과 무관한데
+  //    지우면 남의 자료·설정이 날아간다. 그래서 localStorage.clear()를 쓰지 않는다.
+  //  · 지금 편집 중인 곡(LS_KEY)은 지울 수밖에 없다(남아 있으면 restored라 환영 카드가 안 뜬다)
+  //    → confirm()으로 한 번 묻는다.
+  //  · 파라미터는 쓰자마자 주소에서 뗀다 — 안 그러면 이 주소를 북마크·공유해 두고 새로고침할
+  //    때마다 작업이 날아간다.
+  function consumeFirstVisitParam() {
+    let on = false;
+    try { on = new URLSearchParams(location.search).has("first"); } catch (e) { return; }
+    if (!on) return;
+    try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {}
+    if (!confirm("처음 접속한 것처럼 환영 카드와 둘러보기를 다시 봅니다.\n\n" +
+                 "• 지금 편집 중인 곡은 지워집니다\n" +
+                 "• 보관함의 임시 저장과 다크 설정은 그대로 둡니다\n\n계속할까요?")) return;
+    try {
+      [LS_KEY, NEWDOC_PENDING_KEY, WELCOME_LS_KEY, "jgb_guide_seen_v1"]
+        .forEach(function (k) { localStorage.removeItem(k); });
+    } catch (e) {}
+  }
+  consumeFirstVisitParam();
 
   // 이전 작업 복구(localStorage) — 저장된 게 없어도(첫 방문) 입력 모드 힌트 문구는 채워야 한다
   let restored = false;
