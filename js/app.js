@@ -791,13 +791,10 @@
     const w = CELL_BORDER_WIDTH_PX[spec.width] || CELL_BORDER_WIDTH_PX.medium;
     return borderDoubleInset(w) - w / 2;
   }
-  // 흰 마스크의 반경 — 밑에 깔린 격자선을 먼저 덮어 지워야 점선 틈으로 실선이 비치지 않는다.
-  // '없음'(줄 숨김)은 선을 새로 그리지 않고 이 마스크만 남기므로, 숨겨야 할 기존 격자선
-  // (정간 세로선 T_THICK, 대강선 T_DAEGANG)보다 넉넉하게 잡는다.
-  function borderMaskHalf(w, styleKey) {
-    if (styleKey === "none") return Math.max(T_THICK, T_DAEGANG) / 2 + 0.15;
-    return w / 2;
-  }
+  // '없음'(줄 숨김) 마스크 폭 — 이 스타일만은 위에 선을 새로 그리지 않고 마스크만 남으므로,
+  // 숨겨야 할 기존 격자선(각 세로선 T_THICK, 대강선 T_DAEGANG)보다 넉넉해야 말끔히 지워진다.
+  // 다른 스타일의 마스크 폭은 drawBorderMask에서 따로 잡는다(넉넉하면 되레 해로워서).
+  const BORDER_HIDE_MASK_W = (Math.max(T_THICK, T_DAEGANG) / 2 + 0.15) * 2 + 0.4;
   // 한 각(세로 열)의 커스텀 테두리를 선분 목록으로 모은다. 좌/우 세로선은 같은 굵기·종류로
   // 이어지는 칸끼리 한 선분으로 합친다 — 칸마다 따로 그리면 굵은 선·점선·이중선이 칸 경계에서
   // 끊겨 보인다. 그리기는 render 쪽에서 두 단계(마스크 전부 → 선 전부)로 나눠서 하는데,
@@ -845,31 +842,41 @@
     }
   }
   function drawBorderMask(svg, s) {
-    // 이중선은 정간 틀(원래 격자선)을 바깥 줄로 그대로 쓰고 안쪽에 한 줄만 더 긋는
-    // 방식이라, 밑에 깔린 격자선을 지울 일이 없다 — 마스크 없음.
+    // 이중선은 격자선 자리에 바깥 줄을 덧그리고 안쪽에 한 줄을 더 긋는 방식이라
+    // 밑에 깔린 격자선을 지울 일이 없다 — 마스크 없음(있으면 각 틀만 갉는다).
     if (s.style === "double") return;
     const w = CELL_BORDER_WIDTH_PX[s.width] || CELL_BORDER_WIDTH_PX.medium;
-    const maskW = borderMaskHalf(w, s.style) * 2 + 0.4;
-    let x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2, cap = "square";
-    if (s.style === "none") {
-      // '없음' 마스크는 격자선보다 넓어서, square cap으로 끝을 지나치면 교차하는
-      // 세로선(정간 세로선)이나 경계 너머로 이어지는 선까지 지운다 — 대강선·통줄은
-      // structuralSegs로 되살리지만 세로선은 아니라서 그 자리에 틈이 남는다.
-      // butt cap으로 끝을 정확히 맞추고, 가로 마스크는 세로선 반굵기만큼 안으로
-      // 들인다(가려진 가로선의 남는 토막은 세로선 밑에 정확히 숨는다).
-      cap = "butt";
-      if (y1 === y2) { x1 += T_THICK / 2; x2 -= T_THICK / 2; }
-    }
+    let x1 = s.x1, y1 = s.y1, x2 = s.x2, y2 = s.y2;
+    const horiz = (y1 === y2);
+    // 마스크 폭 — '밑에 깔린 선을 가리는 데 필요한 만큼'이지, 넉넉할수록 좋은 게 아니다.
+    // 마스크가 선보다 넓으면 그 차이만큼(양옆으로) 옆에서 맞닿는 선을 갉아 흰 틈을 남긴다.
+    //  · 가로 테두리: 옆으로 넓어져도 나란한 선(정간 가로줄·대강선)만 스치므로 넉넉해도 된다.
+    //    밑에 대강선(T_DAEGANG=0.45)이 깔렸을 수도 있어 w+0.4로 넉넉히 잡는다.
+    //  · 세로 테두리: 정간 가로줄들이 옆에서 직각으로 맞닿는다 — 넉넉하면 그 끝이 0.2쯤
+    //    잘려 '가로줄이 테두리에 안 닿는' 흰 틈이 생겼다. 밑의 각 세로선(T_THICK)만 겨우
+    //    덮을 만큼으로 줄인다(선이 이미 그보다 굵으면 마스크도 선과 같은 폭이면 충분).
+    const maskW = (s.style === "none") ? BORDER_HIDE_MASK_W
+                : horiz ? w + 0.4
+                : Math.max(w, T_THICK + 0.06);
+    // 끝 처리 — square cap이면 끝을 maskW/2만큼 지나쳐 교차하는 각 세로선을 갉는데,
+    // 그 위에 그리는 선은 더 얇아 다 못 덮는다 → 세로선에 위아래로 흰 틈이 남았다
+    // (예전엔 '없음'에서만 막았다). butt cap으로 끝을 정확히 맞추고, 가로 마스크는
+    // 세로선 반굵기만큼 안으로 들인다 — 안 지운 가로선 토막은 세로선 밑에 정확히 숨는다.
+    if (horiz) { x1 += T_THICK / 2; x2 -= T_THICK / 2; }
     svg.appendChild(el("line", { x1: x1, y1: y1, x2: x2, y2: y2,
-      stroke: "#fff", "stroke-width": maskW, "stroke-linecap": cap }));
+      stroke: "#fff", "stroke-width": maskW, "stroke-linecap": "butt" }));
   }
   function drawBorderStroke(svg, s) {
     if (s.style === "none") return;   // '없음'은 마스크만 — 그 자리 격자선을 숨긴다
     const w = CELL_BORDER_WIDTH_PX[s.width] || CELL_BORDER_WIDTH_PX.medium;
     if (s.style === "double") {
-      // 이중선 — 정간 틀(원래 격자선)을 바깥 줄로 그대로 두고, 칸 안쪽으로 나란히
-      // 한 줄을 더 긋는다(전통 악보의 겹줄 표기). butt cap — square면 안쪽 줄의
-      // 끝이 칸 밖(각 사이 여백)으로 삐져나온다.
+      // 이중선 — 바깥 줄 + 칸 안쪽으로 나란히 한 줄(전통 악보의 겹줄 표기).
+      // 바깥 줄은 예전엔 아예 안 그리고 원래 격자선(정간 가로줄 T_THIN=0.14)에 기댔는데,
+      // 안쪽 줄보다 가늘어 겹줄이 아니라 '격자선 옆에 줄 하나'로 보였다. '보통' 굵기로
+      // 또렷하게 긋는다 — 고른 굵기는 안쪽 줄만 타고 바깥은 늘 보통이다.
+      // 격자선 위에 덧그리는 것이라 마스크는 필요 없다(drawBorderMask가 double은 건너뜀).
+      svg.appendChild(line(s.x1, s.y1, s.x2, s.y2, CELL_BORDER_WIDTH_PX.medium));
+      // 안쪽 줄 — butt cap: square면 끝이 칸 밖(각 사이 여백)으로 삐져나온다.
       const off = borderDoubleInset(w);
       const dx = s.side === "left" ? off : s.side === "right" ? -off : 0;
       const dy = s.side === "top" ? off : s.side === "bottom" ? -off : 0;
