@@ -1306,10 +1306,18 @@
   /* keep-all: 한국어가 단어 중간에서 꺾이지 않게("씁니/다" → 어절 단위) */
   #tourBody div { padding-left: 1.1em; text-indent: -1.1em; word-break: keep-all; }
   #tourBody div + div { margin-top: 5px; }
-  /* 예시 그림(fig 있는 단계만, app.js showTourStep이 innerHTML로 끼움) — 카드 폭에 맞춰
-     늘리고, SVG 안 색은 전부 역할 변수(var(--ink) 등)라 다크에서도 같이 맞는다 */
+  /* 예시 그림(fig 있는 단계만) — '입력 칩 ↓ 캡처 이미지 / 설명' 세로 묶음 4개의 가로
+     그리드. 이미지는 앱이 실제 그린 악보의 캡처(흰 종이)라 다크에서도 흰 배경 그대로 —
+     악보가 다크에서도 흰 종이인 것과 같은 원칙이니 반전하지 말 것. */
   #tourFig { margin: -2px 0 12px; }
-  #tourFig svg { display: block; width: 100%; height: auto; }
+  #tourFig .tf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  #tourFig .tf-grid > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  #tourFig .tf-in { font-size: 10px; color: var(--ink); background: var(--soft);
+                    border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px;
+                    white-space: nowrap; }
+  #tourFig .tf-arrow { font-size: 9px; color: var(--muted); line-height: 1; }
+  #tourFig img { width: 46px; height: auto; }
+  #tourFig .tf-cap { font-size: 10px; color: var(--muted); }
   .tour-btns { display: flex; gap: 6px; }
   .tour-btns #tourSkip { margin-right: auto; }
   .tour-btns button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
