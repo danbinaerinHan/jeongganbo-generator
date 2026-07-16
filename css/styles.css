@@ -1310,7 +1310,9 @@
      그리드. 이미지는 앱이 실제 그린 악보의 캡처(흰 종이)라 다크에서도 흰 배경 그대로 —
      악보가 다크에서도 흰 종이인 것과 같은 원칙이니 반전하지 말 것. */
   #tourFig { margin: -2px 0 12px; }
-  #tourFig .tf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  /* 3열(예시 5개 → 3+2 두 줄) — 4열이던 때 '황{미는표}' 칩이 칸을 넘쳤다. 열을 줄이면
+     칸이 넓어져 긴 칩도 들어간다. 예시를 더 늘리면 칩 폭부터 확인할 것. */
+  #tourFig .tf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 8px; }
   #tourFig .tf-grid > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   #tourFig .tf-in { font-size: 10px; color: var(--ink); background: var(--soft);
                     border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px;
