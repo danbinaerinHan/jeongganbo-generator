@@ -5339,6 +5339,34 @@
       body: "• 입력 — 율명·시김새·장단·가사·텍스트·각/장 도구창 열기\n• 각 삽입/삭제 · 정간 내용 지우기 · 셀 서식\n• 율명·가사 글자 크기 조절" },
     { sel: "#sheetArea", title: "악보",
       body: "• 전통 방식대로 오른쪽 → 왼쪽으로 읽습니다\n• 정간을 클릭하면 그 자리에서 바로 입력합니다\n• 잘못 고쳤으면 ⌘/Ctrl+Z로 되돌립니다" },
+    // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
+    // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. fig는 우리가 쓴 정적 SVG라 innerHTML로
+    // 끼워도 안전하고, 색은 전부 역할 변수(var(--ink) 등)라 다크에서도 맞는다.
+    { sel: "#sheetArea", title: "정간에 쓰기",
+      body: "• 정간을 클릭해 한글 율명으로 적으면 한자로 그려집니다\n• 스페이스로 나누면 분박 — 한 박이 위→아래로 나뉩니다\n• 붙여 쓰면 한 줄에 나란히(붙임)\n• 옥타브는 앞에 청/배 — 청황→潢, 배황→僙",
+      fig: '<svg viewBox="0 0 276 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정간 입력 예시: 황, 황 태, 황태">' +
+           '<g text-anchor="middle">' +
+           '<rect x="16" y="4" width="60" height="22" rx="5" fill="var(--soft)" stroke="var(--line)"/>' +
+           '<text x="46" y="19" font-size="12" fill="var(--ink)">황</text>' +
+           '<line x1="46" y1="30" x2="46" y2="40" stroke="var(--muted)"/><path d="M42 38 L46 44 L50 38 Z" fill="var(--muted)"/>' +
+           '<rect x="18" y="48" width="56" height="60" fill="none" stroke="var(--ink)" stroke-width="1.5"/>' +
+           '<text x="46" y="86" font-size="24" fill="var(--ink)">黃</text>' +
+           '<text x="46" y="124" font-size="10" fill="var(--muted)">한 박에 한 음</text>' +
+           '<rect x="108" y="4" width="60" height="22" rx="5" fill="var(--soft)" stroke="var(--line)"/>' +
+           '<text x="138" y="19" font-size="12" fill="var(--ink)">황 태</text>' +
+           '<line x1="138" y1="30" x2="138" y2="40" stroke="var(--muted)"/><path d="M134 38 L138 44 L142 38 Z" fill="var(--muted)"/>' +
+           '<rect x="110" y="48" width="56" height="60" fill="none" stroke="var(--ink)" stroke-width="1.5"/>' +
+           '<line x1="110" y1="78" x2="166" y2="78" stroke="var(--line)"/>' +
+           '<text x="138" y="71" font-size="18" fill="var(--ink)">黃</text>' +
+           '<text x="138" y="101" font-size="18" fill="var(--ink)">太</text>' +
+           '<text x="138" y="124" font-size="10" fill="var(--muted)">스페이스 = 분박</text>' +
+           '<rect x="200" y="4" width="60" height="22" rx="5" fill="var(--soft)" stroke="var(--line)"/>' +
+           '<text x="230" y="19" font-size="12" fill="var(--ink)">황태</text>' +
+           '<line x1="230" y1="30" x2="230" y2="40" stroke="var(--muted)"/><path d="M226 38 L230 44 L234 38 Z" fill="var(--muted)"/>' +
+           '<rect x="202" y="48" width="56" height="60" fill="none" stroke="var(--ink)" stroke-width="1.5"/>' +
+           '<text x="230" y="84" font-size="16" fill="var(--ink)">黃太</text>' +
+           '<text x="230" y="124" font-size="10" fill="var(--muted)">붙여 쓰면 한 줄</text>' +
+           '</g></svg>' },
     // 듣기 — 상단바 1급 버튼 셋(재생·정지·재생 설정)인데 예전 투어엔 통째로 빠져 있었다.
     // 악보 다음에 두는 건 '써 넣었으면 들어본다'는 차례라서(설정·인쇄보다 앞).
     { sel: "#playBar", title: "들어보기",
@@ -5399,6 +5427,10 @@
       d.textContent = ln;
       bodyEl.appendChild(d);
     });
+    // 예시 그림(fig 있는 단계만) — positionTour보다 먼저 넣어야 카드 높이에 반영된다
+    const figEl = $("tourFig");
+    figEl.innerHTML = s.fig || "";
+    figEl.style.display = s.fig ? "" : "none";
     $("tourPrev").style.display = i === 0 ? "none" : "";
     $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
     positionTour();

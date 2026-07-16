@@ -1306,6 +1306,10 @@
   /* keep-all: 한국어가 단어 중간에서 꺾이지 않게("씁니/다" → 어절 단위) */
   #tourBody div { padding-left: 1.1em; text-indent: -1.1em; word-break: keep-all; }
   #tourBody div + div { margin-top: 5px; }
+  /* 예시 그림(fig 있는 단계만, app.js showTourStep이 innerHTML로 끼움) — 카드 폭에 맞춰
+     늘리고, SVG 안 색은 전부 역할 변수(var(--ink) 등)라 다크에서도 같이 맞는다 */
+  #tourFig { margin: -2px 0 12px; }
+  #tourFig svg { display: block; width: 100%; height: auto; }
   .tour-btns { display: flex; gap: 6px; }
   .tour-btns #tourSkip { margin-right: auto; }
   .tour-btns button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
