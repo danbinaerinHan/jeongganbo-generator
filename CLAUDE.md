@@ -7,9 +7,13 @@
 상단바 맨 왼쪽 #brandBox(로고+이름, 페이지 유일 h1)·탭 제목·meta description·환영 카드에 쓰인다.
 로고 원본은 `assets/Gemini_Generated_Logo.png`(까치+井 붓글씨), 웹용 가공본(투명화·크롭·축소)은
 `assets/brand/`이며 index.html에는 **데이터 URL로 인라인**(파비콘 포함) — 프리뷰 미러가
-assets/를 제외해도 보이게. 상단바 로고는 **위쪽 크롭본**(umulsai-top-64: 까치+맨 윗 가로획,
-전체 井은 작게 그리면 새가 안 보임), 파비콘은 전체 로고(favicon-64, 흰 배경). 로고를 다시
-가공하면 데이터 URL도 갈아끼워야 한다. 다크모드 로고는 CSS invert(body.dark #brandBox img).
+assets/를 제외해도 보이게. 상단바 로고는 **위쪽 크롭본**(umulsai-top-128: 까치+맨 윗 가로획,
+전체 井은 작게 그리면 새가 안 보임), 파비콘은 전체 로고(favicon-64, 흰 배경).
+상단바 로고가 128px(표시 32px의 4배)인 건 화질 때문 — 예전 64px 가공본은 dpr 2에서 딱
+1:1인 데다 **잉크 알파가 최대 221(반투명)**이라 흐리고 회색으로 씻겨 보였다. 재가공은
+`python3 tools/regen-top-logo.py`(원본에서 현행 프레이밍을 MSE 탐색으로 되찾아 크롭,
+알파 16단계+팔레트 64색 양자화로 2KB 미만) → 출력 PNG를 base64로 index.html 데이터 URL에
+교체. 다크모드 로고는 CSS invert(body.dark #brandBox img).
 워드마크(#brandWord)는 **EBS훈민정음 SB를 아웃라인 패스로 뜬 인라인 SVG** — 폰트 파일은
 안 싣는다. EBS 라이선스가 웹 임베딩·BI/CI는 허용하나 폰트 자체의 변형(서브셋 포함)·재배포는
 사전 서면승인 대상이라, '폰트로 만든 로고'인 패스 방식이 그 조항을 안 건드린다(2.6KB, 모든
