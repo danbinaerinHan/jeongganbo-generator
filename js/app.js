@@ -1922,6 +1922,14 @@
   function setOrnInstrument(v, opts) {
     ornInstrument = INSTRUMENT_PRIORITY[v] ? v : "all";
     document.querySelectorAll(".orn-instrument").forEach(function (s) { s.value = ornInstrument; });
+    // 악기를 고르면 숫자 단축키(1~0)도 그 악기 우선순위로 팔레트 위쪽에 올라온 붙임표
+    // 시김새 순서대로 새로 배정한다("all"이면 기본 배정 = 원래 순서 앞 10개와 동일).
+    // 수동 배정은 덮어쓴다 — 악기를 바꾸는 행위가 곧 '이 악기 세트로 갈아끼우기'라서.
+    ornAddMap = sortByInstrument(ORN_ADD_ALL, function (o) { return o.k; })
+      .slice(0, ORN_ADD_KEYS.length)
+      .map(function (o) { return o.s; });
+    rebuildOrnAddKeyMap();
+    buildOrnAddMapBar();
     buildOrnPalette($("directOrnPalette"));
     if (palView === "orn") buildPalette();
     buildLyricSymPal();
