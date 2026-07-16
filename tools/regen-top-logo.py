@@ -1,13 +1,16 @@
 # 상단바 로고(까치+맨 윗 가로획) 고해상 재가공.
 # 기존 137×64와 같은 프레이밍을 찾기 위해, 원본에서 크롭 후보를 탐색해
 # 기존 이미지와의 MSE가 최소인 크롭 박스를 고른 뒤 128px 높이로 다시 뽑는다.
+# 경로는 이 파일(tools/) 기준 상대 경로 — 어느 컴퓨터에서 리포를 클론해도 그대로 돌아간다.
+import os
 import numpy as np
 from PIL import Image
 
-SRC = "/Users/handanbinaerin/Library/Mobile Documents/com~apple~CloudDocs/정간보 생성기/assets/Gemini_Generated_Logo.png"
-REF = "/Users/handanbinaerin/Library/Mobile Documents/com~apple~CloudDocs/정간보 생성기/assets/brand/umulsai-top-128.png"  # 프레이밍 기준(현행 가공본)
-OUT = "/Users/handanbinaerin/Library/Mobile Documents/com~apple~CloudDocs/정간보 생성기/assets/brand/umulsai-top-128.png"
-CMP = "/private/tmp/claude-501/-Users-handanbinaerin-Library-Mobile-Documents-com-apple-CloudDocs--------/5105cab6-c5f5-4741-b186-4bbe2c668152/scratchpad/logo-compare.png"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.join(ROOT, "assets", "Gemini_Generated_Logo.png")
+REF = os.path.join(ROOT, "assets", "brand", "umulsai-top-128.png")  # 프레이밍 기준(현행 가공본)
+OUT = os.path.join(ROOT, "assets", "brand", "umulsai-top-128.png")
+CMP = os.path.join(ROOT, "assets", "brand", "_logo-compare.png")   # 눈으로 비교만 하는 임시 파일(gitignore의 *.png 대상)
 
 src = Image.open(SRC).convert("RGB")
 W, H = src.size
@@ -86,11 +89,13 @@ arr[..., 3] = (arr[..., 3] // 16) * 17
 Image.fromarray(arr).quantize(colors=64, method=Image.FASTOCTREE).save(OUT, optimize=True)
 print("saved:", OUT, f"{out_w}x{out_h}")
 
-# 눈 비교용: 기존(64)·새(128)를 같은 높이 256으로 확대해 나란히
+# 눈 비교용: 이번에 고른 크롭(REF, 재실행 시 직전 결과)과 새로 뽑은 결과(OUT)를
+# 같은 높이 256으로 확대해 나란히. new는 방금 막 quantize()로 palette 모드(P)가 됐으므로
+# RGBA로 변환해야 알파 있는 이미지로 합성된다(안 하면 "bad transparency mask"로 죽는다).
 def upscale(img, hh):
     ww = int(round(img.width * hh / img.height))
     return img.resize((ww, hh), Image.NEAREST)
-new = Image.open(OUT)
+new = Image.open(OUT).convert("RGBA")
 a_img = upscale(ref, 256); b_img = upscale(new, 256)
 cmp_img = Image.new("RGBA", (a_img.width + b_img.width + 20, 256 + 40), (255, 255, 255, 255))
 cmp_img.paste(a_img, (0, 30), a_img); cmp_img.paste(b_img, (a_img.width + 20, 30), b_img)
