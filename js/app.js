@@ -1582,6 +1582,17 @@
   const ORN_ADD_ALL = ORN_LIST.filter(function (o) { return o.c === "wo" || o.c === "both"; });
   const ORN_ADD_DEFAULT = ORN_ADD_ALL.slice(0, ORN_ADD_KEYS.length).map(function (o) { return o.s; });
   let ornAddMap = ORN_ADD_DEFAULT.slice();
+  // 악기별 배정 번들 — 악기(및 "all")마다 자기 배정표를 기억한다. 수동으로 고친 배정은
+  // 지금 악기 번들에 저장되고, 악기를 바꿨다 돌아와도 그대로다. 아직 안 가 본 악기만
+  // 그 악기 우선순위 기본값(ornAddDefault)으로 시작한다.
+  let ornAddMaps = {};
+  // 지금 악기(ornInstrument) 우선순위로 팔레트 위쪽에 올라온 붙임표 시김새 앞 10개
+  // ("all"이면 원래 순서 = ORN_ADD_DEFAULT와 동일).
+  function ornAddDefault() {
+    return sortByInstrument(ORN_ADD_ALL, function (o) { return o.k; })
+      .slice(0, ORN_ADD_KEYS.length)
+      .map(function (o) { return o.s; });
+  }
   const ORN_ADD_KEY_BY_STEM = {};
   function rebuildOrnAddKeyMap() {
     Object.keys(ORN_ADD_KEY_BY_STEM).forEach(function (k) { delete ORN_ADD_KEY_BY_STEM[k]; });
@@ -1615,6 +1626,7 @@
         const stem = sel.value || null;
         if (stem) ornAddMap.forEach(function (s, j) { if (j !== i && s === stem) ornAddMap[j] = null; });
         ornAddMap[i] = stem;
+        ornAddMaps[ornInstrument] = ornAddMap.slice();   // 수동 수정은 지금 악기 번들에 저장
         rebuildOrnAddKeyMap();
         buildOrnAddMapBar();   // 중복 정리로 다른 슬롯이 비워졌을 수 있어 전체 다시 그림
         refreshOrnAddBadges();
@@ -1920,16 +1932,18 @@
       .map(function (x) { return x.it; });
   }
   function setOrnInstrument(v, opts) {
-    ornInstrument = INSTRUMENT_PRIORITY[v] ? v : "all";
+    const next = INSTRUMENT_PRIORITY[v] ? v : "all";
+    if (next !== ornInstrument) {
+      // 숫자 단축키(1~0)는 악기별 번들 — 떠나는 악기 번들에 지금 배정을 저장하고,
+      // 가는 악기는 자기 번들이 있으면 그대로, 처음이면 그 악기 우선순위 기본값.
+      // 그래서 수동으로 고친 배정이 악기를 오가도 안 날아간다.
+      ornAddMaps[ornInstrument] = ornAddMap.slice();
+      ornInstrument = next;
+      ornAddMap = ornAddMaps[next] ? ornAddMaps[next].slice() : ornAddDefault();
+      rebuildOrnAddKeyMap();
+      buildOrnAddMapBar();
+    }
     document.querySelectorAll(".orn-instrument").forEach(function (s) { s.value = ornInstrument; });
-    // 악기를 고르면 숫자 단축키(1~0)도 그 악기 우선순위로 팔레트 위쪽에 올라온 붙임표
-    // 시김새 순서대로 새로 배정한다("all"이면 기본 배정 = 원래 순서 앞 10개와 동일).
-    // 수동 배정은 덮어쓴다 — 악기를 바꾸는 행위가 곧 '이 악기 세트로 갈아끼우기'라서.
-    ornAddMap = sortByInstrument(ORN_ADD_ALL, function (o) { return o.k; })
-      .slice(0, ORN_ADD_KEYS.length)
-      .map(function (o) { return o.s; });
-    rebuildOrnAddKeyMap();
-    buildOrnAddMapBar();
     buildOrnPalette($("directOrnPalette"));
     if (palView === "orn") buildPalette();
     buildLyricSymPal();
@@ -4064,8 +4078,8 @@
              lyrics: lyricsFull, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
-             melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, cellStyles: cellStyles,
-             gakNames: gakNames, leftDockW: leftDockW, ornInstrument: ornInstrument };
+             melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, ornAddMaps: ornAddMaps,
+             cellStyles: cellStyles, gakNames: gakNames, leftDockW: leftDockW, ornInstrument: ornInstrument };
   }
 
   function applyState(s) {
@@ -4099,12 +4113,26 @@
     ornPalZoom = typeof s.ornPalZoom === "number" ? Math.max(0.6, Math.min(2, s.ornPalZoom)) : 1;
     edFontPx = typeof s.edFontPx === "number" ? Math.max(10, Math.min(26, s.edFontPx)) : 14;
     applyPalZoom(); applyOrnPalZoom(); applyEdFont();
-    if (Array.isArray(s.ornAddMap) && s.ornAddMap.length === ORN_ADD_KEYS.length) {
-      const validStems = new Set(ORN_ADD_ALL.map(function (o) { return o.s; }));
-      ornAddMap = s.ornAddMap.map(function (stem) { return (stem && validStems.has(stem)) ? stem : null; });
-    } else {
-      ornAddMap = ORN_ADD_DEFAULT.slice();
+    const validStems = new Set(ORN_ADD_ALL.map(function (o) { return o.s; }));
+    function sanitizeAddMap(arr) {
+      if (!Array.isArray(arr) || arr.length !== ORN_ADD_KEYS.length) return null;
+      return arr.map(function (stem) { return (stem && validStems.has(stem)) ? stem : null; });
     }
+    // 악기별 번들 복원 — 모르는 악기 키·깨진 배열은 조용히 버린다.
+    ornAddMaps = {};
+    if (s.ornAddMaps && typeof s.ornAddMaps === "object") {
+      Object.keys(s.ornAddMaps).forEach(function (inst) {
+        if (inst !== "all" && !INSTRUMENT_PRIORITY[inst]) return;
+        const arr = sanitizeAddMap(s.ornAddMaps[inst]);
+        if (arr) ornAddMaps[inst] = arr;
+      });
+    }
+    // 옛 저장분(번들 없이 단일 ornAddMap)은 그때 보던 악기 번들로 승계
+    if (!ornAddMaps[ornInstrument]) {
+      const legacy = sanitizeAddMap(s.ornAddMap);
+      if (legacy) ornAddMaps[ornInstrument] = legacy;
+    }
+    ornAddMap = ornAddMaps[ornInstrument] ? ornAddMaps[ornInstrument].slice() : ornAddDefault();
     rebuildOrnAddKeyMap();
     inputMode = s.melInput === "direct" ? "direct" : "editor";
     ribbonPos = s.ribbonPos === "left" ? "left" : "top";
@@ -4130,7 +4158,7 @@
   // 팔레트 크기/글자 크기, 시김새 단축키 배정 같은 UI 상태는 스냅샷 비교·복원 양쪽에서
   // 모두 빼서, 팔레트를 열고 닫거나 모드를 바꾼 것이 되돌리기 단계로 남지 않게 한다.
   // (localStorage에는 UI 상태까지 통째로 저장한다 — 새로고침 복원용이라 목적이 다름.)
-  const UNDO_UI_KEYS = ["activeTab", "palZoom", "ornPalZoom", "edFontPx", "melInput", "ribbonPos", "ornAddMap"];
+  const UNDO_UI_KEYS = ["activeTab", "palZoom", "ornPalZoom", "edFontPx", "melInput", "ribbonPos", "ornAddMap", "ornAddMaps"];
   function docJsonOf(state) {
     const s = Object.assign({}, state);
     UNDO_UI_KEYS.forEach(function (k) { delete s[k]; });
