@@ -572,14 +572,9 @@
   .ribbon { display: flex; flex-wrap: wrap; align-items: stretch; gap: 2px; padding: 5px 8px;
             margin-bottom: 10px;
             background: var(--soft); border: 1px solid var(--line); border-radius: 8px; }
-  /* 기능바(리본) 접기/펼치기 — 그립·접기 버튼만 남기고 나머지 그룹을 숨긴다 */
-  .ribbon-collapse-btn { flex: 0 0 auto; }
-  .ribbon-collapse-btn svg { transition: transform .12s ease; }
-  /* 접기·도킹 전환 묶음 — 가로 배치에선 앞쪽 아이콘 두 개, 세로 도킹에선 맨 위 한 줄 */
+  /* 도킹 컨트롤 묶음 — 가로 배치에선 앞쪽 아이콘, 세로 도킹에선 맨 위 한 줄(헤더).
+     예전의 기능바 접기(.ribbon.collapsed)는 없앴다 — index.html 주석 참고. */
   .ribbon-topctl { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
-  .ribbon.collapsed { overflow: hidden; }
-  .ribbon.collapsed > *:not(.bar-grip):not(.ribbon-topctl) { display: none !important; }
-  .ribbon.collapsed .ribbon-collapse-btn svg { transform: rotate(-90deg); }
   /* 그룹은 2단 — 위에 얇은 이름표(.rb-cap), 아래에 실제 컨트롤(.rb-items) */
   .ribbon-group { display: flex; flex-direction: column; align-items: stretch; gap: 2px;
                   padding: 0 4px; flex: 0 0 auto; }
@@ -720,7 +715,7 @@
   }
 
   /* --- 왼쪽 도킹 꾸밈(밋밋함 완화) --- */
-  /* 접기·도킹 되돌리기 버튼을 열 맨 위 한 줄(헤더)로 — 세로로 안 쌓이고 나란히, 아래 구분선. */
+  /* 도킹 되돌리기 버튼을 열 맨 위 한 줄(헤더)로 — 아래 구분선. */
   body.ribbon-left #melodyRibbon > .ribbon-topctl {
     width: 100%; justify-content: flex-start; gap: 4px;
     padding: 1px 2px 7px; margin-bottom: 6px;

@@ -437,13 +437,10 @@
       <div class="bar-grip" title="끌어서 이동">
         <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
       </div>
-      <!-- 접기·도킹 위치 전환을 한 묶음(.ribbon-topctl)으로 — 왼쪽 세로 도킹에선 이 묶음이
-           열 맨 위 한 줄(가로)로 놓인다(그래야 두 버튼이 세로로 안 쌓이고 나란히 보임). -->
+      <!-- 도킹 컨트롤 묶음(.ribbon-topctl) — 왼쪽 세로 도킹에선 열 맨 위 한 줄(헤더)로 놓인다.
+           예전엔 접기(∨) 버튼도 여기 있었는데 없앴다 — 기능바 없이는 어차피 아무것도 못 하는
+           모드라 접을 이유가 없었고, 실수로 눌러 도구가 다 사라지는 사고만 났다. 되살리지 말 것. -->
       <div class="ribbon-topctl">
-        <button type="button" id="ribbonCollapseToggle" class="icon-btn ribbon-collapse-btn tip"
-          data-tip="기능바를 접거나 펼칩니다" title="접기/펼치기">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </button>
         <!-- 기능바 도킹 위치(위쪽 가로 / 왼쪽 세로) 전환 — 직접 입력 전용(에디터 모드에선
              기능바가 아래 독에 들어가므로 CSS가 숨김). 아이콘은 '누르면 갈 곳'을 보여준다. -->
         <button type="button" id="ribbonPosToggle" class="icon-btn ribbon-pos-btn tip"
