@@ -5282,24 +5282,26 @@
 
   // -- 둘러보기(투어) --
   // 대상은 두 입력 모드에 공통으로 존재(리본은 모드에 따라 위치만 이동 — 매번 셀렉터로 재탐색)
+  // 본문은 줄글 대신 • 글머리표 한 줄씩(\n 줄바꿈 — #tourCard p의 white-space:pre-line이 받는다).
+  // 한 줄 = 한 정보. '여기서/거기서' 같은 가리키는 말 대신 대상 이름을 그대로 쓴다.
   const TOUR_STEPS = [
     { sel: "#modeBox", title: "입력 방식",
-      body: "직접 입력은 악보의 정간을 클릭해 그 자리에서 입력하고, 에디터는 곡 전체를 텍스트로 편집합니다. 언제든 바꿀 수 있습니다." },
+      body: "• 직접 입력 — 악보의 정간을 클릭해 그 자리에서 씁니다 (기본)\n• 에디터 — 곡 전체를 텍스트로 한 번에 고칩니다\n• 언제든 서로 바꿀 수 있습니다" },
     { sel: "#melodyRibbon", title: "기능바",
-      body: "율명·시김새·장단·가사·텍스트·각/장 도구창을 열고, 각 추가·삭제, 정간 내용 지우기·셀 서식, 글자 크기 조절을 여기서 합니다." },
+      body: "• 입력 — 율명·시김새·장단·가사·텍스트·각/장 도구창 열기\n• 각 삽입/삭제 · 정간 내용 지우기 · 셀 서식\n• 율명·가사 글자 크기 조절" },
     { sel: "#sheetArea", title: "악보",
-      body: "정간보는 전통 방식대로 오른쪽에서 왼쪽으로 읽습니다. 정간을 클릭하면 바로 입력할 수 있습니다. 잘못 고쳤으면 ⌘/Ctrl+Z로 되돌립니다." },
+      body: "• 전통 방식대로 오른쪽 → 왼쪽으로 읽습니다\n• 정간을 클릭하면 그 자리에서 바로 입력합니다\n• 잘못 고쳤으면 ⌘/Ctrl+Z로 되돌립니다" },
     // 듣기 — 상단바 1급 버튼 셋(재생·정지·재생 설정)인데 예전 투어엔 통째로 빠져 있었다.
     // 악보 다음에 두는 건 '써 넣었으면 들어본다'는 차례라서(설정·인쇄보다 앞).
     { sel: "#playBar", title: "들어보기",
-      body: "써 넣은 선율을 소리로 들어볼 수 있습니다(사인파, 시김새는 빼고). 재생 설정에서 기준음(황)과 빠르기를 바꿉니다." },
+      body: "• 써 넣은 선율을 소리로 확인합니다 (사인파 · 시김새 제외)\n• 재생 설정 ⚙ — 기준음(황)과 빠르기를 바꿉니다" },
     { sel: "#sidebar", title: "설정",
-      body: "문서·레이아웃 탭에서 제목·정간 수·종이 방향을 정하고, 보관 탭에서 지금 상태를 이름 붙여 저장해둡니다.",
+      body: "• 문서·레이아웃 탭 — 제목·정간 수·종이 방향\n• 보관 탭 — 지금 상태를 이름 붙여 저장",
       skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
     { sel: "#outBox", title: "인쇄 · 파일",
-      body: "다 만들면 인쇄 버튼으로 종이나 PDF로 뽑습니다. 옆 ⋯ 파일 메뉴에는 새 문서, PNG 다운로드, 파일로 저장·불러오기가 있습니다." },
+      body: "• 인쇄 — 완성한 악보를 종이나 PDF로 출력합니다\n• ⋯ 파일 메뉴 — 새 문서 · PNG 다운로드 · 파일로 저장·불러오기" },
     { sel: "#btnHelp", title: "도움말",
-      body: "궁금할 때는 언제든 이 버튼으로 도움말을 열 수 있습니다. 둘러보기도 거기서 다시 시작할 수 있습니다." }
+      body: "• 궁금할 때 언제든 이 버튼으로 도움말을 엽니다\n• 이 둘러보기도 도움말 창에서 다시 시작할 수 있습니다" }
   ];
   let tourIdx = -1, tourOnEnd = null;
   function tourRect(step) {
@@ -5340,7 +5342,15 @@
     const s = TOUR_STEPS[i];
     $("tourStepNum").textContent = (i + 1) + " / " + TOUR_STEPS.length;
     $("tourTitle").textContent = s.title;
-    $("tourBody").textContent = s.body;
+    // 본문은 \n마다 줄(div) 하나 — 통짜 textContent + pre-line이 아니라 줄 단위 블록이라야
+    // 긴 글머리표가 접힐 때 둘째 줄이 • 밑이 아니라 글자 밑에 맞는다(내어쓰기, CSS #tourBody div).
+    const bodyEl = $("tourBody");
+    bodyEl.textContent = "";
+    s.body.split("\n").forEach(function (ln) {
+      const d = document.createElement("div");
+      d.textContent = ln;
+      bodyEl.appendChild(d);
+    });
     $("tourPrev").style.display = i === 0 ? "none" : "";
     $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
     positionTour();

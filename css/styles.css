@@ -1303,7 +1303,14 @@
               box-shadow: 0 12px 40px rgba(0,0,0,.3); }
   #tourStepNum { font-size: 11px; color: var(--muted); }
   #tourCard h4 { margin: 2px 0 6px; font-size: 13px; color: var(--accent); }
-  #tourCard p { margin: 0 0 12px; font-size: 12px; line-height: 1.65; }
+  /* 본문은 • 글머리표 한 줄(div) 단위 — showTourStep이 body의 \n마다 div로 쪼개 넣는다.
+     내어쓰기(padding-left + 음수 text-indent): 긴 줄이 접히면 둘째 줄이 • 밑이 아니라
+     글자 밑에 맞아야 글머리표 목록으로 읽힌다(통짜 p + pre-line로는 못 함 —
+     text-indent는 블록의 첫 줄에만 걸려서). */
+  #tourCard p { margin: 0 0 12px; font-size: 12px; line-height: 1.6; }
+  /* keep-all: 한국어가 단어 중간에서 꺾이지 않게("씁니/다" → 어절 단위) */
+  #tourBody div { padding-left: 1.1em; text-indent: -1.1em; word-break: keep-all; }
+  #tourBody div + div { margin-top: 5px; }
   .tour-btns { display: flex; gap: 6px; }
   .tour-btns #tourSkip { margin-right: auto; }
   .tour-btns button { border: 1px solid var(--accent); background: var(--accent); color: #fff;

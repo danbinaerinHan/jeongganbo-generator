@@ -203,6 +203,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   전역 .tab/.tabpanel은 사이드바가 문서 전체를 토글하므로 절대 혼용 금지), 투어는 #tourLayer
   (TOUR_STEPS, app.js "도움말 센터" 섹션). 진짜 첫 방문(`jgb_welcome_v1`·`jgb_guide_seen_v1`·
   상태 전부 없음)에만 환영 카드 → 어떤 선택이든 새 문서 마법사로 수렴.
+  - 투어 본문(body)은 줄글 금지 — `\n`으로 나눈 `•` 글머리표 한 줄씩. showTourStep이 줄마다
+    div로 넣고 CSS(#tourBody div)가 내어쓰기 + word-break:keep-all을 건다(통짜 p + pre-line로는
+    접힌 둘째 줄이 • 밑에 붙는다 — text-indent는 블록 첫 줄에만 걸려서).
   - **`?first=1`**(consumeFirstVisitParam)로 온보딩을 첫 방문처럼 다시 볼 수 있다. 강력
     새로고침(Cmd+Shift+R)은 HTTP 캐시만 비우고 localStorage는 그대로라 아무리 눌러도 첫 방문이
     안 되고, 브라우저가 '강력 새로고침인지'를 JS에 알려주지 않아 그 동작을 훅으로 잡을 수도 없어서 둔 것.
