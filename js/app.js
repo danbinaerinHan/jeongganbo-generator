@@ -1629,6 +1629,8 @@
         ornAddMaps[ornInstrument] = ornAddMap.slice();   // 수동 수정은 지금 악기 번들에 저장
         rebuildOrnAddKeyMap();
         buildOrnAddMapBar();   // 중복 정리로 다른 슬롯이 비워졌을 수 있어 전체 다시 그림
+        buildOrnPalette($("directOrnPalette"));   // 새로 배정된 시김새가 팔레트 위쪽으로 올라오게
+        if (palView === "orn") buildPalette();
         refreshOrnAddBadges();
         saveState();
       });
@@ -1931,6 +1933,21 @@
       .sort(function (a, b) { return (a.r - b.r) || (a.i - b.i); })
       .map(function (x) { return x.it; });
   }
+  // 시김새 팔레트 전용 정렬 — 숫자 단축키(1~0)에 배정된 시김새가 번호 순으로 그룹 맨
+  // 앞에 오고, 나머지는 악기 우선순위 → 원래 순서. 배정 줄에서 단축키를 바꾸면 그
+  // 시김새가 곧바로 위쪽으로 올라온다. 악기 기본 배정과도 자연히 맞는다 — 기본 배정
+  // 자체가 우선순위 앞 10개라 그 악기에선 두 기준이 같은 순서를 내서.
+  function sortOrnChips(items) {
+    const rank = ornInstrumentRank();
+    return items
+      .map(function (o, i) {
+        const ki = ornAddMap.indexOf(o.s);
+        return { o: o, i: i, k: ki === -1 ? Infinity : ki,
+                 r: rank.has(o.k) ? rank.get(o.k) : Infinity };
+      })
+      .sort(function (a, b) { return (a.k - b.k) || (a.r - b.r) || (a.i - b.i); })
+      .map(function (x) { return x.o; });
+  }
   function setOrnInstrument(v, opts) {
     const next = INSTRUMENT_PRIORITY[v] ? v : "all";
     if (next !== ornInstrument) {
@@ -2144,7 +2161,7 @@
       wrap.appendChild(head);
       const g = document.createElement("div");
       g.className = "ornrow";
-      sortByInstrument(ORN_LIST.filter(grp.match), function (o) { return o.k; }).forEach(function (o) {
+      sortOrnChips(ORN_LIST.filter(grp.match)).forEach(function (o) {
         const item = document.createElement("div");
         item.className = "pi ornchip"; item.title = o.k + " (" + o.s + ")";
         item.dataset.stem = o.s;
