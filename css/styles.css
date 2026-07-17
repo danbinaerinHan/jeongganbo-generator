@@ -1315,6 +1315,15 @@
   /* 소제목(줄 앞 "## ") — 한 단계 안 글머리표 묶음이 둘일 때의 나눔 머리. 내어쓰기 해제. */
   #tourBody div.tour-sub { padding-left: 0; text-indent: 0; font-weight: 700; color: var(--accent); }
   #tourBody div + div.tour-sub { margin-top: 11px; }
+  /* 팁(줄 앞 "!! ") — 기능 안내가 아니라 권장 사용법. 연한 강조 배경 상자로 본문과 구분. */
+  #tourBody div.tour-tip { padding: 7px 9px; text-indent: 0; background: var(--accent-tint);
+                           border-radius: 7px; }
+  #tourBody div.tour-tip b:first-child { color: var(--accent); }
+  #tourBody div + div.tour-tip { margin-top: 10px; }
+  /* 보조 하이라이트 링(step.also) — 컷아웃 구멍은 하나뿐이라, 본문이 가리키는 나머지
+     '실제 누를 버튼'에 살짝 두르는 테두리. positionTour가 만들고 자리도 잡는다. */
+  .tour-ring { position: absolute; border: 2px solid var(--accent); border-radius: 8px;
+               pointer-events: none; opacity: .75; }
   /* 예시 그림(fig 있는 단계만) — '입력 칩 ↓ 캡처 이미지 / 설명' 세로 묶음 4개의 가로
      그리드. 이미지는 앱이 실제 그린 악보의 캡처(흰 종이)라 다크에서도 흰 배경 그대로 —
      악보가 다크에서도 흰 종이인 것과 같은 원칙이니 반전하지 말 것. */

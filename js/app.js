@@ -5380,6 +5380,20 @@
         { t: "황{미는표}", cap: "시김새", img: TOUR_CELL_IMGS.orn },
         { t: "황태 -황", cap: "이음(-)", img: TOUR_CELL_IMGS.tie }
       ] },
+    // 시김새 3단계 — 팔레트(악기 선택)·숫자 단축키·미세 조정. 정간 입력 바로 다음인 건
+    // 시김새가 선율에 붙는 것이라 '음을 넣었으면 꾸민다'는 차례라서. 캡처 없이 글로만 —
+    // 셋 다 악보 그림이 아니라 조작(어디를 눌러 어떻게 쓰나)에 대한 안내라서.
+    // prep(tourEnsureOrnWin)이 시김새 창을 열어 두므로 also의 버튼들이 실제로 보인다.
+    // 대상은 팔레트 머리줄(.pal-top) — 악기·크기 컨트롤이 다 이 줄에 있어 구멍 하나로 다
+    // 밝아진다. 기능바의 여는 버튼은 also 링으로.
+    { sel: "#ornWinWrap .pal-top", title: "시김새 팔레트", prep: tourEnsureOrnWin,
+      also: ["#winToggleOrn", "#ornWinWrap .orn-instrument", "#ornWinWrap .size-ctl"],
+      body: "• 기능바 **입력** 그룹의 **시김새**에서 팔레트를 열 수 있습니다\n• 칩을 클릭하면 지금 열린 정간에 바로 들어갑니다\n• **악기**(가야금·거문고·대금·피리·해금·아쟁)를 고르면 그 악기에서 자주 쓰는 시김새가 맨 앞으로 올라옵니다\n• **크기 ±**로 팔레트 기호를 키워 볼 수 있습니다" },
+    { sel: "#ornWinWrap", title: "시김새 숫자 단축키", prep: tourEnsureOrnWin,
+      also: ["#ornMapToggle"],
+      body: "• 붙임표 시김새 칩에는 숫자 **1~0** 배지가 항상 붙어 있습니다\n• **숫자키**를 누르면 그 시김새가 골라집니다\n• 이어서 악보에서 **붙일 음을 클릭**하면 그 옆에 바로 붙습니다\n• 번호 배정은 팔레트의 **단축키 변환 ①**에서 바꿀 수 있습니다\n!! **Tip!** 꾸밈음 시김새는 율명을 먼저 다 적어 두고, 나중에 단축키로 한 번에 붙이는 게 편합니다" },
+    { sel: "#ornEditToggle", title: "시김새 미세 조정", prep: tourEnsureOrnWin,
+      body: "• 팔레트의 **크기/위치 미세조정 ⌖**을 켭니다\n• 악보에서 **시김새를 클릭**해 고르면(옅은 네모 표시) 크기와 위치를 조절할 수 있습니다\n• **Backspace/Delete**로 고른 시김새를 지울 수 있습니다\n• 글자로도 됩니다 — 괄호 안에 **@크기,좌우,상하**를 덧붙입니다\n• 예: **황{미는표@120,5,-5}** = 120% 크기, 오른쪽 5·위 5" },
     // 장단·가사 — '켜면 이렇게 되고 이렇게 쓴다'를 실제 렌더 캡처와 함께.
     // 정간 입력 다음 순서인 건 실제 작성 차례(선율 → 장단·가사)를 따라가는 것.
     { sel: "#sheetArea", title: "장단 쓰기",
@@ -5414,26 +5428,72 @@
     const r = el.getBoundingClientRect();
     return (r.width || r.height) ? r : null;   // rect 0 = 화면에 없음 → 그 단계는 건너뜀
   }
+  // 단계 준비(prep) — 시김새 3단계처럼 '눌러야 하는 버튼'이 접힌 도구창 안에 있으면
+  // 창을 먼저 열어 보여준다. 뭘 열었는지 기억해 뒀다가 endTour에서 원래 창으로 복원.
+  let tourPrevWin = null, tourTouchedWin = false;
+  function tourEnsureOrnWin() {
+    const w = $("ornWinWrap");
+    if (!w || w.classList.contains("win-open")) return;
+    if (!tourTouchedWin) {
+      const open = document.querySelector(".direct-win.win-open");
+      tourPrevWin = open ? open.id : null;
+      tourTouchedWin = true;
+    }
+    $("winToggleOrn").click();
+  }
   function stepAvailable(i) {
     const s = TOUR_STEPS[i];
+    if (s.prep) { try { s.prep(); } catch (_e) {} }   // 대상 rect 재기 전에 — 닫힌 창이면 rect 0이라 건너뛰어버림
     return !(s.skipIf && s.skipIf()) && !!tourRect(s);
+  }
+  // 보조 하이라이트 링(step.also) — 컷아웃 구멍은 하나뿐이라, 본문이 가리키는 나머지
+  // '실제 누를 버튼'들엔 살짝 테두리만 두른다(pointer-events 없음, positionTour마다 재계산).
+  function positionTourRings(step) {
+    document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
+    (step.also || []).forEach(function (sel) {
+      const el = document.querySelector(sel);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width && !r.height) return;
+      const d = document.createElement("div");
+      d.className = "tour-ring";
+      d.style.left = (r.left - 4) + "px";
+      d.style.top = (r.top - 4) + "px";
+      d.style.width = (r.width + 8) + "px";
+      d.style.height = (r.height + 8) + "px";
+      // 카드보다 '앞'에 끼워야(z 순서) 링이 말풍선 위로 그려지지 않는다
+      $("tourLayer").insertBefore(d, $("tourCard"));
+    });
   }
   function positionTour() {
     if (tourIdx < 0) return;
     const r = tourRect(TOUR_STEPS[tourIdx]);
     if (!r) { endTour(); return; }
+    positionTourRings(TOUR_STEPS[tourIdx]);
     const pad = 6;
     const hole = $("tourHole");
     hole.style.left = (r.left - pad) + "px";
     hole.style.top = (r.top - pad) + "px";
     hole.style.width = (r.width + pad * 2) + "px";
     hole.style.height = (r.height + pad * 2) + "px";
-    // 말풍선은 대상 아래 우선, 공간이 없으면 위, 그래도 없으면 화면 안으로 클램핑
+    // 말풍선은 대상 아래 우선 → 위 → 옆(오른쪽 우선) → 화면 안으로 클램핑.
+    // '옆'은 대상이 화면 높이를 거의 다 쓰는 경우(시김새 팔레트 전체 등) 위아래 어디에도
+    // 안 들어가서 — 그때 대상을 덮고 앉는 것보단 옆이 낫다.
     const card = $("tourCard");
     const cw = card.offsetWidth, ch = card.offsetHeight, gap = 12;
     let top = r.bottom + pad + gap;
     if (top + ch > window.innerHeight - 8) top = r.top - pad - gap - ch;
-    if (top < 8) top = Math.max(8, Math.min(window.innerHeight - ch - 8, r.top));
+    if (top < 8) {
+      const rightX = r.right + pad + gap, leftX = r.left - pad - gap - cw;
+      const sideLeft = (rightX + cw <= window.innerWidth - 8) ? rightX : (leftX >= 8 ? leftX : null);
+      if (sideLeft !== null) {
+        card.style.left = sideLeft + "px";
+        card.style.top = Math.max(8, Math.min(window.innerHeight - ch - 8,
+          r.top + r.height / 2 - ch / 2)) + "px";
+        return;
+      }
+      top = Math.max(8, Math.min(window.innerHeight - ch - 8, r.top));
+    }
     let left = r.left + r.width / 2 - cw / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - cw - 8));
     card.style.left = left + "px";
@@ -5448,14 +5508,16 @@
     $("tourTitle").textContent = s.title;
     // 본문은 \n마다 줄(div) 하나 — 통짜 textContent + pre-line이 아니라 줄 단위 블록이라야
     // 긴 글머리표가 접힐 때 둘째 줄이 • 밑이 아니라 글자 밑에 맞는다(내어쓰기, CSS #tourBody div).
-    // 미니 문법 둘: **굵게**(짝수 번째 ** 사이만 <b>), 줄 앞 "## "은 소제목(.tour-sub —
-    // 한 단계 안에서 글머리표 묶음이 둘일 때 나눔). innerHTML 대신 노드 조립 —
+    // 미니 문법 셋: **굵게**(짝수 번째 ** 사이만 <b>), 줄 앞 "## "은 소제목(.tour-sub —
+    // 한 단계 안에서 글머리표 묶음이 둘일 때 나눔), 줄 앞 "!! "은 팁(.tour-tip — 기능 안내가
+    // 아니라 권장 사용법, 연한 강조 배경 상자). innerHTML 대신 노드 조립 —
     // 본문에 황{미는표}·< 같은 문자가 그대로 들어가 이스케이프 사고를 피하려고.
     const bodyEl = $("tourBody");
     bodyEl.textContent = "";
     s.body.split("\n").forEach(function (ln) {
       const d = document.createElement("div");
       if (ln.slice(0, 3) === "## ") { d.className = "tour-sub"; ln = ln.slice(3); }
+      else if (ln.slice(0, 3) === "!! ") { d.className = "tour-tip"; ln = ln.slice(3); }
       ln.split("**").forEach(function (seg, k) {
         if (!seg) return;
         if (k % 2) { const b = document.createElement("b"); b.textContent = seg; d.appendChild(b); }
@@ -5489,6 +5551,10 @@
     $("tourPrev").style.display = i === 0 ? "none" : "";
     $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
     positionTour();
+    // prep이 방금 도구창을 열었다면 이 시점 레이아웃이 아직 낡았을 수 있다(특히 프리뷰
+    // 환경) — 한 틱 뒤 같은 단계면 한 번 더 자리 잡기. rAF는 프리뷰에서 안 돌아 setTimeout.
+    const my = tourIdx;
+    setTimeout(function () { if (tourIdx === my) positionTour(); }, 60);
   }
   function startTour(onEnd) {
     // 겹침 방지 — 모달(z 500)들이 투어(z 800) 밑에 깔린 채 남지 않게 먼저 닫는다
@@ -5502,6 +5568,18 @@
   function endTour() {
     // 건너뛰기·Escape·완료 모두 이 경로 — onEnd(첫 방문이면 마법사)는 딱 한 번
     tourIdx = -1;
+    document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
+    // prep이 시김새 창을 열었었다면 투어 전에 열려 있던 창으로 되돌린다(작업 공간 존중)
+    if (tourTouchedWin) {
+      const w = $("ornWinWrap");
+      if (w && w.classList.contains("win-open") && tourPrevWin !== "ornWinWrap") $("winToggleOrn").click();
+      if (tourPrevWin && tourPrevWin !== "ornWinWrap") {
+        const btn = document.querySelector('.win-toggle[data-target="' + tourPrevWin + '"]');
+        const pw = $(tourPrevWin);
+        if (btn && pw && !pw.classList.contains("win-open")) btn.click();
+      }
+      tourTouchedWin = false; tourPrevWin = null;
+    }
     $("tourLayer").style.display = "none";
     const cb = tourOnEnd; tourOnEnd = null;
     if (cb) cb();
