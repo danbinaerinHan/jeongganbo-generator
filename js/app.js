@@ -5373,6 +5373,11 @@
       body: "• **입력** 그룹 — **율명·시김새·장단·가사/활**·텍스트·빠르기/각/장 도구창을 열 수 있습니다\n• **각(마디) 삽입/삭제**·내용 지우기·**정간 서식**을 할 수 있습니다\n• 율명·가사 **글자 크기**를 조절할 수 있습니다" },
     { sel: "#sheetArea", title: "악보",
       body: "• 전통 정간보처럼 **오른쪽에서 왼쪽**으로 읽습니다\n• **정간(칸)을 클릭**해 그 자리에서 바로 쓸 수 있습니다\n• **⌘/Ctrl+Z**로 되돌릴 수 있습니다" },
+    // 레이아웃 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)을 어디서 바꾸는지부터
+    // 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 돌려 보여준다.
+    { sel: "#sidebar", title: "레이아웃 잡기", prep: tourEnsureLayoutTab,
+      body: "• 오른쪽 **설정 › 레이아웃** 탭에서 악보의 짜임을 정할 수 있습니다\n• **한 각의 정간 수**·**총 각 수** — 새 문서에서 정한 값을 언제든 바꿀 수 있습니다\n• **한 줄에 놓을 각 수**·**페이지 채움**으로 종이에 어떻게 얹을지 정합니다\n• 맨 위 요약에서 **각 너비·페이지 수**를 바로 확인할 수 있습니다",
+      skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
     // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
     // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. 이미지는 손그림이 아니라 **앱이 실제로
     // 그린 악보**의 캡처다: 에디터에 "황 | 황 태 | 황태 | 황{미는표} | 황태 -황"을 넣고
@@ -5420,8 +5425,9 @@
     // 악보 다음에 두는 건 '써 넣었으면 들어본다'는 차례라서(설정·인쇄보다 앞).
     { sel: "#playBar", title: "들어보기",
       body: "• **재생**을 누르면 써 넣은 선율을 소리로 들어볼 수 있습니다 (사인파 · 시김새 제외)\n• **재생 설정 ⚙**에서 기준음(황)과 빠르기를 바꿀 수 있습니다" },
+    // 레이아웃은 앞의 '레이아웃 잡기' 단계가 맡았으니 여기선 나머지 탭만
     { sel: "#sidebar", title: "설정",
-      body: "• **문서·레이아웃** 탭 — 제목, 정간 수, 종이 방향을 정할 수 있습니다\n• **보관** 탭 — 지금 상태를 이름 붙여 저장할 수 있습니다",
+      body: "• **문서** 탭 — 제목·종이 방향 등 문서의 기본을 정할 수 있습니다\n• **보관** 탭 — 지금 상태를 이름 붙여 저장할 수 있습니다",
       skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
     { sel: "#outBox", title: "인쇄 · 파일",
       body: "• **인쇄** — 완성한 악보를 종이나 **PDF**로 출력할 수 있습니다\n• **⋯ 파일** 메뉴 — 새 문서 · **PNG** 다운로드 · 파일 저장·불러오기를 할 수 있습니다" },
@@ -5447,6 +5453,19 @@
       tourTouchedWin = true;
     }
     $("winToggleOrn").click();
+  }
+  // '레이아웃 잡기' 단계용 — 사이드바를 레이아웃 탭으로 돌려 본문이 가리키는 컨트롤이
+  // 실제로 보이게 한다. 시김새 창과 같은 규칙으로 endTour에서 원래 탭 복원.
+  let tourPrevTab = null, tourTouchedTab = false;
+  function tourEnsureLayoutTab() {
+    const btn = document.querySelector('.tab[data-tab="layout"]');
+    if (!btn || btn.classList.contains("active")) return;
+    if (!tourTouchedTab) {
+      const cur = document.querySelector(".tab.active");
+      tourPrevTab = cur ? cur.dataset.tab : null;
+      tourTouchedTab = true;
+    }
+    btn.click();
   }
   function stepAvailable(i) {
     const s = TOUR_STEPS[i];
@@ -5586,6 +5605,14 @@
         if (btn && pw && !pw.classList.contains("win-open")) btn.click();
       }
       tourTouchedWin = false; tourPrevWin = null;
+    }
+    // prep이 사이드바 탭을 돌렸었다면 원래 탭으로
+    if (tourTouchedTab) {
+      if (tourPrevTab) {
+        const b = document.querySelector('.tab[data-tab="' + tourPrevTab + '"]');
+        if (b && !b.classList.contains("active")) b.click();
+      }
+      tourTouchedTab = false; tourPrevTab = null;
     }
     $("tourLayer").style.display = "none";
     const cb = tourOnEnd; tourOnEnd = null;
