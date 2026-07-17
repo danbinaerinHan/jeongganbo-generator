@@ -1867,7 +1867,12 @@
     const wrap = $("lyricsSymRow");
     if (!wrap) return;
     wrap.innerHTML = "";
-    sortByInstrument(LYRIC_SYMS.slice(), function (n) { return n; }).forEach(function (stem) {
+    // 가로표·세로표는 늘 맨 앞 — 악기 우선순위(해금 목록이 "늘임표, 가로표, 세로표" 순인 등)가
+    // 늘임표를 앞세워도, 막대 둘은 가장 기본 기호라 순서 고정(늘임표보다 항상 앞).
+    const pinned = ["가로표", "세로표"];
+    const sorted = sortByInstrument(LYRIC_SYMS.slice(), function (n) { return n; })
+      .filter(function (n) { return pinned.indexOf(n) === -1; });
+    pinned.concat(sorted).forEach(function (stem) {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "lsp-btn";
