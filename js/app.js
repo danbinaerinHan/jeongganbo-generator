@@ -3849,10 +3849,11 @@
     // 요약은 '설정의 결과'만 — 가로 각·줄 수처럼 바로 아래 입력값을 되풀이하던 줄은 뺐다
     // (전문용어 나열이라 읽히지도 않았고, 진짜 파생값은 페이지 수·실제 칸 크기·A4 축소율뿐).
     // 경고(대강 합·가사/장단 각 수 불일치)는 이 상자가 사는 이유이니 그대로 둔다.
+    // 문구는 건조하게 — '이 설정이면 ~ 그립니다' 같은 말 붙임 없이 값만.
     $("readout").innerHTML =
-      `이 설정이면 <b>페이지 ${pages.length}장</b> · 정간 한 칸 <b>${cell.toFixed(1)}mm</b>` +
-      (scale < 0.999 ? ` · <span style="color:#8a6d3b">A4에 맞춰 <b>${Math.round(scale * 100)}%</b>로 줄여 그립니다</span>` : "") +
-      (dg.ok ? "" : `<div class="warn">⚠ 대강 값의 합이 정간 수(${beats})와 달라 무시했습니다.</div>`) +
+      `페이지 <b>${pages.length}장</b> · 정간 한 칸 <b>${cell.toFixed(1)}mm</b>` +
+      (scale < 0.999 ? ` · <span style="color:#8a6d3b">A4에 맞춰 <b>${Math.round(scale * 100)}%</b> 축소</span>` : "") +
+      (dg.ok ? "" : `<div class="warn">⚠ 대강 분절의 합이 한 각의 정간 수(${beats})와 달라 적용하지 않았습니다.</div>`) +
       (lyGakMismatch ? `<div class="warn">⚠ 선율(${parsed.length}각)과 가사(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.</div>` : "") +
       (jdBeatMismatch ? `<div class="warn">⚠ 장단의 정간 수(${jdParsed[0].length})가 선율(${beats})과 달라요 — 구조를 바꾸면 넘치는 내용이 잘릴 수 있습니다.</div>` : "");
   }

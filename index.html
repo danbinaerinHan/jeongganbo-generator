@@ -320,19 +320,19 @@
       <div class="field">
         <label for="beats">한 각의 정간 수</label>
         <input type="number" id="beats" min="1" max="64" value="12">
-        <div class="hint">• 각(세로 한 줄, 마디) 하나에 들어가는 정간(칸)의 수 — 곧 <b>한 각이 몇 박인지</b>입니다.</div>
+        <div class="hint">• 각(세로 한 줄) 하나에 들어가는 정간의 수, 곧 <b>한 각의 박 수</b>입니다. 보통 한 각에 한 장단이 들어가므로 장단의 박 수를 따릅니다.</div>
       </div>
 
       <div class="field">
         <label for="daegang">대강 분절 (선택)</label>
         <input type="text" id="daegang" placeholder="예: 3 3 3 3">
-        <div class="hint">• 각 안을 <b>굵은 가로선으로 나누는 묶음</b>입니다 — '3 3 3 3'이면 12박이 3박씩 넷으로 나뉩니다.<br>• 합이 정간 수와 같아야 하고, 비우면 박 수에 맞는 대표 패턴이 자동으로 들어갑니다.</div>
+        <div class="hint">• 각을 굵은 가로선(마디금)으로 나눈 단위를 <b>대강(大綱)</b>이라 합니다. '3 3 3 3'이라 적으면 12박이 3박씩 네 대강으로 나뉩니다.<br>• 숫자의 합이 한 각의 정간 수와 같아야 하며, 비워 두면 박 수에 맞는 대표 패턴이 들어갑니다.</div>
       </div>
 
       <div class="field">
         <label for="gakCount">총 각 수</label>
         <input type="number" id="gakCount" min="1" max="480" value="18">
-        <div class="hint">• 곡 전체의 각(마디) 수입니다 — 장단 줄은 여기 세지 않습니다(따로 한 각 자리를 차지).</div>
+        <div class="hint">• 곡 전체의 각 수입니다. 장단 줄은 여기 세지 않습니다(따로 한 각 자리를 차지합니다).</div>
       </div>
 
       <!-- 정간·각(내용의 짜임) 위 세 항목과, 그걸 페이지에 어떻게 얹을지(배치) 아래 두
@@ -345,10 +345,10 @@
              선율이 몇 각 들어가는지 계산할 수 있게 자리 먹는 항목을 모두 나열한다.
              가사는 폭을 안 먹는다(간격 안에 들어감, 기능-정리.md '가사' 절) — 널리 알려진
              관행과 달라 오해가 잦아서 '안 먹는다'는 쪽을 명시. -->
-        <div class="hint">• 한 줄(단)에 각을 <b>몇 개 나란히 놓을지</b>입니다 — 넘치는 각은 다음 줄·다음 페이지로 이어집니다.<br>
-          • <b>세로 칸 제목</b>은 첫 페이지에서 <b>각 2개 자리</b>(자동, 각 수가 적으면 1개)를 차지합니다 — '칸 폭: 좁게'면 1각.<br>
+        <div class="hint">• 한 줄(단)에 각을 <b>몇 개 나란히 놓을지</b>입니다. 넘치는 각은 다음 줄과 다음 페이지로 이어집니다.<br>
+          • <b>세로 칸 제목</b>은 첫 페이지에서 <b>각 2개 자리</b>(자동, 각 수가 적으면 1개)를 차지합니다. '칸 폭: 좁게'를 고르면 1각만 씁니다.<br>
           • <b>장단</b>을 켜면 첫 줄 맨 앞에 장단 줄이 <b>한 각 자리</b>를 차지합니다.<br>
-          • 가사는 각 사이 간격 안에 들어가 한 줄 폭·각 수에 영향이 없습니다.</div>
+          • 가사는 각 사이 간격 안에 들어가 한 줄 폭과 각 수에 영향이 없습니다.</div>
       </div>
 
       <div class="field">
@@ -357,7 +357,7 @@
           <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
           <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
         </div>
-        <div class="hint">• 위에서 만든 줄(단)을 한 페이지에 <b>세로로 최대 몇 개 쌓을지</b>입니다.<br>• <b>자동</b>을 켜면 종이에 들어가는 만큼 알아서 쌓습니다 — 보통은 켜 두면 됩니다.</div>
+        <div class="hint">• 위에서 만든 줄(단)을 한 페이지에 <b>세로로 최대 몇 개 쌓을지</b>입니다.<br>• <b>자동</b>을 켜면 종이에 들어가는 만큼 알아서 쌓습니다. 보통은 켜 둡니다.</div>
       </div>
 
       <div class="field">
@@ -372,7 +372,7 @@
         <div class="field slider-field">
           <label for="sizeScale">전체 배율 <small>정간·간격 한번에</small> — <span id="sizeScaleVal">1.0×</span></label>
           <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
-          <div class="hint">• 정간 칸·간격·글자를 <b>같은 비율로 한번에</b> 키우거나 줄입니다 — 악보가 작다 싶으면 먼저 이걸 올려 보세요.</div>
+          <div class="hint">• 정간 칸·간격·글자를 <b>같은 비율로 한번에</b> 키우거나 줄입니다. 악보가 작다 싶으면 먼저 이 값을 올립니다.</div>
         </div>
 
         <div class="field slider-field">
@@ -1211,7 +1211,7 @@
         <input type="number" id="ndGakCount" min="1" max="480" placeholder="기본: 20">
         <!-- 장단이 한 각 자리를 '따로' 차지한다는 걸 여기서 미리 말해줘야 한다 — 총 각 수에
              장단 줄까지 세어 넣고 "한 각이 모자라다/남는다"고 헷갈리는 경우가 잦아서 -->
-        <div class="hint">• <b>선율이 들어갈 각만</b> 세어 주세요 — 장단을 켜면 장단 줄이 맨 앞에 <b>한 각 자리를 따로</b> 차지합니다(총 각 수에 포함하지 않음).</div>
+        <div class="hint">• <b>선율이 들어갈 각만</b> 세어 주세요. 장단을 켜면 장단 줄이 맨 앞에 <b>한 각 자리를 따로</b> 차지합니다(총 각 수에 포함하지 않음).</div>
       </div>
       <div class="field">
         <label for="ndTitle">곡 제목 (선택)</label>
@@ -1231,7 +1231,7 @@
       </div>
       <div class="field">
         <label class="chk"><input type="checkbox" id="ndWantJangdan"> 장단 입력 사용</label>
-        <div class="hint">• 장단 줄은 맨 처음 각 옆에 <b>한 각 자리</b>로 들어갑니다 — 위 '총 각 수'는 선율 각만 세면 됩니다.</div>
+        <div class="hint">• 장단 줄은 맨 처음 각 옆에 <b>한 각 자리</b>로 들어갑니다. 위 '총 각 수'는 선율 각만 세면 됩니다.</div>
       </div>
       <div class="btns">
         <button type="button" id="ndCancel" class="secondary">취소</button>
