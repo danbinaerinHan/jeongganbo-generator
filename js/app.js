@@ -4903,7 +4903,9 @@
   });
 
   // 크기·간격을 처음 값으로 초기화 (제목·선율 등 내용과 문서 구조는 그대로)
-  const LAYOUT_DEFAULTS = { sizeScale: 1, pageFill: 0, noteScale: 1, lyricsScale: 1, cellSize: 11, gakGap: 7, bandGap: 10 };
+  // pageFill 50 = index.html 슬라이더 초깃값과 한 쌍 — 새 문서가 페이지를 어느 정도 채운
+  // 상태로 시작하게 한 값이라 초기화도 같은 곳으로 돌아와야 한다.
+  const LAYOUT_DEFAULTS = { sizeScale: 1, pageFill: 50, noteScale: 1, lyricsScale: 1, cellSize: 11, gakGap: 7, bandGap: 10 };
   $("layoutReset").addEventListener("click", function () {
     Object.keys(LAYOUT_DEFAULTS).forEach(function (id) { $(id).value = LAYOUT_DEFAULTS[id]; });
     render();
@@ -5363,7 +5365,7 @@
     // { sel: "#modeBox", title: "입력 방식",
     //   body: "• 직접 입력 — 악보의 정간을 클릭해 그 자리에서 씁니다 (기본)\n• 에디터 — 곡 전체를 텍스트로 한 번에 고칩니다\n• 언제든 서로 바꿀 수 있습니다" },
     { sel: "#melodyRibbon", title: "기능바",
-      body: "• **입력** 그룹 — **율명·시김새·장단·가사**·텍스트·각/장 도구창을 열 수 있습니다\n• **각(마디) 삽입/삭제**·내용 지우기·**정간 서식**을 할 수 있습니다\n• 율명·가사 **글자 크기**를 조절할 수 있습니다" },
+      body: "• **입력** 그룹 — **율명·시김새·장단·가사/활**·텍스트·빠르기/각/장 도구창을 열 수 있습니다\n• **각(마디) 삽입/삭제**·내용 지우기·**정간 서식**을 할 수 있습니다\n• 율명·가사 **글자 크기**를 조절할 수 있습니다" },
     { sel: "#sheetArea", title: "악보",
       body: "• 전통 정간보처럼 **오른쪽에서 왼쪽**으로 읽습니다\n• **정간(칸)을 클릭**해 그 자리에서 바로 쓸 수 있습니다\n• **⌘/Ctrl+Z**로 되돌릴 수 있습니다" },
     // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
@@ -5404,7 +5406,7 @@
         { t: "더러러러", img: TOUR_JD_IMGS.deureo }
       ] },
     { sel: "#sheetArea", title: "가사 쓰기",
-      body: "• 기능바 **입력** 그룹의 **가사**에서 켤 수 있습니다 — 각(세로줄)마다 오른쪽에 가사 줄이 생깁니다\n• 정간마다 노랫말을 **한 글자씩** 적을 수 있습니다 — 그 정간 오른쪽에 표시됩니다",
+      body: "• 기능바 **입력** 그룹의 **가사/활**에서 켤 수 있습니다 — 각(세로줄)마다 오른쪽에 가사 줄이 생깁니다\n• 정간마다 노랫말을 **한 글자씩** 적을 수 있습니다 — 그 정간 오른쪽에 표시됩니다\n• **활 기호**(뜰·튕김 등)도 기호 팔레트에서 같은 줄에 넣을 수 있습니다",
       fig: [
         { t: "달", cap: "황 옆에 '달'", img: TOUR_LY_IMGS.dal },
         { t: "아", cap: "태 옆에 '아'", img: TOUR_LY_IMGS.a }

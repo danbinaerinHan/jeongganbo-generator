@@ -108,7 +108,7 @@
         <div class="pp-row"><span>템포 (BPM)</span>
           <input type="number" id="tempoBpm" min="20" max="240" value="60">
         </div>
-        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 악보에 템포를 표시하려면 '각/장' 창의 <b>템포</b> 체크를 켜세요(숫자는 여기 BPM을 따름).</div>
+        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 악보에 빠르기를 표시하려면 '빠르기/각/장' 창의 <b>빠르기</b> 체크를 켜세요(숫자는 여기 BPM을 따름).</div>
       </div>
     </div>
     <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
@@ -339,7 +339,13 @@
       <div class="field">
         <label for="gakPerRow">한 줄에 놓을 각 수</label>
         <input type="number" id="gakPerRow" min="1" max="40" value="10">
-        <div class="hint">• 제목을 '세로 칸'일 경우 첫 페이지에서 제목이 각 2개 자리(자동, 각 수가 적으면 1개)를 차지합니다. '칸 폭: 좁게'를 고르면 1각만 씁니다.</div>
+        <!-- 여기서 정한 수에서 '자리를 따로 차지하는 것들'이 빠진다는 게 흔한 헷갈림 —
+             선율이 몇 각 들어가는지 계산할 수 있게 자리 먹는 항목을 모두 나열한다.
+             가사는 폭을 안 먹는다(간격 안에 들어감, 기능-정리.md '가사' 절) — 널리 알려진
+             관행과 달라 오해가 잦아서 '안 먹는다'는 쪽을 명시. -->
+        <div class="hint">• <b>세로 칸 제목</b>은 첫 페이지에서 <b>각 2개 자리</b>(자동, 각 수가 적으면 1개)를 차지합니다 — '칸 폭: 좁게'면 1각.<br>
+          • <b>장단</b>을 켜면 첫 줄 맨 앞에 장단 줄이 <b>한 각 자리</b>를 차지합니다.<br>
+          • 가사는 각 사이 간격 안에 들어가 한 줄 폭·각 수에 영향이 없습니다.</div>
       </div>
 
       <div class="field">
@@ -367,8 +373,11 @@
         </div>
 
         <div class="field slider-field">
-          <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">0%</span></label>
-          <input type="range" id="pageFill" min="0" max="100" step="5" value="0">
+          <!-- 기본 50%: 0%는 아래 여백이 휑해 '왜 안 채워지지'가 첫인상이었다 — 처음부터
+               페이지를 어느 정도 채운 상태로 시작하고, 원하면 내리는 쪽이 자연스럽다.
+               app.js LAYOUT_DEFAULTS.pageFill(초기화 버튼)과 같은 값이어야 한다. -->
+          <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">50%</span></label>
+          <input type="range" id="pageFill" min="0" max="100" step="5" value="50">
           <div class="hint">페이지에 맞게 한번에 키우거나 줄입니다.</div>
         </div>
 
@@ -484,11 +493,12 @@
           <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
             data-tip="장단 도구창을 열고 닫습니다">長<span>장단</span></button>
           <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
-            data-tip="가사 도구창을 열고 닫습니다">詞<span>가사</span></button>
+            data-tip="가사·활 기호 도구창을 열고 닫습니다
+· 노랫말과 활 기호(뜰·튕김 등)를 정간 옆 가사 줄에 적습니다">詞<span>가사/활</span></button>
           <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
             data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
           <button type="button" id="winToggleGakName" class="ribbon-btn win-toggle tip" data-target="gakNameArea"
-            data-tip="각 위에 각/장 이름(대여음·1장 등)을 붙입니다">章<span>각/장</span></button>
+            data-tip="각 위에 빠르기(一分・N井)와 각/장 이름(대여음·1장 등)을 붙입니다">章<span>빠르기/각/장</span></button>
         </div>
       </div>
       <div class="ribbon-sep win-toggle-sep"></div>
@@ -585,9 +595,9 @@
                여러 도구창을 동시에 띄울 수 있어야 해서 '탭(하나만 활성)' 방식이 안 맞는다. -->
           <button type="button" class="rail-btn domain-tab active" data-panel="melodyArea">선율</button>
           <button type="button" class="rail-btn domain-tab" data-panel="jangdanArea">장단</button>
-          <button type="button" class="rail-btn domain-tab" data-panel="lyricsArea">가사</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="lyricsArea">가사/활</button>
           <button type="button" class="rail-btn domain-tab" data-panel="textArea">텍스트</button>
-          <button type="button" class="rail-btn domain-tab" data-panel="gakNameArea">각/장</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="gakNameArea">빠르기/각/장</button>
           <button type="button" class="rail-btn domain-tab" data-panel="cellStyleWin">정간 서식</button>
           <div class="rail-sep"></div>
           <!-- 전역 단축키 안내 — 어느 탭에서든 늘 보이는 자리라 여기 둔다 -->
@@ -1021,7 +1031,7 @@
         </button>
         <label class="chk" title="켜면 각(세로줄)마다 오른쪽에 가사 줄이 추가됩니다">
           <input type="checkbox" id="wantLyrics"></label>
-        가사 입력
+        가사/활 입력
         <span class="guide-wrap">
           <button type="button" id="lyricsGuideToggle" class="icon-btn" title="입력 방법 안내">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -1106,7 +1116,7 @@
         <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
       </div>
       <div class="melody-head">
-        각/장
+        빠르기/각/장
         <span class="guide-wrap">
           <button type="button" id="gakNameGuideToggle" class="icon-btn" title="입력 방법 안내">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -1119,15 +1129,15 @@
               • 대여음·중여음·여음·환입·초장·종장도 한자로 표시됩니다.<br>
               • 오른쪽 크기·간격으로 모든 이름을 한꺼번에 조절합니다 — 간격은
                 각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.<br>
-              • <b>템포</b>를 켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井
-                식으로 표시되고, 아래 목록에 <b>템포 항목</b>이 하나 생깁니다 — 숫자는 재생 설정(⚙)의
+              • <b>빠르기</b>를 켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井
+                식으로 표시되고, 아래 목록에 <b>빠르기 항목</b>이 하나 생깁니다 — 숫자는 재생 설정(⚙)의
                 BPM을 따르고, <b>크기·간격 모두 그 항목에서 각/장 이름과 따로</b> 조절합니다.
             </div>
           </div>
         </span>
         <span class="mh-right">
-          <label class="chk" title="켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井 식으로 표시합니다 — 숫자는 재생 설정(⚙)의 BPM을 따르고, 크기는 아래 '템포' 항목에서 조절합니다">
-            <input type="checkbox" id="wantTempo"> 템포
+          <label class="chk" title="켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井 식으로 표시합니다 — 숫자는 재생 설정(⚙)의 BPM을 따르고, 크기는 아래 '빠르기' 항목에서 조절합니다">
+            <input type="checkbox" id="wantTempo"> 빠르기
           </label>
           <label class="chk" title="켜면 '1장'→一章, 대여음→大餘音처럼 한자로 표시합니다. 끄면 쓴 그대로">
             <input type="checkbox" id="gakNameHanja" checked> 한자
@@ -1154,12 +1164,12 @@
              CTRL_IDS를 돌며 $(id).value를 널 검사 없이 읽어서, 없으면 저장이 통째로 터진다.
              간격(#tempoGap)도 마찬가지로 따로 — 높이 예약과 그리기가 이 한 값을 같이 쓴다. -->
         <div id="tempoItem" class="tx-item">
-          <span class="gn-gak">템포</span>
+          <span class="gn-gak">빠르기</span>
           <span id="tempoPreview" class="gn-preview" title="재생 설정(⚙)의 BPM으로 만들어집니다">一分・六十井</span>
-          <span class="tool-inline" title="템포 표기의 글자 크기 배율 (각/장 이름과 따로)">크기
+          <span class="tool-inline" title="빠르기 표기의 글자 크기 배율 (각/장 이름과 따로)">크기
             <span class="num-unit"><input type="number" id="tempoSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
           </span>
-          <span class="tool-inline" title="각(장단 칸) 위쪽 선과 템포 표기 맨 아래 글자 사이 간격 (각/장 이름과 따로)">간격
+          <span class="tool-inline" title="각(장단 칸) 위쪽 선과 빠르기 표기 맨 아래 글자 사이 간격 (각/장 이름과 따로)">간격
             <span class="num-unit"><input type="number" id="tempoGap" min="0" max="20" step="0.5" value="4"><span class="unit">mm</span></span>
           </span>
         </div>
@@ -1195,6 +1205,9 @@
       <div class="field">
         <label for="ndGakCount">총 각 수</label>
         <input type="number" id="ndGakCount" min="1" max="480" placeholder="기본: 20">
+        <!-- 장단이 한 각 자리를 '따로' 차지한다는 걸 여기서 미리 말해줘야 한다 — 총 각 수에
+             장단 줄까지 세어 넣고 "한 각이 모자라다/남는다"고 헷갈리는 경우가 잦아서 -->
+        <div class="hint">• <b>선율이 들어갈 각만</b> 세어 주세요 — 장단을 켜면 장단 줄이 맨 앞에 <b>한 각 자리를 따로</b> 차지합니다(총 각 수에 포함하지 않음).</div>
       </div>
       <div class="field">
         <label for="ndTitle">곡 제목 (선택)</label>
@@ -1214,6 +1227,7 @@
       </div>
       <div class="field">
         <label class="chk"><input type="checkbox" id="ndWantJangdan"> 장단 입력 사용</label>
+        <div class="hint">• 장단 줄은 맨 처음 각 옆에 <b>한 각 자리</b>로 들어갑니다 — 위 '총 각 수'는 선율 각만 세면 됩니다.</div>
       </div>
       <div class="btns">
         <button type="button" id="ndCancel" class="secondary">취소</button>
@@ -1334,7 +1348,7 @@
             <h4>직접 입력 — 문법을 몰라도 됩니다</h4>
             <ul>
               <li>악보의 정간을 클릭하면 <b>입력 카드</b>가 열립니다. <span class="key">Enter</span>/<span class="key">Tab</span>으로 다음 정간, 방향키로 옆 정간 이동.</li>
-              <li>기능바의 입력 그룹(율명·시김새·장단·가사·텍스트·각/장)으로 뜬 도구창을 열고, 팔레트를 클릭하면 지금 열린 칸에 바로 들어갑니다.</li>
+              <li>기능바의 입력 그룹(율명·시김새·장단·가사/활·텍스트·빠르기/각/장)으로 뜬 도구창을 열고, 팔레트를 클릭하면 지금 열린 칸에 바로 들어갑니다.</li>
             </ul>
 
             <h4>정간 안에 어떻게 들어가나 — 붙임과 분박</h4>
