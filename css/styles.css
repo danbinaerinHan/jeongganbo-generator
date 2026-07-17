@@ -102,7 +102,10 @@
   /* 브랜드(로고+이름) — 상단바 맨 왼쪽. 로고 옆에 두 줄 문패: 위=이름, 아래=작은 설명
      ("정간보 편집기"). 위/아래라는 자리 자체가 위계를 말해줘야 부제가 부제로 읽힌다 —
      한 줄로 이름 옆에 같은 밑선으로 붙였더니 이름의 꼬리처럼 보였다.
-     두 줄이어도 상단바는 안 커진다: 텍스트 열이 32px로 로고와 같은 높이라서.
+     두 줄이어도 상단바는 안 커진다: 로고 36px = 상단바 버튼(.topbar-cmd 36px)과 같은
+     높이고 텍스트 열(18+3+11=32px)은 그 안에 들어가서. (입력 방식 버튼이 상단바에서
+     빠지면서 문패 왼쪽이 허전해져 로고 32→36, 워드마크 16→18, 부제 10→11px로 한 단계
+     키운 것 — 바 높이 49px는 그대로다.)
      (궁서 20px 워드마크 시절엔 두 줄이 버튼 무리를 밀어내 답답했는데, 워드마크가 16px
      SVG가 되면서 그 제약이 사라졌다 — '두 줄은 답답하다'는 옛 판단을 되살리지 말 것.)
      클릭 대상이 아니라 호버 없음. */
@@ -111,7 +114,7 @@
   #brandBox { display: flex; align-items: center; gap: 9px; padding: 0 2px; margin-right: 28px;
               flex: 0 0 auto; }
   /* 로고는 위쪽 크롭본(까치+맨 윗 가로획, 가로로 긴 비율) — 높이만 정하고 폭은 비율대로 */
-  #brandBox img { height: 32px; width: auto; display: block; }
+  #brandBox img { height: 36px; width: auto; display: block; }
   .brand-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
   /* 이름은 EBS훈민정음 SB를 아웃라인 패스로 뜬 SVG(index.html에 인라인) — 해례본 판본체라
      로고의 井 격자와 한 결이고, 폰트 설치 여부와 무관하게 모든 OS에서 똑같이 나온다.
@@ -119,18 +122,19 @@
      높이만 정하고 폭은 viewBox 비율(5.169:1)대로. 패스를 잉크 경계로 크롭해둔 덕에
      SVG 아래끝 = 글자 잉크의 아래끝이라, 위 gap(3px)이 곧 눈에 보이는 간격이 된다. */
   .brand-txt h1 { margin: 0; line-height: 0; font-size: 0; }
-  .brand-txt h1 svg { height: 16px; width: auto; display: block; }
+  .brand-txt h1 svg { height: 18px; width: auto; display: block; }
   /* 부제 — 두 줄이 왼쪽뿐 아니라 '오른쪽 끝'도 맞아야 문패가 한 덩어리로 묶인다(자간 없이
      두면 20px 짧게 끝나 밑에 딸린 부스러기처럼 떴다). 넓은 자간 자체도 '이건 부제다'라는
      흔한 신호라 일석이조.
      두 값은 눈대중이 아니라 풀어서 맞춘 값이다. letter-spacing은 마지막 글자 '뒤에도'
      붙으므로 눈에 보이는 잉크 폭 = 박스 폭 − 자간 1개. 글자 7개("정간보 편집기", 공백 포함)의
-     자간 없는 폭이 54.5px이니 잉크 폭 = 54.5 + 6×자간 = 82.7(워드마크 폭) → 자간 4.7px = .47em.
-     그러면 박스만 꼬리 여백 4.7px를 물고 87.4px가 되어 문패 폭을 부풀리므로, 같은 크기의
-     음수 margin-right로 그 꼬리를 레이아웃에서 걷어낸다(박스도 82.7px로 복귀).
-     주의: 위 svg height(16px)나 부제 문구를 바꾸면 82.7·54.5가 달라져 다시 풀어야 한다. */
-  .brand-txt span { font-size: 10px; font-weight: 600; color: var(--muted); line-height: 1;
-                    white-space: nowrap; letter-spacing: .47em; margin-right: -.47em; }
+     자간 없는 폭이 11px에서 59.9px이니 잉크 폭 = 59.9 + 6×자간 = 93.0(워드마크 18px 폭,
+     viewBox 비율 5.169) → 자간 5.5px = .5em.
+     그러면 박스만 꼬리 여백 5.5px를 물고 98.5px가 되어 문패 폭을 부풀리므로, 같은 크기의
+     음수 margin-right로 그 꼬리를 레이아웃에서 걷어낸다(박스도 93.0px로 복귀).
+     주의: 위 svg height(18px)나 부제 문구·크기를 바꾸면 93.0·59.9가 달라져 다시 풀어야 한다. */
+  .brand-txt span { font-size: 11px; font-weight: 600; color: var(--muted); line-height: 1;
+                    white-space: nowrap; letter-spacing: .5em; margin-right: -.5em; }
   /* 로고 잉크는 순검정(흰 배경 투명) — 다크모드에선 invert로 순백이 된다 */
   body.dark #brandBox img { filter: invert(1); }
   /* 입력 방식 — 예전엔 '이름표 + <select>'라 상단바에서 혼자 딴 물건이었다. 지금은 다른
@@ -1292,20 +1296,25 @@
               box-shadow: 0 0 0 9999px rgba(20,18,14,.55);
               outline: 2px solid var(--accent);
               transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
-  #tourCard { position: absolute; width: 300px; max-width: calc(100vw - 24px);
+  /* 카드 폭·글자 크기는 한 묶음 — 본문을 13px로 키우면서 300px에서 넓혔다(줄이 자주
+     접혀 목록이 길어 보이는 걸 막는 용). 크기를 더 만지면 폭도 같이 볼 것. */
+  #tourCard { position: absolute; width: 330px; max-width: calc(100vw - 24px);
               background: var(--panel); color: var(--ink); border: 1px solid var(--line);
-              border-radius: 10px; padding: 14px 16px;
+              border-radius: 10px; padding: 16px 18px;
               box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-  #tourStepNum { font-size: 11px; color: var(--muted); }
-  #tourCard h4 { margin: 2px 0 6px; font-size: 13px; color: var(--accent); }
+  #tourStepNum { font-size: 12px; color: var(--muted); }
+  #tourCard h4 { margin: 2px 0 8px; font-size: 15px; color: var(--accent); }
   /* 본문은 • 글머리표 한 줄(div) 단위 — showTourStep이 body의 \n마다 div로 쪼개 넣는다.
      내어쓰기(padding-left + 음수 text-indent): 긴 줄이 접히면 둘째 줄이 • 밑이 아니라
      글자 밑에 맞아야 글머리표 목록으로 읽힌다(통짜 p + pre-line로는 못 함 —
-     text-indent는 블록의 첫 줄에만 걸려서). */
-  #tourCard p { margin: 0 0 12px; font-size: 12px; line-height: 1.6; }
+     text-indent는 블록의 첫 줄에만 걸려서). **굵게**는 showTourStep이 <b>로 조립. */
+  #tourCard p { margin: 0 0 12px; font-size: 13px; line-height: 1.65; }
   /* keep-all: 한국어가 단어 중간에서 꺾이지 않게("씁니/다" → 어절 단위) */
   #tourBody div { padding-left: 1.1em; text-indent: -1.1em; word-break: keep-all; }
   #tourBody div + div { margin-top: 5px; }
+  /* 소제목(줄 앞 "## ") — 한 단계 안 글머리표 묶음이 둘일 때의 나눔 머리. 내어쓰기 해제. */
+  #tourBody div.tour-sub { padding-left: 0; text-indent: 0; font-weight: 700; color: var(--accent); }
+  #tourBody div + div.tour-sub { margin-top: 11px; }
   /* 예시 그림(fig 있는 단계만) — '입력 칩 ↓ 캡처 이미지 / 설명' 세로 묶음 4개의 가로
      그리드. 이미지는 앱이 실제 그린 악보의 캡처(흰 종이)라 다크에서도 흰 배경 그대로 —
      악보가 다크에서도 흰 종이인 것과 같은 원칙이니 반전하지 말 것. */
@@ -1314,16 +1323,18 @@
      칸이 넓어져 긴 칩도 들어간다. 예시를 더 늘리면 칩 폭부터 확인할 것. */
   #tourFig .tf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 8px; }
   #tourFig .tf-grid > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  #tourFig .tf-in { font-size: 10px; color: var(--ink); background: var(--soft);
-                    border: 1px solid var(--line); border-radius: 4px; padding: 1px 4px;
+  #tourFig .tf-in { font-size: 11px; color: var(--ink); background: var(--soft);
+                    border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
                     white-space: nowrap; }
-  #tourFig .tf-arrow { font-size: 9px; color: var(--muted); line-height: 1; }
-  #tourFig img { width: 46px; height: auto; }
-  #tourFig .tf-cap { font-size: 10px; color: var(--muted); }
+  #tourFig .tf-arrow { font-size: 10px; color: var(--muted); line-height: 1; }
+  /* 높이 기준(폭 auto) — 정간 캡처는 정사각이지만 가사 캡처는 가사 줄까지 가로로 길어서,
+     폭을 고정하면 가사 예시만 작아진다. 높이를 맞추면 어느 예시든 '정간 한 칸 높이'가 같다. */
+  #tourFig img { height: 50px; width: auto; max-width: 100%; }
+  #tourFig .tf-cap { font-size: 11px; color: var(--muted); }
   .tour-btns { display: flex; gap: 6px; }
   .tour-btns #tourSkip { margin-right: auto; }
   .tour-btns button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
-                      border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+                      border-radius: 6px; padding: 6px 13px; font-size: 13px; font-weight: 600;
                       cursor: pointer; font-family: inherit; }
   .tour-btns button.secondary { background: var(--panel); color: var(--accent); }
   .tour-btns button:hover { opacity: .9; }

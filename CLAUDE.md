@@ -9,7 +9,7 @@
 `assets/brand/`이며 index.html에는 **데이터 URL로 인라인**(파비콘 포함) — 프리뷰 미러가
 assets/를 제외해도 보이게. 상단바 로고는 **위쪽 크롭본**(umulsai-top-128: 까치+맨 윗 가로획,
 전체 井은 작게 그리면 새가 안 보임), 파비콘은 전체 로고(favicon-64, 흰 배경).
-상단바 로고가 128px(표시 32px의 4배)인 건 화질 때문 — 예전 64px 가공본은 dpr 2에서 딱
+상단바 로고가 128px(표시 36px의 ~3.6배)인 건 화질 때문 — 예전 64px 가공본은 dpr 2에서 딱
 1:1인 데다 **잉크 알파가 최대 221(반투명)**이라 흐리고 회색으로 씻겨 보였다. 재가공은
 `python3 tools/regen-top-logo.py`(원본에서 현행 프레이밍을 MSE 탐색으로 되찾아 크롭,
 알파 16단계+팔레트 64색 양자화로 2KB 미만) → 출력 PNG를 base64로 index.html 데이터 URL에
@@ -24,11 +24,13 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 (음수 margin·position:top의 %는 안 먹는다 — styles.css 주석 참고). 색은 fill=currentColor라
 다크모드 자동(로고 img의 invert와 무관).
 문패는 로고 옆 **두 줄**(위=이름, 아래=작은 "정간보 편집기") — 위/아래 자리가 곧 위계라 부제가
-부제로 읽힌다(한 줄로 옆에 붙이면 이름의 꼬리처럼 보였다). 두 줄이어도 텍스트 열이 29px라
-로고(32px) 안에 들어가 상단바는 49px 그대로 — "두 줄은 답답하다"는 궁서 20px 시절 판단이니
-되살리지 말 것. 부제의 `letter-spacing:.47em` + `margin-right:-.47em`은 두 줄의 **오른쪽 끝까지**
+부제로 읽힌다(한 줄로 옆에 붙이면 이름의 꼬리처럼 보였다). 크기는 로고 36px(상단바 버튼과 같은
+높이)·워드마크 18px·부제 11px — 입력 방식 버튼이 상단바에서 빠져 왼쪽이 허전해지면서 한 단계
+키운 값이고(원래 32/16/10), 텍스트 열(32px)이 로고 안에 들어가 상단바는 49px 그대로 —
+"두 줄은 답답하다"는 궁서 20px 시절 판단이니 되살리지 말 것.
+부제의 `letter-spacing:.5em` + `margin-right:-.5em`은 두 줄의 **오른쪽 끝까지**
 맞춘 값이다(자간이 마지막 글자 뒤에도 붙어 잉크 폭 = 박스 폭 − 자간 1개 → 박스만 맞추면 오른쪽이
-4px 뜬다. 음수 마진은 그 꼬리 여백을 레이아웃에서 걷는 용). svg height나 부제 문구를 바꾸면
+5.5px 뜬다. 음수 마진은 그 꼬리 여백을 레이아웃에서 걷는 용). svg height나 부제 문구를 바꾸면
 다시 풀어야 한다 — 계산은 styles.css 주석 참고. 로마자 "Umulsai"는 문패에서 뺐다 — 이름의 로마자와
 '뭐 하는 앱인지'는 성격이 달라 `·`로 묶으면 둘 다 흐려진다(탭 제목·meta·#brandBox 툴팁엔 남음).
 상단바 그룹 구분은 세로 구분선 없이 #topBar gap(16px)만으로 — 구분선
@@ -110,7 +112,8 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   `order`(입력 그룹 뒤 형제 order:3, 도구창 order:2)로 '입력' 그룹 바로 아래에 오게 한다.
   도킹된 창은 카드 스타일을 벗고(배경·테두리 없음) 기능바와 한 몸처럼 보인다. 닫히거나
   위쪽 배치로 돌아가면 placeholder 주석 노드로 원위치 복원.
-- 셀 서식(#cellStyleWin)은 섹션 **둘**: ① **정간** — 배경색(#cellStyleColorPicker로 색만 고르고
+- 셀 서식(#cellStyleWin — **UI 표기는 '정간 서식'**으로 통일했다. 리본 버튼·레일 탭·창 제목·
+  툴팁·confirm 문구가 대상이고 코드 식별자 cellStyle*은 그대로)은 섹션 **둘**: ① **정간** — 배경색(#cellStyleColorPicker로 색만 고르고
   #cellFillPaintToggle이 칠함) · 합치기/나누기(#cellMergeBtn/#cellUnmergeBtn) · 없애기(#cellEraseBtn).
   ② **가로줄** — 모양(#cellBorderShapeThick/Dashed/Double)을 방향 토글(#cellBorderSideTop/Bottom)이
   가리키는 줄에. \+ 맨 아래 #cellStyleResetBtn(초기화)은 배경색과 **네 변 전부**를 함께 지운다
