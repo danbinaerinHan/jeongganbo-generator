@@ -945,6 +945,14 @@
   .cell-style-action.erase { color: var(--danger-2); border-color: var(--danger-line); background: var(--danger-soft); }
   .cell-style-action.erase:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger-2); }
   .cell-style-action:disabled { opacity: .4; cursor: default; }
+  /* 3칸 그리드 안의 실행 버튼은 '아이콘 칸(고정폭) + 글자 칸' 2열 격자로 속을 짠다 —
+     글자 시작점을 모든 버튼에서 똑같게 맞추려는 것. 예전 justify-content:center는 아이콘 폭
+     (세로 13 vs 가로 17px)과 글자 수(2~3자)가 달라 버튼마다 글자가 제각각 시작했다
+     (합치기 30 / 굵게 36 / 이중선 32px…). 아이콘은 칸 안에서 가운데, 글자는 왼끝. */
+  .cs-grid .cell-style-action { display: grid; grid-template-columns: 18px 1fr;
+                                justify-content: start; align-items: center; gap: 6px; }
+  .cs-grid .cell-style-action svg { justify-self: center; }
+  .cs-grid .cell-style-action span { justify-self: start; }
   /* 창 폭을 꽉 채우는 실행 버튼(초기화) — .cell-style-action의 width:auto를 덮어야 하므로
      반드시 그 뒤에 온다(둘 다 클래스 하나짜리라 순서로 이긴다). */
   .cs-wide { width: 100%; max-width: var(--cs-w); }
