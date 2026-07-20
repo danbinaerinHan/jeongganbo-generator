@@ -113,12 +113,15 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   도킹된 창은 카드 스타일을 벗고(배경·테두리 없음) 기능바와 한 몸처럼 보인다. 닫히거나
   위쪽 배치로 돌아가면 placeholder 주석 노드로 원위치 복원.
 - 셀 서식(#cellStyleWin — **UI 표기는 '정간 서식'**으로 통일했다. 리본 버튼·레일 탭·창 제목·
-  툴팁·confirm 문구가 대상이고 코드 식별자 cellStyle*은 그대로)은 섹션 **둘**: ① **정간** — 배경색(#cellStyleColorPicker로 색만 고르고
-  #cellFillPaintToggle이 칠함) · 합치기/나누기(#cellMergeBtn/#cellUnmergeBtn) · 없애기(#cellEraseBtn).
-  ② **가로줄** — 모양(#cellBorderShapeThick/Dashed/Double)을 방향 토글(#cellBorderSideTop/Bottom)이
-  가리키는 줄에. \+ 맨 아래 #cellStyleResetBtn(초기화)은 배경색과 **네 변 전부**를 함께 지운다
-  (위/아래 토글 무시). 배경색이 '정간' 섹션에 있는 건 그것도 '칸을 어떻게 보이게 할지'라 테두리와
-  성격이 같아서 — 따로 섹션으로 도로 빼지 말 것.
+  툴팁·confirm 문구가 대상이고 코드 식별자 cellStyle*은 그대로)은 섹션 **셋**: ① **배경색** — '색상'
+  라벨 + 색판(#cellStyleColorPicker로 색만 고르고) + [칠하기](#cellFillPaintToggle이 칠함). 방향 줄과
+  같은 .cs-row(flex)라 한 줄에 선다. ② **정간** — 합치기/나누기(#cellMergeBtn/#cellUnmergeBtn) ·
+  없애기(#cellEraseBtn). ③ **가로줄** — 모양(#cellBorderShapeThick/Dashed/Double)을 방향
+  토글(#cellBorderSideTop/Bottom)이 가리키는 줄에. \+ 맨 아래 #cellStyleResetBtn(초기화)은 배경색과
+  **네 변 전부**를 함께 지운다(위/아래 토글 무시) — 버튼 아래 .cs-foot-note('배경색·가로줄을 함께
+  지웁니다')로 그걸 상시 적어 둔다(툴팁에만 있으면 놓쳐서). 예전엔 배경색이 '정간' 섹션 안에
+  합치기·없애기와 한 덩어리였는데(2026-07-20 분리), '칠하는 일'과 '합치고 지우는 일'은 성격이 달라
+  제목부터 갈랐다. 라벨은 '배경색' 버튼→'칠하기', 색판 앞 '색상'.
   - 넷 다 sidesForCellInRange의 mode 하나로 갈린다: 합치기/나누기="inner"(구간 안쪽 가로줄만),
     없애기="erase"(좌우 벽 + 안쪽 가로줄), 초기화="all"(네 변), 모양="sides"(방향 토글).
   - **없애기**는 합치기에 좌우까지 더한 것 — 구간이 각에서 도려내진 빈 자리가 된다. 구간의 바깥

@@ -906,10 +906,15 @@
              max-width: var(--cs-w); margin-bottom: 6px; }
   .cs-grid:last-child { margin-bottom: 0; }
   .cell-style-foot { margin-top: 2px; }
-  /* 색 고르개도 그리드 한 칸 — 큼직한 색 판이 곧 '지금 칠할 색'이라 따로 라벨이 필요 없다.
-     width:100%가 꼭 있어야 한다: input[type=color]는 대체 요소(replaced element)라 그리드의
-     기본 justify-self:stretch가 안 먹고 제 고유 폭(50px)으로 서서, 옆 칸(82px)보다 좁아진다. */
-  #cellStyleColorPicker { width: 100%; height: 32px; padding: 2px; border: 1px solid var(--line);
+  /* 초기화 아래 상시 안내 — 배경색·가로줄을 함께 지운다는 걸 버튼만 봐선 모르므로 한 줄로 적어둔다. */
+  .cs-foot-note { font-size: 10px; color: var(--muted); text-align: center; margin-top: 5px; }
+  /* 배경색 줄 — '색상' 라벨 + 색판 + [칠하기]를 한 줄에(방향 줄 .cs-row 재사용).
+     칠하기 버튼이 남는 폭을 채우고, 색판은 제 폭(고정)으로 왼쪽에 붙는다. */
+  .cs-fill .cs-lab { flex: 0 0 auto; }
+  .cs-fill-btn { flex: 1 1 auto; }
+  /* 색 고르개 — 예전엔 그리드 한 칸이라 width:100%였는데, 이제 배경색 줄(flex)에서 '색상' 라벨과
+     [칠하기] 사이에 제 폭으로 선다(대체 요소라 flex-basis를 명시해야 고유 폭 50px로 안 튄다). */
+  #cellStyleColorPicker { flex: 0 0 46px; width: 46px; height: 32px; padding: 2px; border: 1px solid var(--line);
                            border-radius: 8px; background: var(--panel); cursor: pointer; }
 
   /* 아이콘 — currentColor로 그린 선이 '이 버튼이 그리는(또는 남기는) 선', .ghost는 안 건드리거나

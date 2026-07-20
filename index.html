@@ -866,27 +866,30 @@
       <!-- 모든 버튼이 '먼저 고르고 → 누르면 바로 적용'이라 그 한 문장을 창 머리에 상시로 건다.
            툴팁마다 "① 악보에서 정간 클릭…"을 되풀이하던 걸 여기 한 줄로 모은 것. -->
       <div class="cell-style-hint">악보에서 정간을 클릭(한 칸)·드래그(여러 칸)로 고른 뒤 누르세요</div>
+      <!-- 배경색 — 색상 고르개 + 칠하기. 예전엔 '정간' 섹션 안에 합치기·없애기와 한 덩어리였는데,
+           칸을 '칠하는' 일과 '합치고 지우는' 일은 성격이 달라 제목부터 갈랐다(제목이 곧 그 구역이 뭘
+           하는지). 방향 줄(.cs-row)과 같은 뼈대로 '색상' 라벨 + 색판 + [칠하기]를 한 줄에 둔다. -->
       <div class="cell-style-sec">
-        <div class="cell-style-sec-title">정간</div>
-        <!-- 정간 그 자체에 하는 일을 한 섹션에 모았다 — 배경색도 '칸을 어떻게 보이게 할지'라
-             테두리와 성격이 같아서(예전엔 배경색만 따로 섹션이었다).
-             실제로 하는 일은 넷뿐. 예전엔 프리셋 3(전체/바깥쪽/안쪽) + 변 4(위/오른쪽/아래/왼쪽)
-             + 굵기 3 + 종류 4 = 16개 노브였는데, 정간보는 '열이 하나뿐인 표'라 좌우를 따로 손볼
-             일이 없고(각의 벽이라 건드리면 각이 무너진다) 굵기×종류를 다 조합할 일도 없었다.
-             데이터 모델(border[변]={width,style})은 그대로 둬서 예전 파일은 그대로 열리고 그려진다. -->
-        <!-- 색 고르개와 [배경색]도 아래 세 버튼과 같은 3칸 그리드에 태운다 — 셋째 칸은 비지만,
-             그래야 [배경색]이 [나누기] 바로 위에 서고 폭도 같아진다. 예전엔 이 줄만 flex라
-             [배경색]이 남는 폭을 다 먹어(185px) 70px짜리 버튼 줄 위에 혼자 길쭉했다. -->
-        <div class="cs-grid">
+        <div class="cell-style-sec-title">배경색</div>
+        <div class="cs-row cs-fill">
+          <span class="cs-lab">색상</span>
           <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="칠할 색">
-          <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint"
-            data-tip="배경색
+          <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint cs-fill-btn"
+            data-tip="칠하기
 고른 정간을 왼쪽 색으로 칠합니다">
             <svg class="cs-ico" viewBox="0 0 14 20" aria-hidden="true">
               <rect x="1.8" y="1.8" width="10.4" height="16.4" rx="1.5" fill="currentColor" fill-opacity=".28"
                     stroke="currentColor" stroke-width="1.6"/>
-            </svg><span>배경색</span></button>
+            </svg><span>칠하기</span></button>
         </div>
+      </div>
+      <!-- 정간 — 칸 자체의 짜임을 바꾼다(합치기·나누기·없애기). 실제로 하는 일은 셋뿐. 예전엔
+           프리셋 3(전체/바깥쪽/안쪽) + 변 4(위/오른쪽/아래/왼쪽) + 굵기 3 + 종류 4 = 16개 노브였는데,
+           정간보는 '열이 하나뿐인 표'라 좌우를 따로 손볼 일이 없고(각의 벽이라 건드리면 각이 무너진다)
+           굵기×종류를 다 조합할 일도 없었다. 데이터 모델(border[변]={width,style})은 그대로 둬서
+           예전 파일은 그대로 열리고 그려진다. -->
+      <div class="cell-style-sec">
+        <div class="cell-style-sec-title">정간</div>
         <div class="cs-grid">
           <button type="button" id="cellMergeBtn" class="ribbon-btn tip cell-style-action"
             data-tip="합치기
@@ -982,6 +985,9 @@
             <rect x="1.8" y="1.8" width="10.4" height="16.4" rx="1.5" fill="none"
                   stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.6,2"/>
           </svg><span>초기화</span></button>
+        <!-- 초기화가 배경색과 가로줄(테두리)을 '함께' 지운다는 걸 버튼만 봐선 모른다 —
+             한 줄로 상시 적어 둔다(툴팁에만 있으면 열어보기 전엔 놓친다). -->
+        <div class="cs-foot-note">배경색·가로줄을 함께 지웁니다</div>
       </div>
     </div>
     <div id="jangdanArea" class="dock-panel direct-win">
