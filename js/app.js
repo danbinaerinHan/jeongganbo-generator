@@ -2138,6 +2138,22 @@
     return item;
   }
 
+  // 기호/특수음처럼 음계 매트릭스 밖의 칩을 한 줄(plabel + 칩들)로 붙인다. list가 비면 아무것도 안 함.
+  // extraClass로 위치별 구분선 스타일을 준다(top-marks=아래 구분선, 기본 symrow=위 구분선).
+  function appendSymRow(wrap, labelText, list, extraClass) {
+    if (!list.length) return;
+    const rowEl = document.createElement("div");
+    rowEl.className = "prow symrow" + (extraClass ? " " + extraClass : "");
+    const lab = document.createElement("span");
+    lab.className = "plabel";
+    lab.textContent = labelText;
+    rowEl.appendChild(lab);
+    list.forEach(function (s) {
+      rowEl.appendChild(paletteChip(s.label, s.file, s.ins, s.fallback, false, s.cap, s.semis));
+    });
+    wrap.appendChild(rowEl);
+  }
+
   // 시김새 팔레트 (붙임 / 독립 / 퇴성·추성 그룹)
   function buildOrnPalette(wrap) {
     wrap.innerHTML = "";
@@ -2356,6 +2372,16 @@
     if (palView === "orn") { buildOrnPalette(wrap); return; }
     if (pianoOn) { buildPianoPalette(wrap); return; }
     wrap.innerHTML = "";
+    const data = window.NOTE_DATA || {};
+
+    // 기호 줄 — 쉼표·이음·숨표는 자주 쓰지만 음이 아니라 표 맨 아래에 묻히면 눈에 안 띈다.
+    // 그래서 음계 매트릭스 위에 별도 줄로 세워 팔레트를 열자마자 보이게 한다.
+    const markList = [];
+    if (data["pause_007"]) markList.push({ file: "pause_007", label: "쉼표", ins: "쉼", cap: "쉼표(무음)" });
+    // '-'·'<' 문자 그대로 삽입 — 타이핑으로도 바로 쓸 수 있다는 걸 캡션에서 보여줌
+    markList.push({ file: null, label: "이음", ins: "-", fallback: "-", cap: "이음(-)" });
+    markList.push({ file: null, label: "숨표", ins: "<", fallback: "<", cap: "숨표(<)" });
+    appendSymRow(wrap, "기호", markList, "top-marks");
 
     // 조 프리셋을 고르면 그 조의 구성음만 적힌 순서대로, 아니면 12율 전체
     const jo = JO_PRESETS[$("joPreset").value];
@@ -2398,32 +2424,15 @@
       wrap.appendChild(rowEl);
     });
 
-    // 특수 — 쉼표·이음·숨표(약어로 삽입)에 더해, 유니코드 없는 특수 율명(SPECIAL_NOTES,
-    // 거문고 하하배임 등)도 이 줄에 들어간다(12율×5옥타브 표 밖의 음이라 매트릭스엔 자리가 없음).
-    const data = window.NOTE_DATA || {};
+    // 특수 율명 — 유니코드 없는 표 밖의 음(거문고 하하배임 등, 12율×5옥타브 표에 자리가 없음).
+    // 쉼표·이음·숨표는 위 '기호' 줄로 옮겼으니 여기 도로 넣지 말 것.
     const symList = [];
     Object.keys(SPECIAL_NOTES).forEach(function (nm) {
       const sp = SPECIAL_NOTES[nm];
       if (data[sp.file]) symList.push({ file: sp.file, label: nm, ins: nm, cap: nm,
                                         semis: SCALE.indexOf(sp.base) + sp.oct * 12 });
     });
-    if (data["pause_007"]) symList.push({ file: "pause_007", label: "쉼표", ins: "쉼", cap: "쉼표" });
-    // '-' 문자 그대로 삽입 — 타이핑으로도 바로 쓸 수 있다는 걸 캡션에서 보여줌
-    symList.push({ file: null, label: "이음", ins: "-", fallback: "-", cap: "이음(-)" });
-    // '<' 문자 그대로 삽입 — 그 정간의 마지막 음 뒤에 바로 이어 쓰면(공백 없이) 오른쪽-아래 모서리에 표시됨
-    symList.push({ file: null, label: "숨표", ins: "<", fallback: "<", cap: "숨표(<)" });
-    if (symList.length) {
-      const rowEl = document.createElement("div");
-      rowEl.className = "prow symrow";
-      const lab = document.createElement("span");
-      lab.className = "plabel";
-      lab.textContent = "특수";
-      rowEl.appendChild(lab);
-      symList.forEach(function (s) {
-        rowEl.appendChild(paletteChip(s.label, s.file, s.ins, s.fallback, false, s.cap, s.semis));
-      });
-      wrap.appendChild(rowEl);
-    }
+    appendSymRow(wrap, "특수", symList);
   }
 
   // 장단 칸 하나 그리기: 정간 옆 좁은 줄에 구음 기호(들)를 세로로 배치(분박과 동일한 공백 규칙)
@@ -5386,7 +5395,7 @@
     // 렌더된 페이지 SVG를 정간별로 viewBox 크롭 → canvas로 PNG 데이터 URL화(16px/mm,
     // 흰 배경, 편집 하이라이트 rect 제거). 렌더 모양이 바뀌면 같은 방법으로 다시 떠서 교체할 것.
     { sel: "#sheetArea", title: "정간 입력 방법",
-      body: "## 한글로 쓰기\n• 한글로 적으면 자동으로 **한자**로 바뀌어 표시됩니다 (예: 황 → 黃)\n• 옥타브는 앞에 **중청/청/배/하배**를 붙여 입력합니다 — 청황→潢, 배황→僙\n## 입력 방법\n• **스페이스**로 나누면 **분박** — 한 박을 위→아래로 나눌 수 있습니다\n• **붙여 쓰면** 한 줄에 나란히 넣을 수 있습니다(붙임)\n• 앞 음을 끌어 이을 자리엔 **-** 를 적습니다(이음)\n• 시김새는 음 뒤에 **괄호**로 넣을 수 있습니다 (예: 황{미는표})",
+      body: "## 한글로 쓰기\n• 한글로 적으면 자동으로 **한자**로 바뀌어 표시됩니다 (예: 황 → 黃)\n• 옥타브는 앞에 **중청/청/배/하배**를 붙여 입력합니다 — 청황→潢, 배황→僙\n## 입력 방법\n• **스페이스**로 나누면 **분박** — 한 박을 위→아래로 나눌 수 있습니다\n• **붙여 쓰면** 한 줄에 나란히 넣을 수 있습니다(붙임)\n• 앞 음을 끌어 이을 자리엔 **-** 를 적습니다(이음)\n• 소리가 비는 자리엔 **쉼표** — 팔레트 맨 위 **기호** 줄에서 넣거나 **쉼**이라 적습니다\n• 숨 쉬는 자리는 음 뒤에 붙여 **<** — **숨표**로 표시됩니다\n• 시김새는 음 뒤에 **괄호**로 넣을 수 있습니다 (예: 황{미는표})",
       fig: [
         { t: "황", cap: "한 음", img: TOUR_CELL_IMGS.one },
         { t: "황 태", cap: "분박", img: TOUR_CELL_IMGS.split },

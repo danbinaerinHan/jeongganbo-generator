@@ -255,6 +255,9 @@
   .palette .prow:last-child { margin-bottom: 0; }
   .palette .prow.headrow { margin-bottom: 4px; }
   .palette .prow.symrow { border-top: 1px dashed var(--line); padding-top: 6px; margin-top: 4px; }
+  /* 기호 줄(쉼표·이음·숨표)은 맨 위라 구분선을 위가 아닌 아래로 — 음계 표와 갈라 준다 */
+  .palette .prow.symrow.top-marks { border-top: none; border-bottom: 1px dashed var(--line);
+                                    padding-top: 0; padding-bottom: 6px; margin-top: 0; margin-bottom: 6px; }
   .palette .plabel { flex: 0 0 32px; font-size: 10px; font-weight: 700; color: var(--accent);
                      text-align: center; letter-spacing: .5px; }
   /* 표 안 글씨체를 전부 하나로 통일(악보 음표 서체 NOTE_FONT와 동일 목록) —
