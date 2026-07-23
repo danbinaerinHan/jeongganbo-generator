@@ -875,7 +875,16 @@
   /* 시김새 창 안의 모드 버튼(미세조정/추가 모드) — 전역 도구바가 아니라 이 팔레트 설정임을
      보여주려고 시김새 창 안에 둔다. .pal-top 한 줄 안에 들어가므로 아래 마진을 주면
      줄 높이보다 커져 위아래로 삐져나오고, 바로 아래 점선 안내 상자와 선이 겹쳐 보인다. */
-  .orn-win-modes { display: flex; gap: 6px; }
+  .orn-win-modes { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+  /* 뜬(도킹 안 된) 시김새 창도 폭이 좁아, '시김새 편집(위치·삭제)'+'단축키 변환'이
+     한 줄을 넘어 삐져나갔다. 도킹 상태(위 body.ribbon-left 규칙)와 똑같이 머리줄을
+     줄바꿈시켜 제목 아래로 오른쪽 묶음(악기·편집·단축키·크기)을 접고, 오른끝 정렬로 쌓는다.
+     (.pal-top 기본 규칙엔 flex-wrap이 없어 제목과 컨트롤이 한 줄에 끼어 눌렸다.) */
+  body.input-direct:not(.ribbon-left) #ornWinWrap .pal-top { flex-wrap: wrap; row-gap: 5px; }
+  body.input-direct:not(.ribbon-left) #ornWinWrap .pal-top-right {
+    flex-wrap: wrap; row-gap: 5px; min-width: 0; justify-content: flex-end;
+  }
 
   /* ---------- 셀 서식 창 ----------
      세로로 한 줄씩 쌓이는 창이라 '열을 맞추는 것'이 곧 디자인이다 — 버튼들이 제 글자 길이대로
