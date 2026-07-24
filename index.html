@@ -1144,13 +1144,14 @@
               • 오른쪽 크기·간격으로 모든 이름을 한꺼번에 조절합니다 — 간격은
                 각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.<br>
               • <b>빠르기</b>를 켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井
-                식으로 표시되고, 아래 목록에 <b>빠르기 항목</b>이 하나 생깁니다 — 숫자는 재생 설정(⚙)의
-                BPM을 따르고, <b>크기·간격 모두 그 항목에서 각/장 이름과 따로</b> 조절합니다.
+                식으로 표시되고, 아래 목록에 <b>빠르기 항목</b>이 하나 생깁니다 — 그 항목의 <b>BPM</b>
+                칸에서 숫자를 바로 조절할 수 있고 <b>재생 설정(⚙)과 서로 연동</b>됩니다.
+                <b>크기·간격</b>도 그 항목에서 각/장 이름과 따로 조절합니다.
             </div>
           </div>
         </span>
         <span class="mh-right">
-          <label class="chk" title="켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井 식으로 표시합니다 — 숫자는 재생 설정(⚙)의 BPM을 따르고, 크기는 아래 '빠르기' 항목에서 조절합니다">
+          <label class="chk" title="켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井 식으로 표시합니다 — 숫자(BPM)는 아래 '빠르기' 항목에서 조절하며 재생 설정(⚙)과 연동됩니다">
             <input type="checkbox" id="wantTempo"> 빠르기
           </label>
           <label class="chk" title="켜면 '1장'→一章, 대여음→大餘音처럼 한자로 표시합니다. 끄면 쓴 그대로">
@@ -1179,7 +1180,12 @@
              간격(#tempoGap)도 마찬가지로 따로 — 높이 예약과 그리기가 이 한 값을 같이 쓴다. -->
         <div id="tempoItem" class="tx-item">
           <span class="gn-gak">빠르기</span>
-          <span id="tempoPreview" class="gn-preview" title="재생 설정(⚙)의 BPM으로 만들어집니다">一分・六十井</span>
+          <span id="tempoPreview" class="gn-preview" title="아래 BPM으로 만들어집니다 — 재생 설정(⚙)과 연동">一分・六十井</span>
+          <!-- BPM — 재생 설정(⚙)의 #tempoBpm과 양방향 미러. 정본은 #tempoBpm(재생·표기·저장이 이걸 읽음),
+               여기서 고치면 확정 시 #tempoBpm에 써넣고, #tempoBpm이 바뀌면 render가 이 칸을 맞춘다. -->
+          <span class="tool-inline" title="재생 빠르기(BPM) — 재생 설정(⚙)과 같은 값이며 서로 연동됩니다">BPM
+            <span class="num-unit"><input type="number" id="tempoBpmGak" min="20" max="240" value="60"></span>
+          </span>
           <span class="tool-inline" title="빠르기 표기의 글자 크기 배율 (각/장 이름과 따로)">크기
             <span class="num-unit"><input type="number" id="tempoSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
           </span>

@@ -3071,6 +3071,10 @@
     // 각/장 창의 템포 항목 — 켜져 있을 때만 보이고(CSS), 미리보기는 지금 BPM으로 만든 실물 그대로
     document.body.classList.toggle("want-tempo", wantTempo);
     if ($("tempoPreview")) $("tempoPreview").textContent = tempoStr;
+    // BPM 정본은 재생 설정(#tempoBpm) — 각/장 창의 미러(#tempoBpmGak)는 편집 중이 아닐 때만 값을 맞춘다
+    // (타이핑 중 덮어쓰지 않게). 반대 방향(미러→정본)은 아래 wireConfirm에서.
+    const tempoBpmGakEl = $("tempoBpmGak");
+    if (tempoBpmGakEl && document.activeElement !== tempoBpmGakEl) tempoBpmGakEl.value = $("tempoBpm").value;
     // 템포 글자 크기 배율 — 각/장 이름(gakNameSize)과 따로 논다. 아래 높이 예약과 실제
     // 그리기가 같은 값을 써야 키운 만큼 진짜로 커진다(예약을 안 늘리면 avail에 걸려 잘린다).
     const tempoMul = Math.max(0.3, parseFloat($("tempoSize").value) || 1);
@@ -5154,6 +5158,9 @@
   });
   // 템포(BPM)는 재생뿐 아니라 템포 표시(악보)에도 쓰이므로 바뀌면 다시 그림
   wireConfirm($("tempoBpm"), render);   // 숫자 타이핑 칸 — [확인]/Enter로만 적용
+  // 각/장 창의 빠르기(BPM) 미러 — 재생 설정(#tempoBpm)과 양방향 연동. 확정 시 정본에 써넣고 렌더
+  // (render가 다시 정본→미러를 맞추지만, 미러는 지금 포커스 중이라 그 단계는 건너뛴다).
+  wireConfirm($("tempoBpmGak"), function () { $("tempoBpm").value = $("tempoBpmGak").value; render(); });
   $("wantTempo").addEventListener("change", render);
   $("wantTempo").addEventListener("input", render);
   // 재생 설정(기준음·템포) 팝오버
