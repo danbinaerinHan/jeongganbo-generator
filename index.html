@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우물사이 Umulsai | 웹에서 그리는 정간보 편집기</title>
+<meta name="description" content="우물사이는 웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기입니다. 설치 없이 정간보 만들기를 시작하세요. Umulsai is a free web-based editor for Jeongganbo, Korean traditional music notation.">
+<meta property="og:title" content="우물사이 Umulsai — 웹에서 그리는 정간보 편집기">
+<meta property="og:description" content="웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기. 설치 없이 시작하세요.">
+<meta property="og:type" content="website">
+<!-- 파비콘 — assets/brand/favicon-64.png(로고 축소본, 흰 배경 유지 — 어두운 탭에서도 보이게)를
+     데이터 URL로 인라인. 원본 로고: assets/Gemini_Generated_Logo.png -->
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="stylesheet" href="css/styles.css">
+<style id="pageStyle">@page { size: A4 portrait; margin: 0; }</style>
+</head>
+<body>
+  <!-- 입력 방식(에디터/직접 입력) — 선율·장단·가사 전역에 걸쳐 가장 먼저 정해야 하는
+       선택이라 화면 맨 위, 사이드바·악보 어느 쪽에도 속하지 않는 공용 자리에 크게 둔다.
+       고른 쪽 옆에 한 줄 요약(mode-hint)이 늘 붙어 있고, 안내(?)에는 두 방식의 차이를
+       자세히 풀어둔다 — 선율 입력 자체에 대한 규칙·시김새 넣는 법은 선율 입력 옆
+       ?에 따로 있다. -->
+  <div id="topBar">
+    <!-- 브랜드(로고+이름) — 상단바 맨 왼쪽, 앱들이 으레 이름을 두는 자리. 로고는 井(정간) 격자에
+         까치가 앉은 그림이라 작아도 정간보 앱임이 읽힌다. assets/brand/umulsai-top-64.png(위쪽 크롭:
+         까치+맨 윗 가로획 — 전체 井은 작게 그리면 새가 안 보여 위쪽만 쓴다)를 데이터 URL로 인라인 — 프리뷰 미러(rsync)가
+         assets/를 제외해도 항상 보이게. 페이지의 h1은 여기 하나뿐(사이드바 머리글은 h2). -->
+    <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
+      <img id="brandLogo" src="data:image/png;base64,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" alt="우물사이 로고">
+      <div class="brand-txt">
+        <!-- 워드마크 "우물사이" — 글씨체는 EBS훈민정음 SB지만 폰트 파일을 싣지 않고
+             글자를 아웃라인 패스로 떠서 넣었다. EBS 라이선스는 웹 임베딩·BI/CI는 허용하나
+             폰트 자체의 변형(서브셋 포함)·재배포는 사전 서면승인 대상이라, 폰트를 안 싣는
+             이 방식이 라이선스를 건드리지 않는다. 덤으로 3KB고 모든 OS에서 동일하게 나온다.
+             다시 뜨려면: python3 tools/gen-wordmark.py (EBS훈민정음SB.otf 설치 필요).
+             fill=currentColor라 다크모드는 --ink 색을 따라간다(로고 img의 invert와 무관). -->
+        <h1><svg id="brandWord" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4011 776" role="img" aria-label="우물사이"><path fill="currentColor" d="M0 553V456H835V553ZM489 650C489 669 482 687 469 700C455 715 438 722 418 722C396 722 380 715 366 700C353 687 346 669 346 650C346 630 353 614 366 599C380 586 396 578 418 578C438 578 455 586 469 599C482 614 489 630 489 650ZM304 199C304 214 307 228 313 240C319 254 326 265 337 274C347 284 359 292 374 297C387 303 402 305 418 305C433 305 448 303 462 297C476 292 487 284 498 274C508 265 516 254 522 240C528 228 531 214 531 199C531 185 528 172 522 158C516 145 508 134 498 124C487 114 476 107 462 101C448 95 433 92 418 92C402 92 387 95 374 101C359 107 347 114 337 124C326 134 319 145 313 158C307 172 304 185 304 199ZM204 199C204 172 210 146 222 121C232 98 248 77 267 58C287 41 309 26 335 15C360 6 388 0 418 0C447 0 474 6 500 15C525 26 548 41 568 58C587 77 603 98 614 121C625 146 631 172 631 199C631 226 625 252 614 275C603 301 587 322 568 339C548 358 525 372 500 382C474 393 447 398 418 398C388 398 360 393 335 382C309 372 287 358 267 339C248 322 232 301 222 275C210 252 204 226 204 199ZM1075 383V291H1910V383H1549C1553 393 1556 401 1556 407C1556 423 1549 436 1535 446H1861V654H1227V689H1861V776H1124V568H1758V533H1124V446H1449C1443 441 1438 435 1435 429C1431 423 1429 415 1429 407C1429 399 1431 391 1436 383ZM1153 247V14H1832V247ZM1256 155H1729V107H1256ZM2878 747H2775V19H2878ZM3056 337C3056 357 3050 373 3037 387C3023 401 3007 407 2987 407C2965 407 2949 401 2936 387C2923 373 2917 357 2917 337C2917 318 2923 302 2936 288C2949 274 2965 268 2987 268C3007 268 3023 274 3037 288C3050 302 3056 318 3056 337ZM2403 68 2684 582 2597 640 2403 271 2218 640 2131 582ZM4011 747H3908V19H4011ZM3225 349C3225 312 3231 277 3245 244C3256 213 3275 185 3298 162C3320 139 3348 120 3380 107C3411 94 3445 87 3482 87C3519 87 3554 94 3586 107C3617 120 3643 139 3667 162C3689 185 3707 213 3721 244C3734 277 3740 312 3740 349C3740 387 3734 422 3721 453C3707 486 3689 513 3667 536C3643 560 3617 578 3586 591C3554 604 3519 611 3482 611C3445 611 3411 604 3380 591C3348 578 3320 560 3298 536C3275 513 3256 486 3245 453C3231 422 3225 387 3225 349ZM3328 349C3328 372 3331 395 3339 414C3345 434 3355 452 3369 466C3382 482 3398 494 3417 501C3436 510 3457 514 3482 514C3506 514 3528 510 3547 501C3566 494 3582 482 3596 466C3610 452 3619 434 3627 414C3634 395 3638 372 3638 349C3638 326 3634 304 3627 284C3619 265 3610 247 3596 232C3582 217 3566 206 3547 197C3528 189 3506 184 3482 184C3457 184 3436 189 3417 197C3398 206 3382 217 3369 232C3355 247 3345 265 3339 284C3331 304 3328 326 3328 349Z"/></svg></h1>
+        <!-- 부제는 워드마크 '아래' — 위=이름, 아래=설명이라는 위계가 위치로 드러나야 부제로
+             읽힌다. 옆에 같은 밑선으로 붙이면 이름의 꼬리처럼 보였다. 로마자 'Umulsai'는
+             여기서 뺐다 — 이름의 로마자 표기와 '뭐 하는 앱인지'는 성격이 달라 `·`로 묶으면
+             둘 다 흐려진다. Umulsai는 탭 제목·meta·#brandBox title(툴팁)에 남아 있다. -->
+        <span>정간보 편집기</span>
+      </div>
+      <!-- 베타 배지 — 누르면 저장 주의 안내 팝오버가 열린다(wireTopMenu, 배율·파일 메뉴와 같은 토글).
+           자동 저장은 브라우저·기기 환경에 따라 사라질 수 있어 파일 저장(.json)을 권한다. -->
+      <div id="betaBox">
+        <button type="button" id="betaBadge" title="베타 버전 · 저장 안내">BETA</button>
+        <div id="betaPop" class="tb-menu beta-pop">
+          <div class="bp-title"><b>베타 버전입니다</b></div>
+          <p>작업은 이 브라우저에 <b>자동 저장</b>되지만, 브라우저·기기 환경에 따라 <b>저장이 사라질 수 있습니다.</b></p>
+          <p>중요한 작업은 수시로 <b>파일로 저장(.json)</b>으로 내려받아 두세요 — 상단바 <b>⋯ 파일</b> 메뉴에도 있습니다.</p>
+          <button type="button" id="betaSaveBtn" class="bp-save">지금 파일로 저장</button>
+        </div>
+      </div>
+    </div>
+    <!-- 예전엔 여기(문패 바로 옆)에 새 문서·실행 취소·다시 실행이 줄지어 있었다. 지금은:
+         · 실행 취소/다시 실행 → 버튼 없앰. ⌘/Ctrl+Z·⇧Z로 한다(도움말 '단축키' 탭 참고).
+         · 새 문서 → 오른쪽 '파일' 메뉴로(File > New 자리).
+         문패 옆을 비워 브랜드가 살고, 왼쪽엔 곡을 쓰기 전에 정하는 '입력 방식'만 남는다. -->
+
+    <!-- 입력 방식 — 예전엔 '이름표 + <select>'라 상단바에서 혼자 딴 물건처럼 보였다.
+         지금은 다른 명령들과 같은 '기호 + 아래 작은 글씨'(.topbar-cmd) 꼴에, 배율·파일과 같은
+         .tb-menu 드롭다운 문법. 글씨는 배율의 '100%'처럼 **지금 값**(직접 입력/에디터)을 보여준다.
+         기호는 다크 토글(.sun/.moon)과 같은 방식으로 body.input-direct에 따라 CSS가 바꿔치기 —
+         커서(직접 입력: 정간을 클릭해 넣는다) ↔ 글줄(에디터: 텍스트로 편집한다).
+         두 모드의 자세한 차이는 옆 ? 가이드와 툴팁이 담당한다.
+         ※ 텍스트 에디터 모드 임시 비활성화 — 직접 입력만 쓰기로 해서 이 선택 자체를 숨겼다
+         (display:none). 마크업·배선(app.js setInputMode 등)은 다 남아 있으니 되살리려면
+         아래 style만 떼고, app.js loadState의 inputMode 강제(direct)·TOUR_STEPS의 #modeBox
+         단계 주석·도움말(시작하기/입력 탭)의 에디터 문구를 함께 되돌릴 것. -->
+    <div class="topbar-box" id="modeBox" style="display:none;">
+      <button type="button" id="modeToggle" class="topbar-cmd tip"
+        data-tip="입력 방식 바꾸기
+· 직접 입력: 정간 클릭 → 그 자리에서 바로 입력
+· 에디터: 곡 전체를 텍스트로 보며 편집
+· 선율·장단·가사 공통 · 언제든 전환">
+        <svg class="ic-direct" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+        <svg class="ic-editor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="14" y2="12"></line><line x1="4" y1="18" x2="18" y2="18"></line></svg>
+        <span class="lbl" id="modeToggleLbl">직접 입력</span>
+      </button>
+      <div id="modePop" class="tb-menu">
+        <button type="button" id="modeDirect">직접 입력</button>
+        <button type="button" id="modeEditor">에디터</button>
+      </div>
+    <span class="guide-wrap">
+      <button type="button" id="inputModeGuideToggle" class="icon-btn" title="입력 방식 안내">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </button>
+      <div id="inputModeGuide" class="melody-guide">
+        <div class="mg-sec"><b>에디터</b><br>
+          곡 전체를 텍스트로 쭉 보며 편집합니다. 줄바꿈=각 구분, <span class="mono">|</span>=정간 구분,
+          스페이스=분박 같은 문법을 알아야 하지만, 반복 구절 복사·붙여넣기나 한꺼번에 고치는
+          대량 편집에 강합니다.
+        </div>
+        <div class="mg-sec"><b>직접 입력</b><br>
+          악보의 정간을 클릭하면 그 자리에 입력창이 열리고, 왼쪽 팔레트를 눌러도 지금 열린
+          칸에 바로 들어갑니다. 문법을 몰라도 보이는 대로 채울 수 있어 직관적이지만, 한 칸씩
+          채워야 해서 대량 수정에는 에디터보다 느립니다.
+        </div>
+      </div>
+    </span>
+    </div>
+    <!-- 재생 컨트롤 — 보기 배율처럼 상단바 오른쪽에 고정(예전엔 악보 위 떠 있는 바).
+         재생 버튼 하나가 상태에 따라 재생→일시정지→이어하기로 바뀐다(별도 일시정지 버튼 없음). -->
+    <div id="playBar" class="topbar-box">
+      <!-- 재생은 상태에 따라 기호·라벨이 바뀌므로(재생↔일시정지↔이어하기) 둘 다 id로 잡는다 -->
+      <button type="button" id="btnPlay" class="topbar-cmd" title="재생 (사인파, 시김새 제외)"><span id="btnPlayIco">▶</span><span class="lbl" id="btnPlayLbl">재생</span></button>
+      <button type="button" id="btnStop" class="topbar-cmd" title="정지" disabled>■<span class="lbl">정지</span></button>
+      <button type="button" id="playSettingsToggle" class="topbar-cmd" title="재생 설정 (기준음·템포)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span class="lbl">재생 설정</span></button>
+      <div id="playPop" class="play-pop">
+        <div class="pp-row"><span>황 음고 (기준음)</span>
+          <select id="hwangPitch">
+            <option value="63" selected>E♭4</option>
+            <option value="60">C4</option>
+          </select>
+        </div>
+        <div class="pp-row"><span>템포 (BPM)</span>
+          <input type="number" id="tempoBpm" min="20" max="240" value="60">
+        </div>
+        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 악보에 적는 빠르기는 <b>빠르기/각/장</b> 창에서 따로 정합니다(최소~최대 범위로도 적을 수 있음).<br>• 여기 BPM은 <b>재생 전용</b>입니다 — 처음엔 악보에 적은 최소값을 따르고, 여기서 한 번 바꾸면 그때부터 따로 갑니다.</div>
+      </div>
+    </div>
+    <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,
+         늘 같은 자리에 있는 게 편해서 상단바 오른쪽에 고정했다 -->
+    <!-- 배율 숫자가 곧 메뉴 버튼(▾) — 세로/가로 맞춤은 매번 쓰는 게 아니라서 PPT의 배율
+         프리셋처럼 숫자 클릭 메뉴 안으로 접었다(빈도 낮은 건 접는다). −/＋만 상시 노출. -->
+    <div id="zoomBar" class="topbar-box">
+      <button id="zoomOut" title="축소">−</button>
+      <button type="button" class="zval" id="zoomVal" title="보기 배율 · 맞춤">100%</button>
+      <button id="zoomIn" title="확대">+</button>
+      <div id="zoomPop" class="tb-menu">
+        <button type="button" id="zoom100">100%</button>
+        <button type="button" id="zoomFitH" title="페이지 높이를 화면에 맞춤">세로 맞춤</button>
+        <button type="button" id="zoomFitW" title="페이지 너비를 화면에 맞춤">가로 맞춤</button>
+      </div>
+    </div>
+    <!-- 색상 메뉴 — 색상 테마(미색/은청색/옥색) + 다크 전환. 예전엔 다크 단독 토글이었는데
+         테마 프리셋이 생기며 '화면을 어떻게 볼지'를 한 메뉴로 묶었다(상단바 버튼 수 유지,
+         테마는 가끔 정하는 값이라 접는 게 빈도 규칙에도 맞다). 배율·입력 방식과 같은
+         .tb-menu 문법이되 글씨는 '색상' 고정 — 지금 테마는 메뉴 안 .sel 표시가 말한다.
+         (글씨에 지금 테마 이름을 쓰는 안과 물건 이름(한지·수정·청자)은 사용자가 물렸다 —
+         테마 이름은 한국어 색상 이름으로, 둘 다 되돌리지 말 것. 아이콘(해/달)은 지금 모드.)
+         테마·다크 모두 앱 설정(localStorage)이라 문서에는 저장되지 않는다.
+         코드 식별자(theme-crystal·crystal 등)는 옛 이름 그대로다. -->
+    <div id="screenBox">
+      <button type="button" id="screenToggle" class="topbar-cmd tip"
+        data-tip="색상 테마 · 다크 전환
+· 악보(종이)는 늘 흰색으로 유지됩니다">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span class="lbl">색상</span>
+      </button>
+      <div id="screenPop" class="tb-menu">
+        <button type="button" id="themeHanji">미색</button>
+        <button type="button" id="themeCrystal">은청색</button>
+        <button type="button" id="themeCeladon">옥색</button>
+        <hr>
+        <button type="button" id="darkModeItem">어두운 화면으로</button>
+      </div>
+    </div>
+    <!-- 인쇄/PDF — 이 앱의 최종 목적지라 메뉴에 숨기지 않고 1급 버튼으로 꺼내 뒀다.
+         빈도만 보면(곡 하나에 한 번) 아래 '파일' 메뉴로 접는 게 규칙에 맞지만, 위험하지도
+         않고 사람들이 마지막에 반드시 찾는 버튼이라 '찾기 쉬움'을 빈도보다 앞에 뒀다.
+         빈도×위험도 규칙의 의도된 예외 — 규칙대로 메뉴에 도로 집어넣지 말 것. -->
+    <!-- 인쇄·파일은 '내보내기' 한 짝이라 .topbar-box로 묶는다 — 안쪽은 3px, 옆 무리와는
+         #topBar gap 16px로 벌어져 한 덩어리로 읽힌다. 투어가 가리킬 대상이기도 하다. -->
+    <div id="outBox" class="topbar-box">
+      <!-- 새 문서 — 파일 메뉴(File > New 자리)에 넣었더니 사람들이 못 찾았다(2026-07-18).
+           인쇄와 같은 논리의 의도된 예외: 앱의 시작점이라 '찾기 쉬움'이 빈도 규칙보다 앞선다.
+           startNewDocument가 confirm()으로 묻고 임시저장 여부도 물어 위험하지 않다.
+           중복 금지 원칙대로 파일 메뉴에서는 뺐다(같은 명령 두 군데 금지). 문패 옆이 아니라
+           여기(문서 생명주기 짝: 새 문서→인쇄→파일)에 두는 것. -->
+      <button type="button" id="btnNewDoc" class="topbar-cmd tip"
+        data-tip="새 문서
+· 지금 작업은 임시저장할지 먼저 물어봄
+· 제목·선율·장단·가사·텍스트·레이아웃 → 처음 상태">＋<span class="lbl">새 문서</span></button>
+      <button type="button" id="btnPrint" class="topbar-cmd tip"
+        data-tip="인쇄 / PDF로 저장
+· 브라우저 인쇄창에서 'PDF로 저장'을 고르면 PDF가 됩니다">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <span class="lbl">인쇄</span>
+      </button>
+      <!-- 파일(⋯) — 인쇄 말고 나머지 문서·출력 명령의 '진짜 집'(예전엔 사이드바 출력 탭
+           버튼을 대신 눌러주는 껍데기였는데, 같은 명령이 두 군데 있는 게 헷갈려 이리로 일원화).
+           이름이 '더보기'였을 땐 열기 전엔 뭐가 든지 알 수 없는 잡동사니 서랍이었다 — 저장·
+           불러오기는 고전적인 '파일' 메뉴 그 자체라 뜻이 있는 이름으로 바꿨다.
+           사이드바를 접어둔 채로도 부를 수 있어야 해서 상단바에 둔다.
+           전체 초기화도 여기 — 위험하지만 resetAllContent가 confirm()으로 한 번 더 묻고
+           되돌리기(⌘Z)도 먹어서 안전장치가 둘이다.
+           새 문서는 여기 있다가 1급 버튼으로 나갔다(위 #btnNewDoc 주석 참고). -->
+      <div id="fileBox">
+        <button type="button" id="fileToggle" class="topbar-cmd tip"
+          data-tip="파일 · PNG·파일로 저장·불러오기·초기화">⋯<span class="lbl">파일</span></button>
+        <div id="filePop" class="tb-menu">
+          <button type="button" id="btnPng">PNG 다운로드</button>
+          <button type="button" id="btnExport">파일로 저장</button>
+          <button type="button" id="btnImport">불러오기</button>
+          <!-- 숨은 파일 고르기 입력 — btnImport가 이걸 대신 클릭한다(사이드바 출력 탭에
+               있던 걸 명령과 함께 옮겨 왔다). display:none이라 어디 있든 상관없지만
+               주인 버튼 옆에 둬야 다음 사람이 찾는다. -->
+          <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
+          <hr>
+          <button type="button" id="btnResetContent" class="danger tip"
+            data-tip="전체 초기화
+· 지움: 선율·장단·가사·텍스트·정간 서식
+· 유지: 종이 방향·정간 크기 등 레이아웃">⟲ 전체 초기화</button>
+        </div>
+      </div>
+    </div>
+    <!-- 도움말 센터 열기 — 정간보 기초부터 사용법·단축키까지 담은 모달(#helpModal).
+         첫 방문 환영 카드·둘러보기(투어)도 여기서 다시 열 수 있다. -->
+    <button type="button" id="btnHelp" class="topbar-cmd tip"
+      data-tip="도움말
+· 정간보 기초 · 시작하기 · 입력 방법 · 단축키">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <span class="lbl">도움말</span>
+    </button>
+    <!-- 설정 패널 토글 — 늘 보인다. 예전엔 접었을 때만 나타났는데(그래서 이름도 '열기'),
+         버튼이 사라졌다 나타나면 자리가 흔들리고 '지금 열려 있다'는 것도 안 보였다.
+         이제 다크 토글처럼 켜짐(.on) 표시가 붙는 상시 토글이라 눌러서 열고 닫는다.
+         사이드바 안 ✕(#sidebarToggle)는 닫기 전용으로 그대로 둔다 — 패널을 보고 있을 땐
+         그 자리에서 바로 닫는 게 빠르니까. -->
+    <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
+      data-tip="설정 패널 열기 / 닫기
+· 문서 · 레이아웃 · 보관">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span class="lbl">설정</span>
+    </button>
+  </div>
+  <div id="appRow">
+  <aside id="sidebar">
+    <div class="side-head">
+      <div>
+        <!-- 앱 이름(우물사이)은 상단바 브랜드로 옮겼고, 여기는 폼의 성격(설정)만 말한다.
+             h1은 페이지에 하나(상단바 브랜드)라 h2로 내렸다. -->
+        <h2 class="side-title">설정</h2>
+      </div>
+      <button type="button" id="sidebarToggle" class="icon-btn" title="설정 폼 접기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="doc">문서</button>
+      <button type="button" class="tab" data-tab="layout">레이아웃</button>
+      <!-- data-tab은 "out"인 채로 둔다 — 저장된 상태(activeTab)에 이 문자열이 들어 있어서
+           바꾸면 '출력' 탭을 보던 사람이 다음 실행에 '문서' 탭으로 튕긴다(applyActiveTab의
+           폴백). 라벨만 '보관'으로: 인쇄·PNG·저장·불러오기는 상단바로 갔고 여기 남은 건
+           임시 저장 관리뿐이라 더는 '출력'이 아니다. -->
+      <button type="button" class="tab" data-tab="out">보관</button>
+    </div>
+
+    <!-- ===== 문서 ===== -->
+    <div class="tabpanel active" data-tab="doc">
+      <div class="field">
+        <label for="orientation">종이 방향</label>
+        <select id="orientation">
+          <option value="portrait" selected>세로 (Portrait)</option>
+          <option value="landscape">가로 (Landscape)</option>
+        </select>
+      </div>
+
+      <!-- 제목·부제 — 이 두 칸이 **정본**이고(render·저장이 읽는 곳), 기능바 文 텍스트 창의
+           목록 항목엔 같은 값을 비추는 미러 칸(#titleMirror·#subMirror)이 있어 거기서 고치면
+           이쪽에 써넣는다. 적으면 텍스트 창 목록에 항목이 자동으로 나타난다
+           (render()가 #txTitleItem/#txSubItem 표시 토글). 위치는 악보에서 드래그. -->
+      <div class="sec">제목</div>
+      <div class="field">
+        <label for="title">곡 제목 (선택)</label>
+        <input type="text" id="title" placeholder="예: 언편">
+      </div>
+      <div class="field">
+        <label for="subtitle">부제 (선택)</label>
+        <input type="text" id="subtitle" placeholder="예: (한송정)">
+        <div class="hint">• 제목과 부제목은 기능바 <b>文 텍스트</b> 창에서 서식과 위치를 편집할 수 있습니다.<br>• <b>//</b>를 통해 줄바꿈할 수 있습니다.</div>
+      </div>
+      <div class="sec">번호 표시</div>
+      <div class="field">
+        <label for="pageNumPos">쪽 번호 <small>페이지 아래 여백</small></label>
+        <select id="pageNumPos">
+          <option value="none" selected>표시 안 함</option>
+          <option value="left">아래 왼쪽</option>
+          <option value="center">아래 가운데</option>
+          <option value="right">아래 오른쪽</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="gakNumMode">각 번호 <small>각 아래 옅은 회색 숫자</small></label>
+        <select id="gakNumMode">
+          <option value="none">표시 안 함</option>
+          <option value="screen" selected>화면에만 (인쇄·PNG 제외)</option>
+          <option value="all">화면·출력 모두</option>
+        </select>
+        <div class="hint">• 각(마디)의 순서를 각 아래에 작은 회색 숫자로 표시합니다.<br>• '화면에만'을 고르면 화면에서만 보이고 인쇄·PNG 저장에서는 빠집니다.</div>
+      </div>
+
+    </div>
+
+    <!-- ===== 레이아웃 ===== -->
+    <div class="tabpanel" data-tab="layout">
+      <!-- 현재 짜임 보고(#readout) — 아래 값들을 바꾸면 각 너비·페이지 장수·A4 맞춤 배율이
+           어떻게 나왔는지 여기서 바로 확인한다. 예전엔 '출력' 탭에 있었는데, 인쇄 결과가
+           아니라 '레이아웃 설정의 결과'라 조절하는 값들 바로 위가 제 집이다. -->
+      <div class="readout" id="readout"></div>
+      <div class="field">
+        <label for="beats">한 각의 정간 수</label>
+        <input type="number" id="beats" min="1" max="64" value="12">
+        <div class="hint">• 각(세로 한 줄) 하나에 들어가는 정간의 수, 곧 <b>한 각의 박 수</b>입니다. 보통 한 각에 한 장단이 들어가므로 장단의 박 수를 따릅니다.</div>
+      </div>
+
+      <div class="field">
+        <label for="daegang">대강 분절 (선택)</label>
+        <input type="text" id="daegang" placeholder="예: 3 3 3 3">
+        <div class="hint">• 각을 굵은 가로선(마디금)으로 나눈 단위를 <b>대강(大綱)</b>이라 합니다. '3 3 3 3'이라 적으면 12박이 3박씩 네 대강으로 나뉩니다.<br>• 숫자의 합이 한 각의 정간 수와 같아야 하며, 비워 두면 박 수에 맞는 대표 패턴이 들어갑니다.</div>
+      </div>
+
+      <div class="field">
+        <label for="gakCount">총 각 수</label>
+        <input type="number" id="gakCount" min="1" max="480" value="8">
+        <div class="hint">• 곡 전체의 각 수입니다. 장단 줄은 여기 세지 않습니다(따로 한 각 자리를 차지합니다).</div>
+      </div>
+
+      <!-- 정간·각(내용의 짜임) 위 세 항목과, 그걸 페이지에 어떻게 얹을지(배치) 아래 두
+           항목을 구분선으로 살짝 나눈다 -->
+      <div class="sec">배치</div>
+      <div class="field">
+        <label for="gakPerRow">한 줄에 놓을 각 수</label>
+        <input type="number" id="gakPerRow" min="1" max="40" value="10">
+        <!-- 여기서 정한 수에서 '자리를 따로 차지하는 것들'이 빠진다는 게 흔한 헷갈림 —
+             선율이 몇 각 들어가는지 계산할 수 있게 자리 먹는 항목을 모두 나열한다.
+             가사는 폭을 안 먹는다(간격 안에 들어감, 기능-정리.md '가사' 절) — 널리 알려진
+             관행과 달라 오해가 잦아서 '안 먹는다'는 쪽을 명시. -->
+        <div class="hint">• 한 줄(단)에 각을 <b>몇 개 나란히 놓을지</b>입니다. 넘치는 각은 다음 줄과 다음 페이지로 이어집니다.<br>
+          • <b>세로 칸 제목</b>은 첫 페이지에서 <b>각 2개 자리</b>(자동, 각 수가 적으면 1개)를 차지합니다. '칸 폭: 좁게'를 고르면 1각만 씁니다.<br>
+          • <b>장단</b>을 켜면 첫 줄 맨 앞에 장단 줄이 <b>한 각 자리</b>를 차지합니다.<br>
+          • 곁줄은 각 사이 간격 안에 들어가 한 줄 폭과 각 수에 영향이 없습니다.</div>
+      </div>
+
+      <div class="field">
+        <label for="stackCount">한 페이지에 쌓을 줄 수</label>
+        <div class="row">
+          <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
+          <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
+        </div>
+        <div class="hint">• 위에서 만든 줄(단)을 한 페이지에 <b>세로로 최대 몇 개 쌓을지</b>입니다.<br>• <b>자동</b>을 켜면 종이에 들어가는 만큼 알아서 쌓습니다. 보통은 켜 둡니다.</div>
+      </div>
+
+      <div class="field">
+        <label class="chk" style="font-size:13px; font-weight:600;">
+          <input type="checkbox" id="frame" checked> 바깥 테두리 그리기
+        </label>
+        <div class="hint">• 격자 전체를 감싸는 굵은 사각 테두리입니다.<br>• 끄면 테두리 없이 격자만 남습니다.</div>
+      </div>
+
+      <div class="sec">크기 · 간격</div>
+      <div class="sizebox">
+        <div class="field slider-field">
+          <label for="sizeScale">전체 배율 <small>정간·간격 한번에</small> — <span id="sizeScaleVal">1.0×</span></label>
+          <input type="range" id="sizeScale" min="0.6" max="2.5" step="0.1" value="1">
+          <div class="hint">• 정간 칸·간격·글자를 <b>같은 비율로 한번에</b> 키우거나 줄입니다. 악보가 작다 싶으면 먼저 이 값을 올립니다.</div>
+        </div>
+
+        <div class="field slider-field">
+          <!-- 기본 50%: 0%는 아래 여백이 휑해 '왜 안 채워지지'가 첫인상이었다 — 처음부터
+               페이지를 어느 정도 채운 상태로 시작하고, 원하면 내리는 쪽이 자연스럽다.
+               app.js LAYOUT_DEFAULTS.pageFill(초기화 버튼)과 같은 값이어야 한다. -->
+          <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">50%</span></label>
+          <input type="range" id="pageFill" min="0" max="100" step="5" value="50">
+          <div class="hint">• 페이지 <b>여백을 줄이고</b>, 세로로 남는 공간을 줄 사이에 고르게 나눠 <b>페이지를 채웁니다</b>.<br>• 0%면 여백을 넉넉히 두고 위쪽부터 그립니다.</div>
+        </div>
+
+        <details class="adv">
+          <summary>
+            <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;vertical-align:-2px"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              항목별 세부 조정 <small>각 너비 · 간격 · 머리단</small></span>
+            <span class="chev">▾</span>
+          </summary>
+
+        <div class="field">
+          <label for="cellSize">각(정간 칸) 너비 (mm)</label>
+          <input type="number" id="cellSize" min="4" max="30" step="0.5" value="11">
+          <div class="hint">정간 한 칸의 크기(정사각형)이며, 각의 너비이기도 합니다.</div>
+        </div>
+
+        <div class="two">
+          <div class="field">
+            <label for="gakGap">각 사이 간격 (mm)</label>
+            <input type="number" id="gakGap" min="0" max="40" step="0.5" value="7">
+          </div>
+          <div class="field">
+            <label for="bandGap">열 사이 간격 (mm)</label>
+            <input type="number" id="bandGap" min="0" max="60" step="0.5" value="10">
+          </div>
+        </div>
+        <div class="hint" style="margin-top:-2px;">• 각 사이 = 옆 각과의 <b>가로</b> 간격(곁줄이 이 안에 들어감) · 열 사이 = 줄(단)과 줄 사이의 <b>세로</b> 간격.</div>
+
+        <div class="field" style="margin-bottom:4px;">
+          <label class="chk" style="font-size:13px; font-weight:600;">
+            <input type="checkbox" id="header"> 각 밴드 위에 이름 칸(머리단) 두기
+          </label>
+          <div class="hint">각 열 위에 가로로 이어진 빈 칸을 추가합니다 (악절 이름 등 기입용).</div>
+        </div>
+
+        <div class="hint" style="margin-top:2px;">A4 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
+        </details>
+
+        <button type="button" id="layoutReset" class="orn-reset" style="margin:10px 0 8px;"
+          title="전체 배율·페이지 채움·각 너비·간격을 처음 값으로 되돌립니다 (제목·선율 등 내용은 그대로)">
+          크기·간격 기본값으로 초기화</button>
+      </div>
+    </div>
+
+    <!-- ===== 출력 ===== -->
+    <!-- 보관 — 인쇄·PNG·파일로 저장·불러오기는 상단바(인쇄 버튼 / 파일 메뉴)로 옮겼다.
+         명령은 상단바, 설정·관리는 사이드바로 선을 그은 것. 여기 남은 임시 저장은 목록을
+         띄워놓고 고르는 관리 UI라 드롭다운에 못 들어가서 패널에 남는다. -->
+    <div class="tabpanel" data-tab="out">
+      <div class="hint">• 인쇄·PNG·파일로 저장·불러오기는 <b>상단바</b>에 있습니다 — 인쇄는 버튼으로, 나머지는 ⋯ <b>파일</b> 메뉴 안에.<br>• 작업은 자동 저장되어 새로고침해도 유지됩니다.</div>
+
+      <div class="sec">임시 저장 (이 컴퓨터)</div>
+      <div class="field">
+        <div class="row">
+          <input type="text" id="snapName" placeholder="이름 (비우면 제목·시간)" style="flex:1; min-width:0;">
+          <button type="button" id="snapSaveBtn" class="at-add">임시저장</button>
+        </div>
+        <div id="snapList"></div>
+        <div class="hint">• 지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.<br>• 불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.<br>• <b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 상단바 ⋯ <b>파일</b> 메뉴의 ‘파일로 저장’으로 파일을 만들어 전달하세요.</div>
+      </div>
+    </div>
+    <!-- 저작권 — 사이드바 맨 아래에 상시(어느 탭이든). 화면 UI에만, 악보(인쇄/PNG)엔 안 나온다.
+         margin-top:auto로 아래에 붙는다(#sidebar는 flex 세로열). -->
+    <div class="side-copy">© 2026 우물사이</div>
+  </aside>
+
+  <main id="main">
+    <!-- 기능바(리본) — 각 추가/삭제·셀 서식·율명 크기처럼 어느 탭/입력 방식을 보고 있든
+         늘 같은 자리에 있어야 하는 문서 편집 동작 모음. 직접 입력 모드에선 이 자리(악보
+         바로 위) 그대로, 에디터 모드에선 applyInputMode가 아래 독(#editorDock) 맨 위로
+         옮긴다 — 작업 영역이 아래이므로 손 가까이에. '입력' 그룹(도구창 탭)만 직접 입력
+         모드 전용(CSS로 숨김). -->
+    <div class="ribbon" id="melodyRibbon">
+      <div class="bar-grip" title="끌어서 이동">
+        <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+      </div>
+      <!-- 도킹 컨트롤 묶음(.ribbon-topctl) — 왼쪽 세로 도킹에선 열 맨 위 한 줄(헤더)로 놓인다.
+           예전엔 접기(∨) 버튼도 여기 있었는데 없앴다 — 기능바 없이는 어차피 아무것도 못 하는
+           모드라 접을 이유가 없었고, 실수로 눌러 도구가 다 사라지는 사고만 났다. 되살리지 말 것. -->
+      <div class="ribbon-topctl">
+        <!-- 기능바 도킹 위치(위쪽 가로 / 왼쪽 세로) 전환 — 직접 입력 전용(에디터 모드에선
+             기능바가 아래 독에 들어가므로 CSS가 숨김). 아이콘은 '누르면 갈 곳'을 보여준다. -->
+        <button type="button" id="ribbonPosToggle" class="icon-btn ribbon-pos-btn tip"
+          data-tip="기능바를 왼쪽에 세로로 붙입니다" title="기능바 위치">
+          <svg class="rp-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          <svg class="rp-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>
+        </button>
+      </div>
+      <!-- 마우스 모드 — 가장 왼쪽. 선택(클릭해서 정간 입력·편집) / 이동(악보를 잡고 끌어
+           화면을 움직임). 이동 모드에선 CSS(body.pan-mode)가 악보 클릭을 막고 손 모양 커서로
+           바꾼다. -->
+      <div class="ribbon-group">
+        <div class="rb-cap">마우스</div>
+        <div class="rb-items">
+          <button type="button" id="cursorSelect" class="ribbon-btn cursor-btn tip on"
+            data-tip="선택 모드
+· 정간을 클릭해 입력·편집">
+            <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
+            <span>선택</span></button>
+          <button type="button" id="cursorPan" class="ribbon-btn cursor-btn tip"
+            data-tip="이동 모드
+· 악보를 잡고 끌어 화면을 움직입니다
+· 편집하려면 '선택'으로">
+            <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>
+            <span>이동</span></button>
+        </div>
+      </div>
+      <div class="ribbon-sep"></div>
+      <!-- 그룹마다 얇은 이름표(.rb-cap)를 위에, 실제 컨트롤(.rb-items)을 아래에 두는 2단 구성 -->
+      <div class="ribbon-group win-toggle-group">
+        <div class="rb-cap">입력</div>
+        <div class="rb-items">
+          <!-- 율명과 시김새는 **한 버튼·한 창**이다(창 머리의 '율명 | 시김새' 토글로 갈아 끼운다).
+               둘 다 정간 안에 들어가는 것이고 PANEL_DOMAIN에서도 같은 "mel"이라, 버튼을 둘로
+               가르면 같은 자리를 두 번 여는 꼴이었다. 에디터 모드는 원래부터 이 꼴이었고
+               직접 입력만 갈려 있던 것을 맞춘 것 — 도로 두 버튼으로 나누지 말 것. -->
+          <!-- 글자는 **井** — 이 버튼이 여는 건 '정간(井間) 안에 넣는 것'이라 무엇이냐(音)가
+               아니라 어디냐로 부른다(옆의 傍=곁과 결이 같다). 앱 이름 우물사이(井間)의 글자이기도
+               해서 가장 자주 쓰는 첫 버튼에 온다. 아래 '□ 정간 서식'과 뿌리가 같아 보이지만
+               하는 일이 다르다 — 井은 정간 **안에 넣기**, □는 정간 **자체를 꾸미기**. -->
+          <button type="button" id="winToggleYul" class="ribbon-btn win-toggle tip" data-target="paletteCol"
+            data-tip="정간 안에 넣는 팔레트를 열고 닫습니다
+· 창 머리의 '율명 | 시김새'로 갈아 끼웁니다">井<span>율명/시김새</span></button>
+          <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
+            data-tip="곁줄 도구창을 열고 닫습니다
+· 곁줄 = 정간 오른쪽에 붙는 줄. 노랫말·활 기호(뜰·튕김 등)·장구 구음을 적습니다
+· 창을 열면 빈 곁줄이 보입니다 — 그 자리를 눌러 바로 쓰면 됩니다">傍<span>곁줄</span></button>
+          <!-- 차례는 **정간에서 멀어지는 순서**다: 정간 안(井) → 정간 바로 옆(傍 곁줄) →
+               곡에 하나뿐인 별도 줄(長 장단) → 각 위(章) → 종이 위(文).
+               예전엔 長이 시김새와 곁줄 사이에 끼어 '정간 안'과 '정간 옆'을 갈라놨다. -->
+          <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
+            data-tip="장단 도구창을 열고 닫습니다">長<span>장단</span></button>
+          <button type="button" id="winToggleGakName" class="ribbon-btn win-toggle tip" data-target="gakNameArea"
+            data-tip="각 위에 빠르기(一分・N井)와 각/장 이름(대여음·1장 등)을 붙입니다">章<span>빠르기/각/장</span></button>
+          <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
+            data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
+        </div>
+      </div>
+      <div class="ribbon-sep win-toggle-sep"></div>
+      <div class="ribbon-group">
+        <div class="rb-cap">각 삽입/삭제</div>
+        <div class="rb-items">
+          <button type="button" id="gakInsertBtn" class="ribbon-btn tip"
+            data-tip="커서 각 뒤에 빈 각 추가
+· 단축키: ⌘/Ctrl+Enter
+· 가사도 같이 밀림">＋<span>추가</span></button>
+          <input type="number" id="gakInsertN" min="1" max="50" value="1" title="한 번에 추가/삭제할 각 수" class="ribbon-num">
+          <button type="button" id="gakDeleteBtn" class="ribbon-btn tip"
+            data-tip="커서가 있는 각 삭제
+· 가사도 같이 당겨짐
+· 복구: ⌘/Ctrl+Z">−<span>삭제</span></button>
+        </div>
+      </div>
+      <div class="ribbon-sep"></div>
+      <!-- 그룹 캡션이 '정간 편집'인 건 안의 [정간 서식] 버튼과 이름이 겹치지 않게 하려는 것.
+           예전엔 캡션도 '셀 서식'이라 버튼을 같은 이름으로 바꾸면 '셀 서식 > 셀 서식'이 됐다.
+           둘 다 '고른 정간 구간'에 하는 일이라(하나는 내용을, 하나는 서식을) 묶는 이름은
+           '정간 편집'이 맞다 — 옆 '각 삽입/삭제'가 각 단위인 것과 짝을 이룬다. -->
+      <div class="ribbon-group">
+        <div class="rb-cap">정간 편집</div>
+        <div class="rb-items">
+          <button type="button" id="rangeClearToggle" class="ribbon-btn tip"
+            data-tip="① 악보 드래그로 구간 선택
+② 클릭 → 그 구간의 음·시김새 지움
+· 복구: ⌘/Ctrl+Z">⌧<span>내용 지우기</span></button>
+          <!-- 라벨이 '정간 서식'인 건 창 제목·레일 탭과 같은 이름이라야 같은 물건으로 읽혀서.
+               예전 '색상·테두리'는 이제 합치기·나누기·없애기까지 하는 창에 비해 이름이 좁았고,
+               '셀 서식'은 이 앱 용어(정간)와 어긋나 '정간 서식'으로 통일했다(id는 cellStyle* 그대로). -->
+          <button type="button" id="winToggleCellStyle" class="ribbon-btn win-toggle tip" data-target="cellStyleWin"
+            data-tip="정간 서식 팔레트를 열고 닫습니다
+· 배경색 · 합치기 · 나누기 · 없애기 · 가로줄 모양">□<span>정간 서식</span></button>
+        </div>
+      </div>
+      <div class="ribbon-sep"></div>
+      <div class="ribbon-group ribbon-slider-group">
+        <div class="rb-cap"><label for="noteScale" title="정간 안 율명(음표 글자) 크기 — 시김새 크기는 그대로 유지됩니다">율명 크기</label></div>
+        <div class="rb-items">
+          <input type="range" id="noteScale" min="0.7" max="2.5" step="0.05" value="1">
+          <span id="noteScaleVal">1.0×</span>
+        </div>
+      </div>
+      <!-- 곁줄 글자 크기 — 곁줄이 나와 있을 때만 보임(body.want-lyrics로 CSS가 여닫음) -->
+      <div class="ribbon-group ribbon-slider-group" id="lyricsScaleGroup">
+        <div class="rb-cap"><label for="lyricsScale" title="정간 옆 곁줄의 글자 크기">곁줄 크기</label></div>
+        <div class="rb-items">
+          <input type="range" id="lyricsScale" min="0.7" max="2" step="0.05" value="1">
+          <span id="lyricsScaleVal">1.0×</span>
+        </div>
+      </div>
+    </div>
+    <!-- 기능바 왼쪽 도킹용 그릇 — 위쪽 배치에선 display:contents라 없는 셈이고,
+         body.ribbon-left일 때만 세로 열이 되어 기능바와 열린 도구창을 위아래로 담는다.
+         직접 입력이면 JS(applyInputMode)가 기능바를 늘 이 안에 넣는다. -->
+    <div id="leftDock"></div>
+    <!-- 왼쪽 도킹 폭 조절 손잡이 — 직접 입력 + 왼쪽 도킹에서만 보임(CSS). 더블클릭 = 자동 폭 -->
+    <div id="leftDockResizer" title="끌어서 폭 조절 · 더블클릭 = 자동"></div>
+    <div id="sheetArea">
+      <div id="ornPanel" class="orn-panel">
+        <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" class="icon-btn" title="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button></div>
+        <!-- 위치는 악보에서 기호를 직접 끌어 옮긴다 — 예전엔 여기 좌우(←→)·상하(↑↓) 줄이
+             있었지만 끌기와 하는 일이 똑같아 뺐다(문 옆에 손잡이가 둘인 꼴). 되살리지 말 것.
+             크기만 끌기로 못 하는 일이라 남는다. -->
+        <div class="orn-row"><span>크기</span>
+          <button type="button" data-a="sz-">−</button><button type="button" data-a="sz+">+</button></div>
+        <button type="button" id="ornReset" class="orn-reset">위치·크기 초기화</button>
+        <button type="button" id="ornDelete" class="orn-reset text-panel-del" title="Backspace·Delete 키로도 지울 수 있습니다">삭제</button>
+      </div>
+      <div id="textPanel" class="orn-panel">
+        <div class="orn-title"><b id="textPanelName">텍스트</b><button type="button" id="textPanelClose" class="icon-btn" title="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button></div>
+        <div class="orn-row"><span>크기</span>
+          <button type="button" data-a="sz-">−</button><button type="button" data-a="sz+">+</button></div>
+        <button type="button" id="textPanelDelete" class="orn-reset text-panel-del">삭제</button>
+      </div>
+      <div id="sheet"></div>
+    </div>
+    <div id="editorDock">
+      <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
+      <div class="dock-body">
+        <nav id="dockRail">
+          <!-- 입력 방식(에디터/직접 입력)은 이제 화면 맨 위 #topBar로 옮겨 늘 크게 보이게
+               했다(가장 먼저 정해야 하는 선택이라 사이드 레일 안에 작게 있기엔 안 어울렸음).
+               여기 레일에는 그 아래 단계인 선율/장단/가사/텍스트 탭만 남는다. -->
+          <!-- 선율/장단/가사/텍스트 탭 — 에디터 모드에서만 쓴다(하나만 골라 하단에 도킹).
+               직접 입력 모드에선 이 탭 대신 리본의 도구창 열기 버튼(.win-toggle)들을 쓴다 —
+               여러 도구창을 동시에 띄울 수 있어야 해서 '탭(하나만 활성)' 방식이 안 맞는다. -->
+          <button type="button" class="rail-btn domain-tab active" data-panel="melodyArea">선율</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="jangdanArea">장단</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="lyricsArea">곁줄</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="textArea">텍스트</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="gakNameArea">빠르기/각/장</button>
+          <button type="button" class="rail-btn domain-tab" data-panel="cellStyleWin">정간 서식</button>
+          <div class="rail-sep"></div>
+          <!-- 전역 단축키 안내 — 어느 탭에서든 늘 보이는 자리라 여기 둔다 -->
+          <span class="guide-wrap rail-shortcuts-wrap">
+            <button type="button" id="shortcutsGuideToggle" class="rail-shortcuts-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><line x1="6" y1="10" x2="6" y2="10"></line><line x1="10" y1="10" x2="10" y2="10"></line><line x1="14" y1="10" x2="14" y2="10"></line><line x1="18" y1="10" x2="18" y2="10"></line><line x1="6" y1="14" x2="18" y2="14"></line></svg>
+              <span>단축키</span>
+            </button>
+            <div id="shortcutsGuide" class="melody-guide">
+              <div class="mg-sec"><b>편집</b><br>
+                실행 취소 <span class="mono">⌘/Ctrl+Z</span> · 다시 실행 <span class="mono">⌘/Ctrl+⇧+Z</span><br>
+                각 추가(선율 에디터) <span class="mono">⌘/Ctrl+Enter</span><br>
+                각 나누기(선율 에디터, 커서 위치) <span class="mono">Enter</span>
+              </div>
+              <div class="mg-sec"><b>직접 입력 카드</b><br>
+                다음 정간 <span class="mono">Enter</span> / <span class="mono">Tab</span> ·
+                인접 정간 이동 <span class="mono">방향키</span><br>
+                닫기 <span class="mono">Esc</span>
+              </div>
+              <div class="mg-sec"><b>텍스트 에디터(선율·장단·가사)</b><br>
+                다음 정간으로 커서 이동 <span class="mono">→</span>
+              </div>
+            </div>
+          </span>
+        </nav>
+        <div class="dock-panels">
+    <div id="melodyArea" class="dock-panel active">
+
+      <div class="melody-head">
+        <button type="button" id="editorToggle" class="icon-btn mini-toggle" title="접기/펼치기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        선율 입력
+        <span class="head-sep"></span>
+        <!-- '율명 | 시김새' 토글은 #paletteCol 안(.pal-top)으로 옮겼다 — 두 모드가 같은 창을
+             쓰게 되면서, 독 머리에 두면 직접 입력에선 창만 뜨고 토글이 안 보였다. -->
+        <span class="guide-wrap">
+          <button type="button" id="melodyGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <div id="melodyGuide" class="melody-guide">
+            <div class="mg-sec"><b>왼쪽 팔레트</b><br>
+              율명·시김새를 클릭하면 커서(에디터) 또는 지금 열린 칸(직접 입력)에 바로 들어갑니다.
+            </div>
+            <div class="mg-sec"><b>세부 규칙(에디터)</b><br>
+              • 한 정간 안에서 <span class="mono">스페이스</span> 없이 이어 쓰면 한 줄에, 띄어 쓰면 그 칸 안에서 줄이 나뉩니다(분박).<br>
+              • 음 뒤에 공백 없이 <span class="mono">&lt;</span> 를 붙이면 그 정간 오른쪽-아래에 숨표가 표시됩니다.
+            </div>
+            <div class="mg-sec"><b>시김새 넣는 법</b><br>
+              • 에디터 모드: 왼쪽 팔레트에서 '시김새' 탭을 클릭해 커서 자리에 입력할 수 있습니다.<br>
+              • 직접 입력 모드: 괄호 안에 시김새 이름을 넣어 직접 텍스트로 입력하여 넣을 수 있습니다
+              (ex. <span class="mono">(추성)</span>, <span class="mono">{추성}</span>, <span class="mono">[추성]</span>)
+            </div>
+          </div>
+        </span>
+      </div>
+
+      <div id="melodyRow">
+        <div id="paletteCol" class="direct-win">
+          <!-- 직접 입력 모드 전용 그립 — 이 팔레트를 독립적으로 끌어서 옮길 때만 보임 -->
+          <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+            <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+          </div>
+          <div class="pal-head">
+            <!-- 첫 줄: 제목(직접 입력 모드에서만) + 오른쪽에 입력·소리 토글과 크기 ± —
+                 입력·소리·크기는 팔레트 전체(표·건반·시김새)에 걸치는 컨트롤이라 설정
+                 묶음 밖 첫 줄 오른쪽에 둔다 -->
+            <div class="pal-top">
+              <span class="pal-col-title">음</span>
+              <!-- 보기 전환 — 두 모드가 이 한 창을 같이 쓰므로 창 안에 있어야 한다.
+                   buildPalette()가 내용을 갈아 끼울 뿐이라 창 높이는 그대로다. -->
+              <div class="pal-views">
+                <button type="button" class="pal-view active" data-view="yul">율명</button>
+                <button type="button" class="pal-view" data-view="orn">시김새</button>
+              </div>
+              <span class="pal-top-right">
+                <label class="chk insert-tool" title="끄면 율명을 눌러도 입력되지 않고 소리만 들려줍니다">
+                  <input type="checkbox" id="palInsert" checked> 입력
+                </label>
+                <label class="chk sound-tool" title="누르면 그 음을 짧게 들려줍니다">
+                  <input type="checkbox" id="palSound" checked> 소리
+                </label>
+                <!-- 시김새 보기(.orn-active)에서만 보이는 크기/위치 미세조정 — 직접 입력
+                     모드의 #ornEditToggle과 같은 기능(같은 ornEditMode)을 에디터 모드에서도
+                     쓸 수 있게 한다. 공유 클래스 .orn-edit-toggle로 두 버튼을 함께 동기화. -->
+                <label class="tool-inline orn-only-tool" title="악기를 고르면 그 악기에서 자주 쓰는 시김새가 각 그룹 맨 앞으로 올라옵니다 (가사 기호 팔레트에도 적용)">악기
+                  <select class="orn-instrument">
+                    <option value="all" selected>전체</option>
+                    <option value="가야금">가야금</option>
+                    <option value="거문고">거문고</option>
+                    <option value="대금">대금</option>
+                    <option value="피리">피리</option>
+                    <option value="해금">해금</option>
+                    <option value="아쟁">아쟁</option>
+                  </select>
+                </label>
+                <button type="button" id="ornEditToggleEd" class="ribbon-btn tip orn-edit-toggle orn-only-tool"
+                  data-tip="켜면: 악보의 시김새 클릭 → 위치·크기 조절 · 삭제(Backspace/Delete)
+(조절 가능한 시김새 = 옅은 네모 표시)">⌖<span>시김새 편집(위치·삭제)</span></button>
+                <!-- 단축키 변환 — 숫자 단축키 자체가 직접 입력 전용이라 .orn-direct-tool로 한 겹 더
+                     좁힌다(시김새 보기 + 직접 입력일 때만). 예전엔 #ornWinWrap에 있던 것. -->
+                <button type="button" id="ornMapToggle" class="ribbon-btn tip orn-only-tool orn-direct-tool"
+                  data-tip="숫자(1~0)마다 배정할 시김새 바꾸기
+(단축키 자체는 항상 켜져 있음)">①<span>단축키 변환</span></button>
+                <span class="tool-inline size-ctl" title="팔레트 크기 — 율명 보기와 시김새 보기가 각자 값을 따로 기억합니다">
+                  <span class="size-lab">크기</span>
+                  <button type="button" id="palSizeDown">−</button>
+                  <button type="button" id="palSizeUp">+</button>
+                </span>
+              </span>
+            </div>
+            <!-- 둘째 줄: 율명 전용 설정 묶음 — 시김새 탭에서는 줄째로 숨는다 -->
+            <div class="pal-tools">
+              <span class="yul-tools" title="율명 팔레트 설정">
+                <span class="pal-seg" id="yulModeSeg">
+                  <button type="button" class="seg-btn active" data-mode="grid">표</button>
+                  <button type="button" class="seg-btn" data-mode="piano">건반</button>
+                </span>
+                <label class="tool-inline" title="조를 고르면 그 조의 구성음만 모아서 보여줍니다">조
+                  <select id="joPreset">
+                    <option value="all" selected>12율 전체</option>
+                    <option value="hwang-pyeong">황종 평조</option>
+                    <option value="hwang-gyemyeon">황종 계면조</option>
+                    <option value="jung-pyeong">중려 평조</option>
+                  </select>
+                </label>
+                <label class="tool-inline">표기
+                  <select id="noteMode">
+                    <option value="font" selected>한자</option>
+                    <option value="hangul">한글</option>
+                  </select>
+                </label>
+                <label class="tool-inline pitch-tool" title="율명 클릭 소리와 건반, 악보 재생에 함께 적용됩니다">황 음고
+                  <select id="pianoBase">
+                    <option value="63">E♭4</option>
+                    <option value="60">C4</option>
+                  </select>
+                </label>
+              </span>
+            </div>
+          </div>
+          <!-- 숫자 단축키 배정 바 — 위 [단축키 변환]이 여닫는다(.open). 시김새 보기 + 직접
+               입력에서만 뜻이 있어 CSS가 그렇게 가둔다. 예전엔 #ornWinWrap에 있던 것. -->
+          <div id="ornAddMapBar" class="orn-add-map-bar"></div>
+          <!-- 괄호 문법 안내는 팔레트 안에서 buildSymPalette가 그린다(줄마다 문구가 다름) -->
+          <div id="paletteWrap"><div id="notePalette" class="palette"></div></div>
+        </div>
+        <div id="melodySplit" title="좌우로 드래그하여 팔레트·편집창 너비 조절"></div>
+        <div id="editorCol">
+          <div class="ed-head">
+            <div class="ed-top">
+              <span class="ed-title">텍스트 에디터</span>
+              <button type="button" id="edModeTip" class="icon-btn tip" data-tip="텍스트 입력 규칙
+· 음 = 한글 율명(황·태·협…)
+· 줄바꿈 = 각 구분
+· | = 정간 구분
+· 스페이스 = 한 정간 안 분박(음 여러 개)
+· 음 뒤 < = 숨표
+· 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나
+예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              </button>
+              <div class="ed-right">
+                <div class="ed-pager" style="display:none;">
+                  <button type="button" class="ed-prev mel-btn" title="이전 페이지 편집">◀</button>
+                  <span class="ed-plabel">1 / 1 페이지</span>
+                  <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="melodyHlWrap">
+            <div id="melodyHlBack" aria-hidden="true"></div>
+            <textarea id="melody" spellcheck="false"
+              placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  황 | 임 | 남 | 고 | 태 | 황"></textarea>
+            <div class="size-ctl ed-font-ctl" title="에디터 글자 크기">
+              <button type="button" id="edFontDown">−</button>
+              <button type="button" id="edFontUp">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 셀 서식 — 정간(선율 칸)을 클릭(한 칸)·드래그(여러 칸)로 골라 배경색·테두리를 지정하는
+         도구창. 이 창이 열려 있는 동안은 정간 클릭이 내용 편집이 아니라 '선택'이 된다. 장단/가사에는 아직 적용 안 됨.
+         장단/가사/텍스트와 같은 dock-panel(에디터 모드에서 레일 탭으로 전환) + direct-win(직접 입력
+         모드에서 뜬 도구창) 이중 구조 — 선율 탭 안에 끼워두면 에디터 모드에서 선율 아래로 그냥
+         새어 보이므로 독립된 탭으로 분리한다. 색 고르개는 그냥 '지금 칠할 값'일 뿐 실행이 아니라,
+         옆의 [배경색]을 눌러야 칠해진다(여러 색을 번갈아 칠할 수 있어서). -->
+    <div id="cellStyleWin" class="dock-panel direct-win">
+      <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+        <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+      </div>
+      <div class="pal-top">
+        <span class="pal-col-title">정간 서식</span>
+      </div>
+      <!-- 모든 버튼이 '먼저 고르고 → 누르면 바로 적용'이라 그 한 문장을 창 머리에 상시로 건다.
+           툴팁마다 "① 악보에서 정간 클릭…"을 되풀이하던 걸 여기 한 줄로 모은 것. -->
+      <div class="cell-style-hint">악보에서 정간을 클릭(한 칸)·드래그(여러 칸)로 고른 뒤 누르세요</div>
+      <!-- 배경색 — 색상 고르개 + 칠하기. 예전엔 '정간' 섹션 안에 합치기·없애기와 한 덩어리였는데,
+           칸을 '칠하는' 일과 '합치고 지우는' 일은 성격이 달라 제목부터 갈랐다(제목이 곧 그 구역이 뭘
+           하는지). 방향 줄(.cs-row)과 같은 뼈대로 '색상' 라벨 + 색판 + [칠하기]를 한 줄에 둔다. -->
+      <div class="cell-style-sec">
+        <div class="cell-style-sec-title">배경색</div>
+        <div class="cs-row cs-fill">
+          <span class="cs-lab">색상</span>
+          <input type="color" id="cellStyleColorPicker" value="#ffe08a" title="칠할 색">
+          <button type="button" id="cellFillPaintToggle" class="ribbon-btn tip cell-style-action paint cs-fill-btn"
+            data-tip="칠하기
+고른 정간을 왼쪽 색으로 칠합니다">
+            <svg class="cs-ico" viewBox="0 0 14 20" aria-hidden="true">
+              <rect x="1.8" y="1.8" width="10.4" height="16.4" rx="1.5" fill="currentColor" fill-opacity=".28"
+                    stroke="currentColor" stroke-width="1.6"/>
+            </svg><span>칠하기</span></button>
+        </div>
+      </div>
+      <!-- 정간 — 칸 자체의 짜임을 바꾼다(합치기·나누기·없애기). 실제로 하는 일은 셋뿐. 예전엔
+           프리셋 3(전체/바깥쪽/안쪽) + 변 4(위/오른쪽/아래/왼쪽) + 굵기 3 + 종류 4 = 16개 노브였는데,
+           정간보는 '열이 하나뿐인 표'라 좌우를 따로 손볼 일이 없고(각의 벽이라 건드리면 각이 무너진다)
+           굵기×종류를 다 조합할 일도 없었다. 데이터 모델(border[변]={width,style})은 그대로 둬서
+           예전 파일은 그대로 열리고 그려진다. -->
+      <div class="cell-style-sec">
+        <div class="cell-style-sec-title">정간</div>
+        <div class="cs-grid">
+          <button type="button" id="cellMergeBtn" class="ribbon-btn tip cell-style-action"
+            data-tip="합치기
+고른 칸들 사이 줄이 사라져 한 칸처럼 보입니다
+· 두 칸 이상 골라야 합니다
+· 고르지 않은 칸과 맞닿은 바깥 줄은 그대로 남습니다
+· 악보 뼈대(맨 위·아래 통줄, 대강선)는 숨기지 않습니다">
+            <svg class="cs-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="1.6" stroke-linecap="square">
+              <rect x="1.8" y="1.8" width="10.4" height="16.4" stroke="currentColor"/>
+              <line x1="1.8" y1="10" x2="12.2" y2="10" class="ghost" stroke-dasharray="2,2"/>
+            </g></svg><span>합치기</span></button>
+          <button type="button" id="cellUnmergeBtn" class="ribbon-btn tip cell-style-action"
+            data-tip="나누기
+합쳐둔 칸들 사이 줄을 되살려 원래 정간으로">
+            <svg class="cs-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="1.6" stroke-linecap="square" stroke="currentColor">
+              <rect x="1.8" y="1.8" width="10.4" height="16.4"/>
+              <line x1="1.8" y1="10" x2="12.2" y2="10"/>
+            </g></svg><span>나누기</span></button>
+          <button type="button" id="cellEraseBtn" class="ribbon-btn tip cell-style-action"
+            data-tip="없애기
+고른 자리의 정간을 통째로 지워 빈 자리로 만듭니다
+· 좌우 벽과 사이 줄이 사라집니다
+· 위아래 이웃과 맞닿은 가로줄은 남습니다(이웃 칸이 열리지 않게)
+· 정간 내용(음·시김새)은 그대로">
+            <svg class="cs-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="1.6" stroke-linecap="square">
+              <line x1="1.8" y1="1.8" x2="12.2" y2="1.8" stroke="currentColor"/>
+              <line x1="1.8" y1="18.2" x2="12.2" y2="18.2" stroke="currentColor"/>
+              <line x1="1.8" y1="1.8" x2="1.8" y2="18.2" class="ghost" stroke-dasharray="2,2"/>
+              <line x1="12.2" y1="1.8" x2="12.2" y2="18.2" class="ghost" stroke-dasharray="2,2"/>
+            </g></svg><span>없애기</span></button>
+        </div>
+      </div>
+      <div class="cell-style-sec">
+        <div class="cell-style-sec-title">가로줄</div>
+        <!-- 방향은 위/아래뿐 — 좌우(각의 벽)를 따로 바꿀 일이 없어서. 정간 N의 아래줄은
+             N+1의 위줄과 같은 선이라, 어느 쪽에서 집든 결과는 같다. -->
+        <div class="cs-row">
+          <span class="cs-lab">방향</span>
+          <div class="cs-seg">
+            <button type="button" id="cellBorderSideTop" class="ribbon-btn tip cell-style-option on"
+              data-tip="위쪽 줄
+고른 정간의 위 가로줄에 적용">
+              <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+                <path d="M12.5 1.5 V18.5 H1.5 V1.5" class="ghost"/>
+                <line x1="1.5" y1="1.5" x2="12.5" y2="1.5" stroke="currentColor"/>
+              </g></svg><span>위</span></button>
+            <button type="button" id="cellBorderSideBottom" class="ribbon-btn tip cell-style-option"
+              data-tip="아래쪽 줄
+고른 정간의 아래 가로줄에 적용">
+              <svg class="cbp-ico" viewBox="0 0 14 20" aria-hidden="true"><g fill="none" stroke-width="2" stroke-linecap="square">
+                <path d="M1.5 18.5 V1.5 H12.5 V18.5" class="ghost"/>
+                <line x1="1.5" y1="18.5" x2="12.5" y2="18.5" stroke="currentColor"/>
+              </g></svg><span>아래</span></button>
+          </div>
+        </div>
+        <!-- 모양 버튼이 곧 실행 버튼 — 누르면 지금 고른 정간에 바로 적용된다(예전의 '적용'
+             버튼이 하던 일). 굵기 셀렉트는 없앴다: 모양마다 굵기가 정해져 있다.
+             아이콘은 글리프(━ ┅ ═)가 아니라 SVG — 폰트마다 굵기·길이가 제각각이라 셋을
+             나란히 놓으면 굵기 차이가 안 읽혔다. -->
+        <div class="cs-grid">
+          <button type="button" id="cellBorderShapeThick" class="ribbon-btn tip cell-style-action"
+            data-tip="굵게
+고른 줄을 굵은 실선으로">
+            <svg class="cs-ico-h" viewBox="0 0 18 12" aria-hidden="true">
+              <line x1="1" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="3"/>
+            </svg><span>굵게</span></button>
+          <button type="button" id="cellBorderShapeDashed" class="ribbon-btn tip cell-style-action"
+            data-tip="점선
+고른 줄을 점선으로">
+            <svg class="cs-ico-h" viewBox="0 0 18 12" aria-hidden="true">
+              <line x1="1" y1="6" x2="17" y2="6" stroke="currentColor" stroke-width="1.8" stroke-dasharray="3.4,2.4"/>
+            </svg><span>점선</span></button>
+          <button type="button" id="cellBorderShapeDouble" class="ribbon-btn tip cell-style-action"
+            data-tip="이중선
+고른 줄을 겹줄로 (바깥 줄 + 칸 안쪽에 한 줄 더)">
+            <svg class="cs-ico-h" viewBox="0 0 18 12" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6">
+              <line x1="1" y1="3.9" x2="17" y2="3.9"/>
+              <line x1="1" y1="8.1" x2="17" y2="8.1"/>
+            </g></svg><span>이중선</span></button>
+        </div>
+      </div>
+      <!-- 초기화 — 배경색 지우기와 테두리 지우기를 하나로 합쳤다. 둘은 따로 버튼이었는데,
+           '이 칸에 해둔 걸 물리고 싶다'는 하나의 마음에 버튼이 둘이라 어느 쪽을 눌러야 할지
+           매번 생각해야 했다. 섹션에 속하지 않고 창 맨 아래 한 줄로 걸린다 — 위 두 섹션이
+           한 일을 다 되돌리므로 어느 한쪽에 넣으면 그 섹션 것만 지우는 걸로 읽힌다. -->
+      <div class="cell-style-foot">
+        <button type="button" id="cellStyleResetBtn" class="ribbon-btn tip cell-style-action erase cs-wide"
+          data-tip="초기화
+고른 정간에 해둔 서식을 모두 물립니다
+· 배경색 · 테두리(굵게·점선·이중선) · 합치기 · 없애기
+· 정간 내용(음·시김새)은 그대로">
+          <svg class="cs-ico" viewBox="0 0 14 20" aria-hidden="true">
+            <rect x="1.8" y="1.8" width="10.4" height="16.4" rx="1.5" fill="none"
+                  stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.6,2"/>
+          </svg><span>초기화</span></button>
+        <!-- 초기화가 배경색과 가로줄(테두리)을 '함께' 지운다는 걸 버튼만 봐선 모른다 —
+             한 줄로 상시 적어 둔다(툴팁에만 있으면 열어보기 전엔 놓친다). -->
+        <div class="cs-foot-note">배경색·가로줄을 함께 지웁니다</div>
+      </div>
+    </div>
+    <div id="jangdanArea" class="dock-panel direct-win">
+      <!-- 초기화는 예전엔 위 별도 리본 박스에 있었는데, 뜬/도킹 창의 닫기(X)와 겹쳐서
+           머리줄(melody-head) 오른쪽 끝으로 옮겼다. 끌기 그립도 여기로 와 플로팅 끌기를 유지. -->
+      <div class="melody-head">
+        <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+          <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+        </div>
+        <button type="button" id="jangdanToggle" class="icon-btn mini-toggle" title="접기/펼치기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <label class="chk" title="켜면 맨 처음 각 옆에 장구 장단 한 줄이 추가됩니다">
+          <input type="checkbox" id="wantJangdan"></label>
+        장단 입력
+        <span class="guide-wrap">
+          <button type="button" id="jangdanGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <div id="jangdanGuide" class="melody-guide">
+            <div class="mg-sec"><b>입력 방법</b><br>
+              • 장단은 맨 처음 각 옆에 한 번만 표시됩니다.<br>
+              • 정간마다 궁·덩·기덕·덕·다·더러러러 중 하나를 적습니다.
+            </div>
+          </div>
+        </span>
+        <button type="button" id="jangdanReset" class="mel-btn mh-reset tip" data-tip="장단 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲ 초기화</button>
+      </div>
+      <div class="gak-warn" id="jangdanGakWarn"></div>
+      <div id="jangdanRow">
+        <div id="jangdanPaletteWrap"><div id="jangdanPalette" class="palette"></div></div>
+        <div id="jangdanEditorCol">
+          <textarea id="jangdan" spellcheck="false"
+            placeholder="| 로 정간 구분(맨 처음 각 옆에만 표시).  예)  덩 | 기덕 | 궁 | 덕"></textarea>
+        </div>
+      </div>
+    </div>
+    <div id="lyricsArea" class="dock-panel direct-win">
+      <!-- 초기화·글씨체는 예전 위 별도 리본 박스에 있었는데, 닫기(X)와 겹쳐 머리줄 오른쪽 끝으로
+           옮겼다. 끌기 그립도 여기로 와 플로팅 끌기를 유지. -->
+      <div class="melody-head">
+        <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+          <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+        </div>
+        <button type="button" id="lyricsToggle" class="icon-btn mini-toggle" title="접기/펼치기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+        <!-- 켜고 끄는 체크박스가 있었으나 없앴다 — 곁줄은 '쓸까 말까'를 미리 정할 일이 아니라
+             쓰면 생기는 줄이다(app.js lyricsLaneOn 참고). 창을 열면 빈 곁줄이 보이고, 거기
+             적으면 남는다. 각 하나를 통째로 먹는 장단만 스위치를 그대로 뒀다. -->
+        곁줄 <span class="mh-sub">가사·활·구음</span>
+        <span class="guide-wrap">
+          <button type="button" id="lyricsGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <div id="lyricsGuide" class="melody-guide">
+            <div class="mg-sec"><b>입력 방법</b><br>
+              • 선율처럼 각(세로줄)마다 한 줄, 정간마다 한 음절씩 적습니다.<br>
+              • 옆 율명과 나란히, 그 정간 오른쪽 곁줄에 표시됩니다.
+            </div>
+            <!-- '텍스트로 입력할 때'(줄바꿈=각, |=정간, 스페이스=분박) 절은 뺐다 — 곁줄은
+                 악보에서 칸을 눌러 쓰는 것이 정공법이고, 그 규칙은 아래 편집칸을 직접 볼 때만
+                 필요한데 안내를 여는 사람 대부분에게는 군더더기였다. 되살리지 말 것. -->
+          </div>
+        </span>
+        <span class="mh-right">
+          <span class="ribbon-select-group">
+            <label for="lyricsFont">글씨체</label>
+            <select id="lyricsFont">
+              <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+              <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+              <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+              <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+              <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+            </select>
+          </span>
+          <button type="button" id="lyricsReset" class="mel-btn mh-reset tip" data-tip="곁줄 내용을 모두 비웁니다 (⌘/Ctrl+Z로 복구)">⟲ 초기화</button>
+        </span>
+      </div>
+      <div class="gak-warn" id="lyricsGakWarn"></div>
+      <!-- 가사 기호 팔레트 — 클릭하면 지금 편집 중인 가사 칸(직접 입력) 또는 커서(에디터)에
+           {기호} 토큰이 한 글자처럼 들어가고, 악보엔 그 자리에 이미지로 표시된다.
+           속은 시김새·장단과 같은 공용 빌더(buildSymPalette)가 채운다 — 검색·최근·칩 모양이
+           세 창에서 같아야 해서. 왼쪽에 있던 '기호' 라벨은 팔레트 안 제목줄로 옮겼다. -->
+      <div class="lyric-sym-pal" id="lyricsSymPal">
+        <div class="palette" id="lyricsSymRow"></div>
+      </div>
+      <div id="lyricsRow">
+        <div id="lyricsEditorCol">
+          <div class="ed-pager" style="display:none;">
+            <button type="button" class="ed-prev mel-btn" title="이전 페이지 편집">◀</button>
+            <span class="ed-plabel">1 / 1 페이지</span>
+            <button type="button" class="ed-next mel-btn" title="다음 페이지 편집">▶</button>
+          </div>
+          <textarea id="lyrics" spellcheck="false"
+            placeholder="한 줄에 한 각 · | 로 정간 구분.  예)  창 | 밖 | 이 | 어 | 른 | 어"></textarea>
+        </div>
+      </div>
+    </div>
+    <div id="textArea" class="dock-panel direct-win">
+      <!-- 텍스트 탭엔 리본이 없어 뜬 패널을 끌 손잡이가 따로 필요함(다른 탭은 리본의 그립을 재사용) -->
+      <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+        <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+      </div>
+      <div class="melody-head">
+        텍스트
+        <span class="guide-wrap">
+          <button type="button" id="textGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <div id="textGuide" class="melody-guide">
+            <div class="mg-sec"><b>목록</b><br>
+              • 제목·부제·자유 텍스트가 <b>한 목록에 한 줄씩</b> 놓입니다 — 위 칸에
+                내용을 적고 '추가'를 누르면 줄이 아래로 늘어납니다.<br>
+              • 줄마다 내용·방향·크기·자간을 그 자리에서 고칩니다.<br>
+              • 글씨체는 <b>머리줄</b>에서 제목·자유 텍스트에 한꺼번에 걸립니다.
+            </div>
+            <div class="mg-sec"><b>제목 · 부제</b><br>
+              • 곡에 하나뿐이라 목록 <b>맨 위</b>에 고정으로 섭니다 (빠르기/각/장 창의
+                '빠르기' 줄과 같은 규칙).<br>
+              • 내용은 <b>설정 › 문서 탭</b>과 같은 값이며 서로 연동됩니다. 비우면
+                목록에서 사라집니다.
+            </div>
+            <div class="mg-sec"><b>자유 텍스트</b><br>
+              • 악보 위에 얹는 자유 텍스트입니다 (대여음 등).<br>
+              • 악보 위에서 직접 끌어 위치를 옮길 수 있습니다.
+            </div>
+          </div>
+        </span>
+        <!-- 글씨체 — 제목·자유 텍스트 전부에 걸리는 전역 설정이라 목록 밖 머리줄에 둔다
+             (章 창의 크기·간격, 가사 창의 글씨체와 같은 자리·같은 규칙). -->
+        <span class="mh-right">
+          <span class="ribbon-select-group">
+            <label for="titleFont">글씨체</label>
+            <select id="titleFont" title="제목·자유 텍스트에 함께 걸립니다 (부제는 제목을 따름)">
+              <option value="'GungSeo','궁서','Batang',serif" selected>궁서체(붓글씨)</option>
+              <option value="'Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕체</option>
+              <option value="'AppleMyungjo','Nanum Myeongjo','Batang',serif">명조체</option>
+              <option value="'AppleGothic','Apple SD Gothic Neo',sans-serif">애플고딕</option>
+              <option value="'Apple LiSung','STKaiti','GungSeo',serif">해서체</option>
+            </select>
+          </span>
+        </span>
+      </div>
+      <!-- 본문은 '추가 줄 + 목록 하나'다 — 章(빠르기/각/장) 창과 같은 짜임. 예전엔 제목·부제·
+           글씨체가 위쪽 .field 고정 블록 셋이었는데, 블록과 목록의 시각 언어가 달라 '항목이
+           늘어나는 흐름'이 위에서 끊겼다(2026-07-25 통합). 도로 .field 블록으로 빼지 말 것:
+           전역 설정은 머리줄, 항목은 목록 — 이 두 자리만 쓴다. -->
+      <div id="textRow">
+        <div class="tx-add">
+          <input type="text" id="textAddInput" placeholder="예: 대여음">
+          <button type="button" id="textAddBtn" class="at-add">추가</button>
+        </div>
+        <div class="hint">• 제목·부제는 <b>설정 › 문서 탭</b>과 같은 값이며, 비우면 목록에서 사라집니다.<br>
+          • 악보 위 글자를 <b>직접 끌어</b> 위치를 옮길 수 있습니다.</div>
+        <!-- 제목·부제 항목 — 곡에 하나뿐이라 목록 맨 위에 고정으로 세운다(#tempoItem과 같은
+             규칙). **마크업에서 지우지 말 것**: collectState가 CTRL_IDS를 돌며 $(id).value를
+             널 검사 없이 읽어, titleSize 등이 없으면 저장이 통째로 터진다. 내용이 비면
+             render()가 style.display로 숨길 뿐이다.
+             내용 칸(#titleMirror)은 설정 › 문서 탭 #title의 양방향 미러 — 정본은 #title이고
+             (render·저장이 그걸 읽음) 여기서 고치면 그쪽에 써넣는다. #tempoBpmGak ↔ #tempoBpm
+             과 같은 방식. 줄모양을 자유 텍스트 항목과 같게 하려고 둔 것이니 정본을 여기로
+             옮기지 말 것. -->
+        <div id="txTitleItem" class="tx-item">
+          <span class="gn-gak">제목</span>
+          <input type="text" id="titleMirror" title="제목 내용 — 설정 › 문서 탭과 같은 값입니다">
+          <label>방향
+            <select id="titleLayout" title="제목 표기 방향">
+              <option value="side" selected>세로 칸</option>
+              <option value="top">가로 위</option>
+            </select></label>
+          <label>크기(mm)<input type="number" id="titleSize" min="2" max="30" step="0.5" value="10"></label>
+          <label>자간(mm)<input type="number" id="titleSpacing" min="-5" max="30" step="0.5" value="0"></label>
+          <!-- 칸 폭 — 세로 칸 제목이 첫 페이지에서 차지하는 각 수. '가로 위' 제목엔 의미가
+               없어 render()가 숨긴다. 각 단위로만 움직여 격자 정렬이 유지된다. -->
+          <label id="titleGakWidthWrap" title="세로 칸 제목이 차지하는 각 수 — 넓게 잡으면 그만큼 첫 페이지에 들어가는 각이 줄고, 각 너비는 종이에 맞춰 자동으로 다시 잡힙니다">칸 폭
+            <select id="titleGakWidth">
+              <option value="auto" selected>자동</option>
+              <option value="1">1각</option>
+              <option value="2">2각</option>
+              <option value="3">3각</option>
+              <option value="4">4각</option>
+            </select></label>
+          <!-- 상하/좌우 — 악보에서 제목을 끌면 이 값이 바뀐다(양수 = 위/오른쪽).
+               기본 -3 = 예전 '아래로 3mm'과 같은 자리. 드래그가 주 조작이라 숨김. -->
+          <input type="number" id="titleOffset" step="1" value="-3" hidden>
+          <input type="number" id="titleOffsetX" step="1" value="0" hidden>
+        </div>
+        <div id="txSubItem" class="tx-item">
+          <span class="gn-gak">부제</span>
+          <input type="text" id="subMirror" title="부제 내용 — 설정 › 문서 탭과 같은 값입니다">
+          <label>크기(mm)<input type="number" id="subSize" min="1" max="20" step="0.5" value="5"></label>
+          <label>자간(mm)<input type="number" id="subSpacing" min="-5" max="30" step="0.5" value="0"></label>
+          <input type="number" id="subOffset" step="1" value="0" hidden>
+          <input type="number" id="subOffsetX" step="1" value="0" hidden>
+        </div>
+        <div id="textItemList"></div>
+      </div>
+    </div>
+    <!-- 각 이름 — 특정 각 '위'에 붙는 이름(대여음·중여음·1장 등). 자유 텍스트와 달리 각에
+         소속되어 각을 따라다니고(페이지 이동·각 삽입/삭제 포함), 인쇄·PNG에도 나온다.
+         '1장'처럼 숫자+장은 악보에 一章 꼴 한자로, 대여음 등 알려진 단어도 한자로 표기. -->
+    <div id="gakNameArea" class="dock-panel direct-win">
+      <div class="bar-grip dock-panel-grip" title="끌어서 이동">
+        <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
+      </div>
+      <div class="melody-head">
+        빠르기/각/장
+        <span class="guide-wrap">
+          <button type="button" id="gakNameGuideToggle" class="icon-btn" title="입력 방법 안내">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </button>
+          <div id="gakNameGuide" class="melody-guide">
+            <div class="mg-sec"><b>각/장</b><br>
+              • 악보에서 각(마디) 위의 빈 부분을 클릭해 바로 입력할 수 있습니다.<br>
+              • 각에 소속되어 각을 따라다니고, 인쇄·PNG에도 표시됩니다.<br>
+              • '1장'·'2장'처럼 쓰면 악보엔 一章·二章 꼴 한자로 표시됩니다.<br>
+              • 대여음·중여음·여음·환입·초장·종장도 한자로 표시됩니다.<br>
+              • 오른쪽 크기·간격으로 모든 이름을 한꺼번에 조절합니다 — 간격은
+                각 위쪽 선과 이름 '맨 아래 글자' 사이라, 크기를 키워도 위로만 자랍니다.<br>
+              • <b>빠르기</b>를 켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井
+                식으로 표시되고, 아래 목록에 <b>빠르기 항목</b>이 하나 생깁니다 — 그 항목의 <b>BPM</b>
+                칸에서 숫자를 바로 조절할 수 있고 <b>재생 설정(⚙)과 서로 연동</b>됩니다.
+                <b>크기·간격</b>도 그 항목에서 각/장 이름과 따로 조절합니다.
+            </div>
+          </div>
+        </span>
+        <span class="mh-right">
+          <label class="chk" title="켜면 맨 처음 각(장단이 있으면 장단 칸) 위에 一分・六十井 식으로 표시합니다 — 숫자(BPM)는 아래 '빠르기' 항목에서 조절하며 재생 설정(⚙)과 연동됩니다">
+            <input type="checkbox" id="wantTempo"> 빠르기
+          </label>
+          <label class="chk" title="켜면 '1장'→一章, 대여음→大餘音처럼 한자로 표시합니다. 끄면 쓴 그대로">
+            <input type="checkbox" id="gakNameHanja" checked> 한자
+          </label>
+          <span class="tool-inline" title="모든 각/장 이름의 글자 크기 배율">크기
+            <span class="num-unit"><input type="number" id="gakNameSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
+          </span>
+          <span class="tool-inline" title="각 위쪽 선과 이름 맨 아래 글자 사이 간격">간격
+            <span class="num-unit"><input type="number" id="gakNameGap" min="0" max="20" step="0.5" value="4"><span class="unit">mm</span></span>
+          </span>
+        </span>
+      </div>
+      <div id="gakNameRow">
+        <div class="tx-add">
+          <input type="number" id="gakNameAddGak" min="1" placeholder="각 번호" title="이름을 붙일 각 번호(1부터)">
+          <input type="text" id="gakNameAddInput" placeholder="예: 1장, 대여음">
+          <button type="button" id="gakNameAddBtn" class="at-add">추가</button>
+        </div>
+        <!-- 템포 항목 — 머리줄 '템포'를 켜면 나타난다. 각/장 이름과 같은 자리(각 위)에 붙지만
+             각에 소속된 이름이 아니라 곡 전체에 하나뿐이라 목록 맨 위에 따로 세운다.
+             크기는 각/장 이름과 따로 논다(#tempoSize) — 이름은 여러 개를 한꺼번에 맞추는
+             머리줄 '크기'를 쓰고, 템포는 하나뿐이라 제 항목에서 바로 조절하는 게 자연스럽다.
+             **마크업에 늘 있어야 한다**(꺼져 있을 땐 CSS로 숨길 뿐) — collectState가
+             CTRL_IDS를 돌며 $(id).value를 널 검사 없이 읽어서, 없으면 저장이 통째로 터진다.
+             간격(#tempoGap)도 마찬가지로 따로 — 높이 예약과 그리기가 이 한 값을 같이 쓴다. -->
+        <div id="tempoItem" class="tx-item">
+          <span class="gn-gak">빠르기</span>
+          <span id="tempoPreview" class="gn-preview" title="아래 두 칸으로 만들어지는 실제 표기">一分・六十井</span>
+          <!-- 악보에 적는 빠르기 — 이 두 칸이 **표기의 정본**이다(재생 BPM은 아래 규칙으로 따로 논다).
+               최대를 비우면 예전처럼 한 값만 적힌다: 一分・六十井 / 채우면 一分・六十~八十井.
+               실제 악보가 최소~최대로 적는 일이 흔해 범위를 받는다. -->
+          <span class="tool-inline" title="악보에 적을 빠르기(1분에 몇 정간). 최대를 비우면 한 값만 적습니다">BPM
+            <span class="num-unit"><input type="number" id="tempoBpmGak" min="20" max="240" value="60"></span>
+          </span>
+          <span class="tool-inline" title="최대값 — 적으면 '최소~최대'로 표기됩니다. 비우면 한 값만 표기">~
+            <span class="num-unit"><input type="number" id="tempoBpmGakMax" min="20" max="240" placeholder="최대" title="비우면 한 값만 적습니다"></span>
+          </span>
+          <span class="tool-inline" title="빠르기 표기의 글자 크기 배율 (각/장 이름과 따로)">크기
+            <span class="num-unit"><input type="number" id="tempoSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
+          </span>
+          <span class="tool-inline" title="빠르기 표기의 글자 사이 세로 간격 — 세로쓰기라 위아래로 벌어집니다">자간
+            <span class="num-unit"><input type="number" id="tempoSpacing" min="-3" max="20" step="0.5" value="0"><span class="unit">mm</span></span>
+          </span>
+          <!-- 위치(좌우 tempoOffX · 상하 tempoGap)는 **악보에서 끌어서** 정한다. 예전엔 상하가
+               '간격(mm)' 칸으로 나와 있었는데, 이름은 간격이어도 하는 일이 상하 위치라 헷갈렸고
+               끌기와 하는 일이 똑같았다(시김새 패널에서 좌우·상하를 뺀 것과 같은 이유).
+               **둘 다 DOM에선 지우지 말 것**: 드래그가 여기에 값을 써넣고, collectState가
+               CTRL_IDS를 돌며 $(id).value를 널 검사 없이 읽어 없으면 저장이 통째로 터진다.
+               tempoGap은 높이 예약(tempoH)과 그리기가 같이 쓰는 값이기도 하다. -->
+          <input type="number" id="tempoGap" value="4" hidden>
+          <input type="number" id="tempoOffX" value="0" hidden>
+        </div>
+        <div id="gakNameList"></div>
+      </div>
+    </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <!-- 리본·뜬 도구창 버튼 호버 설명 — 버튼 위로 뜨는 말풍선(.tip::after)이 overflow 있는
+       조상 상자 밖으로 나가는 순간 잘려 안 보인다. 리본 버튼만은 body 바로 아래(어떤
+       overflow 조상에도 안 걸리는) 뜬 말풍선 하나를 공유해서 JS로 위치를 계산해 띄운다. -->
+  <div id="ribbonTipFloat" class="ribbon-tip-float"></div>
+
+  <!-- 새 문서 마법사 — '새 문서' 버튼을 눌렀을 때뿐 아니라, 저장된 작업이 전혀 없는 첫 실행에도
+       뜬다. 정간보의 가장 기본적인 뼈대(정간 수·대강·총 각 수·제목·부제·장단 사용 여부)를
+       먼저 정하고 시작하게 한다. -->
+  <div id="newDocModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h3>새 문서 만들기</h3>
+      <div class="field">
+        <label for="ndBeats">한 각의 정간 수</label>
+        <input type="number" id="ndBeats" min="1" max="64" value="12">
+      </div>
+      <div class="field">
+        <label for="ndDaegang">대강 분절 (선택)</label>
+        <input type="text" id="ndDaegang" placeholder="예: 3 3 3 3">
+        <div class="hint">비워두면 박 수에 맞는 대표 패턴이 자동으로 들어갑니다.</div>
+      </div>
+      <div class="field">
+        <label for="ndGakCount">총 각 수</label>
+        <input type="number" id="ndGakCount" min="1" max="480" placeholder="기본: 8">
+        <!-- 장단이 한 각 자리를 '따로' 차지한다는 걸 여기서 미리 말해줘야 한다 — 총 각 수에
+             장단 줄까지 세어 넣고 "한 각이 모자라다/남는다"고 헷갈리는 경우가 잦아서 -->
+        <div class="hint">• <b>선율이 들어갈 각만</b> 세어 주세요. 장단을 넣으면 장단 줄이 맨 앞에 <b>한 각 자리를 따로</b> 차지합니다(총 각 수에 포함하지 않음).</div>
+      </div>
+      <div class="field">
+        <label for="ndTitle">곡 제목 (선택)</label>
+        <div class="row">
+          <input type="text" id="ndTitle" placeholder="예: 언편" style="flex:1; min-width:0;">
+          <select id="ndTitleLayout" title="제목 표기 방향" style="flex:0 0 96px; width:96px;">
+            <option value="side" selected>세로 칸</option>
+            <option value="top">가로 위</option>
+          </select>
+        </div>
+        <div class="hint">비워두면 제목 없이 문서를 만듭니다.</div>
+      </div>
+      <div class="field">
+        <label for="ndSubtitle">부제 (선택)</label>
+        <input type="text" id="ndSubtitle" placeholder="예: (한송정)">
+        <div class="hint">• 제목·부제에 //를 넣으면 줄바꿈이 됩니다.</div>
+      </div>
+      <div class="field">
+        <label class="chk"><input type="checkbox" id="ndWantJangdan"> 장단 입력 사용</label>
+      </div>
+      <div class="btns">
+        <button type="button" id="ndCancel" class="secondary">취소</button>
+        <button type="button" id="ndCreate">만들기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 도움말 센터 — 상단바 ? 버튼(#btnHelp)으로 여는 큰 모달. 정간보를 처음 보는 사람의
+       기초(정간보란?)부터 사용 흐름(시작하기)·입력 문법(입력 방법)·단축키까지 4개 탭.
+       탭 클래스는 사이드바용 .tab/.tabpanel과 절대 겹치면 안 됨(app.js가 문서 전체를
+       토글하므로) — 도움말 전용 .help-tab/.help-pane 사용. 본문 출처: 기능-정리.md 압축. -->
+  <div id="helpModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box help-box">
+      <div class="help-head">
+        <h3>도움말</h3>
+        <button type="button" id="helpClose" class="icon-btn" title="닫기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="help-body">
+        <nav class="help-tabs">
+          <button type="button" class="help-tab active" data-help="basics">정간보란?</button>
+          <button type="button" class="help-tab" data-help="start">시작하기</button>
+          <button type="button" class="help-tab" data-help="input">입력 방법</button>
+          <button type="button" class="help-tab" data-help="keys">단축키</button>
+        </nav>
+        <div class="help-panes">
+
+          <section class="help-pane active" data-help="basics">
+            <h4>정간보(井間譜)란?</h4>
+            <p>정간보는 조선 세종 대에 창안되어 오늘날까지 쓰이고 있는 한국 전통음악의 대표적인 기보법입니다. 우물 정(井) 자가 위아래로 이어진 형태의 악보라는 데서 이름이 왔으며, 네모 칸 하나하나를 <b>'정간'</b>이라 부릅니다.</p>
+            <p>정간 <b>한 칸은 1박</b>을 나타내며, 한 칸에 여러 음을 적으면 정간 내 음의 위치에 따라 반 박, ⅓박과 같이 <b>분박(分拍)</b>이 되거나 두 칸에 걸쳐 1박 이상의 음길이를 가지게 됩니다. 이처럼 음의 길이를 기록할 수 있는 악보를 유량(有量)악보라 하며, 정간보는 <b>동양에서 가장 오래된 유량악보</b>로 평가됩니다.</p>
+            <!-- 도해 1: 읽는 순서 — 3각×4정간 미니 격자. 색은 전부 변수라 다크 자동 대응.
+                 화살표는 역할을 나눠 둘: ① 한 각 안은 위→아래(오른쪽 세로, 번호 ①→④와 같은 축),
+                 ② 다음 각은 왼쪽으로(위 가로). ④→⑤·⑧→⑨ 점선이 두 축이 만나는 '건너뜀'을 그린다 —
+                 예전엔 가로 화살표에만 '읽는 방향'이라 붙어 있어 번호(세로 진행)와 어긋나 보였다. -->
+            <svg class="help-fig" viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정간보 읽는 순서 도해">
+              <text x="244" y="16" font-size="11" fill="var(--accent)" text-anchor="end">다음 각은 왼쪽으로</text>
+              <line x1="238" y1="26" x2="92" y2="26" stroke="var(--accent)" stroke-width="1.5"></line>
+              <path d="M98 22 L90 26 L98 30 Z" fill="var(--accent)"></path>
+              <g stroke="var(--line)" fill="none">
+                <rect x="76" y="36" width="168" height="128"></rect>
+                <line x1="132" y1="36" x2="132" y2="164"></line>
+                <line x1="188" y1="36" x2="188" y2="164"></line>
+                <line x1="76" y1="68" x2="244" y2="68"></line>
+                <line x1="76" y1="100" x2="244" y2="100"></line>
+                <line x1="76" y1="132" x2="244" y2="132"></line>
+              </g>
+              <g font-size="13" fill="var(--ink)" text-anchor="middle">
+                <text x="216" y="57">①</text><text x="216" y="89">②</text><text x="216" y="121">③</text><text x="216" y="153">④</text>
+                <text x="160" y="57">⑤</text><text x="160" y="89">⑥</text><text x="160" y="121">⑦</text><text x="160" y="153">⑧</text>
+                <text x="104" y="57">⑨</text><text x="104" y="89">⑩</text><text x="104" y="121">⑪</text><text x="104" y="153">⑫</text>
+              </g>
+              <!-- ④→⑤, ⑧→⑨ 건너뜀(다음 각 맨 위로) — 흐름이 지그재그임을 격자 위에 직접 -->
+              <g stroke="var(--muted)" fill="none" stroke-dasharray="3 3" stroke-width="1">
+                <path d="M208 148 C192 116 184 92 168 62"></path>
+                <path d="M152 148 C136 116 128 92 112 62"></path>
+              </g>
+              <path d="M166 57 L173 63 L166 66 Z" fill="var(--muted)"></path>
+              <path d="M110 57 L117 63 L110 66 Z" fill="var(--muted)"></path>
+              <line x1="254" y1="44" x2="254" y2="156" stroke="var(--accent)" stroke-width="1.5"></line>
+              <path d="M250 148 L254 158 L258 148 Z" fill="var(--accent)"></path>
+              <text x="260" y="90" font-size="10" fill="var(--accent)">한 각 안은</text>
+              <text x="260" y="104" font-size="10" fill="var(--accent)">위→아래</text>
+              <text x="160" y="182" font-size="10" fill="var(--muted)" text-anchor="middle">세로 한 줄이 각(한 장단) · 칸 하나가 정간(1박)</text>
+            </svg>
+            <h4>읽는 순서</h4>
+            <ul>
+              <li>세로 한 줄을 <b>각</b>이라 합니다. 오른쪽부터 1각, 2각 순서로 세며, 보통 <b>한 각에 한 장단</b>이 들어갑니다.</li>
+              <li>세로쓰기 글을 읽듯 <b>오른쪽 각부터 위에서 아래로</b> 읽고, 한 각을 다 읽으면 <b>왼쪽 각</b>으로 넘어갑니다.</li>
+              <li>한 정간 안에 음이 여럿이면 가로쓰기처럼 <b>왼쪽에서 오른쪽으로</b>, 줄이 나뉘면 <b>위에서 아래로</b> 읽습니다.</li>
+              <li>각 안을 굵은 가로선으로 나눈 단위를 <b>대강</b>이라 합니다. 레이아웃의 '대강 분절'을 통해 대강을 표기할 수 있습니다.</li>
+            </ul>
+            <h4>12율명 — 음이름</h4>
+            <p>서양의 음이름(C, D, E…) 대신 12개의 율명을 사용하여 절대음을 표현합니다: <b>황·대·태·협·고·중·유·임·이·남·무·응</b> — 전통 악보에서는 한자 <b>黃·大·太·夾·姑·仲·蕤·林·夷·南·無·應</b>으로 적습니다. 옥타브(±2옥타브)는 이 한자에 <b>변(部首)을 더해</b> 나타냅니다:</p>
+            <ul>
+              <li>한 옥타브 <b>위</b>(청)는 <b>삼수변(氵)</b>을 붙입니다 — 黃→<b>潢</b>(청황), 太→<b>汰</b>(청태).</li>
+              <li>한 옥타브 <b>아래</b>(배·탁)는 <b>사람인변(亻)</b>을 붙입니다 — 黃→<b>僙</b>(배황), 林→<b>㑣</b>(배임).</li>
+              <li>두 옥타브 <b>위</b>(중청)는 삼수변을 <b>겹쳐</b> 붙이고(黃→<b>㶂</b>), 두 옥타브 <b>아래</b>(하배)는 <b>두인변(彳)</b>을 붙입니다(黃→<b>㣴</b>).</li>
+              <li>한글로 부를 때는 앞에 <b>청·중청</b>(위) / <b>배(탁)·하배</b>(아래)를 붙여 읽습니다 — 예: 청황, 배임.</li>
+            </ul>
+            <!-- 도해 2: 정간 하나 해부 — 율명·시김새·분박의 위치. 시김새(붙임표)는 율명 바로 오른쪽에 붙는다. -->
+            <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="정간 구성 요소 도해">
+              <rect x="44" y="14" width="104" height="120" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <line x1="44" y1="74" x2="148" y2="74" stroke="var(--line)"></line>
+              <!-- 율명은 정간 중앙(x=96), 시김새(붙임표)는 그 오른쪽에 붙는다 -->
+              <text x="96" y="52" font-size="26" fill="var(--ink)" text-anchor="middle">黃</text>
+              <!-- 시김새(붙임표) — 손그림 대신 실제 시김새 이미지를 JS(app.js 도움말 센터)가 끼운다. 율명 바로 오른쪽.
+                   다크모드에선 검은 잉크가 안 보이므로 .help-sigim을 반전(css). -->
+              <image id="helpFigSigim" class="help-sigim" x="112" y="32" width="20" height="20" preserveAspectRatio="xMidYMid meet"></image>
+              <text x="96" y="115" font-size="26" fill="var(--ink)" text-anchor="middle">太</text>
+              <g font-size="11" fill="var(--muted)">
+                <line x1="132" y1="40" x2="190" y2="26" stroke="var(--line)"></line>
+                <text x="194" y="30" fill="var(--accent)">시김새(꾸밈음 기호)</text>
+                <line x1="96" y1="58" x2="190" y2="54" stroke="var(--line)"></line>
+                <text x="194" y="58">율명(음)</text>
+                <line x1="110" y1="76" x2="190" y2="82" stroke="var(--line)"></line>
+                <text x="194" y="86">분박 — 黃·太가</text>
+                <text x="194" y="100">한 박을 반씩 나눔</text>
+              </g>
+            </svg>
+            <h4>함께 적는 것들</h4>
+            <ul>
+              <li><b>시김새</b> — 음의 꾸밈이나 주법을 말하며, 음 옆에 기호로 붙여 표현하거나 개별적으로 사용될 수 있습니다.</li>
+              <li><b>장단</b> — 장구 구음(덩·덕·쿵 등)을 첫번째 장단 각에 적어 곡의 장단을 나타냅니다.</li>
+              <li><b>곁줄</b> — 정간의 오른쪽 공간을 말하며 노랫말이나 활 기호·장구 구음 등을 적을 수 있습니다.</li>
+            </ul>
+            <!-- 출처표시: 시김새 도안의 참조 원전(국립국악원 정악보 7권). 문구 수정 시 논문 각주와 함께 갱신 -->
+            <p class="help-credit">시김새 기호 도안은 국립국악원 발간 『가야금 정악보』·『거문고 정악보』·『피리 정악보』·『해금 정악보』(2015), 『대금 정악보』·『아쟁 정악보』(2016), 『양금 정악보』(2025)의 표기를 참조하여 다시 그린 것입니다.</p>
+          </section>
+
+          <section class="help-pane" data-help="start">
+            <ol>
+              <li><b>새 문서 만들기</b> — 상단바 오른쪽의 <b>＋ 새 문서</b>를 누르면 마법사가 열립니다. 한 각의 정간 수(박 수)·총 각 수·제목만 정하면 빈 악보가 만들어집니다.</li>
+              <!-- 에디터 모드 임시 비활성화 — '입력 방식 고르기' 단계를 뺐다(직접 입력만).
+                   되살릴 때 이 li 복원 + 위 h4를 '다섯 단계'로:
+              <li><b>입력 방식 고르기</b> — 상단바 왼쪽, 문패 옆에서 <b>직접 입력</b>(악보 칸을 클릭해 그 자리에서 입력, 기본)과 <b>에디터</b>(곡 전체를 텍스트로 편집) 중 하나를 고릅니다. 언제든 바꿀 수 있습니다.</li>
+              -->
+              <li><b>선율 입력</b> — 악보의 정간을 클릭해 입력 카드에 쓰고, 팔레트(율명·시김새)를 열어 클릭으로 넣을 수도 있습니다. 장단·곁줄도 같은 방식입니다.</li>
+              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 <b>보관</b> 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 상단바 ⋯ <b>파일</b> 메뉴의 <b>파일로 저장</b>(.jgb.json)을 쓰면 됩니다.</li>
+              <li><b>인쇄·내보내기</b> — 상단바의 <b>인쇄</b> 버튼으로 인쇄(PDF 저장)하고, ⋯ <b>파일</b> 메뉴에서 PNG 이미지로 내보냅니다.</li>
+            </ol>
+            <p>화면 구성이 궁금하면 아래의 <b>둘러보기 다시 시작</b>을 눌러 주요 영역을 하나씩 확인할 수 있습니다.</p>
+          </section>
+
+          <section class="help-pane" data-help="input">
+            <p><b>율명은 한글로 적습니다.</b> 황·태·협처럼 소리 나는 대로 적으면 악보에는 한자(黃·太…)로 그려집니다. 한자로 보일지 한글로 보일지는 율명 팔레트에서 고를 수 있고, 옥타브는 앞에 <b>청·배</b>를 붙입니다(청황, 배임).</p>
+            <h4>정간에 입력하기</h4>
+            <ul>
+              <li>악보의 정간을 클릭하면 <b>입력 카드</b>가 열립니다. 여기에 아래 <b>입력 문법</b>대로 타이핑합니다. <span class="key">Enter</span>/<span class="key">Tab</span>은 다음 정간, 방향키는 옆 정간 이동.</li>
+              <li>문법 없이 넣으려면 기능바 <b>입력</b> 그룹에서 팔레트(율명·시김새 등)를 열어 두면 됩니다. 팔레트를 클릭하면 지금 열린 칸에 바로 들어갑니다.</li>
+            </ul>
+
+            <h4>붙임과 분박</h4>
+            <p>한 정간(칸) 안에서 <b>띄어쓰기 없이 이어 쓰면</b> 한 줄에 <b>왼→오른쪽</b>으로 나란히(붙임), <b>띄어 쓰면</b> 칸 안에서 줄이 나뉘어 <b>위→아래</b>로(분박) 들어갑니다.</p>
+            <!-- 정간예시① 붙임 vs 분박 -->
+            <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="붙임과 분박 예시">
+              <text x="82" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">이어 쓰기 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">황태</tspan></text>
+              <rect x="44" y="24" width="76" height="70" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <text x="70" y="68" font-size="22" fill="var(--ink)" text-anchor="middle">黃</text>
+              <text x="96" y="68" font-size="22" fill="var(--ink)" text-anchor="middle">太</text>
+              <line x1="56" y1="83" x2="104" y2="83" stroke="var(--accent)" stroke-width="1.3"></line>
+              <path d="M100 80 L106 83 L100 86 Z" fill="var(--accent)"></path>
+              <text x="82" y="114" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">붙임 · 왼→오른쪽</text>
+              <text x="82" y="129" font-size="9.5" fill="var(--muted)" text-anchor="middle">한 줄에 나란히</text>
+              <text x="238" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">띄어 쓰기 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">황 태</tspan></text>
+              <rect x="200" y="24" width="76" height="70" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
+              <line x1="200" y1="59" x2="276" y2="59" stroke="var(--line)"></line>
+              <text x="238" y="49" font-size="19" fill="var(--ink)" text-anchor="middle">黃</text>
+              <text x="238" y="86" font-size="19" fill="var(--ink)" text-anchor="middle">太</text>
+              <line x1="286" y1="31" x2="286" y2="87" stroke="var(--accent)" stroke-width="1.3"></line>
+              <path d="M283 81 L286 89 L289 81 Z" fill="var(--accent)"></path>
+              <text x="238" y="114" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">분박 · 위→아래</text>
+              <text x="238" y="129" font-size="9.5" fill="var(--muted)" text-anchor="middle">칸 안에서 줄바꿈</text>
+            </svg>
+
+            <h4>다음 정간으로 넘어가기</h4>
+            <p>정간을 클릭해 쓰고 <span class="key">Enter</span>(또는 <span class="key">Tab</span>)를 누르면 <b>다음 정간</b>으로 넘어갑니다. 각(세로 줄) 안에서는 위에서 아래로 이동합니다.</p>
+            <!-- 정간예시② 직접 입력 Enter -->
+            <svg class="help-fig" viewBox="0 0 320 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="직접 입력에서 Enter로 다음 정간 이동">
+              <text x="150" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">칸을 클릭해 쓰고 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">Enter</tspan></text>
+              <rect x="110" y="26" width="80" height="38" fill="var(--accent-soft)"></rect>
+              <g stroke="var(--ink)" fill="none" stroke-width="1.5">
+                <rect x="110" y="26" width="80" height="38"></rect>
+                <rect x="110" y="64" width="80" height="38"></rect>
+                <rect x="110" y="102" width="80" height="38"></rect>
+              </g>
+              <text x="150" y="52" font-size="20" fill="var(--ink)" text-anchor="middle">黃</text>
+              <line x1="202" y1="45" x2="202" y2="85" stroke="var(--accent)" stroke-width="1.5"></line>
+              <path d="M199 79 L202 87 L205 79 Z" fill="var(--accent)"></path>
+              <text x="210" y="66" font-size="10.5" font-weight="700" fill="var(--accent)">Enter</text>
+              <text x="210" y="80" font-size="9.5" fill="var(--muted)">다음 정간</text>
+              <text x="150" y="154" font-size="9.5" fill="var(--muted)" text-anchor="middle">각(세로 줄) 안에서는 위→아래로 이동</text>
+            </svg>
+
+            <!-- 에디터 모드 임시 비활성화 — 아래 문법 표는 장단·가사 도구창의 텍스트
+                 입력에서 여전히 쓰이므로 표는 남기고 머리말만 바꿨다. 되살릴 때 복원:
+            <h4>에디터 — 곡 전체를 텍스트로</h4>
+            <ul>
+              <li>반복 구절 복사·붙여넣기, 대량 수정에 강합니다. 악보 칸을 클릭하면 에디터의 해당 위치로 커서가 이동합니다(양방향 동기화).</li>
+              <li>에디터·텍스트 입력에서 쓰는 문법은 아래 표와 같습니다.</li>
+            </ul>
+            -->
+            <h4>입력 문법</h4>
+            <ul>
+              <li>입력 카드에서 아래 문법을 씁니다. 장단·가사 도구창의 텍스트 입력에서도 같은 문법을 쓰며, 이때는 <span class="key">|</span>로 정간을, 줄바꿈으로 각을 구분합니다.</li>
+            </ul>
+            <table>
+              <tr><th>문법</th><th>의미</th></tr>
+              <tr><td>칸 안 공백</td><td>분박: 칸 안에서 위→아래로 줄 나눔</td></tr>
+              <tr><td>이어 쓰기</td><td>붙임: 한 줄 안에서 왼→오른쪽 배치</td></tr>
+              <tr><td>청·배 접두어</td><td>옥타브 위(청황)·아래(배임)</td></tr>
+              <tr><td><span class="key">-</span></td><td>이음: 앞 음을 지속</td></tr>
+              <tr><td>쉼</td><td>쉼표(무음)</td></tr>
+              <tr><td>음 뒤 <span class="key">&lt;</span></td><td>숨표</td></tr>
+              <tr><td><span class="key">황{미는표}</span></td><td>음 뒤 괄호로 시김새 삽입</td></tr>
+              <tr><td><span class="key">|</span></td><td>정간(칸, 1박) 구분 (장단·가사 텍스트 입력)</td></tr>
+              <tr><td>줄바꿈</td><td>각 구분 (가사 텍스트 입력)</td></tr>
+            </table>
+            <p style="margin-top:8px;">• 더 자세한 규칙은 각 입력창 머리의 <b>? 버튼</b>에 있습니다.</p>
+          </section>
+
+          <section class="help-pane" data-help="keys">
+            <h4>단축키 모음</h4>
+            <table>
+              <tr><th>키</th><th>동작</th></tr>
+              <tr><td><span class="key">⌘/Ctrl+Z</span> / <span class="key">⌘/Ctrl+⇧+Z</span></td><td>실행 취소 / 다시 실행</td></tr>
+              <tr><td><span class="key">Enter</span> / <span class="key">Tab</span></td><td>다음 정간(직접 입력 카드)</td></tr>
+              <tr><td>방향키</td><td>인접 정간 이동(직접 입력 카드)</td></tr>
+              <tr><td><span class="key">Esc</span></td><td>입력 카드 닫기</td></tr>
+              <tr><td><span class="key">1</span>~<span class="key">0</span></td><td>시김새 고르기(직접 입력, 팔레트 배지)</td></tr>
+              <tr><td><span class="key">Backspace</span>/<span class="key">Delete</span></td><td>선택한 시김새 삭제(시김새 편집 모드)</td></tr>
+              <tr><td><span class="key">⌘/Ctrl+C</span> / <span class="key">⌘/Ctrl+X</span></td><td>고른 정간 구간 복사 / 오려두기 (선율·곁줄·정간 서식)</td></tr>
+              <tr><td><span class="key">⌘/Ctrl+V</span></td><td>고른 구간의 첫 정간부터 붙여넣기</td></tr>
+              <!-- 에디터 모드 임시 비활성화 — 선율 에디터 전용 단축키는 숨김. 되살릴 때 복원:
+              <tr><td><span class="key">Enter</span></td><td>각 나누기(선율 에디터, 커서 위치)</td></tr>
+              <tr><td><span class="key">⌘/Ctrl+Enter</span></td><td>각 추가(선율 에디터)</td></tr>
+              <tr><td><span class="key">→</span></td><td>다음 정간으로 커서 이동(텍스트 에디터)</td></tr>
+              -->
+            </table>
+          </section>
+
+        </div>
+      </div>
+      <div class="help-foot">
+        <button type="button" id="helpTourBtn">둘러보기 다시 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 첫 방문 환영 카드 — 저장된 작업도, 방문 기록도 전혀 없는 진짜 첫 방문에만 한 번 뜬다
+       (app.js firstVisit 판정). 어떤 버튼을 눌러도 결국 새 문서 마법사로 이어진다. -->
+  <div id="welcomeModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box welcome-box">
+      <h3>우물사이</h3>
+      <p class="welcome-sub">정간보를 웹에서 편하게 제작하고<br>인쇄·저장할 수 있습니다.</p>
+      <div class="welcome-btns">
+        <button type="button" id="wcTour">둘러보기 시작</button>
+        <button type="button" id="wcHelp" class="secondary">도움말 열기</button>
+        <button type="button" id="wcSkip" class="secondary">바로 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 둘러보기(투어) — 화면을 어둡게 덮고(#tourSpot SVG 마스크로 여러 곳을 뚫어 밝게) 실제
+       UI를 하나씩 밝혀 가며 말풍선(#tourCard)으로 설명. 단계 정의·위치 계산은 app.js TOUR_STEPS. -->
+  <div id="tourLayer" style="display:none;">
+    <!-- 어둠 + 여러 구멍 — 흰 배경(어둠 보임)에 검은 사각형(그 자리 어둠 숨김=밝음)을 app.js가
+         메인 대상·보조(also) 대상마다 넣는다. box-shadow는 구멍이 하나뿐이라 이 방식으로 바꿨다. -->
+    <svg id="tourSpot" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
+      <defs><mask id="tourSpotMask">
+        <rect x="0" y="0" width="100%" height="100%" fill="#fff"></rect>
+      </mask></defs>
+      <rect x="0" y="0" width="100%" height="100%" fill="#14120e" fill-opacity="0.55" mask="url(#tourSpotMask)"></rect>
+    </svg>
+    <div id="tourHole"></div>
+    <div id="tourCard">
+      <!-- 장 칩(1 개요 · 2 입력 · 3 꾸미기 · 4 마무리) — 전체 목차가 늘 보이고, 누르면 그 장
+           첫 단계로 건너뛴다(app.js가 TOUR_CHAPTERS로 생성). 아래 얇은 줄이 전체 진행도. -->
+      <div id="tourChips"></div>
+      <div id="tourProgress"><i id="tourProgressFill"></i></div>
+      <div id="tourStepNum"></div>
+      <h4 id="tourTitle"></h4>
+      <p id="tourBody"></p>
+      <!-- 예시 그림(fig가 있는 단계만) — '무엇을 치면 무엇이 그려지는지' 같은 시각 예시 자리 -->
+      <div id="tourFig" style="display:none;"></div>
+      <div class="tour-btns">
+        <button type="button" id="tourSkip" class="secondary">건너뛰기</button>
+        <button type="button" id="tourPrev" class="secondary">이전</button>
+        <button type="button" id="tourNext">다음</button>
+      </div>
+    </div>
+    <!-- 완료 축하 카드 — 마지막 단계에서 '다음'(완료)을 누르면 뜬다(건너뛰기 아님).
+         문구·이모지는 js/tour-text.js의 finale에서 고친다. app.js showTourFinale이 채운다. -->
+    <div id="tourFinale" style="display:none;">
+      <div id="tourFinaleEmoji" class="tf-emoji">🎉</div>
+      <h4 id="tourFinaleTitle"></h4>
+      <div id="tourFinaleBody"></div>
+      <button type="button" id="tourFinaleBtn">시작하기</button>
+    </div>
+  </div>
+
+<!-- 익명 사용 통계 래퍼(쿠키·개인정보 없음) — app.js보다 먼저 로드해 window.jgbTrack 준비 -->
+<script src="js/analytics.js"></script>
+<script src="js/notes-data.js"></script>
+<script src="js/symbols-data.js"></script>
+<script src="js/janggu-data.js"></script>
+<!-- 기호 사전(시김새·가사 기호·장구 구음의 이름과 놓일 자리) — 사람이 직접 고치는 파일.
+     위 그림 데이터에 이름을 붙이는 표라 그 뒤, app.js보다는 먼저 로드해야 한다 -->
+<script src="js/symbols-registry.js"></script>
+<!-- 둘러보기 문구 — 사람이 직접 고치는 파일. app.js보다 먼저 로드해야 한다 -->
+<script src="js/tour-text.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
