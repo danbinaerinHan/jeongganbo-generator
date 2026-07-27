@@ -45,8 +45,8 @@ python3 -m http.server 8000
 
 이 시스템을 연구에서 인용하려면 테크니컬 리포트를 인용해 주세요.
 
-> Danbinaerin Han. *Umulsai: A Plain-Text Notation Format and Serverless Web
-> Engraving System for Jeongganbo, Korean Mensural Notation.* Technical
+> Danbinaerin Han. *Umulsai: A Plain-Text Format and In-Browser Engraving
+> System for Jeongganbo, Korean Mensural Notation.* Technical
 > Report, v2026-07.
 
 - 소스 스냅샷 DOI: [10.5281/zenodo.21616981](https://doi.org/10.5281/zenodo.21616981)
