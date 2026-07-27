@@ -149,7 +149,7 @@
     // ── 가사줄 전용 기호(assets/symbol_svgs/special) ──
     { id: "가로표", ko: "가로표", at: { lyric: 0.8 } },      // 막대류는 크게
     { id: "세로표", ko: "세로표", at: { lyric: 0.8 } },
-    { id: "늘임표", ko: "늘임표", at: { lyric: 0.4 } },      // 위 fermata와 별개 그림
+    { id: "늘임표", ko: "늘임표", at: { lyric: 0.4 } },      // 위 fermata와 같은 그림, 별개 키(위 주석 참고)
     { id: "뜰", ko: "뜰", at: { lyric: 0.4 } },              // 위 sigimsae-00과 별개 그림
     { id: "장지", ko: "장지", at: { lyric: 0.4 } },
     { id: "튕김", ko: "튕김", at: { lyric: 0.4 } },

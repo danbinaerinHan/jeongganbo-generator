@@ -82,7 +82,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     어떤 차례로 보여주나). `LEGACY_ALIAS`는 옛 토큰 호환 **읽기 전용** — 새로 늘리지 말 것.
   - app.js는 옛 이름(`ORN_LIST`·`ATT_SYM_SCALE`·`LYRIC_SYMS`·`JANGGU_NAMES` 등)으로 이 사전을
     받아 쓰는 얇은 층만 남았다(`SYM_REG`). 그래서 index.html에서 **app.js보다 먼저 로드**해야 한다.
-  - 이름은 같은데 그림이 다른 짝이 둘 있다(선율 `fermata`↔가사줄 `늘임표`, `sigimsae-00`↔`뜰`).
+  - 이름이 같은 짝이 둘 있는데 성격이 다르다: 선율 `fermata`↔가사줄 `늘임표`는 **같은
+    그림**이 두 키로 등록된 것(바이트까지 동일 — 전체 103항목 중 유일한 그림 공유,
+    2026-07-27 실측)이고, `sigimsae-00`↔`뜰`은 이름만 같고 **그림이 다르다**.
     사전이 하나가 되며 드러난 충돌이라 주석으로 표시만 해뒀다 — 정리는 이름 일원화 단계에서.
 - `assets/symbol_svgs/`·`assets/janggu_svgs/` — 데이터 JS 생성용 SVG 원본(빌드 입력, 브라우저는 안 읽음).
 - `tools/gen-symbols-data.mjs` — 위 생성기. `docs/기능-정리.md` — 사용자용 기능 설명서.
