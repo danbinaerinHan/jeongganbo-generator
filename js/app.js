@@ -24,7 +24,7 @@
   // 얇게가 격자선과 같아진 건 의도한 것(테두리가 격자에 녹아든다).
   const CELL_BORDER_WIDTH_PX = { thin: T_THIN, medium: 0.3, thick: T_THICK };
 
-  const DAEGANG_PRESET = { 8: "", 10: "7 3", 12: "3 3 3 3", 16: "3 2 3 3 2 3", 20: "6 4 4 6" };
+  const DAEGANG_PRESET = { 8: "", 10: "3 2 2 3", 12: "3 3 3 3", 16: "11 5", 20: "6 4 4 6" };
   let daegangAuto = "";
   let palView = "yul";       // 팔레트 보기: 율명 / 시김새(orn)
   let yulMode = "grid";      // 율명 입력 방식: 표(grid) / 피아노 건반(piano)
