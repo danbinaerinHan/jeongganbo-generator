@@ -5163,6 +5163,82 @@
     refreshEditorSlices();
   }
 
+  // ---------- 링크 공유 (문서를 URL 해시에 담기) ----------
+  // 문서 전체(collectState)를 deflate로 압축해 주소의 해시에 싣는다:
+  //   https://umulsai.com/#s=1.<base64url>
+  // 해시는 서버로 전송되지 않으므로 정적 페이지 그대로 동작한다(서버·계정 불요).
+  // 압축은 브라우저 내장 CompressionStream("deflate-raw") — 외부 라이브러리를 안 들이는
+  // 무의존 원칙 유지. 우락 전곡이 payload 약 2,000자(실측)라 메신저·브라우저 한계 안이고,
+  // SHARE_WARN_LEN을 넘으면 파일 공유를 권한다. "1."은 버전 접두어 — 링크는 글·논문에
+  // 박제되어 몇 년 뒤 열릴 수 있으므로, 형식이 바뀌어도 옛 버전 링크는 계속 읽어야 한다.
+  const SHARE_WARN_LEN = 8000;
+  function b64urlFromBytes(bytes) {
+    let s = "";
+    for (let i = 0; i < bytes.length; i += 0x8000)   // 한 번에 spread하면 인자 수 한계에 걸릴 수 있어 쪼갠다
+      s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function bytesFromB64url(str) {
+    const s = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+    const out = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+    return out;
+  }
+  async function bytesThroughStream(bytes, ts) {
+    const stream = new Blob([bytes]).stream().pipeThrough(ts);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  async function shareLinkBuild() {
+    const json = JSON.stringify(collectState());
+    const comp = await bytesThroughStream(new TextEncoder().encode(json), new CompressionStream("deflate-raw"));
+    return location.origin + location.pathname + "#s=1." + b64urlFromBytes(comp);
+  }
+  window.jgbShareLink = shareLinkBuild;   // 검증·임베드용 노출 (window.jgbTrack과 같은 성격)
+  async function shareLinkCopy() {
+    if (typeof CompressionStream === "undefined") { alert("이 브라우저는 링크 공유를 지원하지 않습니다."); return; }
+    track("share_link");
+    const link = await shareLinkBuild();
+    if (link.length > SHARE_WARN_LEN &&
+        !confirm("곡이 커서 링크가 매우 깁니다(" + link.length + "자). 메신저에 따라 잘릴 수 있으니 '파일로 저장' 공유를 권합니다.\n그래도 복사할까요?")) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      alert("악보를 담은 링크가 복사되었습니다.\n붙여넣기로 공유하세요.");
+    } catch (e) {
+      // 클립보드 권한이 없는 환경 — 손으로 복사할 수 있게 보여준다
+      prompt("자동 복사가 막혀 있습니다. 아래 링크를 직접 복사해 주세요.", link);
+    }
+  }
+  // 링크로 받은 악보 열기 — init에서 한 번 호출된다.
+  // 규칙은 ?first=1과 같다: 해시는 쓰자마자 replaceState로 주소에서 뗀다 — 안 떼면 이
+  // 주소를 새로고침할 때마다 편집하던 악보가 링크 내용으로 되돌아간다. 작업 중이던
+  // 문서가 있으면(restored) confirm으로 묻고, 보관함에 자동 저장한 뒤 교체한다.
+  async function consumeShareHash(hadWork) {
+    const m = location.hash.match(/^#s=(\d+)\.([A-Za-z0-9_-]+)$/);
+    if (!m) return;
+    const strip = function () { history.replaceState(null, "", location.pathname + location.search); };
+    if (m[1] !== "1" || typeof DecompressionStream === "undefined") {
+      strip(); alert("이 링크의 악보를 이 브라우저에서는 읽을 수 없습니다."); return;
+    }
+    try {
+      const raw = await bytesThroughStream(bytesFromB64url(m[2]), new DecompressionStream("deflate-raw"));
+      const state = JSON.parse(new TextDecoder().decode(raw));
+      if (hadWork) {
+        if (!confirm("링크에 담긴 악보를 엽니다.\n지금 작업은 사이드바 '보관' 탭에 저장해 둡니다.")) { strip(); return; }
+        const list = loadSnaps();
+        list.unshift({ id: Date.now(), name: (($("title").value.trim() || "제목 없음") + " — 링크 열기 전 자동 저장"),
+          time: new Date().toISOString(), state: collectState() });
+        while (list.length > SNAP_MAX) list.pop();
+        saveSnaps(list); renderSnapList();
+      }
+      strip();
+      restoreFromState(state);
+      track("share_open");
+    } catch (e) {
+      strip();
+      alert("링크의 악보를 읽지 못했습니다. 링크가 중간에 잘려 복사되었을 수 있습니다.");
+    }
+  }
+
   // ---------- 숫자 입력 확정([확인] 버튼 / Enter) ----------
   // 타이핑하는 숫자 칸은 값을 바꿔도 절대 바로 적용하지 않는다 — "12"를 치는 도중
   // "1"인 순간에 구조가 재계산되어 내용이 잘려나가던 문제. 값이 바뀌면 칸 옆에
@@ -6106,6 +6182,7 @@
   });
   window.addEventListener("afterprint", function () { document.title = APP_DOC_TITLE; });
   $("btnExport").addEventListener("click", exportFile);
+  $("btnShareLink").addEventListener("click", shareLinkCopy);
   $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importFile(e.target.files[0]);
@@ -6801,6 +6878,7 @@
   let restored = false;
   try { const raw = localStorage.getItem(LS_KEY); if (raw) { applyState(JSON.parse(raw)); restored = true; } } catch (e) {}
   if (!restored) applyInputMode();
+  consumeShareHash(restored);   // 링크(#s=…)로 받은 악보 열기 — 비동기, 작업 중이면 confirm 후 교체
   // 새 문서 마법사 결과 적용(방금 '새 문서'로 리로드된 직후 한 번) — 없으면 저장된 작업이
   // 아예 없는 첫 실행인지 보고, 맞으면 같은 마법사를 바로 띄운다(임시저장 물어볼 것도 없음).
   let newDocPending = null;

@@ -113,10 +113,17 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - #btnPrint(인쇄)는 **1급 버튼**. 빈도(곡 하나에 한 번)만 보면 아래 규칙상 메뉴행이지만,
     이 앱의 최종 목적지고 위험하지도 않아 '찾기 쉬움'을 빈도보다 앞에 뒀다 — **의도된 예외**니
     규칙대로 메뉴에 도로 넣지 말 것.
-  - 파일 메뉴(#fileToggle ⋯ → #filePop): #btnPng·#btnExport·#btnImport
+  - 파일 메뉴(#fileToggle ⋯ → #filePop): #btnPng·#btnExport·#btnShareLink·#btnImport
     (+숨은 #fileImport) · ── · #btnResetContent. 이름이 '더보기'였을 땐 열기 전엔 뭐가 든지 모르는 잡동사니 서랍이라
     뜻 있는 '파일'로 바꿨다. 전체 초기화는 위험하지만 resetAllContent가 confirm()으로 한 번
     더 묻고 ⌘Z도 먹어 안전장치가 둘이라 여기 둔다.
+  - **링크 공유**(#btnShareLink, app.js '링크 공유' 절): 문서 전체를 브라우저 내장
+    CompressionStream("deflate-raw")로 압축해 `#s=1.<base64url>`에 싣는다(우락 전곡 ≈
+    2,000자 실측; 외부 라이브러리 금지 원칙 유지). 받는 쪽은 init의 `consumeShareHash`가
+    처리 — **?first=1과 같은 규칙**으로 해시를 쓰자마자 replaceState로 떼고(북마크
+    새로고침이 편집을 덮지 않게), 작업 중(restored)이면 confirm 후 현재 작업을
+    보관함(jgb_snapshots_v1)에 자동 저장하고 교체한다. `1.`은 버전 접두어 — 링크는 글에
+    박제되므로 형식을 바꿔도 v1 읽기는 남길 것. `window.jgbShareLink()`는 검증·임베드용.
   - 새 문서(#btnNewDoc)도 **1급 버튼**(#outBox 맨 앞, 새 문서→인쇄→파일 순) — 파일 메뉴
     안(File > New 자리)에 뒀더니 사람들이 못 찾았다(2026-07-18). 인쇄와 같은 '찾기 쉬움'
     예외이고, 중복 금지 원칙대로 메뉴에서는 뺐다. 도로 메뉴에 넣지 말 것.
