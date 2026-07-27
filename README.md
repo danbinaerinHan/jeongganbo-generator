@@ -50,4 +50,6 @@ python3 -m http.server 8000
 > Danbinaerin Han. *Umulsai: A Plain-Text Notation Format and Serverless Web
 > Engraving System for Jeongganbo, Korean Mensural Notation.* Technical
 > Report, v2026-07.
-<!-- TODO: 저장소 URL·Zenodo DOI 확정 후 여기와 테크리포트 Availability 절에 기재 -->
+
+- 소스 스냅샷 DOI: [10.5281/zenodo.21616981](https://doi.org/10.5281/zenodo.21616981)
+- 저장소: <https://github.com/danbinaerinHan/jeongganbo-generator>
