@@ -15,9 +15,9 @@
   // ── 설정 ─────────────────────────────────────────────────────────────
   // GoatCounter 계정 코드. 예: "jeongganbo" → https://jeongganbo.goatcounter.com
   // 비어 있으면 전송하지 않는다(연동 전 대기 모드). 계정을 만들면 여기 한 줄만 채우면 끝.
-  var GOATCOUNTER_CODE = "";
+  var GOATCOUNTER_CODE = "umulsai";
   // 기능이 크게 바뀔 때 갱신 — 대시보드에서 "버전별 사용 변화"를 나눠 볼 수 있게 이벤트에 붙는다
-  var APP_VERSION = "2026-07-10";
+  var APP_VERSION = "2026-07-28";
 
   // 대시보드에 보일 한글 라벨 (없으면 이벤트 이름 그대로)
   var EVENT_LABELS = {
