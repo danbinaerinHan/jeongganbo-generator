@@ -1069,6 +1069,9 @@
     melodyFull = ""; $("jangdan").value = ""; lyricsFull = "";
     customTexts = []; nextTextId = 1; textSel = null;
     cellStyles = {}; gakNames = {}; gakNameOffs = {}; renderGakNameList();
+    // 내용이 통째로 사라진 문서는 더 이상 그 게시물이 아니다 — 여기서 손을 떼지 않으면
+    // 백지가 된 악보로 남들이 보고 있는 게시물을 덮어쓸 수 있다(되돌리기로 같이 살아난다).
+    pubId = null;
     reconcileMelody(); reconcileJangdan(); reconcileLyrics();
     refreshEditorSlices();
     syncActiveFromCursor();
@@ -5002,6 +5005,14 @@
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX"];
   const LS_KEY = "jgb_state_v1";
 
+  // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
+  // **수정 토큰은 여기 두지 않는다** — 권한은 게시한 브라우저의 localStorage에만 있어야 하고,
+  // 문서에 실으면 파일(.jgb.json)·링크를 타고 남의 손에 그대로 넘어간다.
+  // id를 문서 상태에 두는 까닭: '새 문서·불러오기·되돌리기·링크 열기'가 저마다 따로 챙기지
+  // 않아도 정체성이 문서를 따라다녀 저절로 맞는다. 남의 파일을 열면 그 사람의 id가 딸려오지만
+  // 토큰이 없어 갱신은 못 하고 새 게시로 흐르며, 그때 이 값이 '원본'으로 기록된다.
+  let pubId = null;
+
   function collectState() {
     const c = {};
     CTRL_IDS.forEach(function (id) {
@@ -5015,7 +5026,7 @@
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
              melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, ornAddMaps: ornAddMaps,
              symRecent: symRecent,
-             tempoBpmUserSet: tempoBpmUserSet,
+             tempoBpmUserSet: tempoBpmUserSet, pubId: pubId,
              cellStyles: cellStyles, gakNames: gakNames, gakNameOffs: gakNameOffs, leftDockW: leftDockW, ornInstrument: ornInstrument };
   }
 
@@ -5035,6 +5046,8 @@
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
+    // 게시물 id — 꼴이 이상하면 조용히 버린다(남이 손댄 파일도 그냥 열려야 한다)
+    pubId = (typeof s.pubId === "string" && /^[A-Za-z0-9_-]{1,32}$/.test(s.pubId)) ? s.pubId : null;
     if (s.activeTab) applyActiveTab(s.activeTab);
     customTexts = Array.isArray(s.customTexts) ? s.customTexts : [];
     nextTextId = customTexts.reduce(function (m, t) { return Math.max(m, (t.id || 0) + 1); }, 1);
@@ -5291,6 +5304,40 @@
     refreshEditorSlices();
   }
 
+  // ---------- 남이 준 악보 들이기 (링크·게시물 공용) ----------
+  // 받은 악보를 화면에 들이는 절차는 출처가 무엇이든 같다: 작업 중이던 문서가 있으면 먼저
+  // 묻고, 예이면 그 문서를 보관함에 자동 저장한 뒤 교체한다. 링크(#s=)가 쓰던 절차를 그대로
+  // 뽑아 둔 것으로, 뒤에 붙는 게시물 열기(js/cloud.js)도 이 길을 타야 한다 — '남의 악보가 내
+  // 작업을 조용히 덮지 않는다'는 약속은 출처가 늘 때마다 다시 쓸 것이 아니다.
+  // 반환값 false = 사용자가 취소 → 부른 쪽은 아무것도 바꾸지 말 것.
+  function adoptState(state, hadWork, openMsg, snapTag) {
+    if (hadWork) {
+      if (!confirm(openMsg + "\n지금 작업은 사이드바 '보관' 탭에 저장해 둡니다.")) return false;
+      const list = loadSnaps();
+      list.unshift({ id: Date.now(), name: (($("title").value.trim() || "제목 없음") + " — " + snapTag),
+        time: new Date().toISOString(), state: collectState() });
+      while (list.length > SNAP_MAX) list.pop();
+      saveSnaps(list); renderSnapList();
+    }
+    restoreFromState(state);
+    return true;
+  }
+
+  // ---------- 바깥에 여는 문서 훅 (window.jgbDoc) ----------
+  // app.js는 단일 IIFE라 바깥에서 속을 들여다볼 수 없다. 나중에 붙는 기능(서버 게시
+  // js/cloud.js 등)이 이 파일을 고치지 않고도 문서를 읽고 들일 수 있도록 꼭 필요한 것만
+  // 내놓는다 — window.jgbShareLink·window.jgbTrack과 같은 성격의 창구다.
+  // 여기 없는 것이 곧 경계다: 렌더러·팔레트·내부 상태는 바깥에서 못 만진다.
+  window.jgbDoc = {
+    state: collectState,                                    // 지금 문서 전체 (서버에 올릴 것)
+    adopt: adoptState,                                      // 받은 문서를 화면에 들이기
+    hasSavedWork: function () { return restored; },          // 들이기 전에 물어봐야 하는 상태인가
+    title: function () { return $("title").value.trim(); },  // 목록·파일 이름에 쓰는 제목
+    pubId: function () { return pubId; },                    // 이 문서가 어느 게시물인지
+    // 게시 직후 부른다. 토큰은 받지 않는다 — 수정 권한은 문서가 아니라 브라우저에 있다.
+    setPubId: function (id) { pubId = (typeof id === "string" && id) ? id : null; saveState(); },
+  };
+
   // ---------- 링크 공유 (문서를 URL 해시에 담기) ----------
   // 문서 전체(collectState)를 deflate로 압축해 주소의 해시에 싣는다:
   //   https://umulsai.com/#s=1.<base64url>
@@ -5350,16 +5397,9 @@
     try {
       const raw = await bytesThroughStream(bytesFromB64url(m[2]), new DecompressionStream("deflate-raw"));
       const state = JSON.parse(new TextDecoder().decode(raw));
-      if (hadWork) {
-        if (!confirm("링크에 담긴 악보를 엽니다.\n지금 작업은 사이드바 '보관' 탭에 저장해 둡니다.")) { strip(); return; }
-        const list = loadSnaps();
-        list.unshift({ id: Date.now(), name: (($("title").value.trim() || "제목 없음") + " — 링크 열기 전 자동 저장"),
-          time: new Date().toISOString(), state: collectState() });
-        while (list.length > SNAP_MAX) list.pop();
-        saveSnaps(list); renderSnapList();
-      }
+      // 해시는 들이기 전에 뗀다 — 취소하든 열든 주소에는 남기지 않는다(원래 동작).
       strip();
-      restoreFromState(state);
+      if (!adoptState(state, hadWork, "링크에 담긴 악보를 엽니다.", "링크 열기 전 자동 저장")) return;
       track("share_open");
     } catch (e) {
       strip();
@@ -7008,6 +7048,11 @@
   let restored = false;
   try { const raw = localStorage.getItem(LS_KEY); if (raw) { applyState(JSON.parse(raw)); restored = true; } } catch (e) {}
   if (!restored) applyInputMode();
+  // 주소에 악보가 실려 왔는가 — 링크(#s=) 또는 게시물(#v=, js/cloud.js). **해시를 떼기 전에**
+  // 봐 둬야 한다. 받은 악보가 실제로 화면에 들어오는 건 압축 풀이·서버 응답을 기다리느라 한
+  // 박자 뒤인데, 그 사이에 아래 새 문서 마법사가 열리면 [만들기]를 누르는 순간
+  // applyNewDocAnswers가 방금 받은 악보의 제목·정간 수·각 수를 덮어쓴다.
+  const incomingDoc = /^#[sv]=/.test(location.hash);
   consumeShareHash(restored);   // 링크(#s=…)로 받은 악보 열기 — 비동기, 작업 중이면 confirm 후 교체
   // 새 문서 마법사 결과 적용(방금 '새 문서'로 리로드된 직후 한 번) — 없으면 저장된 작업이
   // 아예 없는 첫 실행인지 보고, 맞으면 같은 마법사를 바로 띄운다(임시저장 물어볼 것도 없음).
@@ -7031,7 +7076,7 @@
   // 아래 마법사가 돌면 그쪽 답이 이 값을 덮는다(마법사도 기본 8각).
   if (!restored) { $("gakCount").value = 8; gakUserSet = true; }
   if (newDocPending) applyNewDocAnswers(newDocPending);
-  else if (!restored && !firstVisit) openNewDocWizard(applyNewDocAnswers);
+  else if (!restored && !firstVisit && !incomingDoc) openNewDocWizard(applyNewDocAnswers);
 
   buildPalette();
   buildJangdanPalette();
@@ -7047,5 +7092,7 @@
 
   // 첫 방문이면 환영 카드 — 옛 "선율 가이드 자동 열기"를 대체(가이드는 ? 버튼으로 여전히 사용).
   // 둘러보기/도움말/바로 시작 중 무엇을 골라도 마지막엔 새 문서 마법사로 이어진다.
-  if (firstVisit) showWelcome();
+  // 악보를 받아 온 사람(공유 링크·게시물)에게는 환영 카드도 띄우지 않는다 — 어떤 선택을 해도
+  // 새 문서 마법사로 수렴해 방금 받은 악보를 덮기 때문이다. 카드는 다음에 그냥 들어올 때 뜬다.
+  if (firstVisit && !incomingDoc) showWelcome();
 })();

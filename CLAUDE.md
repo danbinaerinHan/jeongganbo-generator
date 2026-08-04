@@ -45,6 +45,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 - `index.html` (~950줄, 루트) — 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
 - `js/app.js` (~4100줄) — 단일 IIFE. **섹션 마커로 탐색**: `grep -n "// ----------" js/app.js`
   가 목차 역할을 한다 (렌더/에디터/팔레트/재생/저장/되돌리기 등 30여 섹션).
+- `js/cloud.js` + `js/cloud-config.js` — 악보 게시(서버에 올리고 `#v=<id>` 주소로 열기).
+  app.js **뒤에** 로드되며 `window.jgbDoc`만 통해 문서를 만진다. 설정이 비면 스스로 물러난다.
+  서버 쪽은 `server/schema.sql`(Supabase에 붙여넣어 실행). 규칙은 아래 '악보 게시' 절.
 - `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
   호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
   로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
@@ -121,7 +124,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - #btnPrint(인쇄)는 **1급 버튼**. 빈도(곡 하나에 한 번)만 보면 아래 규칙상 메뉴행이지만,
     이 앱의 최종 목적지고 위험하지도 않아 '찾기 쉬움'을 빈도보다 앞에 뒀다 — **의도된 예외**니
     규칙대로 메뉴에 도로 넣지 말 것.
-  - 파일 메뉴(#fileToggle ⋯ → #filePop): #btnPng·#btnExport·#btnShareLink·#btnImport
+  - 파일 메뉴(#fileToggle ⋯ → #filePop): #btnPng·#btnExport·#btnShareLink·#btnPublish·#btnImport
     (+숨은 #fileImport) · ── · #btnResetContent. 이름이 '더보기'였을 땐 열기 전엔 뭐가 든지 모르는 잡동사니 서랍이라
     뜻 있는 '파일'로 바꿨다. 전체 초기화는 위험하지만 resetAllContent가 confirm()으로 한 번
     더 묻고 ⌘Z도 먹어 안전장치가 둘이라 여기 둔다.
@@ -132,6 +135,34 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     새로고침이 편집을 덮지 않게), 작업 중(restored)이면 confirm 후 현재 작업을
     보관함(jgb_snapshots_v1)에 자동 저장하고 교체한다. `1.`은 버전 접두어 — 링크는 글에
     박제되므로 형식을 바꿔도 v1 읽기는 남길 것. `window.jgbShareLink()`는 검증·임베드용.
+  - **악보 게시**(#btnPublish, js/cloud.js · 서버는 server/schema.sql): 링크 공유와 같은
+    '공유' 짝이되 악보가 주소가 아니라 **서버**에 얹힌다 — 주소가 짧아 메신저에서 안 잘리고,
+    올린 뒤에도 같은 주소로 고칠 수 있다(링크 공유의 두 한계). 주소는 `#v=<8자>`.
+    경로(/s/…)가 아니라 해시인 것은 GitHub Pages가 경로 리라이트를 못 해서다 — 경로 주소는
+    카톡·트위터 공유 카드(OG 태그)가 필요해질 때 호스팅과 함께 옮긴다.
+    - **수정 권한은 문서가 아니라 브라우저에 있다.** 게시하면 서버가 토큰을 딱 한 번 주고,
+      그 토큰은 localStorage(`jgb_published_v1`)에만 남는다. 문서에 실리는 것은 게시물
+      **id뿐**(`pubId`, collectState/applyState) — 그래서 .jgb.json·공유 링크를 남에게 줘도
+      수정 권한이 안 넘어가고, 남의 악보를 고쳐 게시하면 새 게시물이 되며 원래 id가
+      `fork_of`로 기록된다(4단계 포크 계보가 여기서부터 쌓인다). **토큰을 문서에 넣지 말 것.**
+    - id를 문서 상태에 둔 까닭: 새 문서·불러오기·되돌리기·링크 열기가 저마다 따로 챙기지
+      않아도 정체성이 문서를 따라다녀 저절로 맞는다. 전체 초기화는 `pubId`를 지운다
+      (백지가 된 악보로 남들이 보고 있는 게시물을 덮지 않게).
+    - cloud.js는 **app.js를 한 줄도 안 고친다** — `window.jgbDoc`(state·adopt·hasSavedWork·
+      title·pubId·setPubId) 여섯 개가 창구이고 그 밖으로 손을 뻗지 말 것. index.html에서
+      app.js **뒤에** 싣는다.
+    - `js/cloud-config.js`가 비면(또는 file://) 게시 기능이 통째로 꺼지고 버튼도 숨는다 —
+      analytics.js의 GOATCOUNTER_CODE와 같은 대기 모드. anonKey는 공개 키라 정적 파일에
+      박히는 게 정상이고, 진짜 빗장은 서버에 있다: 테이블 직접 접근을 막고(권한 회수 + RLS
+      정책 0개) RPC 넷(publish/update/delete/fetch_score)만 연다. 크기 제한·게시 빈도 제한·
+      권한 확인이 전부 그 안에 있다. **없는 id와 틀린 토큰은 같은 오류를 준다**(id를 훑어
+      게시물 존재를 알아내지 못하게). IP는 저장하지 않고 소금 섞은 해시만 남긴다.
+    - 받는 쪽(`consumeScoreHash`)은 링크 열기와 **같은 절차**를 탄다 — app.js의
+      `adoptState()`(작업 중이면 confirm + 보관함 자동 저장 후 교체)를 함께 쓴다. 출처가
+      늘어도 '남의 악보가 내 작업을 조용히 덮지 않는다'는 약속은 한 곳에만 있어야 한다.
+    - 주소에 악보가 실려 오면(`#s=`·`#v=`) init의 `incomingDoc`이 **새 문서 마법사와 환영
+      카드를 막는다** — 악보가 들어오는 건 한 박자 뒤라, 그 사이 마법사에서 [만들기]를
+      누르면 방금 받은 악보의 제목·정간 수·각 수가 덮인다.
   - 새 문서(#btnNewDoc)도 **1급 버튼**(#outBox 맨 앞, 새 문서→인쇄→파일 순) — 파일 메뉴
     안(File > New 자리)에 뒀더니 사람들이 못 찾았다(2026-07-18). 인쇄와 같은 '찾기 쉬움'
     예외이고, 중복 금지 원칙대로 메뉴에서는 뺐다. 도로 메뉴에 넣지 말 것.

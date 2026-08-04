@@ -479,6 +479,20 @@
   }
   .btns button.secondary { background: var(--panel); color: var(--accent); }
   .btns button:hover { opacity: .9; }
+  /* 서버에 다녀오는 동안(게시·갱신·삭제) 누름을 막는다 — 두 번 눌러 두 번 올라가지 않게 */
+  .btns button:disabled, .pub-del:disabled { opacity: .5; cursor: default; }
+
+  /* 악보 게시 창(#pubModal) 전용 — 나머지는 새 문서 마법사의 .field/.row/.chk/.btns 그대로 */
+  .pub-copy { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--accent);
+              background: var(--panel); color: var(--accent); border-radius: 6px;
+              font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .pub-copy:hover { background: var(--hover); }
+  /* [내리기]는 되돌릴 수 없는 명령이라 [게시]·[취소]와 같은 줄에 세우지 않는다 —
+     버튼 셋이 나란하면 손이 미끄러진다. 한 칸 떨어뜨리고 테두리만 있는 옅은 꼴로. */
+  .pub-del { display: block; width: 100%; margin-top: 12px; padding: 8px;
+             border: 1px solid var(--danger-line); background: transparent; color: var(--danger);
+             border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .pub-del:hover { background: var(--danger-soft); }
 
   /* ---------- 미리보기 + 멜로디 에디터 ---------- */
   /* 떠 있는 바(.float-bar)·패널들의 기준점을 스크롤되는 #sheetArea가 아니라 #main으로 둬서
@@ -490,6 +504,16 @@
                background: var(--soft); position: relative; }
   #sheet { transform-origin: top center; transition: transform .08s ease;
            display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+  /* 게시된 악보를 열었을 때의 알림 줄 — 상단바 바로 아래, 화면 전체 폭 한 줄(마크업 자리가
+     #topBar와 #appRow 사이인 까닭은 index.html 주석 참고: #main 안에 두면 왼쪽 도킹에서
+     세로 띠가 된다). 강조색 옅은 바탕이라 종이와 구별되고, 도구창처럼 떠 있지 않아 안 가린다.
+     flex: 0 0 auto — body가 세로 flex라 이게 없으면 내용이 길어질 때 눌려 찌그러진다.
+     내용이 있을 때만 cloud.js가 display를 푼다. */
+  .cloud-banner { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; padding: 8px 8px 8px 14px;
+                  background: var(--accent-tint); border-bottom: 1px solid var(--accent-soft);
+                  font-size: 12px; line-height: 1.45; color: var(--ink); }
+  .cloud-banner span { flex: 1; min-width: 0; }
   .page { background: var(--panel); box-shadow: 0 4px 24px rgba(0,0,0,.18); }
   .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
 
