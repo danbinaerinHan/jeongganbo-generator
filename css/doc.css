@@ -1,0 +1,49 @@
+/* ============================================================================
+   공적 문서 페이지 (policy.html · notices.html) 공통 꼴
+   ============================================================================
+   색·글꼴은 styles.css, 판짜임 되돌리기(body.browse)는 browse.css에서 받는다.
+   여기 있는 것은 '읽는 문서'의 조판뿐이다 — 조(條)·항(①)·호(1.)의 층과 표.
+   ★ 이 꼴을 쓰는 문서는 설명하거나 설득하지 않고 정하기만 한다(policy.html 주석 참고).
+   ============================================================================ */
+.pol { max-width: 720px; margin: 0 auto; padding: 36px 24px 64px; }
+  .pol h1 { font-size: 23px; letter-spacing: .03em; margin: 0 0 8px; }
+  .pol .meta { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  .pol .rule { height: 1px; background: var(--ink); opacity: .35; margin: 24px 0 8px; }
+
+  /* 조 제목 — 번호와 제목을 한 줄로. 본문보다 조금 크되 장식하지 않는다. */
+  .pol h2 { font-size: 15px; font-weight: 700; margin: 30px 0 10px; }
+  /* 항(①②③) · 호(1. 2. 3.) — 접힌 줄이 번호 아래로 들어가지 않게 내어쓰기 */
+  .pol .hang { font-size: 14px; line-height: 1.85; margin: 0 0 8px;
+               padding-left: 1.5em; text-indent: -1.5em; word-break: keep-all; }
+  .pol .ho { margin: 6px 0 10px; padding-left: 1.5em; list-style: none; counter-reset: ho; }
+  .pol .ho li { font-size: 14px; line-height: 1.85; margin-bottom: 5px;
+                padding-left: 1.7em; text-indent: -1.7em; word-break: keep-all;
+                counter-increment: ho; }
+  .pol .ho li::before { content: counter(ho) ". "; }
+  .pol p { font-size: 14px; line-height: 1.85; word-break: keep-all; }
+  .pol a { color: var(--accent); }
+
+  /* 신고 수령인 — 읽는 글이 아니라 찾아보는 값이라 표로 세운다 */
+  .pol .recv { border: 1px solid var(--line); border-radius: 8px; margin: 12px 0 4px;
+               background: var(--soft); overflow: hidden; }
+  .pol .recv div { display: flex; font-size: 14px; line-height: 1.8; }
+  .pol .recv div + div { border-top: 1px solid var(--line); }
+  .pol .recv dt { flex: 0 0 108px; padding: 9px 14px; font-weight: 700;
+                  background: var(--panel); margin: 0; }
+  .pol .recv dd { flex: 1; min-width: 0; padding: 9px 14px; margin: 0; word-break: break-all; }
+
+  .pol .addendum { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .pol .back { margin-top: 36px; font-size: 13px; }
+
+/* ---------- 표 (중단 내역) ---------- */
+.doc-table { width: 100%; border-collapse: collapse; margin: 18px 0 8px;
+             border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.doc-table th, .doc-table td { padding: 10px 12px; font-size: 13.5px; line-height: 1.7;
+                               text-align: left; vertical-align: top;
+                               border-bottom: 1px solid var(--line); word-break: keep-all; }
+.doc-table th { background: var(--panel); font-weight: 700; white-space: nowrap; }
+.doc-table tr:last-child td { border-bottom: 0; }
+.doc-table code { font-size: 12.5px; word-break: break-all; }
+.doc-table .t-sub { color: var(--muted); font-size: 12px; }
+/* 아직 한 건도 없을 때 — 표를 지우지 않고 한 줄로 알린다(표가 있어야 무엇을 적는 자리인지 보인다) */
+.doc-table .t-empty td { color: var(--muted); text-align: center; padding: 26px 12px; }

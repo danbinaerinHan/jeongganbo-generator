@@ -13,37 +13,7 @@
      조(條)·항(①)·호(1.)의 층을 지키고, 새 내용은 해당 조에 항을 더하는 식으로 늘린다. -->
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/browse.css">
-<style>
-  .pol { max-width: 720px; margin: 0 auto; padding: 36px 24px 64px; }
-  .pol h1 { font-size: 23px; letter-spacing: .03em; margin: 0 0 8px; }
-  .pol .meta { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
-  .pol .rule { height: 1px; background: var(--ink); opacity: .35; margin: 24px 0 8px; }
-
-  /* 조 제목 — 번호와 제목을 한 줄로. 본문보다 조금 크되 장식하지 않는다. */
-  .pol h2 { font-size: 15px; font-weight: 700; margin: 30px 0 10px; }
-  /* 항(①②③) · 호(1. 2. 3.) — 접힌 줄이 번호 아래로 들어가지 않게 내어쓰기 */
-  .pol .hang { font-size: 14px; line-height: 1.85; margin: 0 0 8px;
-               padding-left: 1.5em; text-indent: -1.5em; word-break: keep-all; }
-  .pol .ho { margin: 6px 0 10px; padding-left: 1.5em; list-style: none; counter-reset: ho; }
-  .pol .ho li { font-size: 14px; line-height: 1.85; margin-bottom: 5px;
-                padding-left: 1.7em; text-indent: -1.7em; word-break: keep-all;
-                counter-increment: ho; }
-  .pol .ho li::before { content: counter(ho) ". "; }
-  .pol p { font-size: 14px; line-height: 1.85; word-break: keep-all; }
-  .pol a { color: var(--accent); }
-
-  /* 신고 수령인 — 읽는 글이 아니라 찾아보는 값이라 표로 세운다 */
-  .pol .recv { border: 1px solid var(--line); border-radius: 8px; margin: 12px 0 4px;
-               background: var(--soft); overflow: hidden; }
-  .pol .recv div { display: flex; font-size: 14px; line-height: 1.8; }
-  .pol .recv div + div { border-top: 1px solid var(--line); }
-  .pol .recv dt { flex: 0 0 108px; padding: 9px 14px; font-weight: 700;
-                  background: var(--panel); margin: 0; }
-  .pol .recv dd { flex: 1; min-width: 0; padding: 9px 14px; margin: 0; word-break: break-all; }
-
-  .pol .addendum { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); }
-  .pol .back { margin-top: 36px; font-size: 13px; }
-</style>
+<link rel="stylesheet" href="css/doc.css">
 </head>
 <body class="browse">
 
@@ -109,7 +79,7 @@
   <p class="hang">③ 이용자는 스스로 처분할 권원이 있는 범위에서만 이용 조건을 선택하여야 하며, 권원 없이
   선택한 이용 조건은 효력이 없습니다.</p>
 
-  <h2>제6조 (저작권 침해 신고 및 처리)</h2>
+  <h2 id="report">제6조 (저작권 침해 신고 및 처리)</h2>
   <p class="hang">① 저작권 그 밖에 저작권법에 따라 보호되는 권리를 가진 자는 같은 법 제103조에 따라
   다음의 수령인에게 복제·전송의 중단을 요구할 수 있습니다.</p>
   <dl class="recv">
@@ -123,10 +93,10 @@
     <li>요구인의 성명 및 연락처, 권리자 본인 여부(대리인인 경우 그 사실)</li>
     <li>권리를 소명할 수 있는 자료(있는 경우에 한합니다)</li>
   </ol>
-  <p class="hang">③ 서비스는 제1항의 요구를 받은 때에는 지체 없이 해당 악보의 복제·전송을 중단하고 그
-  사실을 요구인에게 통지합니다.</p>
-  <p class="hang">④ 서비스는 해당 악보를 게시한 이용자에게 중단 사실과 그 사유를 통지합니다. 다만 연락
-  수단이 확인되지 아니하는 경우에는 그러하지 아니합니다.</p>
+  <p class="hang">③ 서비스는 제1항의 요구를 받은 때에는 지체 없이 해당 악보의 복제·전송을 중단하고, 그
+  사실을 요구인에게 회신합니다.</p>
+  <p class="hang">④ 서비스는 중단한 악보의 주소와 사유를 <a href="notices.html">중단 내역</a>에
+  게시합니다. 게시자의 연락 수단이 확인되는 경우에는 개별적으로도 통지합니다.</p>
   <p class="hang">⑤ 동일한 이용자가 반복하여 타인의 저작물을 게시하는 경우 서비스는 그 이용자의 게시를
   제한할 수 있습니다.</p>
 
@@ -168,23 +138,6 @@
 </footer>
 
 <script src="js/analytics.js"></script>
-<script>
-  // 문패 그림·워드마크는 index.html에서 한 벌만 관리한다 — 여기 또 박으면 로고를 바꿀 때
-  // 고칠 곳이 늘어난다. 읽는 페이지라 조금 늦게 채워져도 상관없으므로 가져와 꽂는다.
-  // 못 가져와도 글 읽기는 그대로다(이름 글씨만 안 보인다).
-  fetch("index.html").then(function (r) { return r.text(); }).then(function (h) {
-    const doc = new DOMParser().parseFromString(h, "text/html");
-    const img = doc.getElementById("brandLogo");
-    const word = doc.getElementById("brandWord");
-    if (img) { const me = document.getElementById("brandLogo"); me.src = img.src; me.hidden = false; }
-    if (word) document.querySelector(".brand-word").appendChild(word);
-  }).catch(function () {});
-  try {
-    if (localStorage.getItem("jgb_dark_v1") === "1") document.body.classList.add("dark");
-    const th = localStorage.getItem("jgb_theme_v1");
-    if (th === "crystal") document.body.classList.add("theme-crystal");
-    else if (th === "celadon") document.body.classList.add("theme-celadon");
-  } catch (e) {}
-</script>
+<script src="js/doc-brand.js"></script>
 </body>
 </html>
