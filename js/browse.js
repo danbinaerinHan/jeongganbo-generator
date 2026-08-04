@@ -129,6 +129,14 @@
 
   function load(reset) {
     if (loading) return;
+    // 둘러보기를 닫아 둔 동안 — 주소를 직접 쳐서 들어와도 목록을 부르지 않는다.
+    // 화면을 닫는 것이지 서버를 닫는 것은 아니다(까닭은 js/cloud-config.js 주석 참고).
+    if (CFG.browse === false) {
+      document.querySelector(".sc-controls").style.display = "none";
+      setStatus("둘러보기는 준비 중입니다.\n악보는 [악보 게시]로 만든 주소를 나눠 공유할 수 있습니다.", "sc-empty");
+      $("scMore").style.display = "none";
+      return;
+    }
     if (!CFG.url || !KEY) {
       setStatus("게시 서버가 아직 연결되지 않았습니다.", "sc-empty");
       $("scMore").style.display = "none";

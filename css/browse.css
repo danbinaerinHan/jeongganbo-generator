@@ -108,7 +108,9 @@ body.browse {
 
 /* ---------- 상태 · 더 보기 · 꼬리말 ---------- */
 .sc-status { max-width: 1200px; margin: 0 auto; padding: 40px 24px; text-align: center;
-             font-size: 13px; color: var(--muted); }
+             font-size: 13px; color: var(--muted); line-height: 1.8;
+             /* 안내가 여러 줄일 때가 있어(둘러보기 준비 중 등) 줄바꿈을 살린다 */
+             white-space: pre-line; }
 .sc-status.sc-empty { padding: 64px 24px; }
 .sc-status.sc-error { color: var(--danger); }
 

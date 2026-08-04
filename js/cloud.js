@@ -31,6 +31,10 @@
   // JWT 꼴 anon 키(`eyJ…`)를 쓴다. 둘 다 받는다(`anonKey`는 옛 설정 파일 이름).
   const KEY = CFG.key || CFG.anonKey || "";
   const ON = !!(CFG.url && KEY) && location.protocol !== "file:";
+  // 둘러보기(공개 목록)를 열어 두었는가 — 운영 스위치. 닫혀 있으면 목록으로 가는 길과
+  // '공개로 올리기' 선택이 함께 사라지고, 모든 게시가 '주소를 아는 사람만'이 된다.
+  // 까닭은 js/cloud-config.js 주석 참고(신고 절차가 갖춰지기 전에는 목록을 안 연다).
+  const BROWSE_ON = CFG.browse !== false;
   const HASH_RE = /^#v=([a-z0-9]{4,32})$/;
 
   function $(id) { return document.getElementById(id); }
@@ -53,6 +57,13 @@
       alert("이 주소의 악보를 여는 기능이 아직 켜져 있지 않습니다.");
     }
     return;
+  }
+
+  // 둘러보기를 닫아 둔 동안은 목록으로 가는 길도 없앤다 — 눌러 봐야 '준비 중'만 나오는
+  // 버튼을 상단바에 세워 두면 고장으로 읽힌다.
+  if (!BROWSE_ON) {
+    const br = $("btnBrowse");
+    if (br) br.style.display = "none";
   }
 
   // ---------- 서버와 말하기 ----------
@@ -207,7 +218,10 @@
     if (pref.license) $("pubLicense").value = pref.license;
     // 공개가 기본이다 — 여기는 '나눠 보는 곳'이라 올리는 이의 보통 뜻이 그쪽이다.
     // 이미 올린 것을 다시 열 때는 그때 정한 값을 그대로 보여준다.
-    $("pubPublic").checked = mine ? (rec.pub !== false) : (pref.pub !== false);
+    $("pubPublic").checked = BROWSE_ON && (mine ? (rec.pub !== false) : (pref.pub !== false));
+    // 둘러보기를 닫아 둔 동안엔 고를 것이 없다 — 목록이 없는데 '목록에 올리기'를 물으면
+    // 켜 놓고도 아무 데도 안 뜨는 꼴이 된다. 칸을 감추고 모두 '주소를 아는 사람만'으로.
+    $("pubPublic").closest(".field").style.display = BROWSE_ON ? "" : "none";
 
     setBusy(false);
     $("pubModal").style.display = "flex";
