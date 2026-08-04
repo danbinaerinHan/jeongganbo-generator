@@ -197,6 +197,18 @@
 
   $("scMore").addEventListener("click", function () { load(false); });
 
+  // 편집기로 가는 버튼의 이름 — 가는 곳은 늘 index.html이지만, 편집 중이던 악보가 있으면
+  // '돌아가기'라고 말해 줘야 누를 생각을 한다. '악보 만들기'만 있으면 하던 작업이 사라질까 봐
+  // 안 누르고, 문패를 눌러야 돌아간다는 건 알 길이 없다.
+  // 판단 근거는 편집기의 자동 저장 열쇠(app.js의 LS_KEY) 하나뿐이다 — 같은 출처라 그냥 읽힌다.
+  try {
+    if (localStorage.getItem("jgb_state_v1")) {
+      const back = $("scBack");
+      back.textContent = "← 편집기로 돌아가기";
+      back.title = "편집하던 악보를 그대로 이어서";
+    }
+  } catch (e) {}
+
   // 화면 설정(색상 테마·다크)은 편집기와 같은 열쇠를 쓴다 — 두 페이지를 오갈 때 화면이
   // 바뀌면 딴 사이트처럼 보인다. 여기서 바꾸지는 않고 따라가기만 한다.
   try {

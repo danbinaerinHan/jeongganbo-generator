@@ -184,6 +184,11 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     - browse.html은 **css/styles.css를 함께 싣는다** — 색 변수(:root·body.dark·body.theme-*)를
       한 곳에 두려는 것. browse.css에서 새 색을 만들지 말 것. 대신 편집기용 전면 판짜임
       (body가 세로 flex·overflow:hidden)은 `body.browse`에서 되돌린다.
+    - **편집기로 돌아가는 버튼은 하나(#scBack)이고 이름만 상황에 따라 바뀐다** — 편집 중이던
+      악보가 있으면(`jgb_state_v1`) `← 편집기로 돌아가기`, 없으면 `악보 만들기`. 가는 곳은 늘
+      index.html로 같다. 처음엔 '악보 만들기' 하나였는데 그건 '새로 만들기'로 읽혀서, 하던
+      작업을 이어가려는 사람이 누를 생각을 못 했다(문패를 눌러야 돌아가는 걸 알 길이 없다).
+      같은 곳으로 가는 버튼을 둘로 늘리지 말 것 — 중복 금지 원칙은 여기도 그대로다.
     - 문패(#brandBox) 마크업은 index.html에서 **복사해 온 것**이다(로고 PNG·워드마크 SVG 인라인).
       로고를 바꾸면 두 곳을 함께 고쳐야 한다. 베타 배지는 뺐다(app.js가 없어 팝오버가 안 열리고,
       `<a>` 안에 `<button>`은 잘못된 마크업이라).
