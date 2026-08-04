@@ -216,7 +216,7 @@
                 gap: 2px; min-width: 46px; padding: 4px 7px 3px; border: 1px solid transparent;
                 border-radius: 7px; background: none; cursor: pointer; font-family: inherit;
                 color: var(--ink); font-size: 15px; line-height: 1; flex: 0 0 auto; }
-  /* 상단바 컨트롤은 거의 다 <button>이지만 둘러보기(#btnBrowse)만 진짜 링크다 —
+  /* 상단바 컨트롤은 거의 다 <button>이지만 모아보기(#btnBrowse)만 진짜 링크다 —
      새 탭·주소 복사 같은 브라우저 기본 동작을 살리려고. 밑줄만 걷으면 나머지는 같다. */
   a.topbar-cmd { text-decoration: none; }
   .topbar-cmd .lbl { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }

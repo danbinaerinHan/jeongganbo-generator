@@ -52,9 +52,12 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   요구하는 '신고 수령인 공지'가 여기 있으므로, **신고 받는 주소를 바꿀 땐 js/cloud.js의
   `REPORT_TO`와 browse.html 꼬리말까지 세 곳을 함께** 고쳐야 한다(두 군데서 다르면 안 된다).
   문패는 index.html에서 fetch로 가져와 꽂는다 — 로고를 두 번 박지 않으려고.
-- `browse.html` + `css/browse.css` + `js/browse.js` — **둘러보기**(공개 악보 목록). index.html과
+- `browse.html` + `css/browse.css` + `js/browse.js` — **모아보기**(공개 악보 목록).
+  **UI 표기는 '모아보기'** — 도움말의 기능 안내 투어가 '둘러보기'라 말이 겹쳐 갈랐다(2026-08-04,
+  사용자 확정). 파일 이름·식별자(browse·btnBrowse·sc-*)는 그대로 — 이미 배포된 주소를 바꾸지
+  않으려는 것이고, 이 리포는 코드 이름과 표시 이름을 분리하는 관례다(cellStyle*↔'정간 서식'처럼). index.html과
   **별개 문서**라 app.js·기호 데이터(600KB)를 안 싣는다 — 여기선 악보를 그리지 않으므로.
-  카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다. 규칙은 아래 '둘러보기' 절.
+  카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다. 규칙은 아래 '모아보기' 절.
 - `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
   호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
   로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
@@ -170,10 +173,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     - 주소에 악보가 실려 오면(`#s=`·`#v=`) init의 `incomingDoc`이 **새 문서 마법사와 환영
       카드를 막는다** — 악보가 들어오는 건 한 박자 뒤라, 그 사이 마법사에서 [만들기]를
       누르면 방금 받은 악보의 제목·정간 수·각 수가 덮인다.
-  - **둘러보기**(#btnBrowse → browse.html, js/browse.js): 공개로 올라온 악보를 카드 격자로
+  - **모아보기**(#btnBrowse → browse.html, js/browse.js): 공개로 올라온 악보를 카드 격자로
     보여주는 **별개 페이지**. 카드를 누르면 `index.html#v=<id>`로 넘어가고 거기서 cloud.js가
     받아 연다 — 목록과 편집기 사이의 약속은 그 주소 하나뿐이다.
-    - 게시 창의 **[둘러보기 목록에 올리기]가 기본 켬**(visibility=public). 끄면 예전처럼
+    - 게시 창의 **[모아보기 목록에 올리기]가 기본 켬**(visibility=public). 끄면 예전처럼
       주소를 아는 사람만 보는 unlisted가 된다. 여기는 나눠 보는 곳이라 기본값이 공개다.
     - **미리보기 그림은 브라우저가 만든다**(`makeThumb`, 게시할 때 첫 장 SVG → 300px 캔버스
       → PNG data URI). 서버는 악보를 그릴 줄 모르는데 브라우저는 이미 그려 놓았으므로,
