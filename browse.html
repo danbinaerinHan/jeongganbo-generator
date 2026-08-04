@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>둘러보기 · 우물사이 — 사람들이 올린 정간보</title>
+<meta name="description" content="사람들이 올린 정간보를 모아 봅니다. 마음에 드는 악보를 그대로 열어 보고, 고쳐서 내 것으로 만들 수 있습니다.">
+<!-- 편집기와 **같은** styles.css를 싣는다 — 색 변수(:root·body.dark·body.theme-*)를 한 곳에
+     두려는 것이다. 여기 다시 적으면 테마를 고칠 때 두 곳이 어긋난다. 대신 편집기용 전면
+     레이아웃(body가 세로 flex·overflow:hidden)만 browse.css에서 되돌린다. -->
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/browse.css">
+</head>
+<body class="browse">
+
+<!-- 맨 윗줄 — 문패는 편집기로 돌아가는 길이기도 하다 -->
+<div class="sc-top">
+  <a class="sc-brandlink" href="index.html" title="우물사이 — 정간보 편집기로">
+    <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
+      <img id="brandLogo" src="data:image/png;base64,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" alt="우물사이 로고">
+      <div class="brand-txt">
+        <!-- 워드마크 "우물사이" — 글씨체는 EBS훈민정음 SB지만 폰트 파일을 싣지 않고
+             글자를 아웃라인 패스로 떠서 넣었다. EBS 라이선스는 웹 임베딩·BI/CI는 허용하나
+             폰트 자체의 변형(서브셋 포함)·재배포는 사전 서면승인 대상이라, 폰트를 안 싣는
+             이 방식이 라이선스를 건드리지 않는다. 덤으로 3KB고 모든 OS에서 동일하게 나온다.
+             다시 뜨려면: python3 tools/gen-wordmark.py (EBS훈민정음SB.otf 설치 필요).
+             fill=currentColor라 다크모드는 --ink 색을 따라간다(로고 img의 invert와 무관). -->
+        <div class="brand-word"><svg id="brandWord" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4011 776" role="img" aria-label="우물사이"><path fill="currentColor" d="M0 553V456H835V553ZM489 650C489 669 482 687 469 700C455 715 438 722 418 722C396 722 380 715 366 700C353 687 346 669 346 650C346 630 353 614 366 599C380 586 396 578 418 578C438 578 455 586 469 599C482 614 489 630 489 650ZM304 199C304 214 307 228 313 240C319 254 326 265 337 274C347 284 359 292 374 297C387 303 402 305 418 305C433 305 448 303 462 297C476 292 487 284 498 274C508 265 516 254 522 240C528 228 531 214 531 199C531 185 528 172 522 158C516 145 508 134 498 124C487 114 476 107 462 101C448 95 433 92 418 92C402 92 387 95 374 101C359 107 347 114 337 124C326 134 319 145 313 158C307 172 304 185 304 199ZM204 199C204 172 210 146 222 121C232 98 248 77 267 58C287 41 309 26 335 15C360 6 388 0 418 0C447 0 474 6 500 15C525 26 548 41 568 58C587 77 603 98 614 121C625 146 631 172 631 199C631 226 625 252 614 275C603 301 587 322 568 339C548 358 525 372 500 382C474 393 447 398 418 398C388 398 360 393 335 382C309 372 287 358 267 339C248 322 232 301 222 275C210 252 204 226 204 199ZM1075 383V291H1910V383H1549C1553 393 1556 401 1556 407C1556 423 1549 436 1535 446H1861V654H1227V689H1861V776H1124V568H1758V533H1124V446H1449C1443 441 1438 435 1435 429C1431 423 1429 415 1429 407C1429 399 1431 391 1436 383ZM1153 247V14H1832V247ZM1256 155H1729V107H1256ZM2878 747H2775V19H2878ZM3056 337C3056 357 3050 373 3037 387C3023 401 3007 407 2987 407C2965 407 2949 401 2936 387C2923 373 2917 357 2917 337C2917 318 2923 302 2936 288C2949 274 2965 268 2987 268C3007 268 3023 274 3037 288C3050 302 3056 318 3056 337ZM2403 68 2684 582 2597 640 2403 271 2218 640 2131 582ZM4011 747H3908V19H4011ZM3225 349C3225 312 3231 277 3245 244C3256 213 3275 185 3298 162C3320 139 3348 120 3380 107C3411 94 3445 87 3482 87C3519 87 3554 94 3586 107C3617 120 3643 139 3667 162C3689 185 3707 213 3721 244C3734 277 3740 312 3740 349C3740 387 3734 422 3721 453C3707 486 3689 513 3667 536C3643 560 3617 578 3586 591C3554 604 3519 611 3482 611C3445 611 3411 604 3380 591C3348 578 3320 560 3298 536C3275 513 3256 486 3245 453C3231 422 3225 387 3225 349ZM3328 349C3328 372 3331 395 3339 414C3345 434 3355 452 3369 466C3382 482 3398 494 3417 501C3436 510 3457 514 3482 514C3506 514 3528 510 3547 501C3566 494 3582 482 3596 466C3610 452 3619 434 3627 414C3634 395 3638 372 3638 349C3638 326 3634 304 3627 284C3619 265 3610 247 3596 232C3582 217 3566 206 3547 197C3528 189 3506 184 3482 184C3457 184 3436 189 3417 197C3398 206 3382 217 3369 232C3355 247 3345 265 3339 284C3331 304 3328 326 3328 349Z"/></svg></div>
+        <!-- 부제는 워드마크 '아래' — 위=이름, 아래=설명이라는 위계가 위치로 드러나야 부제로
+             읽힌다. 옆에 같은 밑선으로 붙이면 이름의 꼬리처럼 보였다. 로마자 'Umulsai'는
+             여기서 뺐다 — 이름의 로마자 표기와 '뭐 하는 앱인지'는 성격이 달라 `·`로 묶으면
+             둘 다 흐려진다. Umulsai는 탭 제목·meta·#brandBox title(툴팁)에 남아 있다. -->
+        <span>정간보 편집기</span>
+      </div>
+    </div>
+  </a>
+  <a class="sc-make" href="index.html">악보 만들기</a>
+</div>
+
+<header class="sc-head">
+  <h1>둘러보기</h1>
+  <p class="sc-lead">사람들이 올린 정간보입니다. 카드를 누르면 그대로 열리고, 고쳐서 내 악보로 다시 올릴 수도 있습니다.</p>
+
+  <div class="sc-controls">
+    <input type="search" id="scSearch" class="sc-search" placeholder="제목·지은이로 찾기" autocomplete="off">
+    <div class="sc-sorts">
+      <button type="button" class="sc-sort on" data-sort="recent">최신순</button>
+      <button type="button" class="sc-sort" data-sort="popular">많이 본 순</button>
+    </div>
+    <span id="scCount" class="sc-count"></span>
+  </div>
+</header>
+
+<div id="scStatus" class="sc-status" style="display:none;"></div>
+<div id="scGrid" class="sc-grid"></div>
+<div class="sc-morewrap">
+  <button type="button" id="scMore" class="sc-more" style="display:none;">더 보기</button>
+</div>
+
+<footer class="sc-foot">
+  올린 악보의 저작권은 올린 이에게 있습니다. 문제가 있는 악보는
+  <a href="mailto:hearenzo@naver.com?subject=%EC%9A%B0%EB%AC%BC%EC%82%AC%EC%9D%B4%20%EC%95%85%EB%B3%B4%20%EC%8B%A0%EA%B3%A0">신고해 주세요</a>.
+  <span class="sc-copy">© 2026 우물사이</span>
+</footer>
+
+<script src="js/analytics.js"></script>
+<script src="js/cloud-config.js"></script>
+<script src="js/browse.js"></script>
+</body>
+</html>

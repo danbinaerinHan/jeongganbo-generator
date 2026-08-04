@@ -230,6 +230,19 @@
         </div>
       </div>
     </div>
+    <!-- 둘러보기 — 사람들이 올린 악보를 모아 보는 다른 페이지(browse.html)로 나가는 길.
+         이 앱에서 유일하게 '문서 바깥'으로 나가는 명령이라 문서 생명주기 짝(#outBox)이
+         아니라 앱 자체를 다루는 오른쪽 끝 짝(도움말·설정) 앞에 세운다.
+         게시 서버가 없으면 갈 곳도 없으므로 js/cloud.js가 이 버튼을 숨긴다.
+         모양은 다른 상단바 컨트롤과 같은 .topbar-cmd지만 진짜 링크(<a>)다 — 새 탭으로
+         열거나 주소를 복사하는 브라우저 기본 동작이 살아 있어야 해서. -->
+    <a id="btnBrowse" class="topbar-cmd tip" href="browse.html"
+      data-tip="둘러보기
+· 사람들이 올린 악보를 모아 봅니다
+· 마음에 드는 악보를 그대로 열어 고칠 수 있습니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+      <span class="lbl">둘러보기</span>
+    </a>
     <!-- 도움말 센터 열기 — 정간보 기초부터 사용법·단축키까지 담은 모달(#helpModal).
          첫 방문 환영 카드·둘러보기(투어)도 여기서 다시 열 수 있다. -->
     <button type="button" id="btnHelp" class="topbar-cmd tip"

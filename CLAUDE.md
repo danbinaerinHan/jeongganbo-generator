@@ -48,6 +48,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 - `js/cloud.js` + `js/cloud-config.js` — 악보 게시(서버에 올리고 `#v=<id>` 주소로 열기).
   app.js **뒤에** 로드되며 `window.jgbDoc`만 통해 문서를 만진다. 설정이 비면 스스로 물러난다.
   서버 쪽은 `server/schema.sql`(Supabase에 붙여넣어 실행). 규칙은 아래 '악보 게시' 절.
+- `browse.html` + `css/browse.css` + `js/browse.js` — **둘러보기**(공개 악보 목록). index.html과
+  **별개 문서**라 app.js·기호 데이터(600KB)를 안 싣는다 — 여기선 악보를 그리지 않으므로.
+  카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다. 규칙은 아래 '둘러보기' 절.
 - `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
   호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
   로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
@@ -163,6 +166,27 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     - 주소에 악보가 실려 오면(`#s=`·`#v=`) init의 `incomingDoc`이 **새 문서 마법사와 환영
       카드를 막는다** — 악보가 들어오는 건 한 박자 뒤라, 그 사이 마법사에서 [만들기]를
       누르면 방금 받은 악보의 제목·정간 수·각 수가 덮인다.
+  - **둘러보기**(#btnBrowse → browse.html, js/browse.js): 공개로 올라온 악보를 카드 격자로
+    보여주는 **별개 페이지**. 카드를 누르면 `index.html#v=<id>`로 넘어가고 거기서 cloud.js가
+    받아 연다 — 목록과 편집기 사이의 약속은 그 주소 하나뿐이다.
+    - 게시 창의 **[둘러보기 목록에 올리기]가 기본 켬**(visibility=public). 끄면 예전처럼
+      주소를 아는 사람만 보는 unlisted가 된다. 여기는 나눠 보는 곳이라 기본값이 공개다.
+    - **미리보기 그림은 브라우저가 만든다**(`makeThumb`, 게시할 때 첫 장 SVG → 300px 캔버스
+      → PNG data URI). 서버는 악보를 그릴 줄 모르는데 브라우저는 이미 그려 놓았으므로,
+      서버 렌더러가 통째로 필요 없다. 못 떠도 게시는 그대로 간다(카드에 그림만 안 나온다).
+      그림은 `scores.thumb`에 data URI로 그냥 담는다 — Storage 버킷·업로드 정책을 안 들이려는
+      선택이고, 이 앱이 기호·소리를 전부 data URI로 다루는 것과도 결이 같다. 양이 부담스러워
+      지면 `thumb_path`(비워 둔 칸)로 옮기면 된다.
+    - 목록 RPC `list_scores(sort, q, limit, offset)`는 **doc을 빼고** 보낸다 — 악보 본문까지
+      실으면 한 쪽이 수 MB인데 목록에선 쓰지도 않는다. 정렬은 최신순·인기순 둘뿐이고 인덱스도
+      그 둘만 뒀다. 검색은 제목·지은이만 본다(선율까지 뒤지면 율명 한 글자가 온 곡에 다 들어
+      있어 뜻이 없다).
+    - browse.html은 **css/styles.css를 함께 싣는다** — 색 변수(:root·body.dark·body.theme-*)를
+      한 곳에 두려는 것. browse.css에서 새 색을 만들지 말 것. 대신 편집기용 전면 판짜임
+      (body가 세로 flex·overflow:hidden)은 `body.browse`에서 되돌린다.
+    - 문패(#brandBox) 마크업은 index.html에서 **복사해 온 것**이다(로고 PNG·워드마크 SVG 인라인).
+      로고를 바꾸면 두 곳을 함께 고쳐야 한다. 베타 배지는 뺐다(app.js가 없어 팝오버가 안 열리고,
+      `<a>` 안에 `<button>`은 잘못된 마크업이라).
   - 새 문서(#btnNewDoc)도 **1급 버튼**(#outBox 맨 앞, 새 문서→인쇄→파일 순) — 파일 메뉴
     안(File > New 자리)에 뒀더니 사람들이 못 찾았다(2026-07-18). 인쇄와 같은 '찾기 쉬움'
     예외이고, 중복 금지 원칙대로 메뉴에서는 뺐다. 도로 메뉴에 넣지 말 것.

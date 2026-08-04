@@ -46,6 +46,8 @@
   if (!ON) {
     const b = $("btnPublish");
     if (b) b.style.display = "none";
+    const br = $("btnBrowse");
+    if (br) br.style.display = "none";   // 목록도 서버가 있어야 뜻이 있다
     if (HASH_RE.test(location.hash)) {
       stripHash();
       alert("이 주소의 악보를 여는 기능이 아직 켜져 있지 않습니다.");
