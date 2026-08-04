@@ -49,7 +49,10 @@
     "tempoSize": "1",
     "tempoGap": "4",
     "tempoSpacing": "0",
-    "tempoOffX": "0"
+    "tempoOffX": "0",
+    "paperSize": "square",
+    "paperW": "210",
+    "paperH": "210"
   },
   "melody": "황 | 배임 | 태 | 황 |  | \n태 | 황 | 배임 | 배임 |  | \n태 | 임 | 태 | 태 |  | \n태 | 황 | 배임 | 배임 |  | \n황 | 배임 | 태 | 황 |  | \n태 | 황 | 배임 | 배임 |  | \n태 | 임 | 태 | 태 |  | \n태 | 황 | 배임 | 배임 |  | ",
   "jangdan": "",
