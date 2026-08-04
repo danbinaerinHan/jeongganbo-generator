@@ -104,7 +104,7 @@
          재생 버튼 하나가 상태에 따라 재생→일시정지→이어하기로 바뀐다(별도 일시정지 버튼 없음). -->
     <div id="playBar" class="topbar-box">
       <!-- 재생은 상태에 따라 기호·라벨이 바뀌므로(재생↔일시정지↔이어하기) 둘 다 id로 잡는다 -->
-      <button type="button" id="btnPlay" class="topbar-cmd" title="재생 (사인파, 시김새 제외)"><span id="btnPlayIco">▶</span><span class="lbl" id="btnPlayLbl">재생</span></button>
+      <button type="button" id="btnPlay" class="topbar-cmd" title="재생 (사인파·장구 소리, 시김새 제외)"><span id="btnPlayIco">▶</span><span class="lbl" id="btnPlayLbl">재생</span></button>
       <button type="button" id="btnStop" class="topbar-cmd" title="정지" disabled>■<span class="lbl">정지</span></button>
       <button type="button" id="playSettingsToggle" class="topbar-cmd" title="재생 설정 (기준음·템포)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -119,7 +119,13 @@
         <div class="pp-row"><span>템포 (BPM)</span>
           <input type="number" id="tempoBpm" min="20" max="240" value="60">
         </div>
-        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 악보에 적는 빠르기는 <b>빠르기/각/장</b> 창에서 따로 정합니다(최소~최대 범위로도 적을 수 있음).<br>• 여기 BPM은 <b>재생 전용</b>입니다 — 처음엔 악보에 적은 최소값을 따르고, 여기서 한 번 바꾸면 그때부터 따로 갑니다.</div>
+        <!-- 장구 소리 — 장단 줄이 있을 때만 뜻이 있지만, 없을 때도 칸은 그대로 둔다(끄고 켠
+             자리가 사라졌다 나타나면 어디서 껐는지 다시 찾아야 한다). -->
+        <div class="pp-row"><span>장구 소리</span>
+          <input type="checkbox" id="playJanggu" checked>
+        </div>
+        <div class="hint">• 1정간=1박, 분박은 등분입니다.<br>
+          • 장단 줄을 켜고 구음을 적으면 <b>장구 소리</b>도 함께 납니다(여기서 끌 수 있음).<br>• 빈 정간·이음(-)은 앞 음을 지속하고, 쉼표만 무음입니다.<br>• 악보에 적는 빠르기는 <b>빠르기/각/장</b> 창에서 따로 정합니다(최소~최대 범위로도 적을 수 있음).<br>• 여기 BPM은 <b>재생 전용</b>입니다 — 처음엔 악보에 적은 최소값을 따르고, 여기서 한 번 바꾸면 그때부터 따로 갑니다.</div>
       </div>
     </div>
     <!-- 보기 배율(확대/축소/맞춤) — 예전엔 악보 위에 떠서 끌 수 있었지만,

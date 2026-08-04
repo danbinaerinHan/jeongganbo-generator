@@ -4696,7 +4696,15 @@
   // 앞 음을 지속(새 음을 시작하지 않고 직전 이벤트 길이를 늘림). 쉼표만 실제 무음.
   function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 
+  // 장구 소리를 낼 조건 — 장단 줄이 켜져 있고(악보에 그 줄이 있고) 실제로 적힌 구음이 있으며
+  // 재생 설정에서 끄지 않았을 때. '줄은 켰지만 비어 있음'도 자연히 소리가 없다.
+  function jangguSoundOn() {
+    return !!($("wantJangdan").checked && $("playJanggu") && $("playJanggu").checked
+              && ($("jangdan").value || "").trim());
+  }
+
   // 멜로디 텍스트 → 재생 이벤트 목록 [{ t, dur, freq, gak, cell }] (freq=null → 무음).
+  // janggu: 장구 타점 [{ t, name }] — 선율과 같은 시간축이지만 음높이가 없어 따로 담는다.
   function buildAudioEvents() {
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
@@ -4731,10 +4739,28 @@
       t += dur;
     }
 
+    // 장단 줄은 곡에 한 각짜리 패턴 하나뿐이고 그것이 각마다 되풀이된다(악보에서도 맨 처음
+    // 각 옆에 한 번만 그린다) — 그래서 각마다 같은 칸을 그 각의 시각에 얹는다.
+    const jdCells = jangguSoundOn() ? (parseMelodyOffsets($("jangdan").value)[0] || []) : [];
+    const janggu = [];
+    function jangguCell(cellStart, cellIdx) {
+      const cell = jdCells[cellIdx];
+      const rows = cell ? cell.text.split(/\s+/).filter(Boolean) : [];
+      if (!rows.length) return;
+      const rowDur = secPerBeat / rows.length;   // 분박은 선율과 같은 규칙으로 박을 등분
+      for (let i = 0; i < rows.length; i++) {
+        // 장단 줄은 괄호가 선택이라 덩·{덩} 둘 다 온다(stripSymBracket이 벗겨 읽는다).
+        // 이음(-)은 앞 소리를 잇는 표시라 새로 치지 않는다 — 북은 이미 울리고 있다.
+        const name = stripSymBracket(rows[i]);
+        if (name && name !== "-") janggu.push({ t: cellStart + rowDur * i, name: name });
+      }
+    }
+
     for (let g = 0; g < gaks.length; g++) {
       const gakCells = gaks[g];
       const filled = gakCells.length > 0 ? Math.min(beats, gakCells.length) : beats;
       for (let j = 0; j < filled; j++) {
+        jangguCell(t, j);   // 정간 하나가 늘 1박이므로 이 칸의 시작 시각이 곧 t
         const text = gakCells[j] ? gakCells[j].text : "";
         const rows = text.split(/\s+/).filter(Boolean);
         if (!rows.length) { extend(secPerBeat, g, j); continue; }
@@ -4761,10 +4787,65 @@
         }
       }
     }
-    return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks };
+    return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks, janggu: janggu };
   }
 
   let audioCtx = null, playTimer = null, playing = false, paused = false, playState = null;
+
+  // ----- 장구 음원 -----
+  const JANGGU_GAIN = 0.5;   // 선율(사인파 0.25)과의 균형 — 소리 크기를 바꿀 땐 여기 한 곳만
+
+  // 박보다 이만큼(초) 먼저 음원을 시작한다. 겹타는 음원 맨 앞이 본 타가 아니라 앞꾸밈이라,
+  // 파일 시작을 박에 맞추면 정작 귀에 박으로 들리는 본 타가 그만큼 늦게 떨어진다.
+  // 기덕 0.15 = 잰 값(앞꾸밈 '기' 0초, 본 타 '덕' 0.150초 — 무음을 뗀 음원 기준).
+  // 나머지 구음은 첫 소리가 곧 본 타라 당길 것이 없다.
+  const JANGGU_LEAD = { "기덕": 0.15 };
+  function jangguLead(name) { return JANGGU_LEAD[name] || 0; }
+  // 소리는 [재생]을 눌러야 쓰이므로 js/janggu-audio.js는 index.html에서 미리 싣지 않고
+  // 첫 재생 때 <script>로 불러온다(데이터 URL이라 파일 경로·CORS를 안 탄다).
+  let jangguAudioReq = null;
+  function loadJangguAudio() {
+    if (window.JANGGU_AUDIO) return Promise.resolve(window.JANGGU_AUDIO);
+    if (!jangguAudioReq) {
+      jangguAudioReq = new Promise(function (res) {
+        const s = document.createElement("script");
+        s.src = "js/janggu-audio.js";
+        s.onload = function () { res(window.JANGGU_AUDIO || null); };
+        // 못 불러와도 선율 재생은 그대로 — 소리 하나 때문에 재생이 통째로 막히면 안 된다
+        s.onerror = function () { jangguAudioReq = null; res(null); };
+        document.head.appendChild(s);
+      });
+    }
+    return jangguAudioReq;
+  }
+
+  // decodeAudioData는 컨텍스트의 표본율로 풀어내므로 표본율이 같을 때만 캐시를 다시 쓴다
+  // (재생용 컨텍스트는 정지할 때마다 close 되고 다음 재생에 새로 만들어진다).
+  let jangguBufs = null, jangguBufRate = 0;
+  function decodeAudioBuf(ctx, arr) {
+    return new Promise(function (res, rej) {
+      // 옛 사파리는 콜백 꼴만 받고 프로미스를 안 돌려준다 — 둘 다 받아 둔다
+      const p = ctx.decodeAudioData(arr, res, rej);
+      if (p && p.then) p.then(res, rej);
+    });
+  }
+  function jangguBuffers(ctx) {
+    if (jangguBufs && jangguBufRate === ctx.sampleRate) return Promise.resolve(jangguBufs);
+    const data = window.JANGGU_AUDIO || {};
+    const names = Object.keys(data);
+    return Promise.all(names.map(function (n) {
+      const uri = data[n];
+      const bin = atob(uri.slice(uri.indexOf(",") + 1));
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return decodeAudioBuf(ctx, arr.buffer).catch(function () { return null; });
+    })).then(function (bufs) {
+      const map = {};
+      names.forEach(function (n, i) { if (bufs[i]) map[n] = bufs[i]; });
+      jangguBufs = map; jangguBufRate = ctx.sampleRate;
+      return map;
+    });
+  }
 
   function highlightPlay(gak, cell) {
     playHi.forEach(function (h) { h.style.display = "none"; });
@@ -4782,7 +4863,7 @@
     if (!$("btnPlay")) return;
     $("btnPlayIco").textContent = (!playing || paused) ? "▶" : "⏸";
     $("btnPlayLbl").textContent = !playing ? "재생" : (paused ? "이어하기" : "일시정지");
-    $("btnPlay").title = !playing ? "재생 (사인파, 시김새 제외)" : (paused ? "이어 재생" : "일시정지");
+    $("btnPlay").title = !playing ? "재생 (사인파·장구 소리, 시김새 제외)" : (paused ? "이어 재생" : "일시정지");
     $("btnStop").disabled = !playing;
   }
 
@@ -4828,15 +4909,41 @@
     if (paused) resumePlayback(); else pausePlayback();
   }
 
+  // 장구가 있으면 음원을 불러 푸는 동안 재생 시작이 한 박자 늦는다 — 그 사이 [재생]을 또
+  // 눌러 두 번 시작되는 걸 막는 빗장.
+  let playPending = false;
+
   function playMelody() {
-    if (playing) return;
+    if (playing || playPending) return;
     const built = buildAudioEvents();
+    if (!built.events.length) return;
+    if (!built.janggu.length) { startPlayback(built, null, null); return; }
+    playPending = true;
+    loadJangguAudio().then(function (data) {
+      if (!data) { playPending = false; startPlayback(built, null, null); return; }
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      return jangguBuffers(ctx).then(function (bufs) {
+        playPending = false;
+        startPlayback(built, ctx, bufs);
+      });
+    }).catch(function () {
+      playPending = false;
+      if (!playing) startPlayback(built, null, null);
+    });
+  }
+
+  // 음원을 다 푼 뒤의 실제 재생. ctx는 장구 음원을 풀 때 미리 만든 컨텍스트(없으면 여기서 만듦).
+  function startPlayback(built, ctx, bufs) {
     const events = built.events, marks = built.marks;
-    if (!events.length) return;
     track("play");
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx = ctx;
-    const startAt = ctx.currentTime + 0.15;
+    // 첫 박에 겹타(기덕)가 있으면 그 음원은 0초보다 **앞서** 시작해야 한다 — 그만큼 여유를
+    // 더 두지 않으면 시작 시각이 과거가 되어 그 한 번만 앞꾸밈이 잘린 채 울린다.
+    const maxLead = bufs ? built.janggu.reduce(function (m, h) {
+      return Math.max(m, jangguLead(h.name));
+    }, 0) : 0;
+    const startAt = ctx.currentTime + 0.15 + maxLead;
     const master = ctx.createGain();
     master.gain.value = 0.25;
     master.connect(ctx.destination);
@@ -4858,8 +4965,29 @@
       osc.start(on); osc.stop(off + 0.02);
     });
 
+    // 장구 타점 — 녹음된 소리라 사인파 master(0.25)를 함께 타면 묻힌다. 제 경로로 내보내되
+    // 최대치를 넘지 않게 조금 줄인다(음원 봉우리가 이미 0dBFS 가까이 차 있다).
+    let jangguEnd = 0;
+    if (bufs) {
+      built.janggu.forEach(function (h) {
+        const b = bufs[h.name];
+        if (!b) return;   // 아직 음원이 없는 구음(사전에만 있는 것)은 조용히 넘어간다
+        const src = ctx.createBufferSource();
+        src.buffer = b;
+        const g = ctx.createGain();
+        g.gain.value = JANGGU_GAIN;
+        src.connect(g); g.connect(ctx.destination);
+        // 겹타는 음원을 박보다 먼저 시작해 본 타가 박에 떨어지게 한다(JANGGU_LEAD)
+        const at = h.t - jangguLead(h.name);
+        src.start(startAt + at);
+        jangguEnd = Math.max(jangguEnd, at + b.duration);
+      });
+    }
+
     playing = true; paused = false;
-    const total = events[events.length - 1].t + events[events.length - 1].dur;
+    // 마지막 박에 친 장구는 선율이 끝난 뒤에도 울림이 남는다 — 그만큼 총 길이를 늘려
+    // 컨텍스트가 닫히며 소리가 뚝 끊기지 않게 한다(하이라이트는 마지막 정간에 머문다).
+    const total = Math.max(events[events.length - 1].t + events[events.length - 1].dur, jangguEnd);
     playState = { startAt: startAt, total: total, marks: marks };
     updatePlayButtons();
     tick();
@@ -4870,7 +4998,7 @@
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
-    "hwangPitch", "tempoBpm", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
+    "hwangPitch", "tempoBpm", "playJanggu", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX"];
   const LS_KEY = "jgb_state_v1";
 
@@ -5927,6 +6055,8 @@
     saveState();
     if (palView === "yul" && yulMode === "piano") buildPalette();
   });
+  // 장구 소리 켜기/끄기 — 재생 중에 바꾸면 다음 재생부터 반영된다(이미 예약된 소리는 그대로)
+  $("playJanggu").addEventListener("change", saveState);
   // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
   $("palInsert").addEventListener("change", saveState);
