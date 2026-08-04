@@ -297,12 +297,33 @@
   }
 
   // ---------- 주소로 받은 악보 열기 ----------
+  // 신고 창구 — policy.html에 적힌 곳과 **같은 주소**여야 한다(제103조가 요구하는 '지정·공지된
+  // 수령인'이 두 군데서 다르면 안 된다). 편지에 악보 주소를 미리 채워 넣는다 — 신고하는 사람이
+  // 무엇을 적어야 하는지 몰라 그냥 닫는 일을 줄인다.
+  const REPORT_TO = "hearenzo@naver.com";
+  function reportMailto(id, title) {
+    const subj = "[우물사이] 악보 신고 (" + id + ")";
+    const body = [
+      "문제가 되는 악보", "  주소: " + scoreUrl(id), "  제목: " + (title || ""), "",
+      "어떤 저작물의 권리인지 (곡명·저작자)", "  ", "",
+      "신고하시는 분", "  성함/연락처: ", "  권리자 본인 / 대리인: ", "",
+      "그 밖에 알려 주실 내용", "  ", "",
+      "— 확인 즉시 해당 악보를 내리고 결과를 알려 드리겠습니다.",
+    ].join("\n");
+    return "mailto:" + REPORT_TO + "?subject=" + encodeURIComponent(subj) +
+           "&body=" + encodeURIComponent(body);
+  }
+
   function showBanner(meta, mine) {
     const who = meta.author ? (" · " + meta.author) : "";
     const lic = LICENSE_KO[meta.license] ? (" · " + LICENSE_KO[meta.license]) : "";
     $("cbText").textContent = mine
       ? ("내가 게시한 악보입니다" + who + " — 고친 뒤 [파일 › 악보 게시]에서 같은 주소로 갱신할 수 있습니다")
       : ("공유받은 악보입니다" + who + lic + " — 여기서 고쳐도 원본은 바뀌지 않습니다");
+    // 내가 올린 악보를 나에게 신고하라고 할 일은 없다
+    const rep = $("cbReport");
+    rep.style.display = mine ? "none" : "";
+    if (!mine) rep.href = reportMailto(meta.id, meta.title);
     $("cloudBanner").style.display = "";
   }
 

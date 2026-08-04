@@ -48,6 +48,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 - `js/cloud.js` + `js/cloud-config.js` — 악보 게시(서버에 올리고 `#v=<id>` 주소로 열기).
   app.js **뒤에** 로드되며 `window.jgbDoc`만 통해 문서를 만진다. 설정이 비면 스스로 물러난다.
   서버 쪽은 `server/schema.sql`(Supabase에 붙여넣어 실행). 규칙은 아래 '악보 게시' 절.
+- `policy.html` — **이용 약속과 저작권**(금지 대상·신고 절차·개인정보). 저작권법 제102·103조가
+  요구하는 '신고 수령인 공지'가 여기 있으므로, **신고 받는 주소를 바꿀 땐 js/cloud.js의
+  `REPORT_TO`와 browse.html 꼬리말까지 세 곳을 함께** 고쳐야 한다(두 군데서 다르면 안 된다).
+  문패는 index.html에서 fetch로 가져와 꽂는다 — 로고를 두 번 박지 않으려고.
 - `browse.html` + `css/browse.css` + `js/browse.js` — **둘러보기**(공개 악보 목록). index.html과
   **별개 문서**라 app.js·기호 데이터(600KB)를 안 싣는다 — 여기선 악보를 그리지 않으므로.
   카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다. 규칙은 아래 '둘러보기' 절.
