@@ -309,6 +309,31 @@
 
     <!-- ===== 문서 ===== -->
     <div class="tabpanel active" data-tab="doc">
+      <!-- 종이 크기 — 사실상 '비율'을 정하는 자리다. 정간보에 A4가 당연하지 않다(전통 악보는
+           가로로 긴 첩(帖)이 많고, 교재·논문 삽화는 A5나 정사각이 알맞다). 짧은 곡을 A4에
+           담으면 종이가 비어 보이는 문제도 여기서 풀린다.
+           표준 규격은 @page에 **이름 그대로** 넘겨(size: B5 …) 인쇄 대화상자가 그 용지를 고르게
+           하고, '사용자 지정'만 mm로 넘긴다 — 배선은 app.js render()의 pageStyle 부분. -->
+      <div class="field">
+        <label for="paperSize">종이 크기</label>
+        <select id="paperSize">
+          <option value="A4" selected>A4 (210 × 297)</option>
+          <option value="A5">A5 (148 × 210)</option>
+          <option value="B5">B5 (176 × 250)</option>
+          <option value="letter">레터 (216 × 279)</option>
+          <option value="square">정사각 (210 × 210)</option>
+          <option value="custom">사용자 지정…</option>
+        </select>
+        <!-- '사용자 지정'일 때만 보인다(app.js가 display를 다룬다). 눈으로 보며 맞추는 값이라
+             wireLive — 치는 대로 반영하되 범위 밖 중간값은 걸러진다. -->
+        <div class="row" id="paperCustomWrap" style="display:none; margin-top:6px;">
+          <input type="number" id="paperW" min="60" max="600" step="1" value="210" title="폭(mm)" style="flex:1; min-width:0;">
+          <span style="align-self:center; color:var(--muted); font-size:12px;">×</span>
+          <input type="number" id="paperH" min="60" max="600" step="1" value="297" title="높이(mm)" style="flex:1; min-width:0;">
+          <span style="align-self:center; color:var(--muted); font-size:12px;">mm</span>
+        </div>
+        <div class="hint">화면·PNG·PDF는 선택한 비율로, 실제 인쇄는 프린터 용지에 맞게 출력됩니다.</div>
+      </div>
       <div class="field">
         <label for="orientation">종이 방향</label>
         <select id="orientation">
@@ -458,7 +483,7 @@
           <div class="hint">각 열 위에 가로로 이어진 빈 칸을 추가합니다 (악절 이름 등 기입용).</div>
         </div>
 
-        <div class="hint" style="margin-top:2px;">A4 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
+        <div class="hint" style="margin-top:2px;">고른 종이의 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
         </details>
 
         <button type="button" id="layoutReset" class="orn-reset" style="margin:10px 0 8px;"

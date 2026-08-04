@@ -1613,8 +1613,9 @@
     #sheet { transform: none !important; display: block; gap: 0; }
     .page { box-shadow: none; page-break-after: always; }
     .page:last-child { page-break-after: auto; }
-    .page svg { width: 210mm; height: 297mm; }
-    body.landscape .page svg { width: 297mm; height: 210mm; }
+    /* 인쇄 크기는 여기서 정하지 않는다 — 종이 크기를 고를 수 있게 되면서 app.js의 render()가
+       #pageStyle에 @page와 함께 써 넣는다(용지와 요소 크기가 한 곳에서 나와야 어긋나지 않는다).
+       여기 210/297mm를 박아 두면 종이 크기를 바꿔도 인쇄만 A4로 나온다. */
     /* 편집·재생 하이라이트는 화면 확인용이라 인쇄에는 나오지 않아야 한다 */
     .no-print { display: none !important; }
   }

@@ -8,7 +8,30 @@
     try { if (window.jgbTrack) window.jgbTrack(name, props); } catch (e) { /* 통계는 앱 동작에 영향 주지 않음 */ }
   };
 
-  const PAGE_W = 210, PAGE_H = 297;
+  // 종이 크기(mm) — 사이드바 '종이 크기'가 고르는 값. A4가 기본이고, 여기 없는 비율은
+  // '사용자 지정'으로 폭·높이를 직접 적는다.
+  // `css`는 @page에 넘길 이름 — 표준 규격은 **이름 그대로** 넘겨야 인쇄 대화상자가 그 용지를
+  // 고른다(mm로 넘기면 브라우저가 맞는 용지를 못 찾아 A4에 축소해 앉히는 일이 생긴다).
+  // 사용자 지정만 mm 두 값으로 넘긴다.
+  const PAPERS = {
+    A4:     { w: 210, h: 297, css: "A4" },
+    A5:     { w: 148, h: 210, css: "A5" },
+    B5:     { w: 176, h: 250, css: "B5" },
+    letter: { w: 216, h: 279, css: "letter" },
+    square: { w: 210, h: 210, css: null },
+  };
+  const PAGE_W = 210, PAGE_H = 297;   // 기본값(A4) — 옛 저장분에 종이 크기가 없을 때 쓰인다
+  // 지금 고른 종이의 세로 기준 크기. 방향(가로/세로)은 부르는 쪽에서 뒤집는다.
+  function paperSize() {
+    const key = $("paperSize") ? $("paperSize").value : "A4";
+    if (key === "custom") {
+      const w = parseFloat($("paperW").value), h = parseFloat($("paperH").value);
+      // 치는 도중의 값(빈 칸·한 자리 수)으로 종이를 만들면 배치가 터진다 — 범위 밖은 기본값
+      const ok = function (v) { return isFinite(v) && v >= 60 && v <= 600; };
+      return { w: ok(w) ? w : PAGE_W, h: ok(h) ? h : PAGE_H, css: null };
+    }
+    return PAPERS[key] || PAPERS.A4;
+  }
   // MARGIN_BASE: '페이지 채움' 0%일 때 기본 페이지 여백 / MARGIN_MIN: 100%여도 남기는 최소 여백(mm)
   // — 예시 악보처럼 테두리가 페이지 끝에 닿지 않고 항상 여백을 조금 둔다
   const MARGIN_BASE = 12, MARGIN_MIN = 9, INNER_PAD = 5;
@@ -3738,10 +3761,20 @@
 
     const landscape = $("orientation").value === "landscape";
     document.body.classList.toggle("landscape", landscape);
-    const PW = landscape ? PAGE_H : PAGE_W;
-    const PH = landscape ? PAGE_W : PAGE_H;
+    const paper = paperSize();
+    const PW = landscape ? paper.h : paper.w;
+    const PH = landscape ? paper.w : paper.h;
+    // '사용자 지정'일 때만 폭·높이 칸을 내놓는다
+    if ($("paperCustomWrap"))
+      $("paperCustomWrap").style.display = ($("paperSize").value === "custom") ? "" : "none";
+    // 인쇄 크기는 여기 한 곳에서 정한다 — @page(용지)와 종이 요소의 실제 크기가 어긋나면
+    // 잘리거나 빈 장이 딸려 나온다. 예전엔 styles.css의 @media print가 210/297mm를 박아
+    // 두고 있어서 종이 크기를 바꿔도 인쇄만 A4로 나왔다.
     const ps = $("pageStyle");
-    if (ps) ps.textContent = "@page { size: A4 " + (landscape ? "landscape" : "portrait") + "; margin: 0; }";
+    if (ps) ps.textContent =
+      "@page { size: " + (paper.css ? paper.css + " " + (landscape ? "landscape" : "portrait")
+                                    : PW + "mm " + PH + "mm") + "; margin: 0; }\n" +
+      "@media print { .page svg { width: " + PW + "mm !important; height: " + PH + "mm !important; } }";
 
     // 페이지 채움(0~100%) — 키울수록 페이지 여백을 줄이되, 100%여도 최소 여백(MARGIN_MIN)은 남긴다
     const pageFillPct = Math.max(0, Math.min(100, parseFloat($("pageFill").value) || 0));
@@ -4639,7 +4672,7 @@
     // 문구는 건조하게 — '이 설정이면 ~ 그립니다' 같은 말 붙임 없이 값만.
     $("readout").innerHTML =
       `페이지 <b>${pages.length}장</b> · 정간 한 칸 <b>${cell.toFixed(1)}mm</b>` +
-      (scale < 0.999 ? ` · <span style="color:#8a6d3b">A4에 맞춰 <b>${Math.round(scale * 100)}%</b> 축소</span>` : "") +
+      (scale < 0.999 ? ` · <span style="color:#8a6d3b">종이에 맞춰 <b>${Math.round(scale * 100)}%</b> 축소</span>` : "") +
       (dg.ok ? "" : `<div class="warn">⚠ 대강 분절의 합이 한 각의 정간 수(${beats})와 달라 적용하지 않았습니다.</div>`) +
       (lyGakMismatch ? `<div class="warn">⚠ 선율(${parsed.length}각)과 가사(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.</div>` : "") +
       (jdBeatMismatch ? `<div class="warn">⚠ 장단의 정간 수(${jdParsed[0].length})가 선율(${beats})과 달라요 — 구조를 바꾸면 넘치는 내용이 잘릴 수 있습니다.</div>` : "");
@@ -4997,7 +5030,7 @@
   }
 
   // ---------- 저장 / 불러오기 ----------
-  const CTRL_IDS = ["orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
+  const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
@@ -5512,7 +5545,9 @@
   // 대강 분절은 '숫자의 합이 정간 수와 같아야' 하는 값이라 치는 도중엔 늘 어긋난다 → 확인 유지
   wireConfirm($("daegang"), render);
   // 아래는 전부 눈으로 보며 맞추는 값 — 치는 대로 바로 반영
-  ["cellSize", "gakGap", "bandGap",
+  // 종이 폭·높이(사용자 지정)도 여기 — 눈으로 보며 비율을 맞추는 값이라 치는 대로 반영한다.
+  // 범위(60~600mm) 밖의 '치는 도중 값'은 wireLive가 걸러 내고, paperSize()도 한 번 더 막는다.
+  ["cellSize", "gakGap", "bandGap", "paperW", "paperH",
    "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
    "subSize", "subOffset", "subOffsetX", "subSpacing",
    "gakNameSize", "gakNameGap", "tempoSize", "tempoSpacing"].forEach(id => wireLive($(id), render));
@@ -5522,7 +5557,7 @@
     $(id).addEventListener("change", onFormChange);
   });
   ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
-   "titleFont", "lyricsFont", "header", "frame", "noteMode", "orientation", "pageNumPos", "gakNumMode",
+   "titleFont", "lyricsFont", "header", "frame", "noteMode", "paperSize", "orientation", "pageNumPos", "gakNumMode",
    "gakNameHanja"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
