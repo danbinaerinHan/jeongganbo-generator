@@ -132,6 +132,23 @@
          늘 같은 자리에 있는 게 편해서 상단바 오른쪽에 고정했다 -->
     <!-- 배율 숫자가 곧 메뉴 버튼(▾) — 세로/가로 맞춤은 매번 쓰는 게 아니라서 PPT의 배율
          프리셋처럼 숫자 클릭 메뉴 안으로 접었다(빈도 낮은 건 접는다). −/＋만 상시 노출. -->
+    <!-- 보기 전환(총보/파트보) — **악기가 둘 이상일 때만** 보인다(app.js updateViewMenu).
+         버튼 글씨 자리에 지금 보기(총보 또는 활성 파트 이름)가 뜬다 — 배율·입력 방식과 같은
+         .topbar-cmd + .tb-menu 문법. 메뉴 항목(총보 ── 파트들)은 JS가 그린다.
+         총보 여부의 정본은 숨은 #scoreView 체크박스(문서에 저장, CTRL_IDS라 지우지 말 것) —
+         예전엔 악기 관리 창 머리줄의 체크박스였는데 상단바로 일원화했다(같은 스위치 둘 금지). -->
+    <div id="viewBox" style="display:none;">
+      <button type="button" id="viewToggle" class="topbar-cmd tip"
+        data-tip="총보 / 파트보 전환
+· 총보 = 모든 악기를 한 악보에 나란히
+· 파트를 고르면 그 악기만 보며 편집합니다
+· 레이아웃(배치·크기·간격·종이)은 총보와 파트보에 따로 저장됩니다">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="4" width="4.6" height="16"></rect><rect x="9.7" y="4" width="4.6" height="16"></rect><rect x="15.9" y="4" width="4.6" height="16"></rect></svg>
+        <span class="lbl" id="viewLbl">총보</span>
+      </button>
+      <div id="viewPop" class="tb-menu"></div>
+      <input type="checkbox" id="scoreView" hidden>
+    </div>
     <div id="zoomBar" class="topbar-box">
       <button id="zoomOut" title="축소">−</button>
       <button type="button" class="zval" id="zoomVal" title="보기 배율 · 맞춤">100%</button>
@@ -1327,6 +1344,7 @@
       <div class="melody-head">
         악기 <span class="mh-sub">총보 편성</span>
         <span class="mh-right">
+          <!-- 총보/파트보 전환은 상단바 보기 메뉴(#viewToggle)가 맡는다 — 여기 다시 두지 말 것 -->
           <button type="button" id="partsClose" class="icon-btn" title="닫기">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -1386,6 +1404,14 @@
       </div>
       <div class="field">
         <label class="chk"><input type="checkbox" id="ndWantJangdan"> 장단 입력 사용</label>
+      </div>
+      <!-- 악기 편성(선택) — 행은 app.js openNewDocWizard가 그린다. 비워 두면 지금처럼
+           악기 구분 없는 파트 하나로 시작하고, 둘 이상 고르면 총보 보기로 시작한다. -->
+      <div class="field">
+        <label>악기 편성 (선택)</label>
+        <div id="ndParts"></div>
+        <button type="button" id="ndPartAdd" class="at-add" style="margin-top:4px;">＋ 악기 추가</button>
+        <div class="hint">• 비워 두면 악기 구분 없이 시작합니다 — 나중에 <b>설정 › 문서 › 악기 관리</b>에서 더할 수 있습니다.<br>• 둘 이상 고르면 <b>총보</b>로 시작하고, 상단바에서 총보/파트보를 오갈 수 있습니다.</div>
       </div>
       <div class="btns">
         <button type="button" id="ndCancel" class="secondary">취소</button>

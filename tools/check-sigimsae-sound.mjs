@@ -18,7 +18,12 @@ const app = await loadApp(
    "jangguSoundOn", "stripSymBracket", "midiToFreq", "scaleNotes", "makeScale",
    "realizeMelody", "buildAudioEvents"],
   { beats: "20", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
-    jangdan: "", wantJangdan: false, playJanggu: false }
+    jangdan: "", wantJangdan: false, playJanggu: false },
+  // 합주 파트는 이 검사의 관심 밖이라 '파트 하나'로 세워 둔다 — 여기서 보는 것은 한 가락이
+  // 어떤 음높이로 풀리나이지, 여러 파트를 어떻게 겹치나가 아니다(그건 재생 쪽 몫).
+  `let parts = [{ melody: "", muted: false }];
+   let activePart = 0;
+   function stashActivePart() { parts[0].melody = melodyFull; }`
 );
 const buildAudioEvents = app.fn("buildAudioEvents");
 

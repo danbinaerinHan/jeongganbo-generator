@@ -72,6 +72,9 @@
   let ornEditMode = false;                  // 시김새 수정 모드
   let ornSel = null;                        // 선택된 시김새 {gak, cell, k}
   let ornInstances = [];                    // 렌더된 시김새 위치 목록(수정 모드 히트용)
+  // 총보에서 비활성 파트 열을 그릴 땐 끈다 — 인스턴스의 gak/cell/k는 '활성 파트의 원문'
+  // 기준이라, 남의 파트 기호가 목록에 들어가면 수정 모드가 엉뚱한 토큰을 집는다.
+  let ornCollect = true;
   let ornAddMode = false;                   // 시김새 추가 모드(직접 입력) — 숫자키로 붙임표 시김새를 고른 뒤 음을 클릭해 붙임
   let ornAddArmed = null;                   // 지금 골라둔(armed) 붙임표 시김새의 stem
   let ornAddHeldKey = null;                 // 숫자키를 '누르고 있는 동안에만' armed — 그 키. 떼면 해제
@@ -958,8 +961,8 @@
   // 반 굵기로 남아 '가는 줄 하나 + 가운데만 굵은 줄 하나'처럼 두 줄로 보였다.
   // 대강선·통줄은 이미 structuralSegs가 마스크 뒤에 다시 그어 멀쩡했고, 평범한 정간 가로줄(T_THIN)만
   // 한 번 그리고 마는 탓에 이 문제가 났다 — 같은 방식으로 되살린다.
-  function cellBoundaryNibbled(gi, i) {
-    const row = cellStyles[gi];
+  function cellBoundaryNibbled(gi, i, styles) {
+    const row = (styles || cellStyles)[gi];   // styles = 파트별 서식표(총보에서 비활성 파트)
     if (!row) return false;
     const above = row[i - 1] && row[i - 1].border;
     const below = row[i] && row[i].border;
@@ -979,8 +982,8 @@
   // 이어지는 칸끼리 한 선분으로 합친다 — 칸마다 따로 그리면 굵은 선·점선·이중선이 칸 경계에서
   // 끊겨 보인다. 그리기는 render 쪽에서 두 단계(마스크 전부 → 선 전부)로 나눠서 하는데,
   // 나중 칸의 흰 마스크가 먼저 그린 선의 모서리를 지우는 일이 없게 하기 위해서다.
-  function collectCellBorderSegs(segs, gi, x, gridTop, cell, beats) {
-    const row = cellStyles[gi];
+  function collectCellBorderSegs(segs, gi, x, gridTop, cell, beats, styles) {
+    const row = (styles || cellStyles)[gi];   // styles = 파트별 서식표(총보에서 비활성 파트)
     if (!row) return;
     ["left", "right"].forEach(function (side) {
       const sx = side === "left" ? x : x + cell;
@@ -1119,6 +1122,28 @@
     $("ndTitleLayout").value = "side";
     $("ndSubtitle").value = "";
     $("ndWantJangdan").checked = false;
+    // 악기 편성(선택) — 행마다 악기 고르기 + 이름 칸. 비워 두면 악기 구분 없이 시작.
+    const ndList = $("ndParts");
+    ndList.innerHTML = "";
+    function ndAddPartRow() {
+      const row = document.createElement("div");
+      row.className = "tx-item";
+      const sel = document.createElement("select");
+      [["all", "악기 선택"]].concat(Object.keys(INSTRUMENT_PRIORITY).map(function (k) { return [k, k]; }))
+        .forEach(function (pair) {
+          const o = document.createElement("option");
+          o.value = pair[0]; o.textContent = pair[1]; sel.appendChild(o);
+        });
+      const nm = document.createElement("input");
+      nm.type = "text"; nm.placeholder = "이름 (선택 — 예: 노래)";
+      nm.title = "총보에서 열 위에 붙는 이름 — 비우면 악기 이름으로 부릅니다";
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "tx-del"; del.textContent = "✕"; del.title = "이 악기 빼기";
+      del.addEventListener("click", function () { row.remove(); });
+      row.appendChild(sel); row.appendChild(nm); row.appendChild(del);
+      ndList.appendChild(row);
+    }
+    $("ndPartAdd").onclick = ndAddPartRow;
     modal.style.display = "flex";
     $("ndCreate").onclick = function () {
       const answers = {
@@ -1128,7 +1153,12 @@
         title: $("ndTitle").value.trim(),
         titleLayout: $("ndTitleLayout").value,
         subtitle: $("ndSubtitle").value.trim(),
-        wantJangdan: $("ndWantJangdan").checked
+        wantJangdan: $("ndWantJangdan").checked,
+        // 악기 편성 — 리로드를 건너 applyNewDocAnswers에 닿아야 하므로 값만 담는다
+        parts: Array.from(ndList.children).map(function (row) {
+          return { instrument: row.querySelector("select").value,
+                   name: row.querySelector("input").value.trim() };
+        })
       };
       modal.style.display = "none";
       track("doc_new", { v: answers.beats + "beats" });
@@ -1149,6 +1179,20 @@
     $("titleLayout").value = a.titleLayout || "side";
     $("subtitle").value = a.subtitle;
     $("wantJangdan").checked = a.wantJangdan;
+    // 악기 편성 — 마법사에서 고른 악기들로 파트를 짠다. 안 골랐으면 지금처럼 파트 1개.
+    // 둘 이상이면 총보 보기로 시작 — 여러 악기를 골랐다는 건 총보를 원한다는 뜻이라서.
+    if (Array.isArray(a.parts) && a.parts.length) {
+      parts = a.parts.map(function (sp) {
+        const p = newPart(typeof sp.name === "string" ? sp.name : "");
+        p.instrument = (sp.instrument && (sp.instrument === "all" || INSTRUMENT_PRIORITY[sp.instrument]))
+          ? sp.instrument : "all";
+        return p;
+      });
+      activePart = 0;
+      hydrateActivePart();
+      $("scoreView").checked = parts.length > 1;
+      renderPartsList();
+    }
     reconcileJangdan();
     render();
     saveState();
@@ -3182,7 +3226,7 @@
         drawSymImageRect(svg, tk.sym, bx, by, w, hh);
         // 시김새 수정 모드의 하이라이트·클릭·드래그는 ornInstances 하나만 본다 —
         // 여기 담기면 점선 상자와 끌기가 다른 시김새와 똑같이 따라온다(따로 배선하지 말 것).
-        ornInstances.push({ gak: gakIdx, cell: cellIdx, k: tk.k, page: pageIdx,
+        if (ornCollect) ornInstances.push({ gak: gakIdx, cell: cellIdx, k: tk.k, page: pageIdx,
           x: bx, y: by, w: w, h: hh });
       });
     }
@@ -3296,7 +3340,7 @@
         "font-size": box, "font-family": NOTE_FONT, fill: "#111" });
       t.textContent = tk.sym; svg.appendChild(t);
     }
-    ornInstances.push({ gak: gakIdx, cell: cellIdx, k: k, page: pageIdx,
+    if (ornCollect) ornInstances.push({ gak: gakIdx, cell: cellIdx, k: k, page: pageIdx,
       x: px - box / 2, y: py - box / 2, w: box, h: box });
   }
 
@@ -3689,6 +3733,9 @@
   }
 
   function render() {
+    // 보기(총보/파트보)에 맞는 레이아웃 프로필을 **가장 먼저** 입힌다 — 아래의 모든 컨트롤
+    // 읽기(한 줄 각 수·배율·종이…)보다 앞서야 바뀐 보기의 값으로 셈이 시작된다.
+    syncViewLayout(parts.length > 1 && !!($("scoreView") && $("scoreView").checked));
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const gakPerRow = Math.max(1, parseInt($("gakPerRow").value) || 1);
 
@@ -3711,6 +3758,24 @@
     document.body.classList.toggle("want-lyrics", wantLyrics);
     // 초록 점(레이어 사용 표시)은 '내용이 있음'만 뜻한다 — 창을 열었다고 켜지면 안 된다
     document.body.classList.toggle("has-lyrics", lyricsHasContent());
+
+    // ---------- 총보 보기 ----------
+    // 파트가 여럿이고 악기 관리 창의 [총보]가 켜져 있으면 모든 파트를 한 각 안에 나란히
+    // 그린다(한 각 = 파트 열 묶음, 목록 위 파트가 오른쪽 — 읽는 방향이 오른쪽→왼쪽이라).
+    // 파트보(기본)는 P=1로 아래 전부가 예전과 완전히 같은 경로를 탄다.
+    stashActivePart();   // 비활성 파트 내용도 그리므로 parts[]를 먼저 최신으로
+    const scoreMode = parts.length > 1 && !!($("scoreView") && $("scoreView").checked);
+    const partList = scoreMode ? parts : [parts[activePart]];
+    const P = partList.length;
+    const activeCol = scoreMode ? activePart : 0;   // partList 안에서 활성 파트의 자리
+    document.body.classList.toggle("score-view", scoreMode);
+    // 파트별 곁줄 — 내용이 있는 파트만 제 열 옆에 나온다(총보라고 남의 곁줄 자리를 만들어
+    // 두지 않는다 — 사용자 확정). 활성 파트만 '창 열림'(빈 줄 보이기)도 켬으로 친다.
+    const partLyOn = partList.map(function (p, i) {
+      if (i === activeCol) return wantLyrics;
+      return String(p.lyrics || "").replace(/[|\s]/g, "") !== "";
+    });
+    const lyOnCount = partLyOn.filter(Boolean).length;
     // 텍스트(자유 주석)는 켜짐 스위치가 없어 '하나라도 있음'을 레이어 사용 표시(초록 점)에 쓴다
     // — 제목·부제 서식도 텍스트 창 소관(2026-07-24 분리)이라 함께 센다
     document.body.classList.toggle("has-texts",
@@ -3800,10 +3865,19 @@
       $("titleGakWidthWrap").style.display = $("titleLayout").value === "top" ? "none" : "";
     }
 
-    // 멜로디(내용) 파싱 — 에디터 조각이 아니라 곡 전체 원본을 그린다
-    const parsed = parseMelodyOffsets(melodyFull);
+    // 멜로디(내용) 파싱 — 에디터 조각이 아니라 곡 전체 원본을 그린다. 총보면 파트마다.
+    // 활성 파트는 전역 작업 사본(melodyFull·lyricsFull)이 정본이라 그쪽을 파싱한다.
+    const parsedBy = partList.map(function (p, i) {
+      return parseMelodyOffsets(i === activeCol ? melodyFull : p.melody);
+    });
+    const parsed = parsedBy[activeCol];
     const jdParsed = wantJangdan ? parseMelodyOffsets($("jangdan").value) : null;
-    const lyParsed = wantLyrics ? parseMelodyOffsets(lyricsFull) : null;
+    const lyParsedBy = partList.map(function (p, i) {
+      if (!partLyOn[i]) return null;
+      return parseMelodyOffsets(i === activeCol ? lyricsFull : p.lyrics);
+    });
+    const lyParsed = lyParsedBy[activeCol];
+    const stylesBy = partList.map(function (p, i) { return i === activeCol ? cellStyles : p.cellStyles; });
 
     // 페이지 용량 + 실제로 그릴 각 수
     // 제목 칸은 첫 페이지 전체 높이를 차지하므로(한 통 상자), 첫 페이지의 모든 밴드가
@@ -3850,12 +3924,14 @@
     // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨.
     // 가사 칸은 정간(각) 오른쪽에 딱 붙인다(간격 0) — 남는 간격은 전부 다음 각과의 사이로
     const desiredLyGap = 0;
-    const desiredLyW = wantLyrics ? desiredCell * 0.4 : 0;
+    const desiredLyW = desiredCell * 0.4;   // 곁줄 한 줄의 폭 — 켜진 파트마다 하나씩 늘어난다
     const desiredLyExtra = desiredLyGap + desiredLyW;
     // 가사 줄은 각 사이 간격 '안'에 들어간다 — 가사를 켜도 (남는 간격 + 가사 줄) 합이
     // 원래 간격과 같아 각 기둥 위치·전체 폭이 안 바뀐다. 간격이 가사 줄보다 좁으면
     // 겹치지 않게 0까지만 줄인다(그때만 전체가 가사 줄 몫만큼 넓어짐).
-    const desiredGap = wantLyrics ? Math.max(0, desiredGapBase - desiredLyExtra) : desiredGapBase;
+    // 간격을 파고드는 건 **맨 오른쪽 파트의 곁줄**뿐이다 — 안쪽 파트의 곁줄은 묶음 안에
+    // 있어 옆 파트 열을 밀어내므로 묶음 폭(gakW)에 그대로 더해진다.
+    const desiredGap = partLyOn[0] ? Math.max(0, desiredGapBase - desiredLyExtra) : desiredGapBase;
     // 모든 페이지 공통 스케일(가장 꽉 찬 페이지 기준) → 페이지끼리 크기 일치.
     // 폭은 밴드마다 실제로 그려지는 구성(각 + 각별 가사 칸 + 장단 칸(가사 자리 포함) +
     // 제목 칸)을 그대로 합산해 가장 넓은 밴드를 기준으로 잡는다 — 예전 근사식은
@@ -3867,8 +3943,10 @@
       let bestW = -1;
       pages.forEach(function (p, pi) {
         p.bands.forEach(function (m, i) {
-          let cells = m, gaps = m - 1, lys = wantLyrics ? m : 0;
-          if (pi === 0 && i === 0 && jdSlot) { cells += 1; gaps += 1; if (wantLyrics) lys += 1; }
+          // 총보에선 각 하나가 파트 수(P)만큼의 정간 열 + 켜진 곁줄들(lyOnCount)이다.
+          // 장단 자리는 한 각(묶음) 자리와 같은 폭으로 잡아 아래 밴드들과 열이 맞는다.
+          let cells = m * P, gaps = m - 1, lys = m * lyOnCount;
+          if (pi === 0 && i === 0 && jdSlot) { cells += P; gaps += 1; lys += lyOnCount; }
           if (p.hasTitle) { cells += titleGak; gaps += titleGak; }   // 제목 칸 + titleGutter(간격 1개)
           const w = cells * desiredCell + gaps * desiredGap + lys * desiredLyExtra;
           if (w > bestW) { bestW = w; wCells = cells; wGaps = gaps; wLys = lys; }
@@ -3922,7 +4000,9 @@
     const lyExtraFull = lyGap + lyW;   // 각(정간)마다 오른쪽 가사 줄이 차지하는 폭(간격 포함)
     hiLyGap = lyGap; hiLyW = lyW; hiLyricsOn = wantLyrics;   // 가사 줄 하이라이트용 치수
     const headH = cell * headRatio;
-    const slot = cell + gap + (wantLyrics ? lyExtraFull : 0);
+    // 한 각(묶음)의 폭 — 파트 정간 열 P개 + 켜진 곁줄들. 파트보(P=1)면 예전 그대로.
+    const gakW = P * cell + lyOnCount * lyExtraFull;
+    const slot = gakW + gap;
     const bandH = headH + beats * cell;
     const titleGutter = gap;   // 격자 ↔ 제목 칸 사이 여유(다른 각 사이 간격과 동일)
     const gridTotalW = wCells * cell + wGaps * gap + wLys * lyExtraFull;
@@ -3937,10 +4017,10 @@
       pages.forEach(function (p, pi) {
         p.bands.forEach(function (m, i) {
           let inset = 0;
-          if (!p.hasTitle && wantLyrics) {
+          if (!p.hasTitle && partLyOn[0]) {   // 맨 오른쪽 끝은 늘 맨 오른쪽 파트의 곁줄 자리
             if (pi === 0 && i === 0 && jdSlot) inset = lyExtraFull;
             else {
-              const firstLy = lyParsed && lyParsed[acc];
+              const firstLy = lyParsedBy[0] && lyParsedBy[0][acc];
               const has = !!(firstLy && firstLy.some(function (c) { return c && c.text; }));
               // 열린 가사 열(가로 제목 모드)이라도 내용이 있으면 글자가 그 자리를 차지한다
               if (!has) inset = lyExtraFull;
@@ -4035,10 +4115,8 @@
         // 장단은 전체 악곡의 맨 처음 각(gakAccum===0) 옆에만 붙고, 한 각 자리(가사 폭 포함)를 차지함
         // — 그래야 아래 밴드들과 좌우 폭이 정확히 같아진다
         const bandJdExtra = (wantJangdan && gakAccum === 0)
-          ? jdExtraFull + (wantLyrics ? lyExtraFull : 0) : 0;
-        // 가사는 이 밴드의 각(정간)마다 매번 오른쪽에 붙으므로, 각 수만큼 폭이 늘어남
-        const bandLyExtra = wantLyrics ? nMusic * lyExtraFull : 0;
-        const musicLeft = musicRightEdge - (nMusic * cell + (nMusic - 1) * gap) - bandJdExtra - bandLyExtra;
+          ? jdExtraFull + (gakW - cell) : 0;   // 장단 자리 = 한 각(묶음) 자리와 같은 폭
+        const musicLeft = musicRightEdge - (nMusic * gakW + (nMusic - 1) * gap) - bandJdExtra;
 
         // 밴드 위/아래 통줄의 오른쪽 끝.
         // 제목이 있는 페이지는 모든 밴드의 통줄이 제목 칸 세로선까지 쭉 이어진다(예시 악보 방식).
@@ -4049,11 +4127,11 @@
         if (wantJangdan && gakAccum === 0) {
           // 맨 처음 밴드의 가장 오른쪽은 장단 칸 — 장단 칸엔 가사 자리가 없으므로
           // 통줄도 장단 칸 오른쪽 선에서 끝나야 튀어나오지 않는다
-          capBase = musicRightEdge - (wantLyrics ? lyExtraFull : 0);
-        } else if (wantLyrics) {
+          capBase = musicRightEdge - (gakW - cell);
+        } else if (partLyOn[0]) {
           // 가로(맨 위) 제목이면 오른쪽에 제목 칸이 없으므로, 맨 오른쪽 가사 열을
           // 상자로 감싸지 않고 열어 둔다(통줄도 각의 오른쪽 선까지만).
-          const firstLy = lyParsed && lyParsed[gakAccum];
+          const firstLy = lyParsedBy[0] && lyParsedBy[0][gakAccum];
           const firstLyHasContent = firstLy && firstLy.some(function (c) { return c && c.text; });
           if (!firstLyHasContent || titleTopMode) capBase = musicRightEdge - lyExtraFull;
           else closeLyricCol = true;
@@ -4067,10 +4145,22 @@
 
         for (let m = 0; m < nMusic; m++) {
           // 장단은 맨 처음(가장 오른쪽) 자리를 차지하므로, 이 밴드의 모든 각이 그만큼 왼쪽으로 밀림.
-          // 각마다 그 오른쪽에 가사 칸이 붙는 만큼도 함께 비워둠
-          const x = musicRightEdge - cell - (wantLyrics ? lyExtraFull : 0) - m * slot - bandJdExtra;
+          const gakRight = musicRightEdge - m * slot - bandJdExtra;   // 이 각(묶음)의 오른쪽 끝
+          const gakLeft = gakRight - gakW;
           const melIdx = gakAccum + m;
-          const gakCells = parsed[melIdx];
+          // 묶음 가운데 — 각 번호·각/장 이름이 여기 온다(파트보에선 정간 열 가운데 그대로)
+          const gakCx = scoreMode ? (gakLeft + gakRight) / 2
+                                  : gakRight - (partLyOn[0] ? lyExtraFull : 0) - cell / 2;
+          // 파트 열 묶음 — 오른쪽에서 왼쪽으로 [파트0 곁줄][파트0 정간][파트1 곁줄][파트1 정간]…
+          // (곁줄은 제 정간의 오른쪽에 붙는다 — 파트보와 같은 규칙). 파트보면 한 번만 돈다.
+          let colAcc = 0;
+          for (let pi = 0; pi < P; pi++) {
+          const lyOnP = partLyOn[pi];
+          const x = gakRight - colAcc - (lyOnP ? lyExtraFull : 0) - cell;
+          colAcc += cell + (lyOnP ? lyExtraFull : 0);
+          const isActiveCol = pi === activeCol;
+          const styles = stylesBy[pi];
+          const gakCells = parsedBy[pi][melIdx];
 
           // 이 각에 실제로 채워진 정간(|로 나뉜 칸) 수 — 글자를 그릴 범위(내용이 없으면 0).
           // 테두리·칸 구분선은 타이핑 중이라 |가 덜 채워져도 끊기지 않게 항상 beats 전체 높이로 그린다.
@@ -4079,40 +4169,67 @@
 
           // 정간 배경색 — 글자·격자선보다 먼저 그려서 뒤에 깔리게 한다(출력에도 포함되어야 하므로 no-print 아님)
           for (let j = 0; j < beats; j++) {
-            const cs = cellStyles[melIdx] && cellStyles[melIdx][j];
+            const cs = styles[melIdx] && styles[melIdx][j];
             if (cs && cs.fill) {
               svg.appendChild(rect(x, gridTop + j * cell, cell, cell, 0, { fill: cs.fill, stroke: "none" }));
             }
           }
+          // 비활성 파트 열의 시김새는 인스턴스 목록에 담지 않는다(수정 모드가 활성 파트
+          // 원문 기준으로 토큰을 집으므로) — drawCell 안의 push가 이 빗장을 본다.
+          ornCollect = isActiveCol;
           for (let j = 0; j < filled; j++) {
             const content = gakCells && gakCells[j] ? gakCells[j].text : "";
             if (content) drawCell(svg, x, gridTop + j * cell, cell, content, melIdx, j, pageIdx);
           }
+          ornCollect = true;
           // 세로선·정간 구분 가로선 — 항상 전체 높이. 위/아래 마감은 밴드 통줄이, 대강선은 아래
           // 밴드 통줄과 같은 방식으로 각 사이 간격까지 끊기지 않게 따로 그린다(굵게, 밴드 전체 폭).
-          svg.appendChild(line(x, gridTop, x, gridBottom, T_THICK));
-          svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, T_THICK));
+          // 총보에선 묶음 안 열 사이는 가는 선, 묶음의 양쪽 벽만 굵은 선 — '이 열들이 같은 각'
+          // 으로 읽히게(사용자 확정). 파트보(P=1)는 양쪽 다 굵은 선 그대로.
+          svg.appendChild(line(x, gridTop, x, gridBottom, pi === P - 1 ? T_THICK : T_THIN));
+          svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, pi === 0 ? T_THICK : T_THIN));
           for (let i = 1; i < beats; i++) {
             if (dgSet.has(i)) continue;          // 대강선은 아래에서 밴드 폭으로 따로(구조선이라 마스크 뒤에 다시 그림)
             const cy = gridTop + i * cell;
             svg.appendChild(line(x, cy, x + cell, cy, T_THIN));
             // 없애기의 세로 마스크가 이 줄의 반쪽을 갉는 자리면 구조선에 얹어 마스크 뒤에 다시 긋는다
-            if (cellBoundaryNibbled(melIdx, i)) structuralSegs.push([x, cy, x + cell, cy, T_THIN]);
+            if (cellBoundaryNibbled(melIdx, i, styles)) structuralSegs.push([x, cy, x + cell, cy, T_THIN]);
           }
           // 정간 커스텀 테두리 — 선분만 모아두고 그리기는 밴드 루프가 끝난 뒤에(위 주석 참고)
-          collectCellBorderSegs(cellBorderSegs, melIdx, x, gridTop, cell, beats);
+          collectCellBorderSegs(cellBorderSegs, melIdx, x, gridTop, cell, beats, styles);
 
           // 각 번호(보조) — 각 아래 옅은 회색 작은 숫자 (문서 탭 옵션, '화면에만'이면 출력에서 제외)
-          if (gakNumMode !== "none") {
+          // 묶음에 하나(가운데) — 파트 열마다 달면 같은 번호가 P번 반복된다
+          if (gakNumMode !== "none" && pi === 0) {
             const gnFont = cell * 0.26;
-            const gn = el("text", { x: x + cell / 2, y: gridBottom + gnFont * 1.25,
+            const gn = el("text", { x: gakCx, y: gridBottom + gnFont * 1.25,
               "text-anchor": "middle", "font-size": gnFont, fill: "#c9c9c9", "class": "gak-num" });
             gn.textContent = String(melIdx + 1);
             svg.appendChild(gn);
           }
 
+          // 악기 이름 — 총보에서만, 밴드마다 맨 오른쪽 각 위에 한 번. 곡 머리(첫 페이지 첫
+          // 밴드)는 파트의 온 이름, 그 다음 밴드부터는 약어(비워 두면 붙이지 않는다 — 피날레의
+          // Full/Abbreviated Name 구분과 같다). 악보 내용이므로 인쇄·PNG에 포함(no-print 아님).
+          if (scoreMode && m === 0) {
+            const pp = partList[pi];
+            const firstBand = pageIdx === 0 && b === 0;
+            const lbl = firstBand ? partLabel(pp, pi) : (pp.abbr || "").trim();
+            if (lbl) {
+              const chars = Array.from(lbl);
+              const lf = Math.min(cell * 0.3, (cell * 0.94) / Math.max(1, chars.length));
+              // 머리단이 있으면 그 띠 안 가운데, 없으면 각 윗선 위에 살짝 띄워서
+              const lyY = wantHeader ? (bandTop + headH / 2 + lf * 0.35) : (bandTop - lf * 0.45);
+              const lt = el("text", { x: x + cell / 2, y: lyY, "text-anchor": "middle",
+                "font-size": lf, "font-family": CJK, fill: "#333" });
+              lt.textContent = lbl;
+              svg.appendChild(lt);
+            }
+          }
+
           // 클릭·하이라이트 영역은 숨은 정간 포함 전체 beats (여전히 입력 가능)
-          for (let j = 0; j < beats; j++) {
+          // — 활성 파트 열에만 단다(총보에서 남의 열을 누르는 라우팅은 다음 단계).
+          if (isActiveCol) for (let j = 0; j < beats; j++) {
             const cyTop = gridTop + j * cell;
             (cellGeom[melIdx] = cellGeom[melIdx] || {})[j] = { page: pageIdx, x: x, y: cyTop, w: cell, h: cell };
             // 둘러보기가 '여기가 정간입니다'를 가리킬 수 있게 **첫 각(맨 오른쪽)만** 표시해 둔다.
@@ -4156,6 +4273,24 @@
                 render();
               });
             })(melIdx, j);
+            svg.appendChild(hit);
+          }
+          // 총보에서 남의 파트 열을 누르면 그 파트로 갈아타고 누른 칸을 곧장 연다 —
+          // 눌리는 곳이 곧 편집 대상(피날레와 같은 감각). 드래그 선택·시김새 추가 같은
+          // 나머지 동작은 갈아탄 다음부터 활성 열에서 그대로 된다.
+          else if (scoreMode) for (let j = 0; j < beats; j++) {
+            const hit = rect(x, gridTop + j * cell, cell, cell, 0,
+              { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
+            hit.style.cursor = "text";
+            (function (pIdx, gi, ci) {
+              hit.addEventListener("mousedown", function (e) {
+                e.preventDefault();
+                if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
+                switchPart(pIdx);   // stash→전환→render까지 — 좌표가 새로 잡힌 뒤에 연다
+                if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
+                else openCellEditor("mel", gi, ci);
+              });
+            })(pi, melIdx, j);
             svg.appendChild(hit);
           }
 
@@ -4205,13 +4340,14 @@
               render();
             });
           }
-          if (wantTempo && pageIdx === 0 && melIdx === 0 && !wantJangdan) {
+          if (wantTempo && pageIdx === 0 && melIdx === 0 && !wantJangdan && pi === 0) {
             drawTempoLabel(x + cell / 2, bandTop);
           }
 
           // 각 이름(대여음·一章 등) — 그 각 위 여백에 세로쓰기. 첫 각의 템포 표시와
           // 겹칠 수 있는 유일한 자리(첫 각)에서만 왼쪽으로 반 칸 비킨다.
-          {
+          // 이름은 각(묶음)의 것이라 파트 열마다가 아니라 묶음에 한 번(가운데).
+          if (pi === 0) {
             // 간격의 기준은 각의 '실제 윗선'(bandTop) — 예전엔 테두리 여백선(-INNER_PAD)
             // 기준이라 간격 0mm여도 5mm쯤 떠 보였다
             const gnTop = bandTop;
@@ -4231,7 +4367,7 @@
               const gnNeed = 0.85 + 1.12 * (gnChars.length - 1);
               const gnFont = Math.min(cell * 0.38 * gnMul, Math.max(1, gnAvail) / gnNeed);
               const gnLineH = gnFont * 1.12;
-              const gnX = x + cell / 2
+              const gnX = gakCx
                 - ((wantTempo && pageIdx === 0 && melIdx === 0 && !wantJangdan) ? cell * 0.75 : 0);
               // 마지막 글자 기준선 — 한자·한글 잉크가 기준선 위에서 끝나는 몫(≈0.06)을
               // 보태 간격 0mm이면 잉크 밑이 각 위쪽 선에 딱 닿는다
@@ -4264,7 +4400,7 @@
                   o.dy = Math.round(((o.dy || 0) + dy / scale) * 10) / 10;
                   render();
                 }, function () { openGakNameCard(gi, pg, cxv, topv); });
-              })(melIdx, pageIdx, x + cell / 2, gnTop - cell * 1.4);
+              })(melIdx, pageIdx, gakCx, gnTop - cell * 1.4);
             }
             // 각 위 클릭 영역(투명) — 누르면 그 자리에서 이름 입력 카드가 열린다.
             // **章 창이 열려 있을 때만** 둔다: 각 위 빈 자리는 cell*1.4나 되는 넓은 띠라,
@@ -4273,7 +4409,8 @@
             //  하이라이트·드래그가 章 창 열림에만 반응하는 규칙과 이제 결이 같다.)
             if (gakWinOpen) {
             const gnZoneH = cell * 1.4;
-            const gnHit = rect(x, gnTop - gnZoneH, cell, gnZoneH, 0,
+            // 클릭존은 묶음 전체 폭 — 총보에서도 각 위 아무 데나 눌러 이름을 달 수 있게
+            const gnHit = rect(gakLeft, gnTop - gnZoneH, gakW, gnZoneH, 0,
               { fill: "transparent", stroke: "none", "pointer-events": "all" });
             gnHit.style.cursor = "text";
             (function (gi, cxv, topv, pg) {
@@ -4282,15 +4419,16 @@
                 if (cellEditInput) commitCellEditor(false);
                 openGakNameCard(gi, pg, cxv, topv);
               });
-            })(melIdx, x + cell / 2, gnTop - gnZoneH, pageIdx);
+            })(melIdx, gakCx, gnTop - gnZoneH, pageIdx);
             svg.appendChild(gnHit);
             }
           }
 
-          // 장단 줄(악곡 맨 처음 자리, 가장 오른쪽) — 켜져 있고, 악곡 맨 처음 각일 때만
-          if (wantJangdan && melIdx === 0) {
-            // 가사가 켜져 있으면 각들의 선 끝(가사 자리만큼 안쪽)에 맞춰 장단 칸도 같이 당김
-            const jdRight = musicRightEdge - (wantLyrics ? lyExtraFull : 0), jdLeft = jdRight - jdW;
+          // 장단 줄(악곡 맨 처음 자리, 가장 오른쪽) — 켜져 있고, 악곡 맨 처음 각일 때만.
+          // 곡에 한 줄뿐이라 파트 루프에선 한 번만(pi===0) 그린다.
+          if (wantJangdan && melIdx === 0 && pi === 0) {
+            // 장단 자리는 한 각(묶음) 자리 폭 — 장단 칸은 그 자리의 맨 왼쪽(각들의 선 끝)에 맞춘다
+            const jdRight = musicRightEdge - (gakW - cell), jdLeft = jdRight - jdW;
             // 템포 표기 — 장단이 있으면 첫 각 대신 장단 칸 위에(같은 각/장 규칙)
             if (wantTempo && pageIdx === 0) drawTempoLabel((jdLeft + jdRight) / 2, bandTop);
             // 어느 칸이 장단인지 알려주는 회색 '장단' 라벨 — 각 번호와 한 세트:
@@ -4346,10 +4484,10 @@
             }
           }
 
-          // 가사(선율 오른쪽) — 켜져 있으면 각(정간)마다 매번. 별도 테두리 없이 정간 옆에 글자만 놓음
-          if (wantLyrics) {
+          // 가사(선율 오른쪽) — 곁줄이 켜진 파트마다, 제 정간 열 오른쪽에. 별도 테두리 없이 글자만 놓음
+          if (lyOnP) {
             const lyLeft = x + cell + lyGap;
-            const lyCells = lyParsed && lyParsed[melIdx];
+            const lyCells = lyParsedBy[pi] && lyParsedBy[pi][melIdx];
             const lyCount = lyCells ? lyCells.length : 0;
             const lyFilled = lyCount > 0 ? Math.min(beats, lyCount) : 0;
             for (let j = 0; j < lyFilled; j++) {
@@ -4358,8 +4496,9 @@
               const melTxt = gakCells && gakCells[j] ? gakCells[j].text : "";
               if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content, lyricsFontFam, melTxt);
             }
-            // 클릭 영역 — 숨은 정간 포함 전체 beats, 글자 위로 올려야 그 위를 클릭해도 먹힌다
-            for (let j = 0; j < beats; j++) {
+            // 클릭 영역 — 숨은 정간 포함 전체 beats, 글자 위로 올려야 그 위를 클릭해도 먹힌다.
+            // 활성 파트의 곁줄에만(총보에서 남의 곁줄 편집 라우팅은 다음 단계).
+            if (isActiveCol) for (let j = 0; j < beats; j++) {
               const lyHit = rect(lyLeft, gridTop + j * cell, lyW, cell, 0,
                 { fill: "transparent", stroke: "none", "pointer-events": "all",
                   class: melIdx === 0 ? "tour-lane-ly" : null });
@@ -4382,7 +4521,27 @@
               })(melIdx, j);
               svg.appendChild(lyHit);
             }
-          } else {
+            // 총보에서 남의 파트 곁줄 — 더블클릭하면 그 파트로 갈아타고 그 칸을 연다
+            // (곁줄은 원래 더블클릭 편집이라 규칙이 같다)
+            else if (scoreMode) for (let j = 0; j < beats; j++) {
+              const lyHit = rect(lyLeft, gridTop + j * cell, lyW, cell, 0,
+                { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
+              lyHit.style.cursor = "text";
+              (function (pIdx, gi, ci) {
+                lyHit.addEventListener("mousedown", function (e) { e.preventDefault(); });
+                lyHit.addEventListener("dblclick", function (e) {
+                  e.preventDefault();
+                  exitOrnEditMode();
+                  switchPart(pIdx);
+                  if (inputMode === "editor") CELL_EDIT.ly.setCursor(gi, ci, true);
+                  else openCellEditor("ly", gi, ci);
+                });
+              })(pi, melIdx, j);
+              svg.appendChild(lyHit);
+            }
+          } else if (!scoreMode) {
+            // (총보에선 이 진입로를 두지 않는다 — 곁줄 없는 열 오른쪽엔 곧바로 옆 파트 열이
+            //  붙어 있어 빈 틈 자체가 없다. 곁줄은 그 파트를 활성으로 두고 리본에서 켠다.)
             // 곁줄이 아직 없을 때(내용도 없고 창도 닫힘) — 정간 오른쪽 틈에 '여기가 곁줄 자리'
             // 라는 진입로를 둔다. 정간은 격자가 늘 그려져 있어 아무 데나 눌러도 열리는데
             // 곁줄만 없으면 누를 데조차 없어서, 처음 쓰는 사람은 곁줄을 리본에서 켜야 한다는
@@ -4411,6 +4570,7 @@
               svg.appendChild(lyOpen);
             }
           }
+          }   // 파트 열 루프(pi) 끝
         }
         gakAccum += nMusic;
 
@@ -4799,10 +4959,11 @@
   //   kind      "note" 새 소리 · "rest" 쉼표 · "hold" 앞 음을 잇는다(새로 시작하지 않음)
   //   seq       이 자리를 고르게 나눠 채울 음높이(midi)들 — kind가 "note"일 때만
   //   pre·post  본음 앞뒤를 스치는 꾸밈음(midi). 제 길이가 따로 없어 자리에서 떼어 쓴다.
-  function realizeMelody(hwangMidi) {
+  function realizeMelody(hwangMidi, melodyText) {
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const sc = makeScale(hwangMidi);
-    const gaks = parseMelodyOffsets(melodyFull);
+    // melodyText를 주면 그 선율을(합주에서 파트마다), 안 주면 활성 파트 작업 사본을 푼다
+    const gaks = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull);
     const slots = [];
     let beat = 0;
     // 독립 시김새(제 음높이가 없는 노·니·느나…)가 기준 삼을 마지막 실음. 꾸밈음이 아니라
@@ -4897,30 +5058,10 @@
 
     const events = [];
     // marks: 오디오 이벤트와 별개로, 지속(빈 정간·이음)이어도 매 정간마다 하나씩 남겨서
-    // 재생 하이라이트가 시간이 지나면 그 정간으로 계속 이동하도록 함
+    // 재생 하이라이트가 시간이 지나면 그 정간으로 계속 이동하도록 함.
+    // 합주에서도 **활성 파트의 것만** 담는다 — 하이라이트 좌표(cellGeom)가 활성 파트 열이라서.
     const marks = [];
-    let t = 0;
-    let lastEvent = null;   // 지속(빈 정간/이음) 대상이 되는 마지막 유음 이벤트
-
-    function extend(dur, gakIdx, cellIdx) {
-      marks.push({ t: t, gak: gakIdx, cell: cellIdx });
-      if (lastEvent) lastEvent.dur += dur;
-      else events.push({ t: t, dur: dur, freq: null, gak: gakIdx, cell: cellIdx });
-      t += dur;
-    }
-    function rest(dur, gakIdx, cellIdx) {
-      marks.push({ t: t, gak: gakIdx, cell: cellIdx });
-      events.push({ t: t, dur: dur, freq: null, gak: gakIdx, cell: cellIdx });
-      lastEvent = null;
-      t += dur;
-    }
-    function note(freq, dur, gakIdx, cellIdx) {
-      marks.push({ t: t, gak: gakIdx, cell: cellIdx });
-      const ev = { t: t, dur: dur, freq: freq, gak: gakIdx, cell: cellIdx };
-      events.push(ev);
-      lastEvent = ev;
-      t += dur;
-    }
+    let totalT = 0;   // 가장 긴 파트의 끝 — 파트마다 각 수가 다를 수 있다
 
     // 앞·뒷꾸밈 한 알의 길이. 스치듯 짧은 소리라 고정 시간에 가깝게 두되, 느린 곡에서
     // 자리를 다 먹지 않게 자리의 3할을 넘기지 않는다(그 3할을 꾸밈 수로 나눠 갖는다).
@@ -4945,23 +5086,65 @@
       }
     }
 
+    // 파트 하나의 선율을 시간축에 앉힌다(합주는 이 함수를 파트 수만큼 부른다 — 모두 0초에서
+    // 함께 출발). opts.sound=false면 소리 없이 시간만 재고(음소거된 활성 파트의 하이라이트),
+    // opts.marks=false면 하이라이트 표식 없이(비활성 파트), opts.janggu는 장단 타점 담당 표시.
     // 무엇이 울리나는 realizeMelody가 이미 다 풀어 놓았다. 여기는 그 자리들을 시간(초)에
     // 앉히고 사인파로 바꾸는 일만 한다.
-    let curGak = -1, curCell = -1;
-    realizeMelody(hwangMidi).forEach(function (s) {
-      // 정간 하나가 늘 1박이므로, 그 정간의 첫 자리가 시작되는 시각이 곧 장단 타점의 시작
-      if (s.gak !== curGak || s.cell !== curCell) { jangguCell(t, s.cell); curGak = s.gak; curCell = s.cell; }
-      const dur = s.dur * secPerBeat;
-      if (s.kind === "rest") { rest(dur, s.gak, s.cell); return; }
-      if (s.kind === "hold") { extend(dur, s.gak, s.cell); return; }
-      const gn = s.pre.length + s.post.length;
-      const gl = graceLen(dur, gn);
-      const body = (dur - gl * gn) / s.seq.length;
-      s.pre.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
-      s.seq.forEach(function (m) { note(midiToFreq(m), body, s.gak, s.cell); });
-      s.post.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
+    function addPart(melodyText, opts) {
+      let t = 0, lastEvent = null;
+      function mark(g, c) { if (opts.marks) marks.push({ t: t, gak: g, cell: c }); }
+      function extend(dur, g, c) {
+        mark(g, c);
+        if (opts.sound && lastEvent) lastEvent.dur += dur;
+        t += dur;
+      }
+      function rest(dur, g, c) { mark(g, c); lastEvent = null; t += dur; }
+      function note(freq, dur, g, c) {
+        mark(g, c);
+        if (opts.sound) {
+          const ev = { t: t, dur: dur, freq: freq, gak: g, cell: c };
+          events.push(ev); lastEvent = ev;
+        }
+        t += dur;
+      }
+      let curGak = -1, curCell = -1;
+      realizeMelody(hwangMidi, melodyText).forEach(function (s) {
+        // 정간 하나가 늘 1박이므로, 그 정간의 첫 자리가 시작되는 시각이 곧 장단 타점의 시작
+        if (opts.janggu && (s.gak !== curGak || s.cell !== curCell)) {
+          jangguCell(t, s.cell); curGak = s.gak; curCell = s.cell;
+        }
+        const dur = s.dur * secPerBeat;
+        if (s.kind === "rest") { rest(dur, s.gak, s.cell); return; }
+        if (s.kind === "hold") { extend(dur, s.gak, s.cell); return; }
+        const gn = s.pre.length + s.post.length;
+        const gl = graceLen(dur, gn);
+        const body = (dur - gl * gn) / s.seq.length;
+        s.pre.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
+        s.seq.forEach(function (m) { note(midiToFreq(m), body, s.gak, s.cell); });
+        s.post.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
+      });
+      totalT = Math.max(totalT, t);
+    }
+
+    // 합주 — 모든 파트가 한 시간축에서 함께 울린다(파트가 하나면 예전과 동일).
+    // 스피커(muted) 꺼진 파트는 소리에서 빠지고, 하이라이트는 활성 파트를 따라간다.
+    // 장단 타점은 각(박) 격자의 일이라 파트와 무관 — 각 수가 가장 많은 파트에 얹어
+    // 곡 끝까지 되풀이되게 한다.
+    stashActivePart();
+    const texts = parts.map(function (p, i) { return i === activePart ? melodyFull : p.melody; });
+    let host = 0, hostLen = -1;
+    texts.forEach(function (txt, i) {
+      const n = parseMelodyOffsets(txt).length;
+      if (n > hostLen) { hostLen = n; host = i; }
     });
-    return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks, janggu: janggu };
+    parts.forEach(function (p, i) {
+      const opts = { sound: p.muted !== true, marks: i === activePart, janggu: i === host };
+      if (!opts.sound && !opts.marks && !opts.janggu) return;   // 소리도 표식도 장단도 없으면 헛돎
+      addPart(texts[i], opts);
+    });
+    return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks,
+             janggu: janggu, total: totalT };
   }
   // 시김새가 제대로 풀렸는지는 귀 말고는 볼 길이 없어 창구를 하나 낸다
   // (window.jgbShareLink·window.jgbTrack과 같은 성격의 검증용 노출).
@@ -5164,10 +5347,61 @@
     playing = true; paused = false;
     // 마지막 박에 친 장구는 선율이 끝난 뒤에도 울림이 남는다 — 그만큼 총 길이를 늘려
     // 컨텍스트가 닫히며 소리가 뚝 끊기지 않게 한다(하이라이트는 마지막 정간에 머문다).
-    const total = Math.max(events[events.length - 1].t + events[events.length - 1].dur, jangguEnd);
+    // 합주는 파트마다 이벤트가 섞여 마지막 원소가 끝이 아닐 수 있다 — built.total(가장 긴
+    // 파트의 끝)을 쓰고, 이벤트 최대치와 장구 울림으로 한 번 더 받친다.
+    const evEnd = events.reduce(function (m, e) { return Math.max(m, e.t + e.dur); }, 0);
+    const total = Math.max(built.total || 0, evEnd, jangguEnd);
     playState = { startAt: startAt, total: total, marks: marks };
     updatePlayButtons();
     tick();
+  }
+
+  // ---------- 보기별 레이아웃 (총보/파트보 프로필) ----------
+  // 총보는 각이 파트 수만큼 넓어져 한 줄 각 수·배율·간격의 적정값이 파트보와 다르다 —
+  // 그래서 레이아웃이 두 벌이다. 경계는 탭으로 긋는다(사용자 확정, 2026-08-08):
+  // **레이아웃 탭(배치·크기·간격·머리단·테두리) + 종이 크기·방향 = 보기별**,
+  // 문서 탭(정간 수·총 각 수·대강·제목 등 곡의 구조)·왼쪽 퀵 패널(율명·곁줄 크기) = 공유.
+  // 컨트롤(DOM)은 늘 '지금 보기'의 작업 사본이고, 보기가 바뀔 때 stash/hydrate —
+  // 파트 전환(stashActivePart/hydrateActivePart)과 같은 문법이다.
+  const VIEW_LAYOUT_IDS = ["paperSize", "paperW", "paperH", "orientation",
+    "gakPerRow", "stackCount", "stackAuto", "sizeScale", "pageFill",
+    "cellSize", "gakGap", "bandGap", "header", "frame"];
+  let viewLayouts = { part: null, score: null };   // null = 아직 그 보기로 안 가 봄
+  let layoutView = "part";                          // 지금 컨트롤에 입혀진 프로필
+  function grabViewLayout() {
+    const o = {};
+    VIEW_LAYOUT_IDS.forEach(function (id) {
+      const el = $(id);
+      o[id] = el.type === "checkbox" ? el.checked : el.value;
+    });
+    return o;
+  }
+  function putViewLayout(o) {
+    VIEW_LAYOUT_IDS.forEach(function (id) {
+      if (!(id in o)) return;
+      const el = $(id);
+      if (el.type === "checkbox") el.checked = !!o[id];
+      else el.value = o[id];
+    });
+  }
+  // render() 첫머리가 부른다 — 상단바 메뉴·파트 추가/삭제 등 어떤 길로 보기가 바뀌어도
+  // 컨트롤이 제 보기의 프로필을 입고 나서 레이아웃 셈이 시작되게.
+  function syncViewLayout(scoreMode) {
+    const next = scoreMode ? "score" : "part";
+    if (next === layoutView) return;
+    viewLayouts[layoutView] = grabViewLayout();
+    if (!viewLayouts[next]) {
+      // 처음 가 보는 보기 — 지금 값으로 시작하되, 총보는 각이 파트 수만큼 넓어지므로
+      // 한 줄 각 수를 파트 수로 나눠 첫 화면이 종이를 넘치지 않게 한다.
+      const seed = grabViewLayout();
+      if (next === "score") {
+        const per = Math.max(1, parseInt(seed.gakPerRow, 10) || 1);
+        seed.gakPerRow = String(Math.max(1, Math.round(per / Math.max(1, parts.length))));
+      }
+      viewLayouts[next] = seed;
+    }
+    putViewLayout(viewLayouts[next]);
+    layoutView = next;
   }
 
   // ---------- 파트 (총보 성부) ----------
@@ -5185,9 +5419,13 @@
   let parts = [newPart()];   // 늘 1개 이상 — 파트가 하나면 지금까지의 단독 악보와 동일
   let activePart = 0;
 
+  // name = 첫 줄(곡 머리)에 붙는 이름 · abbr = 둘째 줄부터 붙는 약어(비우면 생략) ·
+  // instrument = 실제 악기 종류(시김새 팔레트 우선순위가 따라감) — 피날레 Score Manager처럼
+  // 셋을 따로 둔다(사용자 확정, 2026-08-08).
   function newPart(name) {
     return { id: nextPartId++, name: typeof name === "string" ? name : "",
-             instrument: "all", melody: "", lyrics: "", cellStyles: {} };
+             abbr: "", instrument: "all", muted: false,
+             melody: "", lyrics: "", cellStyles: {} };
   }
   // 저장분·남의 파일에서 온 파트 하나를 검증해 들인다. 꼴이 아예 아니면 null.
   function sanitizePart(p) {
@@ -5195,8 +5433,10 @@
     return {
       id: (typeof p.id === "number" && p.id > 0) ? p.id : nextPartId++,
       name: typeof p.name === "string" ? p.name : "",
+      abbr: typeof p.abbr === "string" ? p.abbr : "",
       instrument: (typeof p.instrument === "string"
         && (p.instrument === "all" || INSTRUMENT_PRIORITY[p.instrument])) ? p.instrument : "all",
+      muted: p.muted === true,
       melody: normalizeGakSeparators(typeof p.melody === "string" ? p.melody : ""),
       lyrics: normalizeGakSeparators(typeof p.lyrics === "string" ? p.lyrics : ""),
       cellStyles: (p.cellStyles && typeof p.cellStyles === "object") ? p.cellStyles : {}
@@ -5221,7 +5461,12 @@
   // 피날레 Score Manager 같은 자리 — 파트 추가·삭제·이름·악기·순서·'지금 편집할 악기'를
   // 한 창에서. 사이드바 '문서' 탭 [악기 관리…]가 열고, 입력 방식과 무관하게 뜬다.
   // 목록 순서 = 나중 총보에서 악기 열이 서는 순서(오른쪽→왼쪽으로 읽으니 위 = 오른쪽).
-  function partLabel(p, i) { return (p.name || "").trim() || ("파트 " + (i + 1)); }
+  // 부르는 이름: 지은 이름 → 악기 이름 → "파트 N". 관리 창·보기 메뉴·총보 열 이름이 같이 쓴다.
+  function partLabel(p, i) {
+    return (p.name || "").trim()
+      || (p.instrument && p.instrument !== "all" ? p.instrument : "")
+      || ("파트 " + (i + 1));
+  }
 
   // 활성 파트의 내용을 화면(작업 사본·에디터·팔레트·악보)에 들이는 공통 절차 —
   // 파트 전환과 '활성 파트 삭제'가 같이 쓴다. hydrateActivePart와 달리 악기는
@@ -5267,7 +5512,8 @@
     if (i < activePart) activePart -= 1;
     else if (wasActive) activePart = Math.min(i, parts.length - 1);
     track("part_remove", { v: String(parts.length) });
-    if (wasActive) loadActivePartIntoView();
+    if (wasActive) loadActivePartIntoView();   // (render 포함)
+    else render();                             // 총보면 그 파트의 열이 사라져야 한다
     renderPartsList(); saveState();
   }
   function movePart(i, d) {
@@ -5277,7 +5523,8 @@
     const t = parts[i]; parts[i] = parts[j]; parts[j] = t;
     if (activePart === i) activePart = j;
     else if (activePart === j) activePart = i;
-    renderPartsList(); saveState();
+    render();            // 총보면 열 순서가 곧 그리는 순서 (render가 저장까지 겸한다)
+    renderPartsList();
   }
   function renderPartsList() {
     const list = $("partsList");
@@ -5293,8 +5540,13 @@
       const name = document.createElement("input");
       name.type = "text"; name.className = "part-name";
       name.value = p.name; name.placeholder = partLabel(p, i);
-      name.title = "파트 이름 (비우면 번호로 부릅니다)";
-      name.addEventListener("change", function () { p.name = name.value.trim(); saveState(); });
+      name.title = "이름 — 총보 곡 머리(첫 줄)의 열 위에 붙습니다 (비우면 악기·번호로 부릅니다)";
+      name.addEventListener("change", function () { p.name = name.value.trim(); render(); });
+      const abbr = document.createElement("input");
+      abbr.type = "text"; abbr.className = "part-abbr";
+      abbr.value = p.abbr || ""; abbr.placeholder = "약어";
+      abbr.title = "약어 — 총보 둘째 줄부터 열 위에 붙습니다 (비우면 곡 머리에만 이름이 붙습니다)";
+      abbr.addEventListener("change", function () { p.abbr = abbr.value.trim(); render(); });
       const inst = document.createElement("select");
       inst.className = "part-inst";
       inst.title = "악기 — 시김새 팔레트의 우선순위가 이 악기를 따릅니다";
@@ -5309,6 +5561,12 @@
         if (i === activePart) setOrnInstrument(inst.value);   // saveState 포함
         else saveState();
       });
+      const mute = document.createElement("button");
+      mute.type = "button"; mute.className = "mel-btn part-mute";
+      mute.textContent = p.muted ? "🔇" : "🔊";
+      mute.title = p.muted ? "재생에서 빠져 있습니다 — 누르면 다시 들립니다"
+                           : "재생에서 이 악기의 소리 끄기(악보에는 그대로)";
+      mute.addEventListener("click", function () { p.muted = !p.muted; renderPartsList(); saveState(); });
       const up = document.createElement("button");
       up.type = "button"; up.className = "mel-btn"; up.textContent = "↑"; up.title = "위로";
       up.disabled = (i === 0);
@@ -5322,11 +5580,52 @@
       del.title = (parts.length <= 1) ? "마지막 악기는 지울 수 없습니다" : "이 악기 삭제";
       del.disabled = (parts.length <= 1);
       del.addEventListener("click", function () { removePart(i); });
-      row.appendChild(radio); row.appendChild(name); row.appendChild(inst);
-      row.appendChild(up); row.appendChild(down); row.appendChild(del);
+      row.appendChild(radio); row.appendChild(name); row.appendChild(abbr); row.appendChild(inst);
+      row.appendChild(mute); row.appendChild(up); row.appendChild(down); row.appendChild(del);
       list.appendChild(row);
     });
+    updateViewMenu();   // 편성이 바뀌면 상단바 보기 메뉴(노출 여부·이름들)도 따라간다
   }
+  // ---------- 보기 전환 메뉴 (상단바 #viewToggle — 총보 / 파트들) ----------
+  // 악기가 둘 이상일 때만 보인다. 버튼 글씨 = 지금 보기(총보 또는 활성 파트 이름).
+  // 항목을 누르면 보기와 편집 대상이 한 번에 정해진다 — 관리 창은 편성 관리만 맡는다.
+  function setScoreView(on) {
+    const cb = $("scoreView");
+    if (cb.checked !== on) {
+      cb.checked = on;
+      render();   // render 첫머리의 syncViewLayout이 보기별 레이아웃을 갈아입힌다(저장 포함)
+    }
+    updateViewMenu();
+  }
+  function updateViewMenu() {
+    const box = $("viewBox");
+    if (!box) return;
+    const many = parts.length > 1;
+    box.style.display = many ? "" : "none";
+    if (!many) return;
+    const scoreOn = $("scoreView").checked;
+    $("viewLbl").textContent = scoreOn ? "총보" : partLabel(parts[activePart], activePart);
+    const pop = $("viewPop");
+    pop.innerHTML = "";
+    const bt = document.createElement("button");
+    bt.type = "button"; bt.textContent = "총보";
+    bt.className = scoreOn ? "sel" : "";
+    bt.addEventListener("click", function () { setScoreView(true); });
+    pop.appendChild(bt);
+    pop.appendChild(document.createElement("hr"));
+    parts.forEach(function (p, i) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = partLabel(p, i);
+      b.className = (!scoreOn && i === activePart) ? "sel" : "";
+      b.addEventListener("click", function () {
+        setScoreView(false);
+        if (i !== activePart) switchPart(i);
+        else updateViewMenu();
+      });
+      pop.appendChild(b);
+    });
+  }
+
   $("btnPartsWin").addEventListener("click", function () {
     const w = $("partsWin");
     if (w.classList.contains("open")) { w.classList.remove("open"); return; }
@@ -5592,7 +5891,8 @@
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
-    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX"];
+    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
+    "scoreView"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -5605,6 +5905,7 @@
 
   function collectState() {
     stashActivePart();   // 전역 작업 사본(melodyFull 등)을 파트 목록에 되써 넣고 나서 뜬다
+    viewLayouts[layoutView] = grabViewLayout();   // 지금 보기의 레이아웃도 제 프로필에
     const c = {};
     CTRL_IDS.forEach(function (id) {
       const el = $(id);
@@ -5614,7 +5915,7 @@
     // v:2 — 선율·곁줄·정간 서식·악기가 parts[]로 들어갔다(총보). 옛 v1의 루트
     // melody·lyrics·cellStyles·ornInstrument는 더 안 쓰고, 읽기(applyState)만 남긴다.
     return { v: 2, controls: c, jangdan: $("jangdan").value,
-             parts: parts, activePart: activePart, gakUserSet: gakUserSet,
+             parts: parts, activePart: activePart, viewLayouts: viewLayouts, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
              melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, ornAddMaps: ornAddMaps,
@@ -5647,6 +5948,19 @@
     activePart = Math.min(Math.max(0, parseInt(s.activePart, 10) || 0), parts.length - 1);
     hydrateActivePart();   // melodyFull·lyricsFull·cellStyles·ornInstrument가 활성 파트를 따라간다
     renderPartsList();
+    // 보기별 레이아웃 — controls에는 저장 당시 보기의 작업 사본이 실려 있으므로,
+    // layoutView를 그 보기로 맞춰 두면 다음 전환 때 제 프로필에 stash된다.
+    viewLayouts = { part: null, score: null };
+    if (s.viewLayouts && typeof s.viewLayouts === "object") {
+      ["part", "score"].forEach(function (k) {
+        const o = s.viewLayouts[k];
+        if (!o || typeof o !== "object") return;
+        const c2 = {};
+        VIEW_LAYOUT_IDS.forEach(function (id) { if (id in o) c2[id] = o[id]; });
+        viewLayouts[k] = c2;
+      });
+    }
+    layoutView = (parts.length > 1 && $("scoreView").checked) ? "score" : "part";
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
@@ -6127,7 +6441,7 @@
   });
   ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
    "titleFont", "lyricsFont", "header", "frame", "noteMode", "paperSize", "orientation", "pageNumPos", "gakNumMode",
-   "gakNameHanja"].forEach(id => {
+   "gakNameHanja", "scoreView"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
@@ -6926,6 +7240,7 @@
     });
   }
   wireTopMenu("zoomVal", "zoomPop");
+  wireTopMenu("viewToggle", "viewPop");   // 보기 전환(총보/파트보) — 악기 둘 이상일 때만 노출
   wireTopMenu("fileToggle", "filePop");
   wireTopMenu("modeToggle", "modePop");
   wireTopMenu("screenToggle", "screenPop");   // 색상 메뉴 — 색상 테마 + 다크 전환

@@ -68,11 +68,13 @@ function takeConst(name) {
 }
 
 /**
- * @param names  떼어 올 것들. "이름"은 함수, "const:이름"은 상수.
- * @param fields DOM 칸 흉내 — { id: "값" | true/false }
+ * @param names   떼어 올 것들. "이름"은 함수, "const:이름"은 상수.
+ * @param fields  DOM 칸 흉내 — { id: "값" | true/false }
+ * @param prelude 떼어 온 조각들 앞에 끼워 넣을 대역(代役) 코드. 검사 범위 밖의 것을
+ *                가리는 데 쓴다(예: 합주 파트 목록 — 시김새 소리 검사엔 파트가 하나면 된다).
  * @returns { fields, setMelody, fn }
  */
-export async function loadApp(names, fields) {
+export async function loadApp(names, fields, prelude) {
   await import("../../js/symbols-registry.js");
   const SYM_REG = globalThis.JGB_SYM;
 
@@ -100,6 +102,7 @@ export async function loadApp(names, fields) {
     ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
     let melodyFull = "";
     function track() {}
+    ${prelude || ""}
     ${parts.join("\n\n")}
     return { __setMelody: function (t) { melodyFull = t; },
              ${exposed.map(function (n) { return n + ": " + n; }).join(", ")} };
