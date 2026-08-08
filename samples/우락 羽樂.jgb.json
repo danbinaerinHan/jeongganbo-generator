@@ -1,0 +1,361 @@
+{
+  "v": 1,
+  "controls": {
+    "orientation": "portrait",
+    "beats": "16",
+    "gakPerRow": "11",
+    "stackCount": "1",
+    "stackAuto": true,
+    "gakCount": "8",
+    "daegang": "11 5",
+    "noteMode": "font",
+    "sizeScale": "1",
+    "pageFill": "80",
+    "noteScale": "1",
+    "lyricsScale": "1",
+    "cellSize": "11",
+    "gakGap": "7",
+    "bandGap": "10",
+    "header": false,
+    "frame": true,
+    "title": "우  락   羽 樂",
+    "titleSize": "9",
+    "titleOffset": "-0.1",
+    "titleOffsetX": "2.3",
+    "titleSpacing": "0",
+    "subtitle": "(바람은)",
+    "subSize": "5",
+    "subOffset": "-4.1",
+    "subOffsetX": "2.3",
+    "subSpacing": "0",
+    "titleFont": "'GungSeo','궁서','Batang',serif",
+    "titleLayout": "side",
+    "titleGakWidth": "auto",
+    "hwangPitch": "63",
+    "tempoBpm": "50",
+    "wantJangdan": true,
+    "wantLyrics": true,
+    "wantTempo": true,
+    "lyricsFont": "'GungSeo','궁서','Batang',serif",
+    "palSound": true,
+    "palInsert": true,
+    "joPreset": "all",
+    "pageNumPos": "none",
+    "gakNumMode": "screen",
+    "gakNameSize": "1",
+    "gakNameGap": "4",
+    "gakNameHanja": true,
+    "tempoSize": "0.8",
+    "tempoGap": "4",
+    "tempoOffX": "0"
+  },
+  "melody": " |  |  |  |  |  |  |  |  |  |  | 태 중 - |  |  |  | - - 쉼\n중 | - - 태 | 황 -중 태 | 중 | - - 태 | 황 -중 태< | 중 | - -{겹흘림표@120,0,0} 태 | 황 |  | 황(니라) - 쉼 | 태 - (니나) | 황 - 태(니레) | 남{노네@80,0,0} - 임 | 중 | - -{흘림표} 쉼\n태 | 황 - {느니} | 태 -(니나) (느나) | 배남 -배임 황(나니나) | 배임 - 쉼 | 중 -{흘림표@120,0,0} 태 | 황 - (느니) | 태 -(노) 배남< | 임(니라) | - - (니나) | 중 - (느니) | 임{노니로} - (니나) | 중 - 임{니레}< | 청황 - (니레나) | 남 -{흘림표@120,0,0} 임{니라} | 중 (니나) 태\n황 |  | 태{니레} - 황(나니나) | 배임 | 배임{니라} - 쉼 | 배남{노니로} 태 - | 태{니레} | - -(노) 배남 | 배임 | 배임{니라} | 태 -(노) 중 | 배남황중 황 - |  |  | - - (니) | (노) -(니) (느나)\n황 |  | 태{니레} - (니나) | 황 | < | 황{니라} - 태{니레} | 중 | - -(겹흘림표) 태 | 황 |  | 황{니라} - 쉼 | 태 - (니나) | 황 - 태{니레} | 남{니레} -(니나) 임 | 중 | - -{흘림표@120,0,0} 태<\n임 | - -(니) 태 | 중 -{미는표} 태 | 황 - (니) | 황 - (니나) | 중< | 배남 | 배임 -황 배남 | 황 | < | 태 - (니나) | 황 | 황{니라} - 태{니레} | 중 | 황 -(니){미는표} 배남 | 태 - 쉼\n청황 - -(니) | 남 - (같은음표) | 임 - 배남{덧길이표@100,-19,0}(노){반길이표@100,19,0} | 중 | - - 임(나니나) | 중 태 -< | 임 | 남{니레} - 임 | 중 | - -{흘림표} 쉼 | 태 -(니나) 황 | 중 | - - 임{니레} | 남{니레} -(니나) 임 | 중 | - -{흘림표@120,0,0} 쉼\n태 | 황 - (느니) | 태< | 중 - 태 | 황 -(니){미는표@100,-9,-19} 배남 | 배임 |  |  |  |  | - - 쉼 | 태 중 - |  | - - 임(나니나) | 중 | - - 쉼",
+  "jangdan": "덩 |  | 더러러러 | 궁 |  | 다 | 기덕 |  | 궁 |  | 다 | 덩 |  | 더러러러 | 궁 | 다",
+  "lyrics": " |  |  |  |  |  |  |  |  |  |  |  |  |  |  | \n |  |  |  |  |  |  |  |  |  |  |  |  |  |  | \n |  |  |  |  |  |  | - {뜰} |  |  |  |  |  |  |  | \n |  |  |  |  |  |  | - {뜰} |  |  |  |  |  |  |  | \n |  |  |  |  |  |  |  |  |  |  |  |  |  |  | \n |  |  |  |  |  |  |  |  |  |  |  |  |  |  | \n- - {s02} |  |  |  |  |  |  |  |  |  |  |  |  |  |  | \n |  |  |  |  |  |  |  |  |  |  |  |  |  |  | ",
+  "gakUserSet": true,
+  "daegangAuto": "3 3 3 3",
+  "activeTab": "doc",
+  "customTexts": [
+    {
+      "id": 1,
+      "text": "여창우조",
+      "xf": 0.9230379286266508,
+      "yf": 0.10995079836861456,
+      "size": 4.5,
+      "spacing": 1
+    },
+    {
+      "id": 2,
+      "text": "바람은",
+      "xf": 0.3401039377848308,
+      "yf": 0.0972895985099202,
+      "size": 4.5,
+      "spacing": 0.3
+    },
+    {
+      "id": 3,
+      "text": "지동치듯",
+      "xf": 0.30240194774809326,
+      "yf": 0.09680062239418934,
+      "size": 4.5,
+      "spacing": 0.3
+    },
+    {
+      "id": 4,
+      "text": "불고",
+      "xf": 0.2636332048688616,
+      "yf": 0.09769631074333833,
+      "size": 4.5,
+      "spacing": 0.3
+    },
+    {
+      "id": 5,
+      "text": "구진 비는",
+      "xf": 0.17602398463657926,
+      "yf": 0.09858444034049813,
+      "size": 4.5,
+      "spacing": 0.3
+    },
+    {
+      "id": 6,
+      "text": "붓드시",
+      "xf": 0.1371066138857887,
+      "yf": 0.0983844371757122,
+      "size": 4.5,
+      "spacing": 0.3
+    },
+    {
+      "id": 7,
+      "text": "온다",
+      "xf": 0.09973464239211313,
+      "yf": 0.09804872455018941,
+      "size": 4.5,
+      "spacing": 0.3
+    },
+    {
+      "id": 8,
+      "text": "눈 정에",
+      "xf": 0.06258451643444243,
+      "yf": 0.09784869569720647,
+      "size": 4.5,
+      "spacing": 0.3
+    }
+  ],
+  "palZoom": 1,
+  "ornPalZoom": 1,
+  "edFontPx": 14,
+  "melInput": "direct",
+  "ribbonPos": "left",
+  "ornAddMap": [
+    "push",
+    "flow",
+    "nire",
+    "nina",
+    "niro",
+    "none",
+    "neonye",
+    "noniro",
+    "norino",
+    "nerone"
+  ],
+  "ornAddMaps": {
+    "all": [
+      "push",
+      "flow",
+      "flow-rep",
+      "vib",
+      "vib-long",
+      "roll",
+      "diff-str-fast",
+      "diff-str-1",
+      "diff-str-2",
+      "diff-str-3"
+    ],
+    "대금": [
+      "push",
+      "flow",
+      "nire",
+      "nina",
+      "niro",
+      "none",
+      "neonye",
+      "noniro",
+      "norino",
+      "nerone"
+    ]
+  },
+  "cellStyles": {
+    "0": {
+      "0": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "1": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "2": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "3": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "4": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "5": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "6": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "7": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "8": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "9": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          },
+          "bottom": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      },
+      "10": {
+        "border": {
+          "left": {
+            "width": "medium",
+            "style": "none"
+          },
+          "right": {
+            "width": "medium",
+            "style": "none"
+          }
+        }
+      }
+    }
+  },
+  "gakNames": {
+    "0": "대여음",
+    "4": "1장",
+    "6": "2장",
+    "7": "3장"
+  },
+  "gakNameOffs": {
+    "0": {
+      "dx": 0,
+      "dy": 120.8
+    },
+    "7": {
+      "dx": 8.6,
+      "dy": 134.1
+    }
+  },
+  "leftDockW": 395,
+  "ornInstrument": "대금"
+}

@@ -1089,9 +1089,15 @@
   // 찍어두므로 이 초기화도 그걸로 되돌릴 수 있다.
   function resetAllContent() {
     if (!confirm("선율·장단·곁줄·텍스트·정간 서식 등 내용을 모두 지웁니다(레이아웃은 그대로 둠). 계속할까요?")) return;
-    melodyFull = ""; $("jangdan").value = ""; lyricsFull = "";
+    // 모든 파트의 내용을 지운다(악기 편성 자체는 레이아웃처럼 남긴다) — 전역 작업 사본은
+    // hydrate가 빈 활성 파트를 따라간다. 먼저 stash: 지우지 않는 것(악기)까지 낡은 값으로
+    // 되돌리지 않게 사본을 목록에 한 번 맞춰 두고 지운다.
+    stashActivePart();
+    parts.forEach(function (p) { p.melody = ""; p.lyrics = ""; p.cellStyles = {}; });
+    hydrateActivePart();
+    $("jangdan").value = "";
     customTexts = []; nextTextId = 1; textSel = null;
-    cellStyles = {}; gakNames = {}; gakNameOffs = {}; renderGakNameList();
+    gakNames = {}; gakNameOffs = {}; renderGakNameList();
     // 내용이 통째로 사라진 문서는 더 이상 그 게시물이 아니다 — 여기서 손을 떼지 않으면
     // 백지가 된 악보로 남들이 보고 있는 게시물을 덮어쓸 수 있다(되돌리기로 같이 살아난다).
     pubId = null;
@@ -4727,9 +4733,68 @@
     });
   }
 
+  // ---------- 시김새 소리내기 (음계 사다리) ----------
+  // 시김새의 '니'는 반음 위가 아니라 **그 곡 음계의 바로 윗음**이다. 그래서 시김새를 소리로
+  // 내려면 음높이를 옮기기 전에 곡의 음계부터 정해야 한다. 무엇을 몇 칸 옮기나는 기호 사전이
+  // 쥐고 있고(js/symbols-registry.js의 snd, 머리말에 형식 설명), 여기는 '한 칸'을 세는 자리다.
+  const SYM_SND = SYM_REG.sound;
+
+  // 곡의 음계 다섯 음. 조 프리셋(#joPreset)이 정해져 있으면 그 말을 믿고, '12율 전체'(기본값)
+  // 이면 악보에 많이 나온 율명 다섯을 세어 정한다. 조 칸은 본래 팔레트를 추리는 자리지만
+  // 이 앱에서 악조를 적어 두는 곳이 거기 하나뿐이라, 적혀 있으면 그게 곧 이 곡의 음계다.
+  // 율명이 넷도 안 되는 악보(빈 악보·쓰다 만 악보)는 셀 것이 없어 황종 평조로 둔다.
+  function scaleNotes() {
+    const jo = JO_PRESETS[$("joPreset").value];
+    if (jo) return jo.notes;
+    const cnt = {};
+    parseMelodyOffsets(melodyFull).forEach(function (gak) {
+      gak.forEach(function (cell) {
+        cell.text.split(/\s+/).forEach(function (row) {
+          tokenizeNotes(row).forEach(function (tk) {
+            if (tk.base) cnt[tk.base] = (cnt[tk.base] || 0) + 1;
+          });
+        });
+      });
+    });
+    const names = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 5);
+    return names.length >= 4 ? names : JO_PRESETS["hwang-pyeong"].notes;
+  }
+
+  // 음계 사다리. 절대 음높이가 나오려면 황의 음고를 알아야 하므로 재생할 때 만든다.
+  function makeScale(hwangMidi) {
+    const pcs = {};
+    scaleNotes().forEach(function (n) {
+      const i = SCALE.indexOf(n);
+      if (i >= 0) pcs[((i % 12) + 12) % 12] = true;
+    });
+    function inScale(midi) { return !!pcs[(((midi - hwangMidi) % 12) + 12) % 12]; }
+    // n칸 위(양수)·아래(음수)로 옮긴 음. 음계에 없는 음(예외음)에서 떠날 땐 그 방향의 첫
+    // 음계음까지가 한 칸이다 — 그래야 한 칸이 어디서 출발하든 늘 '바로 다음 음'이 된다.
+    function step(midi, n) {
+      if (!n) return midi;
+      const dir = n > 0 ? 1 : -1;
+      let cur = midi;
+      for (let left = Math.abs(n); left > 0; left--) {
+        for (let g = 0; g < 12; g++) { cur += dir; if (inScale(cur)) break; }
+      }
+      return cur;
+    }
+    // 사전의 snd 값 하나 → 절대 음높이. 정수면 음계 칸수, 문자열이면 율명 그대로
+    // (싸랭·슬기둥의 개방현처럼 음계와 무관하게 정해진 음).
+    function pitch(ref, d) {
+      if (typeof d === "string") {
+        const tk = tokenizeNotes(d)[0];
+        return (tk && tk.base) ? hwangMidi + SCALE.indexOf(tk.base) + tk.oct * 12 : ref;
+      }
+      return step(ref, d);
+    }
+    return { step: step, pitch: pitch };
+  }
+
   // ---------- 재생 (사인파 sonification) ----------
-  // 규칙: 정간 1칸 = 1박. 칸 안 공백 행(분박)은 박을 등분. 빈 정간·이음(-)·시김새 단독 토큰은
+  // 규칙: 정간 1칸 = 1박. 칸 안 공백 행(분박)은 박을 등분. 빈 정간·이음(-)·소리 없는 시김새는
   // 앞 음을 지속(새 음을 시작하지 않고 직전 이벤트 길이를 늘림). 쉼표만 실제 무음.
+  // 소리가 있는 시김새(사전의 snd)는 제 자리를 나눠 갖거나 본음 앞뒤에 짧게 붙는다.
   function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 
   // 장구 소리를 낼 조건 — 장단 줄이 켜져 있고(악보에 그 줄이 있고) 실제로 적힌 구음이 있으며
@@ -4748,12 +4813,17 @@
     const secPerBeat = 60 / bpm;
     const gaks = parseMelodyOffsets(melodyFull);
 
+    const sc = makeScale(hwangMidi);
+
     const events = [];
     // marks: 오디오 이벤트와 별개로, 지속(빈 정간·이음)이어도 매 정간마다 하나씩 남겨서
     // 재생 하이라이트가 시간이 지나면 그 정간으로 계속 이동하도록 함
     const marks = [];
     let t = 0;
     let lastEvent = null;   // 지속(빈 정간/이음) 대상이 되는 마지막 유음 이벤트
+    // 독립 시김새(제 음높이가 없는 노·니·느나…)가 기준 삼을 마지막 실음. 꾸밈음이 아니라
+    // 본음이 들어간다 — 니레의 스치는 음이 다음 '노'의 기준이 되면 가락이 밀린다.
+    let prevMidi = null;
 
     function extend(dur, gakIdx, cellIdx) {
       marks.push({ t: t, gak: gakIdx, cell: cellIdx });
@@ -4773,6 +4843,50 @@
       events.push(ev);
       lastEvent = ev;
       t += dur;
+    }
+
+    // 앞·뒷꾸밈 한 알의 길이. 스치듯 짧은 소리라 고정 시간에 가깝게 두되, 느린 곡에서
+    // 자리를 다 먹지 않게 자리의 3할을 넘기지 않는다(그 3할을 꾸밈 수로 나눠 갖는다).
+    const GRACE_MAX = 0.09;   // 초
+    function graceLen(dur, n) { return n ? Math.min(GRACE_MAX, dur * 0.3 / n) : 0; }
+
+    // 그룹 하나(주 토큰 + 붙은 시김새들)를 소리로 낸다. 소리를 냈으면 true, 낼 것이
+    // 없으면(표류 시김새·이음·기준 삼을 앞 음이 없음) false — 부르는 쪽이 지속시킨다.
+    function playGroup(grp, dur, gakIdx, cellIdx) {
+      const tk = grp.main;
+      const atts = [];
+      grp.att.forEach(function (a) { if (a.sym && SYM_SND[a.sym]) atts.push(SYM_SND[a.sym]); });
+
+      let ref, seq;
+      if (tk.base) {
+        ref = hwangMidi + SCALE.indexOf(tk.base) + tk.oct * 12;
+        seq = [0];
+        // 나니나처럼 본음의 자리를 가르는 붙임이 있으면 그 꼴이 본음 하나를 대신한다
+        for (let i = 0; i < atts.length; i++) if (atts[i].seq) { seq = atts[i].seq; break; }
+      } else {
+        const own = tk.sym ? SYM_SND[tk.sym] : null;
+        if (!own || !own.seq || prevMidi == null) return false;
+        ref = prevMidi;   // 독립 시김새의 기준음은 앞 음
+        seq = own.seq;
+      }
+
+      const pre = [], post = [];
+      atts.forEach(function (a) {
+        if (a.pre) a.pre.forEach(function (d) { pre.push(d); });
+        if (a.post) a.post.forEach(function (d) { post.push(d); });
+      });
+
+      const gl = graceLen(dur, pre.length + post.length);
+      const slot = (dur - gl * (pre.length + post.length)) / seq.length;
+      pre.forEach(function (d) { note(midiToFreq(sc.pitch(ref, d)), gl, gakIdx, cellIdx); });
+      let last = ref;
+      seq.forEach(function (d) {
+        last = sc.pitch(ref, d);
+        note(midiToFreq(last), slot, gakIdx, cellIdx);
+      });
+      post.forEach(function (d) { note(midiToFreq(sc.pitch(ref, d)), gl, gakIdx, cellIdx); });
+      prevMidi = last;
+      return true;
     }
 
     // 장단 줄은 곡에 한 각짜리 패턴 하나뿐이고 그것이 각마다 되풀이된다(악보에서도 맨 처음
@@ -4810,21 +4924,20 @@
           if (!groups.length) { extend(rowDur, g, j); continue; }
           const slotDur = rowDur / groups.length;
           for (let gi = 0; gi < groups.length; gi++) {
-            const tk = groups[gi].main;
-            if (tk.base) {
-              const semis = SCALE.indexOf(tk.base) + tk.oct * 12;
-              note(midiToFreq(hwangMidi + semis), slotDur, g, j);
-            } else if (tk.sym === "pause_007") {
-              rest(slotDur, g, j);
-            } else {
-              extend(slotDur, g, j);   // 이음(-)·시김새 단독·기타 문자 → 지속
-            }
+            const grp = groups[gi];
+            // 쉼표는 앞 음을 끊지만 기준음은 지우지 않는다 — 쉼표 뒤의 '노'도 쉼표 앞
+            // 음에서 한 칸 내린 음이라야 가락이 이어진다.
+            if (grp.main.sym === "pause_007") rest(slotDur, g, j);
+            else if (!playGroup(grp, slotDur, g, j)) extend(slotDur, g, j);   // 이음(-)·소리 없는 기호 → 지속
           }
         }
       }
     }
     return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks, janggu: janggu };
   }
+  // 시김새가 제대로 풀렸는지는 귀 말고는 볼 길이 없어 창구를 하나 낸다
+  // (window.jgbShareLink·window.jgbTrack과 같은 성격의 검증용 노출).
+  window.jgbAudioEvents = buildAudioEvents;
 
   let audioCtx = null, playTimer = null, playing = false, paused = false, playState = null;
 
@@ -5029,6 +5142,53 @@
     tick();
   }
 
+  // ---------- 파트 (총보 성부) ----------
+  // 문서 = 공유 뼈대(레이아웃 controls·장단·각 이름·자유 텍스트) + 파트 목록.
+  // 파트 = 악기 하나의 내용: 선율·곁줄·정간 서식(+악기 이름·시김새 우선순위 악기).
+  // 장단은 파트에 안 넣는다 — 장구 줄은 합주에 하나뿐이라 곡(공유)에 속한다.
+  //
+  // 전역 melodyFull·lyricsFull·cellStyles·ornInstrument는 **활성 파트의 작업 사본**이다.
+  // 4천 줄이 이 전역들을 그대로 읽고 쓰므로 갈아엎지 않고, 목록과 어긋나지 않게
+  // 두 함수로만 오간다: stashActivePart(사본→목록, 저장·파트 전환 직전에)와
+  // hydrateActivePart(목록→사본, 불러오기·파트 전환 직후에).
+  // cellStyles는 객체 참조가 같아 그 자리 수정이 목록에도 바로 닿지만, melody·lyrics는
+  // 문자열이라 stash 없이는 목록이 낡는다 — **parts를 읽기 전엔 반드시 stash를 부를 것.**
+  let nextPartId = 1;
+  let parts = [newPart()];   // 늘 1개 이상 — 파트가 하나면 지금까지의 단독 악보와 동일
+  let activePart = 0;
+
+  function newPart(name) {
+    return { id: nextPartId++, name: typeof name === "string" ? name : "",
+             instrument: "all", melody: "", lyrics: "", cellStyles: {} };
+  }
+  // 저장분·남의 파일에서 온 파트 하나를 검증해 들인다. 꼴이 아예 아니면 null.
+  function sanitizePart(p) {
+    if (!p || typeof p !== "object") return null;
+    return {
+      id: (typeof p.id === "number" && p.id > 0) ? p.id : nextPartId++,
+      name: typeof p.name === "string" ? p.name : "",
+      instrument: (typeof p.instrument === "string"
+        && (p.instrument === "all" || INSTRUMENT_PRIORITY[p.instrument])) ? p.instrument : "all",
+      melody: normalizeGakSeparators(typeof p.melody === "string" ? p.melody : ""),
+      lyrics: normalizeGakSeparators(typeof p.lyrics === "string" ? p.lyrics : ""),
+      cellStyles: (p.cellStyles && typeof p.cellStyles === "object") ? p.cellStyles : {}
+    };
+  }
+  function stashActivePart() {
+    const p = parts[activePart];
+    p.melody = melodyFull;
+    p.lyrics = lyricsFull;
+    p.cellStyles = cellStyles;
+    p.instrument = ornInstrument;
+  }
+  function hydrateActivePart() {
+    const p = parts[activePart];
+    melodyFull = p.melody;
+    lyricsFull = p.lyrics;
+    cellStyles = p.cellStyles;
+    ornInstrument = p.instrument;
+  }
+
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
@@ -5047,20 +5207,23 @@
   let pubId = null;
 
   function collectState() {
+    stashActivePart();   // 전역 작업 사본(melodyFull 등)을 파트 목록에 되써 넣고 나서 뜬다
     const c = {};
     CTRL_IDS.forEach(function (id) {
       const el = $(id);
       c[id] = (el.type === "checkbox") ? el.checked : el.value;
     });
     const at = document.querySelector(".tab.active");
-    return { v: 1, controls: c, melody: melodyFull, jangdan: $("jangdan").value,
-             lyrics: lyricsFull, gakUserSet: gakUserSet,
+    // v:2 — 선율·곁줄·정간 서식·악기가 parts[]로 들어갔다(총보). 옛 v1의 루트
+    // melody·lyrics·cellStyles·ornInstrument는 더 안 쓰고, 읽기(applyState)만 남긴다.
+    return { v: 2, controls: c, jangdan: $("jangdan").value,
+             parts: parts, activePart: activePart, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
              melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, ornAddMaps: ornAddMaps,
              symRecent: symRecent,
              tempoBpmUserSet: tempoBpmUserSet, pubId: pubId,
-             cellStyles: cellStyles, gakNames: gakNames, gakNameOffs: gakNameOffs, leftDockW: leftDockW, ornInstrument: ornInstrument };
+             gakNames: gakNames, gakNameOffs: gakNameOffs, leftDockW: leftDockW };
   }
 
   function applyState(s) {
@@ -5073,9 +5236,19 @@
     });
     // 예전에 저장된 "이미지" 표기 옵션은 제거됐으므로 폰트(한자)로 대체
     if (!$("noteMode").value) $("noteMode").value = "font";
-    if (typeof s.melody === "string") melodyFull = normalizeGakSeparators(s.melody);
-    if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;
-    if (typeof s.lyrics === "string") lyricsFull = normalizeGakSeparators(s.lyrics);
+    if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
+    // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
+    // 파트 1개로 승계한다(tempoBpm 승계와 같은 관례 — 옛 문서는 그대로 열려야 한다).
+    if (Array.isArray(s.parts) && s.parts.length) {
+      parts = s.parts.map(sanitizePart).filter(Boolean);
+    } else {
+      parts = [sanitizePart({ melody: s.melody, lyrics: s.lyrics,
+        cellStyles: s.cellStyles, instrument: s.ornInstrument })];
+    }
+    if (!parts.length) parts = [newPart()];
+    nextPartId = parts.reduce(function (m, p) { return Math.max(m, p.id + 1); }, nextPartId);
+    activePart = Math.min(Math.max(0, parseInt(s.activePart, 10) || 0), parts.length - 1);
+    hydrateActivePart();   // melodyFull·lyricsFull·cellStyles·ornInstrument가 활성 파트를 따라간다
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
@@ -5085,12 +5258,10 @@
     customTexts = Array.isArray(s.customTexts) ? s.customTexts : [];
     nextTextId = customTexts.reduce(function (m, t) { return Math.max(m, (t.id || 0) + 1); }, 1);
     textSel = null;
-    cellStyles = (s.cellStyles && typeof s.cellStyles === "object") ? s.cellStyles : {};
     gakNames = (s.gakNames && typeof s.gakNames === "object") ? s.gakNames : {};
     gakNameOffs = (s.gakNameOffs && typeof s.gakNameOffs === "object") ? s.gakNameOffs : {};
     renderGakNameList();
-    ornInstrument = (typeof s.ornInstrument === "string" && INSTRUMENT_PRIORITY[s.ornInstrument])
-      ? s.ornInstrument : "all";
+    // 시김새 우선순위 악기는 파트 소속이 됐다(위 hydrate가 정함) — 셀렉트만 따라 맞춘다
     document.querySelectorAll(".orn-instrument").forEach(function (el2) { el2.value = ornInstrument; });
     buildLyricSymPal();
     palZoom = typeof s.palZoom === "number" ? Math.max(0.6, Math.min(2, s.palZoom)) : 1;
@@ -6442,6 +6613,47 @@
   makeGuideToggle("textGuide", "textGuideToggle");
   makeGuideToggle("gakNameGuide", "gakNameGuideToggle");
   makeGuideToggle("shortcutsGuide", "shortcutsGuideToggle");
+
+  // 사이드바 안내(?) 접기 — 설정 패널의 .hint(회색 작은 글씨)를 항목 이름 옆 ? 버튼 안으로.
+  // 값보다 설명이 길어 무엇을 정하는 자리인지가 안 보였다. 마크업은 그대로 두고(문구를
+  // 고칠 땐 index.html의 그 자리에서 고친다) 여기서 손잡이만 붙여 접는다.
+  // 도구창의 ?(makeGuideToggle)와 달리 띄우지 않고 제자리에서 편다 — 까닭은 styles.css
+  // .hint-btn 주석 참고. 새 .hint를 사이드바에 더하면 아무 배선 없이 같이 접힌다.
+  function foldSidebarHints() {
+    const QMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+    document.querySelectorAll("#sidebar .hint").forEach(function (h) {
+      // 붙일 자리는 '이 설명이 누구 것인가'로 정한다: 제 .field의 이름표(label) →
+      // 이름표가 없는 칸(임시 저장처럼 label 없이 입력줄만 있는 곳)은 바로 위 묶음 머리글(.sec).
+      // 둘 다 없으면 **접지 않는다** — 펼 손잡이가 없으면 글이 영영 안 보인다.
+      // :scope > label — 칸 안쪽에 딸린 라벨(#stackCount의 '자동' 체크박스, 임시 저장 목록이
+      // 나중에 그리는 것들)이 아니라 그 칸의 **이름표**만 집으려는 것.
+      const field = h.closest(".field");
+      let anchor = field && field.querySelector(":scope > label");
+      if (!anchor) {
+        let p = (field || h).previousElementSibling;
+        while (p && !p.classList.contains("sec")) p = p.previousElementSibling;
+        anchor = p;
+      }
+      if (!anchor) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "icon-btn hint-btn";
+      btn.title = "설명 보기";
+      btn.setAttribute("aria-label", "설명 보기");
+      btn.innerHTML = QMARK;
+      anchor.appendChild(btn);
+      h.classList.add("folded");
+      btn.addEventListener("click", function (e) {
+        // 체크박스 항목은 이름표가 <label class="chk">라 그 안의 클릭이 체크박스를 뒤집는다 —
+        // 안내를 여닫는 것만으로 설정이 바뀌면 안 되므로 여기서 끊는다.
+        e.preventDefault(); e.stopPropagation();
+        const on = !h.classList.contains("on");
+        h.classList.toggle("on", on);
+        btn.classList.toggle("on", on);
+      });
+    });
+  }
+  foldSidebarHints();
 
   // 버튼 호버 설명(.tip + data-tip) — 모두 body 바로 아래 뜬 공유 말풍선(#ribbonTipFloat)
   // 하나로 띄운다. CSS ::after 방식은 overflow 있는 조상(리본·도구창) 안에서 잘리고,

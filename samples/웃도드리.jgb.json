@@ -1,0 +1,92 @@
+{
+  "v": 1,
+  "controls": {
+    "orientation": "portrait",
+    "beats": "6",
+    "gakPerRow": "11",
+    "stackCount": "2",
+    "stackAuto": true,
+    "gakCount": "17",
+    "daegang": "",
+    "noteMode": "font",
+    "sizeScale": "1.4",
+    "pageFill": "55",
+    "noteScale": "1.1",
+    "lyricsScale": "0.9",
+    "cellSize": "11",
+    "gakGap": "6.5",
+    "bandGap": "10",
+    "header": false,
+    "frame": true,
+    "title": "웃도드리",
+    "titleSize": "10",
+    "titleOffset": "-3",
+    "titleOffsetX": "0",
+    "titleSpacing": "0",
+    "subtitle": "송구여지곡 ",
+    "subSize": "6",
+    "subOffset": "-128",
+    "subOffsetX": "0",
+    "subSpacing": "0",
+    "titleFont": "'GungSeo','궁서','Batang',serif",
+    "titleLayout": "side",
+    "titleGakWidth": "auto",
+    "hwangPitch": "63",
+    "tempoBpm": "60",
+    "wantJangdan": true,
+    "wantLyrics": true,
+    "wantTempo": true,
+    "lyricsFont": "'GungSeo','궁서','Batang',serif",
+    "palSound": true,
+    "palInsert": true,
+    "joPreset": "all",
+    "pageNumPos": "none",
+    "gakNumMode": "screen",
+    "gakNameSize": "1",
+    "gakNameGap": "4",
+    "gakNameHanja": true
+  },
+  "melody": "배남{슬기둥1} |  | 배남{뜰} | 배남 | 배임 | 배임{뜰}\n황{슬기둥1} |  | 황{뜰} | 배임 | 배남 | 배임\n배중{슬기둥1} |  | 배중{뜰} | 배태 | 배황{퇴성}{추성}{모지} | 배태\n배임{슬기둥1} |  | - - 배중{뜰}{추성} | 배임 | 배중 | 배임\n배임{슬기둥1} |  | 배임{뜰} | 배임 | 황{자출} | 황{뜰}\n황 | 배임 |  | 배임 | 황{자출} | 황{뜰}\n황 | 배임 | - - 황 | 배임 | - - 황{자출} | 배임\n황 | 배중 | 배중{전성} 배임{자출} - | 태 | 배남 | 배임\n배중{슬기둥1} |  | 배중{뜰} | 배태 | 배황{퇴성}{추성}{모지} | 배태\n배임{슬기둥1} |  | - - 배중{뜰}{추성} | 배임 | 배중 | 배임\n하배황 | 배남 | 하배황 | 배남 | 하배황 | 배남\n황{슬기둥1} |  | 황{뜰} | 배임 | 배남 | 배임\n배중{슬기둥1} |  | 배중 - 배태{뜰} | 배중 | 배남 | 배임\n배임{슬기둥1} |  | 배임{뜰} | 배임 | 황 | 황\n배임{슬기둥1} |  | 배임{뜰} | 배임 | 배남 | 배임\n배중{슬기둥1} |  | 배중 - 배태{뜰} | 배중 | 배남 | 배임\n배임{슬기둥1} |  | 배임{뜰} | 배중 | 배임 | 배임",
+  "jangdan": "덩 |  | 기덕 |  | 더러러러 | 다",
+  "lyrics": "살 | 갱 | 뜰 | 징 | 동 | 뜰\n살 | 갱 | 뜰 | 동 | 징 | 동\n살 | 갱 | 뜰 | 등 | 둥 | 뜰\n살 | 갱 | - - 뜰 | 동 | 당 | 동\n살 | 갱 | 뜰 | 도 | 링 | 뜰\n징 | 동 |  | 도 | 링 | 뜰\n징 | 도 | - - 링 | 도 | - - 링 | 동\n징 | 당 | 다 로 | 징 | 징 | 동\n살 | 갱 | 뜰 | 등 | 둥 | 등\n살 | 갱 | - - 뜰 | 동 | 당 | 동\n살 | 갱 | 살 | 갱 | 살 | 갱\n살 | 갱 | 뜰 | 동 | 징 | 동\n살 | 갱 | 당 - 뜰 | 당 | 징 | 동\n살 | 갱 | 뜰 | 도 | 링 | 뜰\n살 | 갱 | 뜰 | 동 | 징 | 동\n살 | 갱 | 당 - 뜰 | 당 | 징 | 동\n살 | 갱 | 뜨 | 라 | 동 | 뜰",
+  "gakUserSet": true,
+  "daegangAuto": "",
+  "activeTab": "out",
+  "customTexts": [],
+  "palZoom": 1.1,
+  "ornPalZoom": 1,
+  "edFontPx": 14,
+  "melInput": "direct",
+  "ribbonPos": "left",
+  "ornAddMap": [
+    "diff-str-1",
+    "flow",
+    "sigimsae-00",
+    "roll-str",
+    "bend-down",
+    "bend-up",
+    "diff-str-fast",
+    "pizzicato",
+    "diff-str-2",
+    "diff-str-3"
+  ],
+  "cellStyles": {
+    "3": {
+      "5": {
+        "border": {
+          "bottom": {
+            "width": "thin",
+            "style": "double"
+          }
+        }
+      }
+    }
+  },
+  "gakNames": {
+    "0": "1장",
+    "4": "2장",
+    "10": "3장"
+  },
+  "leftDockW": 240,
+  "ornInstrument": "거문고"
+}

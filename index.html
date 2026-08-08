@@ -446,7 +446,10 @@
           <!-- 기본 50%: 0%는 아래 여백이 휑해 '왜 안 채워지지'가 첫인상이었다 — 처음부터
                페이지를 어느 정도 채운 상태로 시작하고, 원하면 내리는 쪽이 자연스럽다.
                app.js LAYOUT_DEFAULTS.pageFill(초기화 버튼)과 같은 값이어야 한다. -->
-          <label for="pageFill">페이지 채움 <small>페이지 여백을 줄여 문서를 채움</small> — <span id="pageFillVal">50%</span></label>
+          <!-- 곁말(<small>)이 '페이지 여백을 줄여 문서를 채움'이던 시절엔 이름줄이 폭을 꽉 채워
+               안내(?)가 붙으면 ? 혼자 다음 줄로 떨어졌다. 자세한 말은 이제 ? 안에 있으므로
+               곁말은 한눈에 읽힐 만큼만 남긴다 — 이름줄에 무엇을 더할 땐 폭을 볼 것. -->
+          <label for="pageFill">페이지 채움 <small>여백을 줄여 채움</small> — <span id="pageFillVal">50%</span></label>
           <input type="range" id="pageFill" min="0" max="100" step="5" value="50">
           <div class="hint">• 페이지 <b>여백을 줄이고</b>, 세로로 남는 공간을 줄 사이에 고르게 나눠 <b>페이지를 채웁니다</b>.<br>• 0%면 여백을 넉넉히 두고 위쪽부터 그립니다.</div>
         </div>
@@ -461,29 +464,34 @@
         <div class="field">
           <label for="cellSize">각(정간 칸) 너비 (mm)</label>
           <input type="number" id="cellSize" min="4" max="30" step="0.5" value="11">
-          <div class="hint">정간 한 칸의 크기(정사각형)이며, 각의 너비이기도 합니다.</div>
+          <!-- '인쇄영역을 넘으면 자동 축소' 안내는 예전에 이 세부 조정 묶음 맨 아래 홀로 떠
+               있던 줄이다. 안내(?)는 항목 이름에 붙는데 그 줄엔 붙을 이름이 없어(제 .field가
+               없다) 여기 첫 수치 항목으로 합쳤다 — 아래 간격 값들에도 함께 걸리는 말이다. -->
+          <div class="hint">• 정간 한 칸의 크기(정사각형)이며, 각의 너비이기도 합니다.<br>• 고른 종이의 인쇄영역을 넘으면 이 값과 아래 간격은 전체 비율을 유지한 채 자동 축소됩니다.</div>
         </div>
 
+        <!-- 두 간격 안내는 원래 .two 아래 한 줄로 붙어 있었는데, 안내(?)가 항목 이름에
+             붙으면서 각자의 이름 옆으로 갈랐다(한 줄에 둘을 적어 두면 어느 쪽 ?에 넣어도
+             나머지 하나가 딴 데 숨는다). -->
         <div class="two">
           <div class="field">
             <label for="gakGap">각 사이 간격 (mm)</label>
             <input type="number" id="gakGap" min="0" max="40" step="0.5" value="7">
+            <div class="hint">• 옆 각과의 <b>가로</b> 간격입니다(곁줄이 이 안에 들어갑니다).</div>
           </div>
           <div class="field">
             <label for="bandGap">열 사이 간격 (mm)</label>
             <input type="number" id="bandGap" min="0" max="60" step="0.5" value="10">
+            <div class="hint">• 줄(단)과 줄 사이의 <b>세로</b> 간격입니다.</div>
           </div>
         </div>
-        <div class="hint" style="margin-top:-2px;">• 각 사이 = 옆 각과의 <b>가로</b> 간격(곁줄이 이 안에 들어감) · 열 사이 = 줄(단)과 줄 사이의 <b>세로</b> 간격.</div>
 
         <div class="field" style="margin-bottom:4px;">
           <label class="chk" style="font-size:13px; font-weight:600;">
             <input type="checkbox" id="header"> 각 밴드 위에 이름 칸(머리단) 두기
           </label>
-          <div class="hint">각 열 위에 가로로 이어진 빈 칸을 추가합니다 (악절 이름 등 기입용).</div>
+          <div class="hint">• 각 열 위에 가로로 이어진 빈 칸을 추가합니다 (악절 이름 등 기입용).</div>
         </div>
-
-        <div class="hint" style="margin-top:2px;">고른 종이의 인쇄영역을 넘으면 위 수치는 전체 비율을 유지한 채 자동 축소됩니다.</div>
         </details>
 
         <button type="button" id="layoutReset" class="orn-reset" style="margin:10px 0 8px;"

@@ -8,12 +8,33 @@
 // 어디에 놓이나) 그 둘이 '어느 팔레트 소속인가'로 뭉쳐 있던 탓이다.
 //
 // ── 항목 하나 ──────────────────────────────────────────────────────────
-//   { id, ko, at: { 자리: 크기 }, attKeep? }
+//   { id, ko, at: { 자리: 크기 }, attKeep?, snd? }
 //   id      그림 키. 시김새·가사 기호는 SYM_DATA(=assets/symbol_svgs 파일명),
 //           장구 구음은 JANGGU_DATA 키. 사전 안에서 유일해야 한다.
 //   ko      표시 이름. 악보 토큰({미는표}·{s01}·{덩})에 쓰는 이름이기도 하다.
 //   at      이 기호가 놓일 수 있는 '자리' → 그 자리에서의 크기.
 //   attKeep 붙임표 일괄 확대(1.2배)에서 빼는 표시. 원래 크기로 두는 몇 개만.
+//   snd     이 기호가 '어떻게 울리나'. 없으면 소리가 없다(앞 음이 그대로 이어진다).
+//
+// ── snd: 시김새를 소리로 푸는 법 ───────────────────────────────────────
+//   { seq: [...], pre: [...], post: [...] }   셋 다 없어도 되고 겹쳐도 된다.
+//   seq   이 자리를 등분해 채울 음들. 자리를 통째로 쓴다.
+//   pre   앞꾸밈(본음 앞에 짧게). post 뒷꾸밈(본음 뒤에 짧게).
+//   값 하나는 **음계 칸수**(정수) 또는 **율명**(문자열).
+//     정수 = 기준음에서 그 곡 음계로 몇 칸 위/아래인가. 0이면 기준음 그대로.
+//            반음이 아니라 칸수인 것이 핵심이다 — '니'는 늘 음계의 바로 윗음이지
+//            반음 위가 아니다. 그 곡의 음계는 조 프리셋(#joPreset)이 정해져 있으면
+//            그것을, 아니면 악보에 많이 나온 율명 다섯을 세어 정한다(app.js 참고).
+//     문자열 = 그 율명 자리를 그대로 짚는다(싸랭·슬기둥의 개방현 하배황처럼
+//            음계와 무관하게 정해진 음).
+//   기준음은 이 기호가 어느 자리에 놓였나로 갈린다:
+//     cell 자리(제 칸을 차지) → **앞 음**. 붙임(att) 자리 → **제가 붙은 본음**.
+//   그래서 붙임에 seq가 있으면(나니나·나느나) '본음의 자리를 이 꼴로 가른다'는 뜻이 된다.
+//
+//   표(表)류 시김새(흘림표·미는표·요성표·추성·퇴성…)에는 일부러 snd를 안 달았다.
+//   음높이를 옮기는 게 아니라 '어떻게 눌러/떨어 내나'를 적는 주법 표시라, 사인파
+//   재생으로 흉내 낼 것이 없기 때문이다(소리는 앞 음이 그대로 이어진다).
+//   '추정'이라 적힌 값은 국악 쪽 확인이 아직 안 된 것이니 고치는 데 거리낌 없을 것.
 //
 // ── 자리(at의 키) 다섯 ─────────────────────────────────────────────────
 //   att    음표 오른쪽에 작게 붙음      값 = 기호별 미세 배율(기본 1)
@@ -40,10 +61,12 @@
     { id: "vib-long", ko: "풀어내림표", at: { att: 2.5 } },
     { id: "roll", ko: "떠이어표", at: { att: 1 } },
     // 싸랭·슬기둥1~3은 130%(팔레트·악보 공통)
-    { id: "diff-str-fast", ko: "싸랭", at: { att: 1.3 } },
-    { id: "diff-str-1", ko: "슬기둥1", at: { att: 1.3 } },
-    { id: "diff-str-2", ko: "슬기둥2", at: { att: 1.3 } },
-    { id: "diff-str-3", ko: "슬기둥3", at: { att: 1.3 } },
+    // 거문고 술대법 — 본음 앞에 개방현(하배황)을 한 번 스친다. 음계 칸수가 아니라
+    // 정해진 줄이라 율명을 그대로 적는다. 슬기둥3만 추정(1·2와 같은 계열).
+    { id: "diff-str-fast", ko: "싸랭", at: { att: 1.3 }, snd: { pre: ["하배황"] } },
+    { id: "diff-str-1", ko: "슬기둥1", at: { att: 1.3 }, snd: { pre: ["하배황"] } },
+    { id: "diff-str-2", ko: "슬기둥2", at: { att: 1.3 }, snd: { pre: ["하배황"] } },
+    { id: "diff-str-3", ko: "슬기둥3", at: { att: 1.3 }, snd: { pre: ["하배황"] } },   // 추정
     { id: "roll-str", ko: "전성", at: { att: 1, lyric: 0.4 } },
     { id: "pizzicato", ko: "자출", at: { att: 1 } },
     { id: "splash", ko: "잉어질표", at: { att: 2.5 } },
@@ -51,23 +74,28 @@
     { id: "between-down", ko: "시루표", at: { att: 1 } },
     { id: "down-pitched", ko: "낮게", at: { att: 1 } },
     { id: "tongue", ko: "서침표", at: { att: 1 } },
-    { id: "nanina", ko: "나니나", at: { att: 1 } },
-    { id: "naneuna", ko: "나느나", at: { att: 1 } },
-    { id: "nire", ko: "니레", at: { att: 1 }, attKeep: true },
-    { id: "nina", ko: "니라", at: { att: 1 }, attKeep: true },
-    { id: "niro", ko: "니로", at: { att: 1 }, attKeep: true },
-    { id: "none", ko: "노네", at: { att: 1 } },
-    { id: "neonye", ko: "너녜", at: { att: 1 } },
-    { id: "noniro", ko: "노니로", at: { att: 1 } },
-    { id: "norino", ko: "노리노", at: { att: 1 } },
-    { id: "nerone", ko: "네로네", at: { att: 1 } },
-    { id: "neuneneu", ko: "느네느", at: { att: 1 } },
-    { id: "naniro", ko: "나니로", at: { att: 1 } },
-    { id: "neunira", ko: "느니라", at: { att: 1 } },
-    { id: "neuronireu", ko: "느로니르", at: { att: 1 } },
-    { id: "neunireu", ko: "느니르", at: { att: 1 } },
-    { id: "niruni", ko: "니루니", at: { att: 1 } },
-    { id: "nanireunonireu", ko: "나니르노니르", at: { att: 1 } },
+    // 나니나·나느나는 붙임표인데도 seq다 — 본음 앞에 스치는 게 아니라 본음의 자리를
+    // 나-니-나(또는 나-느-나)로 고르게 가르는 시김새라서. 나느나는 나니나의 아래짝으로 추정.
+    { id: "nanina", ko: "나니나", at: { att: 1 }, snd: { seq: [0, 1, 0] } },
+    { id: "naneuna", ko: "나느나", at: { att: 1 }, snd: { seq: [0, -1, 0] } },   // 추정
+    { id: "nire", ko: "니레", at: { att: 1 }, attKeep: true, snd: { pre: [1] } },
+    // '니라'는 세종/MALerLab 자료의 '니나'(붙임)와 같은 기호로 보인다 — 그쪽 값을 옮겼다.
+    // 이름이 정말 같은 것인지는 국악 쪽 확인이 필요하다(우리 '니나'는 아래 독립 기호 쪽).
+    { id: "nina", ko: "니라", at: { att: 1 }, attKeep: true, snd: { pre: [2] } },
+    { id: "niro", ko: "니로", at: { att: 1 }, attKeep: true, snd: { pre: [3] } },
+    { id: "none", ko: "노네", at: { att: 1 }, snd: { pre: [-1] } },
+    { id: "neonye", ko: "너녜", at: { att: 1 }, snd: { pre: [-2] } },
+    { id: "noniro", ko: "노니로", at: { att: 1 }, snd: { pre: [0, 1] } },
+    { id: "norino", ko: "노리노", at: { att: 1 }, snd: { pre: [0, 2] } },
+    { id: "nerone", ko: "네로네", at: { att: 1 }, snd: { pre: [0, -1] } },
+    { id: "neuneneu", ko: "느네느", at: { att: 1 }, snd: { pre: [0, 3] } },
+    { id: "naniro", ko: "나니로", at: { att: 1 }, snd: { pre: [-1, 1] } },
+    { id: "neunira", ko: "느니라", at: { att: 1 } },   // 소리 미상 — 확인되면 snd를 달 것
+    { id: "neuronireu", ko: "느로니르", at: { att: 1 }, snd: { pre: [0, -1, 1] } },
+    // 앞뒤로 한 번씩 감싸는 두 짝. 이름의 '-'가 본음 자리다(느니-르 / 니루-니).
+    { id: "neunireu", ko: "느니르", at: { att: 1 }, snd: { pre: [-1], post: [-1] } },
+    { id: "niruni", ko: "니루니", at: { att: 1 }, snd: { pre: [1], post: [1] } },
+    { id: "nanireunonireu", ko: "나니르노니르", at: { att: 1 } },   // 소리 미상
     { id: "staccato", ko: "끊는표", at: { att: 1 }, attKeep: true },
     { id: "accent", ko: "특강표", at: { att: 1 }, attKeep: true },
     // 주의: 이 '늘임표'(fermata)와 아래 가사줄 '늘임표'(special/늘임표.svg)는
@@ -114,24 +142,28 @@
     { id: "sigimsae-25", ko: "s25", at: { att: 1 } },
 
     // ── 독립 기호: 정간 안에서 한 칸 차지 ──
-    { id: "no", ko: "노", at: { cell: 0.8 } },              // 유독 커 보이는 여섯은 조금 줄임
-    { id: "ni", ko: "니", at: { cell: 0.8 } },
-    { id: "ro", ko: "로", at: { cell: 0.8 } },
-    { id: "ri", ko: "리", at: { cell: 0.8 } },
-    { id: "nina-dur", ko: "니나", at: { cell: 0.8 } },
-    { id: "neuna", ko: "느나", at: { cell: 0.8 } },
-    { id: "nora", ko: "노라", at: { cell: 1 } },
-    { id: "neuni", ko: "느니", at: { cell: 1 } },
-    { id: "noraneuni", ko: "노라느니", at: { cell: 1 } },
-    { id: "nirena", ko: "니레나", at: { cell: 1 } },
-    { id: "nerona", ko: "네로나", at: { cell: 1 } },
-    { id: "nirona", ko: "니로나", at: { cell: 1 } },
-    { id: "nineurani", ko: "니느라니", at: { cell: 1 } },
-    { id: "neunanina", ko: "느나니나", at: { cell: 1 } },
-    { id: "neunareunani", ko: "느나르나니", at: { cell: 1 } },
+    // 이쪽 snd의 기준음은 **앞 음**이다(제 칸을 차지하니 제 음높이가 따로 없다).
+    // 이름이 곧 소리의 차례라 값을 읽기 쉽다: 니=위, 노=아래, 리=두 칸 위, 로=두 칸 아래.
+    { id: "no", ko: "노", at: { cell: 0.8 }, snd: { seq: [-1] } },   // 유독 커 보이는 여섯은 조금 줄임
+    { id: "ni", ko: "니", at: { cell: 0.8 }, snd: { seq: [1] } },
+    { id: "ro", ko: "로", at: { cell: 0.8 }, snd: { seq: [-2] } },
+    { id: "ri", ko: "리", at: { cell: 0.8 }, snd: { seq: [2] } },
+    { id: "nina-dur", ko: "니나", at: { cell: 0.8 }, snd: { seq: [1, 0] } },
+    { id: "neuna", ko: "느나", at: { cell: 0.8 }, snd: { seq: [-1, 0] } },
+    { id: "nora", ko: "노라", at: { cell: 1 }, snd: { seq: [-1, -2] } },
+    { id: "neuni", ko: "느니", at: { cell: 1 }, snd: { seq: [1, 2] } },
+    // 노라 + 느니를 이어 붙인 것으로 읽었다(둘 다 앞 음 기준). 추정.
+    { id: "noraneuni", ko: "노라느니", at: { cell: 1 }, snd: { seq: [-1, -2, 1, 2] } },   // 추정
+    { id: "nirena", ko: "니레나", at: { cell: 1 }, snd: { seq: [2, 1, 0] } },
+    { id: "nerona", ko: "네로나", at: { cell: 1 }, snd: { seq: [-1, -2, 0] } },
+    { id: "nirona", ko: "니로나", at: { cell: 1 }, snd: { seq: [1, 0, -1] } },
+    { id: "nineurani", ko: "니느라니", at: { cell: 1 }, snd: { seq: [1, 0, -1, 0] } },
+    { id: "neunanina", ko: "느나니나", at: { cell: 1 }, snd: { seq: [-1, 0, 1, 0] } },
+    { id: "neunareunani", ko: "느나르나니", at: { cell: 1 }, snd: { seq: [-1, 0, 1, 0, -1] } },
+    // 요성·겹요성은 음높이를 옮기는 게 아니라 앞 음을 떨어 주는 표라 snd가 없다(위 머리말 참고).
     { id: "shake", ko: "요성표", at: { cell: 1 } },
     { id: "shake-rep", ko: "겹요성표", at: { cell: 1 } },
-    { id: "repeat", ko: "같은음표", at: { cell: 1 } },
+    { id: "repeat", ko: "같은음표", at: { cell: 1 }, snd: { seq: [0] } },
 
     // ── 붙임표 겸 독립 기호(예전 c:"both") ──
     { id: "bend-down", ko: "퇴성", at: { att: 1, cell: 1, lyric: 0.4 } },
@@ -252,10 +284,15 @@
 
   const jangguNames = JANGGU_ORDER.map(function (id) { return byId[id].ko; });
 
+  // 소리 나는 시김새만 모은 표(id → snd). 재생·내보내기가 'snd가 있나'만 보면 되게
+  // 미리 걸러 둔다 — 없는 기호는 소리가 없다는 뜻이라 부르는 쪽에 조건이 하나로 준다.
+  const sound = {};
+  LIST.forEach(function (s) { if (s.snd) sound[s.id] = s.snd; });
+
   root.JGB_SYM = {
     list: LIST, byId: byId, at: at,
     ornList: ornList, attKeep: attKeep, attScale: attScale, cellScale: cellScale,
     lyricNames: lyricNames, lyricAlias: lyricAlias, lyricScale: lyricScale,
-    jangguNames: jangguNames, jangguScale: jangguScale
+    jangguNames: jangguNames, jangguScale: jangguScale, sound: sound
   };
 })(typeof window !== "undefined" ? window : globalThis);
