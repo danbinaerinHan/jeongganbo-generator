@@ -811,6 +811,26 @@
      세로로 아주 길어지면 아래가 화면을 넘을 수 있으나, 그립으로 끌어 옮길 수 있다. */
   body.input-direct #textArea.win-open { max-height: none; overflow: visible; }
 
+  /* ---------- 악기 관리 창 (총보 파트, #partsWin) ----------
+     피날레 Score Manager 자리 — 사이드바 '문서' 탭 [악기 관리…]가 연다. 도구창(.direct-win)이
+     아니라 **독립 창**: 입력 방식과 무관하게 뜨므로 위 body.input-direct 규칙에 얽지 않고
+     .open 클래스 하나로만 여닫는다. 카드꼴·absolute 문법은 도구창(.win-open)과 같게 맞춘다. */
+  .mgr-win { display: none; }
+  .mgr-win.open {
+    display: flex; flex-direction: column; position: absolute; top: 84px; right: 14px; z-index: 7;
+    width: min(430px, calc(100% - 28px)); max-height: 62vh; overflow: auto;
+    background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
+  }
+  .mgr-win .dock-panel-grip { display: flex; }   /* 그립은 입력 방식과 무관하게 늘 보인다 */
+  .mgr-win .melody-head { flex: 0 0 auto; }      /* 세로 flex 창 머리줄 필수 규칙 */
+  .parts-hint { font-size: 11.5px; color: var(--muted); margin: 2px 0 8px; }
+  .part-item .part-name { flex: 1 1 auto; min-width: 0; width: auto; }
+  .part-item .part-inst { flex: 0 0 auto; }
+  /* 지금 편집하는 파트 행 — 색만 살짝, 테두리 반경은 행 안쪽 여백과 맞춘다 */
+  .part-item.active { background: var(--accent-tint); border-radius: 8px; }
+  .parts-foot { margin-top: 10px; flex: 0 0 auto; }
+
   /* ---------- 기능바 왼쪽 세로 도킹 (직접 입력 전용, #ribbonPosToggle로 전환) ----------
      body.ribbon-left는 JS(applyRibbonPos)가 '직접 입력 + 왼쪽' 조합일 때만 붙인다.
      #leftDock은 위쪽 배치에선 display:contents(없는 셈)이고, 왼쪽 도킹에서만 진짜

@@ -4791,6 +4791,90 @@
     return { step: step, pitch: pitch };
   }
 
+  // 악보를 '자리(slot)' 목록으로 푼다. 자리 하나 = 정간 안에서 고르게 나뉜 한 칸이고,
+  // 거기서 무엇이 울리는지가 다 들어 있다. 재생(초 단위 사인파)과 오선보 내보내기(박 단위
+  // 음표)가 이 함수 하나를 나눠 쓴다 — 같은 셈을 두 벌 적으면 소리와 악보가 어긋난다.
+  //   { gak, cell, beat, dur, kind, seq, pre, post }
+  //   beat·dur  정간 하나를 1로 센 시작 시각·길이
+  //   kind      "note" 새 소리 · "rest" 쉼표 · "hold" 앞 음을 잇는다(새로 시작하지 않음)
+  //   seq       이 자리를 고르게 나눠 채울 음높이(midi)들 — kind가 "note"일 때만
+  //   pre·post  본음 앞뒤를 스치는 꾸밈음(midi). 제 길이가 따로 없어 자리에서 떼어 쓴다.
+  function realizeMelody(hwangMidi) {
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const sc = makeScale(hwangMidi);
+    const gaks = parseMelodyOffsets(melodyFull);
+    const slots = [];
+    let beat = 0;
+    // 독립 시김새(제 음높이가 없는 노·니·느나…)가 기준 삼을 마지막 실음. 꾸밈음이 아니라
+    // 본음이 들어간다 — 니레의 스치는 음이 다음 '노'의 기준이 되면 가락이 밀린다.
+    let prevMidi = null;
+
+    function push(kind, dur, g, j, r) {
+      slots.push({ gak: g, cell: j, beat: beat, dur: dur, kind: kind,
+                   seq: (r && r.seq) || [], pre: (r && r.pre) || [], post: (r && r.post) || [] });
+      beat += dur;
+    }
+
+    // 그룹 하나(주 토큰 + 붙은 시김새들)를 음높이로 푼다. 풀 것이 없으면(표류 시김새·
+    // 이음·기준 삼을 앞 음이 없음) null — 부르는 쪽이 앞 음을 잇는다.
+    function resolveGroup(grp) {
+      const tk = grp.main;
+      const atts = [];
+      grp.att.forEach(function (a) { if (a.sym && SYM_SND[a.sym]) atts.push(SYM_SND[a.sym]); });
+
+      let ref, degs;
+      if (tk.base) {
+        ref = hwangMidi + SCALE.indexOf(tk.base) + tk.oct * 12;
+        degs = [0];
+        // 나니나처럼 본음의 자리를 가르는 붙임이 있으면 그 꼴이 본음 하나를 대신한다
+        for (let i = 0; i < atts.length; i++) if (atts[i].seq) { degs = atts[i].seq; break; }
+      } else {
+        const own = tk.sym ? SYM_SND[tk.sym] : null;
+        if (!own || !own.seq || prevMidi == null) return null;
+        ref = prevMidi;   // 독립 시김새의 기준음은 앞 음
+        degs = own.seq;
+      }
+
+      const pre = [], post = [];
+      atts.forEach(function (a) {
+        if (a.pre) a.pre.forEach(function (d) { pre.push(sc.pitch(ref, d)); });
+        if (a.post) a.post.forEach(function (d) { post.push(sc.pitch(ref, d)); });
+      });
+      const seq = degs.map(function (d) { return sc.pitch(ref, d); });
+      prevMidi = seq[seq.length - 1];
+      return { seq: seq, pre: pre, post: post };
+    }
+
+    for (let g = 0; g < gaks.length; g++) {
+      const gakCells = gaks[g];
+      const filled = gakCells.length > 0 ? Math.min(beats, gakCells.length) : beats;
+      for (let j = 0; j < filled; j++) {
+        const text = gakCells[j] ? gakCells[j].text : "";
+        const rows = text.split(/\s+/).filter(Boolean);
+        if (!rows.length) { push("hold", 1, g, j); continue; }
+        const rowDur = 1 / rows.length;
+        for (let r = 0; r < rows.length; r++) {
+          // 숨표(<)·빠르기(tempo) 기호는 소리에 영향 없음 — 배치·소리 계산에서 제외
+          const toks = tokenizeNotes(rows[r]).filter(function (tk) {
+            return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
+          });
+          const groups = groupRowTokens(toks);
+          if (!groups.length) { push("hold", rowDur, g, j); continue; }
+          const slotDur = rowDur / groups.length;
+          for (let gi = 0; gi < groups.length; gi++) {
+            const grp = groups[gi];
+            // 쉼표는 앞 음을 끊지만 기준음은 지우지 않는다 — 쉼표 뒤의 '노'도 쉼표 앞
+            // 음에서 한 칸 내린 음이라야 가락이 이어진다.
+            if (grp.main.sym === "pause_007") { push("rest", slotDur, g, j); continue; }
+            const res = resolveGroup(grp);
+            push(res ? "note" : "hold", slotDur, g, j, res);   // 이음(-)·소리 없는 기호 → 지속
+          }
+        }
+      }
+    }
+    return slots;
+  }
+
   // ---------- 재생 (사인파 sonification) ----------
   // 규칙: 정간 1칸 = 1박. 칸 안 공백 행(분박)은 박을 등분. 빈 정간·이음(-)·소리 없는 시김새는
   // 앞 음을 지속(새 음을 시작하지 않고 직전 이벤트 길이를 늘림). 쉼표만 실제 무음.
@@ -4807,13 +4891,9 @@
   // 멜로디 텍스트 → 재생 이벤트 목록 [{ t, dur, freq, gak, cell }] (freq=null → 무음).
   // janggu: 장구 타점 [{ t, name }] — 선율과 같은 시간축이지만 음높이가 없어 따로 담는다.
   function buildAudioEvents() {
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
     const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
     const hwangMidi = parseInt($("hwangPitch").value) || 63;
     const secPerBeat = 60 / bpm;
-    const gaks = parseMelodyOffsets(melodyFull);
-
-    const sc = makeScale(hwangMidi);
 
     const events = [];
     // marks: 오디오 이벤트와 별개로, 지속(빈 정간·이음)이어도 매 정간마다 하나씩 남겨서
@@ -4821,9 +4901,6 @@
     const marks = [];
     let t = 0;
     let lastEvent = null;   // 지속(빈 정간/이음) 대상이 되는 마지막 유음 이벤트
-    // 독립 시김새(제 음높이가 없는 노·니·느나…)가 기준 삼을 마지막 실음. 꾸밈음이 아니라
-    // 본음이 들어간다 — 니레의 스치는 음이 다음 '노'의 기준이 되면 가락이 밀린다.
-    let prevMidi = null;
 
     function extend(dur, gakIdx, cellIdx) {
       marks.push({ t: t, gak: gakIdx, cell: cellIdx });
@@ -4847,47 +4924,9 @@
 
     // 앞·뒷꾸밈 한 알의 길이. 스치듯 짧은 소리라 고정 시간에 가깝게 두되, 느린 곡에서
     // 자리를 다 먹지 않게 자리의 3할을 넘기지 않는다(그 3할을 꾸밈 수로 나눠 갖는다).
+    // 오선보에서는 꾸밈음이 길이를 안 먹으므로(grace) 이 값은 재생에만 있는 규칙이다.
     const GRACE_MAX = 0.09;   // 초
     function graceLen(dur, n) { return n ? Math.min(GRACE_MAX, dur * 0.3 / n) : 0; }
-
-    // 그룹 하나(주 토큰 + 붙은 시김새들)를 소리로 낸다. 소리를 냈으면 true, 낼 것이
-    // 없으면(표류 시김새·이음·기준 삼을 앞 음이 없음) false — 부르는 쪽이 지속시킨다.
-    function playGroup(grp, dur, gakIdx, cellIdx) {
-      const tk = grp.main;
-      const atts = [];
-      grp.att.forEach(function (a) { if (a.sym && SYM_SND[a.sym]) atts.push(SYM_SND[a.sym]); });
-
-      let ref, seq;
-      if (tk.base) {
-        ref = hwangMidi + SCALE.indexOf(tk.base) + tk.oct * 12;
-        seq = [0];
-        // 나니나처럼 본음의 자리를 가르는 붙임이 있으면 그 꼴이 본음 하나를 대신한다
-        for (let i = 0; i < atts.length; i++) if (atts[i].seq) { seq = atts[i].seq; break; }
-      } else {
-        const own = tk.sym ? SYM_SND[tk.sym] : null;
-        if (!own || !own.seq || prevMidi == null) return false;
-        ref = prevMidi;   // 독립 시김새의 기준음은 앞 음
-        seq = own.seq;
-      }
-
-      const pre = [], post = [];
-      atts.forEach(function (a) {
-        if (a.pre) a.pre.forEach(function (d) { pre.push(d); });
-        if (a.post) a.post.forEach(function (d) { post.push(d); });
-      });
-
-      const gl = graceLen(dur, pre.length + post.length);
-      const slot = (dur - gl * (pre.length + post.length)) / seq.length;
-      pre.forEach(function (d) { note(midiToFreq(sc.pitch(ref, d)), gl, gakIdx, cellIdx); });
-      let last = ref;
-      seq.forEach(function (d) {
-        last = sc.pitch(ref, d);
-        note(midiToFreq(last), slot, gakIdx, cellIdx);
-      });
-      post.forEach(function (d) { note(midiToFreq(sc.pitch(ref, d)), gl, gakIdx, cellIdx); });
-      prevMidi = last;
-      return true;
-    }
 
     // 장단 줄은 곡에 한 각짜리 패턴 하나뿐이고 그것이 각마다 되풀이된다(악보에서도 맨 처음
     // 각 옆에 한 번만 그린다) — 그래서 각마다 같은 칸을 그 각의 시각에 얹는다.
@@ -4906,33 +4945,22 @@
       }
     }
 
-    for (let g = 0; g < gaks.length; g++) {
-      const gakCells = gaks[g];
-      const filled = gakCells.length > 0 ? Math.min(beats, gakCells.length) : beats;
-      for (let j = 0; j < filled; j++) {
-        jangguCell(t, j);   // 정간 하나가 늘 1박이므로 이 칸의 시작 시각이 곧 t
-        const text = gakCells[j] ? gakCells[j].text : "";
-        const rows = text.split(/\s+/).filter(Boolean);
-        if (!rows.length) { extend(secPerBeat, g, j); continue; }
-        const rowDur = secPerBeat / rows.length;
-        for (let r = 0; r < rows.length; r++) {
-          // 숨표(<)·빠르기(tempo) 기호는 재생에 영향 없음 — 배치·소리 계산에서 제외
-          const toks = tokenizeNotes(rows[r]).filter(function (tk) {
-            return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
-          });
-          const groups = groupRowTokens(toks);
-          if (!groups.length) { extend(rowDur, g, j); continue; }
-          const slotDur = rowDur / groups.length;
-          for (let gi = 0; gi < groups.length; gi++) {
-            const grp = groups[gi];
-            // 쉼표는 앞 음을 끊지만 기준음은 지우지 않는다 — 쉼표 뒤의 '노'도 쉼표 앞
-            // 음에서 한 칸 내린 음이라야 가락이 이어진다.
-            if (grp.main.sym === "pause_007") rest(slotDur, g, j);
-            else if (!playGroup(grp, slotDur, g, j)) extend(slotDur, g, j);   // 이음(-)·소리 없는 기호 → 지속
-          }
-        }
-      }
-    }
+    // 무엇이 울리나는 realizeMelody가 이미 다 풀어 놓았다. 여기는 그 자리들을 시간(초)에
+    // 앉히고 사인파로 바꾸는 일만 한다.
+    let curGak = -1, curCell = -1;
+    realizeMelody(hwangMidi).forEach(function (s) {
+      // 정간 하나가 늘 1박이므로, 그 정간의 첫 자리가 시작되는 시각이 곧 장단 타점의 시작
+      if (s.gak !== curGak || s.cell !== curCell) { jangguCell(t, s.cell); curGak = s.gak; curCell = s.cell; }
+      const dur = s.dur * secPerBeat;
+      if (s.kind === "rest") { rest(dur, s.gak, s.cell); return; }
+      if (s.kind === "hold") { extend(dur, s.gak, s.cell); return; }
+      const gn = s.pre.length + s.post.length;
+      const gl = graceLen(dur, gn);
+      const body = (dur - gl * gn) / s.seq.length;
+      s.pre.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
+      s.seq.forEach(function (m) { note(midiToFreq(m), body, s.gak, s.cell); });
+      s.post.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
+    });
     return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks, janggu: janggu };
   }
   // 시김새가 제대로 풀렸는지는 귀 말고는 볼 길이 없어 창구를 하나 낸다
@@ -5189,6 +5217,375 @@
     ornInstrument = p.instrument;
   }
 
+  // ---------- 악기 관리 창 (총보 파트 목록, #partsWin) ----------
+  // 피날레 Score Manager 같은 자리 — 파트 추가·삭제·이름·악기·순서·'지금 편집할 악기'를
+  // 한 창에서. 사이드바 '문서' 탭 [악기 관리…]가 열고, 입력 방식과 무관하게 뜬다.
+  // 목록 순서 = 나중 총보에서 악기 열이 서는 순서(오른쪽→왼쪽으로 읽으니 위 = 오른쪽).
+  function partLabel(p, i) { return (p.name || "").trim() || ("파트 " + (i + 1)); }
+
+  // 활성 파트의 내용을 화면(작업 사본·에디터·팔레트·악보)에 들이는 공통 절차 —
+  // 파트 전환과 '활성 파트 삭제'가 같이 쓴다. hydrateActivePart와 달리 악기는
+  // setOrnInstrument를 태워 숫자 단축키 번들·팔레트 정렬이 함께 갈아탄다.
+  function loadActivePartIntoView() {
+    const p = parts[activePart];
+    melodyFull = p.melody; lyricsFull = p.lyrics; cellStyles = p.cellStyles;
+    setOrnInstrument(p.instrument, { silent: true });
+    // 이전 파트를 가리키던 것들 정리 — 정간 선택·시김새 선택은 그 파트의 것이었다
+    melSelStart = null; melSelEnd = null; refreshMelSelBtns();
+    ornSel = null; hideOrnPanel();
+    edPage = 0; edRange = null; edLyRange = null;
+    reconcileMelody(); reconcileLyrics();
+    refreshEditorSlices(); syncActiveFromCursor();
+    render();
+  }
+  function switchPart(idx) {
+    idx = Math.max(0, Math.min(parts.length - 1, idx | 0));
+    if (idx === activePart) return;
+    if (cellEditInput) commitCellEditor(false);   // 편집 중이던 정간 확정(되돌리기와 같은 순서)
+    stashActivePart();
+    activePart = idx;
+    track("part_switch");
+    loadActivePartIntoView();
+    renderPartsList(); saveState();
+  }
+  function addPart() {
+    if (cellEditInput) commitCellEditor(false);
+    stashActivePart();
+    parts.push(newPart());
+    activePart = parts.length - 1;   // 새 악기를 바로 편집 — 추가하고 곧장 적기 시작하게
+    track("part_add", { v: String(parts.length) });
+    loadActivePartIntoView();
+    renderPartsList(); saveState();
+  }
+  function removePart(i) {
+    if (parts.length <= 1) return;   // 마지막 하나는 못 지운다(문서는 늘 파트 1개 이상)
+    if (!confirm("'" + partLabel(parts[i], i) + "' 악기를 지웁니다. 이 악기의 선율·곁줄·정간 서식이 함께 사라집니다(⌘Z로 되돌릴 수 있음). 계속할까요?")) return;
+    if (cellEditInput) commitCellEditor(false);
+    stashActivePart();
+    const wasActive = (i === activePart);
+    parts.splice(i, 1);
+    if (i < activePart) activePart -= 1;
+    else if (wasActive) activePart = Math.min(i, parts.length - 1);
+    track("part_remove", { v: String(parts.length) });
+    if (wasActive) loadActivePartIntoView();
+    renderPartsList(); saveState();
+  }
+  function movePart(i, d) {
+    const j = i + d;
+    if (j < 0 || j >= parts.length) return;
+    stashActivePart();   // 문자열 사본(melody·lyrics)이 목록에서 낡지 않게 먼저 맞춘다
+    const t = parts[i]; parts[i] = parts[j]; parts[j] = t;
+    if (activePart === i) activePart = j;
+    else if (activePart === j) activePart = i;
+    renderPartsList(); saveState();
+  }
+  function renderPartsList() {
+    const list = $("partsList");
+    if (!list) return;
+    list.innerHTML = "";
+    parts.forEach(function (p, i) {
+      const row = document.createElement("div");
+      row.className = "tx-item part-item" + (i === activePart ? " active" : "");
+      const radio = document.createElement("input");
+      radio.type = "radio"; radio.name = "partActive"; radio.checked = (i === activePart);
+      radio.title = "이 악기를 편집";
+      radio.addEventListener("change", function () { switchPart(i); });
+      const name = document.createElement("input");
+      name.type = "text"; name.className = "part-name";
+      name.value = p.name; name.placeholder = partLabel(p, i);
+      name.title = "파트 이름 (비우면 번호로 부릅니다)";
+      name.addEventListener("change", function () { p.name = name.value.trim(); saveState(); });
+      const inst = document.createElement("select");
+      inst.className = "part-inst";
+      inst.title = "악기 — 시김새 팔레트의 우선순위가 이 악기를 따릅니다";
+      [["all", "악기 선택"]].concat(Object.keys(INSTRUMENT_PRIORITY).map(function (k) { return [k, k]; }))
+        .forEach(function (pair) {
+          const o = document.createElement("option");
+          o.value = pair[0]; o.textContent = pair[1]; inst.appendChild(o);
+        });
+      inst.value = p.instrument;
+      inst.addEventListener("change", function () {
+        p.instrument = inst.value;
+        if (i === activePart) setOrnInstrument(inst.value);   // saveState 포함
+        else saveState();
+      });
+      const up = document.createElement("button");
+      up.type = "button"; up.className = "mel-btn"; up.textContent = "↑"; up.title = "위로";
+      up.disabled = (i === 0);
+      up.addEventListener("click", function () { movePart(i, -1); });
+      const down = document.createElement("button");
+      down.type = "button"; down.className = "mel-btn"; down.textContent = "↓"; down.title = "아래로";
+      down.disabled = (i === parts.length - 1);
+      down.addEventListener("click", function () { movePart(i, 1); });
+      const del = document.createElement("button");
+      del.type = "button"; del.className = "tx-del"; del.textContent = "✕";
+      del.title = (parts.length <= 1) ? "마지막 악기는 지울 수 없습니다" : "이 악기 삭제";
+      del.disabled = (parts.length <= 1);
+      del.addEventListener("click", function () { removePart(i); });
+      row.appendChild(radio); row.appendChild(name); row.appendChild(inst);
+      row.appendChild(up); row.appendChild(down); row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+  $("btnPartsWin").addEventListener("click", function () {
+    const w = $("partsWin");
+    if (w.classList.contains("open")) { w.classList.remove("open"); return; }
+    renderPartsList();
+    w.classList.add("open");
+  });
+  $("partsClose").addEventListener("click", function () { $("partsWin").classList.remove("open"); });
+  $("partAddBtn").addEventListener("click", addPart);
+
+  // ---------- 오선보 내보내기 (MusicXML) ----------
+  // 무엇이 울리나는 realizeMelody가 이미 다 풀어 놓았다(재생과 같은 표 = 사전의 snd).
+  // 여기가 하는 일은 그것을 서양 악보의 말로 옮겨 적는 것뿐이다:
+  //   · 정간 하나 = 점4분음표(3/8). 그래서 각(=한 마디)의 박자표가 3N/8이 된다.
+  //   · 각 = 마디. 마디를 넘는 음은 붙임줄(tie)로 잇는다.
+  //   · 붙임 시김새 = 꾸밈음(grace, 길이를 안 먹음) · 독립 시김새 = 제 자리를 나눈 실음.
+  // 정간을 점4분음표로 보는 환산은 MALerLab/SejongMusic 자료와 같다 — 그쪽 악보와 나란히
+  // 놓고 견줄 수 있게 맞춘 것이니 바꿀 땐 그 점을 생각할 것.
+  const MXL_DIV = 1680;                    // 4분음표 하나를 몇으로 나눠 세나
+  const MXL_JG = MXL_DIV * 3 / 2;          // 정간 하나 = 점4분음표 = 2520
+  // 2520은 1~10과 12로 나눠떨어진다 — 분박을 몇으로 쪼개든 길이가 정수로 떨어지게 고른 값.
+  const MXL_TYPES = [["breve", 2], ["whole", 1], ["half", 1 / 2], ["quarter", 1 / 4],
+                     ["eighth", 1 / 8], ["16th", 1 / 16], ["32nd", 1 / 32], ["64th", 1 / 64]];
+  const MXL_ACC = { "-2": "flat-flat", "-1": "flat", "0": "natural", "1": "sharp", "2": "double-sharp" };
+
+  // 길이(단위) → 음표꼴과 점. 딱 떨어질 때만 적는다 — 틀린 음표꼴을 적느니 비워 두면
+  // 악보 프로그램이 길이(duration)를 보고 알아서 고른다(<type>은 없어도 되는 항목이다).
+  function mxlType(units) {
+    for (let i = 0; i < MXL_TYPES.length; i++) {
+      const base = MXL_TYPES[i][1] * 4 * MXL_DIV;
+      for (let dots = 0; dots <= 2; dots++) {
+        if (Math.abs(base * (2 - Math.pow(0.5, dots)) - units) < 1e-9) {
+          return { type: MXL_TYPES[i][0], dots: dots };
+        }
+      }
+    }
+    return null;
+  }
+
+  // 5도권에서 f번째 자리의 음이름·음높이. -1=F, 0=C, 1=G … 6=F#, -2=B♭.
+  function mxlFifthPc(i) { return (((7 * i) % 12) + 12) % 12; }
+
+  // 조표 고르기 — 그 곡 음계의 다섯 음이 모두 '조표 안 음'이 되는 조 중 조표가 가장 적은
+  // 것. 같으면 내림표 쪽을 고른다(황=E♭인 정악 채보가 내림표로 적히는 관행에 맞춘다).
+  // 세종 자료는 조표를 ♭4개로 **박아** 두었지만 우리는 음계에서 끌어낸다 — 황 음고와 조를
+  // 사용자가 고를 수 있어 고정값이 맞을 수가 없기 때문이다. 그래서 황=E♭ 평조에서 우리는
+  // ♭3개(E♭장조), 그쪽은 ♭4개가 된다. 조표는 적는 방식이라 **소리는 같다**.
+  function mxlFifths(hwangMidi) {
+    const pcs = [];
+    scaleNotes().forEach(function (n) {
+      const i = SCALE.indexOf(n);
+      if (i >= 0) pcs.push((((hwangMidi + i) % 12) + 12) % 12);
+    });
+    let best = 0, bestMiss = 99;
+    for (let d = 0; d <= 7; d++) {
+      const cands = d === 0 ? [0] : [-d, d];   // 같은 개수면 내림표 먼저
+      for (let c = 0; c < cands.length; c++) {
+        const f = cands[c], inKey = {};
+        for (let i = f - 1; i <= f + 5; i++) inKey[mxlFifthPc(i)] = true;
+        const miss = pcs.filter(function (p) { return !inKey[p]; }).length;
+        if (miss < bestMiss) { bestMiss = miss; best = f; }
+        if (bestMiss === 0) return best;
+      }
+    }
+    return best;
+  }
+
+  // midi 하나 → 오선의 자리(글자·변화음·옥타브). 조표 안 음이면 임시표 없이 적히고,
+  // 밖의 음이면 조표가 기운 쪽(내림조면 내림표)으로 한 칸 더 나가 적는다.
+  function mxlPitch(midi, fifths) {
+    const pc = (((midi % 12) + 12) % 12);
+    const order = [];
+    for (let i = fifths - 1; i <= fifths + 5; i++) order.push(i);
+    for (let k = 1; k <= 8; k++) {
+      order.push(fifths < 0 ? fifths - 1 - k : fifths + 5 + k);
+      order.push(fifths < 0 ? fifths + 5 + k : fifths - 1 - k);
+    }
+    let found = 0;
+    for (let n = 0; n < order.length; n++) if (mxlFifthPc(order[n]) === pc) { found = order[n]; break; }
+    const alter = Math.floor((found + 1) / 7);
+    return {
+      step: "FCGDAEB"[(((found + 1) % 7) + 7) % 7],
+      alter: alter,
+      // 변화음만큼 되돌려 놓고 세야 B#·C♭에서 옥타브가 안 밀린다
+      octave: Math.floor((midi - alter) / 12) - 1,
+      // 조표에 이미 든 임시표는 다시 안 적는다(오선보 관행). 0(제자리표)도 적을 것이라
+      // null과 구별해야 하므로 '없음'은 null로만 나타낸다.
+      accidental: (found >= fifths - 1 && found <= fifths + 5) ? null : alter
+    };
+  }
+
+  function xmlEsc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
+    });
+  }
+
+  function buildMusicXml() {
+    const hwangMidi = parseInt($("hwangPitch").value) || 63;
+    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
+    const fifths = mxlFifths(hwangMidi);
+    const measLen = beats * MXL_JG;
+
+    // ① 자리 길이를 정수 단위로. 나눠떨어지지 않는 분박(11등분 등)에서 생기는 반올림
+    //    오차는 그 정간의 마지막 자리에서 걷어, 정간 하나가 늘 딱 MXL_JG가 되게 한다 —
+    //    안 그러면 오차가 쌓여 뒤쪽 마디부터 마디 길이가 어긋난다.
+    const slots = realizeMelody(hwangMidi);
+    let cellSum = 0;
+    slots.forEach(function (s, i) {
+      s.units = Math.max(1, Math.round(s.dur * MXL_JG));
+      cellSum += s.units;
+      const next = slots[i + 1];
+      if (!next || next.cell !== s.cell || next.gak !== s.gak) {
+        s.units = Math.max(1, s.units + MXL_JG - cellSum);
+        cellSum = 0;
+      }
+    });
+
+    // ② 자리 → 음표. 'hold'(빈 정간·이음·소리 없는 기호)는 새 음이 아니라 앞 음이 이어지는
+    //    것이므로 앞 음의 길이에 더한다(재생의 extend와 같은 규칙). 이을 앞 음이 없으면 쉼표.
+    const notes = [];
+    let prev = null;
+    slots.forEach(function (s) {
+      if (s.kind !== "note") {
+        if (s.kind === "hold" && prev) { prev.units += s.units; return; }
+        notes.push({ rest: true, units: s.units });
+        prev = null;
+        return;
+      }
+      const each = s.units / s.seq.length;
+      s.seq.forEach(function (m, i) {
+        prev = { midi: m, units: each, grace: i === 0 ? s.pre : [], after: [] };
+        notes.push(prev);
+      });
+      if (s.post.length) prev.after = s.post;
+    });
+
+    // ③ 마디(=각)에 채워 넣기. 마디를 넘는 음은 잘라 붙임줄로 잇는다.
+    const measures = [];
+    let cur = null, filled = 0;
+    function newMeasure() { cur = []; measures.push(cur); filled = 0; }
+    newMeasure();
+    notes.forEach(function (n) {
+      let left = Math.round(n.units);
+      if (left <= 0) return;   // 너무 잘게 쪼개져 길이가 0이 된 자리는 적을 수 없다
+      let first = true;
+      while (left > 0) {
+        if (filled >= measLen) newMeasure();
+        const take = Math.min(left, measLen - filled);
+        cur.push({
+          midi: n.midi, rest: n.rest, units: take,
+          // 꾸밈은 앞쪽은 첫 조각에, 뒤쪽은 마지막 조각에만 붙는다
+          graces: first ? (n.grace || []) : [],
+          afters: (left - take <= 0) ? (n.after || []) : [],
+          tieStart: left - take > 0, tieStop: !first
+        });
+        filled += take; left -= take; first = false;
+      }
+    });
+    // 마지막 마디의 남는 자리는 쉼표로 메운다(마디가 짧으면 악보 프로그램이 경고한다)
+    if (cur.length && filled < measLen) {
+      cur.push({ rest: true, units: measLen - filled, graces: [], afters: [] });
+    }
+
+    // ④ XML로 적기
+    const out = [];
+    function noteEl(o) {
+      out.push("      <note>");
+      if (o.grace) out.push("        <grace slash=\"yes\"/>");
+      if (o.rest) out.push("        <rest/>");
+      else {
+        const p = mxlPitch(o.midi, fifths);
+        out.push("        <pitch>");
+        out.push("          <step>" + p.step + "</step>");
+        if (p.alter) out.push("          <alter>" + p.alter + "</alter>");
+        out.push("          <octave>" + p.octave + "</octave>");
+        out.push("        </pitch>");
+      }
+      if (!o.grace) out.push("        <duration>" + o.units + "</duration>");
+      if (o.tieStop) out.push("        <tie type=\"stop\"/>");
+      if (o.tieStart) out.push("        <tie type=\"start\"/>");
+      out.push("        <voice>1</voice>");
+      // <note> 안의 차례는 규격이 정해 두었다: 음표꼴 → 점 → 임시표 → 표현. 지킬 것.
+      const ty = o.grace ? { type: "16th", dots: 0 } : mxlType(o.units);
+      if (ty) {
+        out.push("        <type>" + ty.type + "</type>");
+        for (let d = 0; d < ty.dots; d++) out.push("        <dot/>");
+      }
+      if (!o.rest) {
+        const acc = mxlPitch(o.midi, fifths).accidental;
+        if (acc != null) out.push("        <accidental>" + MXL_ACC[acc] + "</accidental>");
+      }
+      if (o.tieStart || o.tieStop) {
+        out.push("        <notations>");
+        if (o.tieStop) out.push("          <tied type=\"stop\"/>");
+        if (o.tieStart) out.push("          <tied type=\"start\"/>");
+        out.push("        </notations>");
+      }
+      out.push("      </note>");
+    }
+
+    // 음역을 보고 높은음자리표/낮은음자리표를 고른다 — 하배 음역이 잦은 곡을 높은음자리표에
+    // 얹으면 덧줄만 잔뜩 생긴다.
+    const pitched = notes.filter(function (n) { return !n.rest; });
+    const mean = pitched.length
+      ? pitched.reduce(function (a, n) { return a + n.midi; }, 0) / pitched.length : 64;
+    const clef = mean < 57 ? { sign: "F", line: 4 } : { sign: "G", line: 2 };
+
+    const title = ($("title").value || "").trim() || "정간보";
+    const sub = ($("subtitle").value || "").trim();
+
+    out.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+    out.push("<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 4.0 Partwise//EN\" " +
+             "\"http://www.musicxml.org/dtds/partwise.dtd\">");
+    out.push("<score-partwise version=\"4.0\">");
+    out.push("  <work><work-title>" + xmlEsc(title) + "</work-title></work>");
+    if (sub) out.push("  <movement-title>" + xmlEsc(sub) + "</movement-title>");
+    out.push("  <identification><encoding><software>우물사이</software></encoding></identification>");
+    out.push("  <part-list><score-part id=\"P1\"><part-name>선율</part-name></score-part></part-list>");
+    out.push("  <part id=\"P1\">");
+    measures.forEach(function (m, mi) {
+      out.push("    <measure number=\"" + (mi + 1) + "\">");
+      if (mi === 0) {
+        out.push("      <attributes>");
+        out.push("        <divisions>" + MXL_DIV + "</divisions>");
+        out.push("        <key><fifths>" + fifths + "</fifths></key>");
+        out.push("        <time><beats>" + (beats * 3) + "</beats><beat-type>8</beat-type></time>");
+        out.push("        <clef><sign>" + clef.sign + "</sign><line>" + clef.line + "</line></clef>");
+        out.push("      </attributes>");
+        // 빠르기는 '정간 하나에 몇'이므로 점4분음표를 단위로 적는다. sound tempo는 4분음표
+        // 기준이라 1.5배 — 여기가 어긋나면 재생만 딴 빠르기로 돈다.
+        out.push("      <direction placement=\"above\"><direction-type><metronome>" +
+                 "<beat-unit>quarter</beat-unit><beat-unit-dot/><per-minute>" + bpm +
+                 "</per-minute></metronome></direction-type><sound tempo=\"" + (bpm * 1.5) +
+                 "\"/></direction>");
+      }
+      m.forEach(function (n) {
+        n.graces.forEach(function (g) { noteEl({ midi: g, grace: true }); });
+        noteEl(n);
+        n.afters.forEach(function (g) { noteEl({ midi: g, grace: true }); });
+      });
+      out.push("    </measure>");
+    });
+    out.push("  </part>");
+    out.push("</score-partwise>");
+    return out.join("\n");
+  }
+
+  function exportMusicXml() {
+    track("export_musicxml");
+    const blob = new Blob([buildMusicXml()], { type: "application/vnd.recordare.musicxml+xml" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (($("title").value || "").trim() || "정간보") + ".musicxml";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  window.jgbMusicXml = buildMusicXml;   // 검증용 노출 (jgbShareLink·jgbAudioEvents와 같은 성격)
+
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
@@ -5249,6 +5646,7 @@
     nextPartId = parts.reduce(function (m, p) { return Math.max(m, p.id + 1); }, nextPartId);
     activePart = Math.min(Math.max(0, parseInt(s.activePart, 10) || 0), parts.length - 1);
     hydrateActivePart();   // melodyFull·lyricsFull·cellStyles·ornInstrument가 활성 파트를 따라간다
+    renderPartsList();
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
@@ -5827,6 +6225,7 @@
   attachBarDrag($("lyricsArea"));
   attachBarDrag($("textArea"));
   attachBarDrag($("cellStyleWin"));
+  attachBarDrag($("partsWin"));   // 악기 관리 창 — 독립 창이지만 끌기는 도구창과 같은 문법
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -6558,6 +6957,7 @@
   });
   window.addEventListener("afterprint", function () { document.title = APP_DOC_TITLE; });
   $("btnExport").addEventListener("click", exportFile);
+  $("btnMusicXml").addEventListener("click", exportMusicXml);
   $("btnShareLink").addEventListener("click", shareLinkCopy);
   $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
