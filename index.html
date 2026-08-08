@@ -183,6 +183,21 @@
         <button type="button" id="darkModeItem">어두운 화면으로</button>
       </div>
     </div>
+    <!-- 오선보 보기 — 정간보를 서양 악보로 바꾼 결과를 화면 아래에 띄운다. '화면을 어떻게
+         볼지'를 정하는 짝(배율·색상)의 일원이라 여기 둔다. 파일 메뉴의 [오선보 내보내기]와는
+         하는 일이 다르다(보기 ↔ 파일로 내보내기)라 중복이 아니다. -->
+    <button type="button" id="btnStaff" class="topbar-cmd tip"
+      data-tip="오선보 보기
+· 정간보를 서양 악보로 바꿔 아래에 띄웁니다
+· 시김새가 실제 음높이로 풀려 보입니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+        <line x1="3" y1="14" x2="21" y2="14"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+        <ellipse cx="9" cy="15.5" rx="2.4" ry="1.8" fill="currentColor" stroke="none"></ellipse>
+        <line x1="11.4" y1="15.5" x2="11.4" y2="7"></line>
+      </svg>
+      <span class="lbl">오선보</span>
+    </button>
     <!-- 인쇄/PDF — 이 앱의 최종 목적지라 메뉴에 숨기지 않고 1급 버튼으로 꺼내 뒀다.
          빈도만 보면(곡 하나에 한 번) 아래 '파일' 메뉴로 접는 게 규칙에 맞지만, 위험하지도
          않고 사람들이 마지막에 반드시 찾는 버튼이라 '찾기 쉬움'을 빈도보다 앞에 뒀다.
@@ -685,6 +700,11 @@
     <div id="leftDock"></div>
     <!-- 왼쪽 도킹 폭 조절 손잡이 — 직접 입력 + 왼쪽 도킹에서만 보임(CSS). 더블클릭 = 자동 폭 -->
     <div id="leftDockResizer" title="끌어서 폭 조절 · 더블클릭 = 자동"></div>
+    <!-- 악보 열 — #sheetArea(종이)와 #staffPane(오선보)을 위아래로 쌓는 그릇.
+         평소에는 display:contents라 '없는 셈'이고(둘이 #main의 직계로 놓임), 기능바 왼쪽
+         도킹(#main이 가로 flex가 됨)일 때만 진짜 세로 열이 되어 오선보가 오른쪽 칸으로
+         튀는 걸 막는다 — #leftDock이 쓰는 것과 같은 수법이다(css/styles.css 참고). -->
+    <div id="sheetCol">
     <div id="sheetArea">
       <div id="ornPanel" class="orn-panel">
         <div class="orn-title"><b id="ornName">시김새</b><button type="button" id="ornClose" class="icon-btn" title="닫기">
@@ -707,6 +727,42 @@
         <button type="button" id="textPanelDelete" class="orn-reset text-panel-del">삭제</button>
       </div>
       <div id="sheet"></div>
+    </div>
+    <!-- 오선보 — 정간보 바로 아래에 나란히 둔다(고치면 곧바로 여기도 다시 그려진다).
+         뜬 창이 아니라 붙박이인 건 '둘을 견주는 자리'라서다 — 떠 있으면 정간보를 가린다.
+         .no-print: 인쇄·PNG는 정간보만 나간다. 오선보가 필요하면 파일로 내보내 그쪽에서 뽑는다. -->
+    <section id="staffPane" class="no-print" hidden>
+      <div id="staffResizer" title="위아래로 끌어 높이 조절"></div>
+      <div class="staff-head">
+        <b>오선보</b>
+        <small>시김새를 실제 음높이로 푼 결과 · 가로 자리는 길이에 비례합니다</small>
+        <span class="staff-tools">
+          <!-- 정간 하나를 무엇으로 볼 것인가. 취향이 아니라 그 곡이 정간을 몇으로 쪼개느냐에
+               달린 값이라(3분박이면 점4분음표, 2분박이면 4분음표라야 분박이 8분음표로 딱
+               떨어진다) 정악 관행대로 점4분음표가 기본이다. **문서에 딸린 값**이라 CTRL_IDS에
+               있고 남에게 악보를 주면 같이 간다 — 배율·높이(브라우저별 보기 설정)와 다르다. -->
+          <label class="staff-unit tip"
+            data-tip="정간 하나를 무엇으로 볼지
+· 분박이 셋이면 점4분음표, 둘이면 4분음표라야 딱 떨어집니다
+· 각 하나가 한 마디이므로 박자표가 여기서 정해집니다">정간
+            <select id="staffUnit">
+              <option value="dotted" selected>점4분음표</option>
+              <option value="plain">4분음표</option>
+            </select>
+          </label>
+          <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
+          <span id="staffZoomVal">100%</span>
+          <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>
+          <button type="button" id="staffExport" class="tip"
+            data-tip="MusicXML 파일로 내보내기
+· 뮤즈스코어·피날레·시벨리우스에서 열립니다">파일로</button>
+          <button type="button" id="staffClose" class="icon-btn" title="닫기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </span>
+      </div>
+      <div id="staffBody"></div>
+    </section>
     </div>
     <div id="editorDock">
       <div id="melodyResizer" title="위아래로 드래그하여 편집창 크기 조절"></div>
@@ -1770,6 +1826,13 @@
 <script src="js/symbols-registry.js"></script>
 <!-- 둘러보기 문구 — 사람이 직접 고치는 파일. app.js보다 먼저 로드해야 한다 -->
 <script src="js/tour-text.js"></script>
+<!-- 오선보 세 짝. app.js가 buildStaffScores()로 만든 재료를 화면(staff-view)과
+     파일(musicxml)이 나눠 쓰고, 음이름·조표·음표꼴 같은 밑감은 staff-core가 준다.
+     셋 다 app.js를 안 보므로 **app.js보다 먼저** 실려 있기만 하면 된다.
+     staff-core가 맨 앞이라야 나머지 둘이 그걸 잡는다. -->
+<script src="js/staff-core.js"></script>
+<script src="js/staff-view.js"></script>
+<script src="js/musicxml.js"></script>
 <script src="js/app.js"></script>
 <!-- 악보 게시 — app.js가 내놓는 window.jgbDoc을 쓰므로 반드시 뒤에. 설정(cloud-config.js)이
      비어 있으면 cloud.js가 스스로 물러나므로 서버 없이도 앱은 예전 그대로 돈다. -->

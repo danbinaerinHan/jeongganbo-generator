@@ -1,0 +1,115 @@
+// 오선보의 밑감 — 음이름 적기·조표 고르기·음표값 표.
+//
+// 그리기(js/staff-view.js) · 파일로 내보내기(js/musicxml.js) · 앱(js/app.js) 셋이 이 한 벌을
+// 나눠 쓴다. 예전엔 app.js의 mxlPitch와 staff-view.js의 pitchAt에 **같은 셈이 두 벌** 있었고
+// 검사(1155자리 대조)로 겨우 맞춰 두고 있었다 — 한 벌이 되면서 그 대조가 필요 없어졌다.
+//
+// 여기 있는 것은 전부 순수한 셈이다: 앱 상태도 DOM도 안 본다.
+(function (root) {
+  "use strict";
+
+  // 길이의 단위. 4분음표 하나를 DIV로 나눠 센다.
+  // DIV를 1680으로 고른 건 정간이 점4분음표(2520)든 4분음표(1680)든 1~10과 12로
+  // 나눠떨어져서 — 분박을 몇으로 쪼개든 길이가 정수로 떨어진다.
+  const DIV = 1680;
+  // 정간 하나를 무엇으로 볼 것인가. 이건 취향이 아니라 **그 곡이 정간을 몇으로 쪼개느냐**에
+  // 달렸다: 3분박이면 점4분음표라야 분박이 8분음표로 딱 떨어지고, 2분박이면 4분음표라야
+  // 그렇다. 안 맞는 쪽을 고르면 음표꼴(<type>)이 딱 안 떨어져 비게 된다.
+  // 정악은 3분박이 흔해 **점4분음표가 기본**이다.
+  const JG = { dotted: DIV * 3 / 2, plain: DIV };
+
+  const LETTERS = "CDEFGAB";
+  // MusicXML의 <accidental> 이름. 0(제자리표)도 적을 것이 있으므로 '없음'은 null로만 나타낸다.
+  const ACC = { "-2": "flat-flat", "-1": "flat", "0": "natural", "1": "sharp", "2": "double-sharp" };
+
+  // 5도권에서 i번째 자리의 음높이(도=0 기준). -1=F, 0=C, 1=G … 6=F♯, -2=B♭.
+  function fifthPc(i) { return (((7 * i) % 12) + 12) % 12; }
+
+  // 조표 고르기 — 주어진 음들이 모두 '조표 안 음'이 되는 조 중 조표가 가장 적은 것.
+  // 같은 개수면 내림표 쪽을 고른다(황=E♭인 정악 채보가 내림표로 적히는 관행).
+  // pcs = 음높이(0~11) 목록.
+  function fifthsFor(pcs) {
+    let best = 0, bestMiss = Infinity;
+    for (let d = 0; d <= 7; d++) {
+      const cands = d === 0 ? [0] : [-d, d];   // 같은 개수면 내림표 먼저
+      for (let c = 0; c < cands.length; c++) {
+        const f = cands[c], inKey = {};
+        for (let i = f - 1; i <= f + 5; i++) inKey[fifthPc(i)] = true;
+        const miss = pcs.filter(function (p) { return !inKey[p]; }).length;
+        if (miss < bestMiss) { bestMiss = miss; best = f; }
+        if (bestMiss === 0) return best;
+      }
+    }
+    return best;
+  }
+
+  // midi 하나 → 오선의 자리. 조표 안 음이면 임시표 없이 적히고, 밖의 음이면 조표가 기운
+  // 쪽(내림조면 내림표)으로 한 칸 더 나가 적는다.
+  //   dia  = '도'를 0으로 센 음이름 자리(옥타브×7 + 글자). 오선의 높이가 이걸로 정해진다.
+  //   acc  = 적어야 할 임시표(null이면 조표에 이미 들어 안 적는다). 0은 제자리표라 null과 다르다.
+  function pitchAt(midi, fifths) {
+    const pc = (((midi % 12) + 12) % 12);
+    const order = [];
+    for (let i = fifths - 1; i <= fifths + 5; i++) order.push(i);
+    for (let k = 1; k <= 8; k++) {
+      order.push(fifths < 0 ? fifths - 1 - k : fifths + 5 + k);
+      order.push(fifths < 0 ? fifths + 5 + k : fifths - 1 - k);
+    }
+    let found = 0;
+    for (let n = 0; n < order.length; n++) if (fifthPc(order[n]) === pc) { found = order[n]; break; }
+    const alter = Math.floor((found + 1) / 7);
+    const step = "FCGDAEB"[(((found + 1) % 7) + 7) % 7];
+    return {
+      step: step,
+      alter: alter,
+      // 변화음만큼 되돌려 놓고 세야 B♯·C♭에서 옥타브가 안 밀린다
+      octave: Math.floor((midi - alter) / 12) - 1,
+      dia: (Math.floor((midi - alter) / 12) - 1) * 7 + LETTERS.indexOf(step),
+      acc: (found >= fifths - 1 && found <= fifths + 5) ? null : alter
+    };
+  }
+
+  // ── 음표꼴 ────────────────────────────────────────────────────────────
+  // 쓰는 곳이 둘인데 바라는 것이 다르다:
+  //   exactValue  내보내기용 — **딱 떨어질 때만** 준다. 틀린 음표꼴을 적느니 비워 두면
+  //               악보 프로그램이 <duration>을 보고 알아서 고른다(<type>은 없어도 되는 항목).
+  //   nearestValue 그리기용 — 늘 무언가는 그려야 하므로 **가장 가까운 것**을 준다. 비례
+  //               간격이라 길이의 진실은 가로 자리가 말하므로 가까운 꼴로 그려도 거짓이 아니다.
+  const TYPES = [["breve", 2], ["whole", 1], ["half", 1 / 2], ["quarter", 1 / 4],
+                 ["eighth", 1 / 8], ["16th", 1 / 16], ["32nd", 1 / 32], ["64th", 1 / 64]];
+  function exactValue(units) {
+    for (let i = 0; i < TYPES.length; i++) {
+      const base = TYPES[i][1] * 4 * DIV;
+      for (let dots = 0; dots <= 2; dots++) {
+        if (Math.abs(base * (2 - Math.pow(0.5, dots)) - units) < 1e-9) {
+          return { type: TYPES[i][0], dots: dots };
+        }
+      }
+    }
+    return null;
+  }
+
+  // head: "whole" 속 빔·기둥 없음 · "half" 속 빈 머리에 기둥 · "q" 꽉 찬 머리에 기둥
+  const SHAPES = [
+    { r: 4, head: "whole", flags: 0, dots: 0 }, { r: 3, head: "half", flags: 0, dots: 1 },
+    { r: 2, head: "half", flags: 0, dots: 0 }, { r: 1.5, head: "q", flags: 0, dots: 1 },
+    { r: 1, head: "q", flags: 0, dots: 0 }, { r: 0.75, head: "q", flags: 1, dots: 1 },
+    { r: 0.5, head: "q", flags: 1, dots: 0 }, { r: 0.375, head: "q", flags: 2, dots: 1 },
+    { r: 0.25, head: "q", flags: 2, dots: 0 }, { r: 0.125, head: "q", flags: 3, dots: 0 }
+  ];
+  function nearestValue(units) {
+    const r = units / DIV;
+    let best = SHAPES[4], bestD = Infinity;
+    SHAPES.forEach(function (v) {
+      const d = Math.abs(Math.log(r / v.r));
+      if (d < bestD) { bestD = d; best = v; }
+    });
+    return best;
+  }
+
+  root.JGB_STAFF_CORE = {
+    DIV: DIV, JG: JG, ACC: ACC,
+    fifthsFor: fifthsFor, pitchAt: pitchAt,
+    exactValue: exactValue, nearestValue: nearestValue
+  };
+})(typeof window !== "undefined" ? window : globalThis);

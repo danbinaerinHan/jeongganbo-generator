@@ -523,6 +523,41 @@
   #sheet { transform-origin: top center; transition: transform .08s ease;
            display: flex; flex-direction: column; align-items: center; gap: 16px; }
 
+  /* ---------- 오선보 보기 (#btnStaff로 여닫음) ----------
+     #sheetCol은 평소 '없는 셈'(display:contents)이라 #sheetArea·#staffPane이 #main의 직계
+     세로 항목으로 놓인다. 기능바 왼쪽 도킹에서 #main이 가로 flex가 되면 그때만 진짜 열이
+     되어 오선보가 오른쪽 칸으로 튀는 걸 막는다 — #leftDock이 쓰는 것과 같은 수법. */
+  #sheetCol { display: contents; }
+  body.ribbon-left #sheetCol { display: flex; flex-direction: column;
+                               flex: 1 1 auto; min-width: 0; min-height: 0; }
+  /* 높이는 JS(applyStaffHeight)가 인라인으로 정한다 — #staffResizer로 끌어 조절하므로.
+     flex: 0 0 auto가 없으면 종이 쪽이 길어질 때 눌려 찌그러진다. */
+  #staffPane { flex: 0 0 auto; display: flex; flex-direction: column; min-height: 0;
+               height: 240px; border-top: 1px solid var(--line); background: var(--panel);
+               color: var(--ink); position: relative; }
+  #staffPane[hidden] { display: none; }
+  #staffResizer { height: 6px; margin-bottom: -3px; cursor: ns-resize; flex: 0 0 auto; }
+  #staffResizer:hover { background: var(--accent-soft); }
+  .staff-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+                padding: 4px 10px 4px 12px; border-bottom: 1px solid var(--line); }
+  .staff-head b { font-size: 12.5px; }
+  .staff-head small { color: var(--muted); font-size: 11px; }
+  .staff-tools { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+  .staff-tools #staffZoomVal { font-size: 11px; color: var(--muted); min-width: 34px;
+                               text-align: center; }
+  .staff-tools #staffExport { font-size: 11px; padding: 3px 8px; }
+  /* 정간 = 점4분음표/4분음표 고르기. 폼 컨트롤 바탕·글자·포커스는 파일 앞쪽 공통 규칙에
+     맡긴다(여기서 다시 칠하면 다크모드 값만 어긋난다 — 기호 검색칸에서 그랬다). */
+  .staff-unit { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+  .staff-unit select { font-size: 11px; padding: 2px 4px; }
+  /* 악보가 창보다 넓으면(각 하나가 창보다 넓은 곡) 가로로 스크롤한다 — 각을 두 줄에
+     걸쳐 쪼개지 않으려는 선택이라 이 스크롤이 그 대가다. */
+  #staffBody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 6px 0 10px; }
+  #staffBody svg { display: block; }
+  /* 종이(흰 SVG)와 달리 오선보는 화면의 일부라 테마·다크를 따라간다 — currentColor로 그려
+     여기 color 하나만 정하면 된다. */
+  #staffBody .staff-empty { padding: 18px 14px; color: var(--muted); font-size: 12px; }
+
   /* 게시된 악보를 열었을 때의 알림 줄 — 상단바 바로 아래, 화면 전체 폭 한 줄(마크업 자리가
      #topBar와 #appRow 사이인 까닭은 index.html 주석 참고: #main 안에 두면 왼쪽 도킹에서
      세로 띠가 된다). 강조색 옅은 바탕이라 종이와 구별되고, 도구창처럼 떠 있지 않아 안 가린다.

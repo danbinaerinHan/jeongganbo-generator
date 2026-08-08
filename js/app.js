@@ -4842,6 +4842,10 @@
       (dg.ok ? "" : `<div class="warn">⚠ 대강 분절의 합이 한 각의 정간 수(${beats})와 달라 적용하지 않았습니다.</div>`) +
       (lyGakMismatch ? `<div class="warn">⚠ 선율(${parsed.length}각)과 가사(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.</div>` : "") +
       (jdBeatMismatch ? `<div class="warn">⚠ 장단의 정간 수(${jdParsed[0].length})가 선율(${beats})과 달라요 — 구조를 바꾸면 넘치는 내용이 잘릴 수 있습니다.</div>` : "");
+
+    // 오선보 칸이 열려 있으면 뒤따라 다시 그린다(닫혀 있으면 아무 일도 안 한다).
+    // 여기서 바로 그리지 않는 건 render()가 글자 한 자에도 불리기 때문 — '오선보 보기' 절 참고.
+    scheduleStaff();
   }
 
   function fillDaegangPreset() {
@@ -5635,111 +5639,54 @@
   $("partsClose").addEventListener("click", function () { $("partsWin").classList.remove("open"); });
   $("partAddBtn").addEventListener("click", addPart);
 
-  // ---------- 오선보 내보내기 (MusicXML) ----------
+  // ---------- 오선보 재료 만들기 ----------
   // 무엇이 울리나는 realizeMelody가 이미 다 풀어 놓았다(재생과 같은 표 = 사전의 snd).
-  // 여기가 하는 일은 그것을 서양 악보의 말로 옮겨 적는 것뿐이다:
+  // 여기가 하는 일은 그것을 '서양 악보의 재료'로 바꾸는 것뿐이고, 그 재료를 **화면
+  // (js/staff-view.js)과 파일(js/musicxml.js)이 나눠 쓴다** — 보이는 것과 나가는 것이
+  // 다르면 보는 뜻이 없다. 음이름 적기·조표 고르기·음표꼴 같은 밑감은 js/staff-core.js에 있다.
   //   · 정간 하나 = 점4분음표(3/8). 그래서 각(=한 마디)의 박자표가 3N/8이 된다.
-  //   · 각 = 마디. 마디를 넘는 음은 붙임줄(tie)로 잇는다.
-  //   · 붙임 시김새 = 꾸밈음(grace, 길이를 안 먹음) · 독립 시김새 = 제 자리를 나눈 실음.
-  // 정간을 점4분음표로 보는 환산은 MALerLab/SejongMusic 자료와 같다 — 그쪽 악보와 나란히
-  // 놓고 견줄 수 있게 맞춘 것이니 바꿀 땐 그 점을 생각할 것.
-  const MXL_DIV = 1680;                    // 4분음표 하나를 몇으로 나눠 세나
-  const MXL_JG = MXL_DIV * 3 / 2;          // 정간 하나 = 점4분음표 = 2520
-  // 2520은 1~10과 12로 나눠떨어진다 — 분박을 몇으로 쪼개든 길이가 정수로 떨어지게 고른 값.
-  const MXL_TYPES = [["breve", 2], ["whole", 1], ["half", 1 / 2], ["quarter", 1 / 4],
-                     ["eighth", 1 / 8], ["16th", 1 / 16], ["32nd", 1 / 32], ["64th", 1 / 64]];
-  const MXL_ACC = { "-2": "flat-flat", "-1": "flat", "0": "natural", "1": "sharp", "2": "double-sharp" };
+  //   · 각 = 마디. 마디를 넘는 음은 붙임줄로 잇는다.
+  //   · 붙임 시김새 = 꾸밈음(길이를 안 먹음) · 독립 시김새 = 제 자리를 나눈 실음.
+  const SC = window.JGB_STAFF_CORE;
 
-  // 길이(단위) → 음표꼴과 점. 딱 떨어질 때만 적는다 — 틀린 음표꼴을 적느니 비워 두면
-  // 악보 프로그램이 길이(duration)를 보고 알아서 고른다(<type>은 없어도 되는 항목이다).
-  function mxlType(units) {
-    for (let i = 0; i < MXL_TYPES.length; i++) {
-      const base = MXL_TYPES[i][1] * 4 * MXL_DIV;
-      for (let dots = 0; dots <= 2; dots++) {
-        if (Math.abs(base * (2 - Math.pow(0.5, dots)) - units) < 1e-9) {
-          return { type: MXL_TYPES[i][0], dots: dots };
-        }
-      }
-    }
-    return null;
-  }
-
-  // 5도권에서 f번째 자리의 음이름·음높이. -1=F, 0=C, 1=G … 6=F#, -2=B♭.
-  function mxlFifthPc(i) { return (((7 * i) % 12) + 12) % 12; }
-
-  // 조표 고르기 — 그 곡 음계의 다섯 음이 모두 '조표 안 음'이 되는 조 중 조표가 가장 적은
-  // 것. 같으면 내림표 쪽을 고른다(황=E♭인 정악 채보가 내림표로 적히는 관행에 맞춘다).
-  // 세종 자료는 조표를 ♭4개로 **박아** 두었지만 우리는 음계에서 끌어낸다 — 황 음고와 조를
-  // 사용자가 고를 수 있어 고정값이 맞을 수가 없기 때문이다. 그래서 황=E♭ 평조에서 우리는
-  // ♭3개(E♭장조), 그쪽은 ♭4개가 된다. 조표는 적는 방식이라 **소리는 같다**.
-  function mxlFifths(hwangMidi) {
+  // 조표 — 그 곡 음계의 다섯 음이 모두 임시표 없이 적히는 조를 고른다. 세종 자료는 ♭4개로
+  // 박아 두었지만 우리는 황 음고와 조를 사용자가 고를 수 있어 고정값이 맞을 수가 없다
+  // (황=E♭ 평조면 우리 ♭3, 그쪽 ♭4 — 적는 방식이 다를 뿐 소리는 같다).
+  function staffFifths(hwangMidi) {
     const pcs = [];
     scaleNotes().forEach(function (n) {
       const i = SCALE.indexOf(n);
       if (i >= 0) pcs.push((((hwangMidi + i) % 12) + 12) % 12);
     });
-    let best = 0, bestMiss = 99;
-    for (let d = 0; d <= 7; d++) {
-      const cands = d === 0 ? [0] : [-d, d];   // 같은 개수면 내림표 먼저
-      for (let c = 0; c < cands.length; c++) {
-        const f = cands[c], inKey = {};
-        for (let i = f - 1; i <= f + 5; i++) inKey[mxlFifthPc(i)] = true;
-        const miss = pcs.filter(function (p) { return !inKey[p]; }).length;
-        if (miss < bestMiss) { bestMiss = miss; best = f; }
-        if (bestMiss === 0) return best;
-      }
-    }
-    return best;
+    return SC.fifthsFor(pcs);
   }
 
-  // midi 하나 → 오선의 자리(글자·변화음·옥타브). 조표 안 음이면 임시표 없이 적히고,
-  // 밖의 음이면 조표가 기운 쪽(내림조면 내림표)으로 한 칸 더 나가 적는다.
-  function mxlPitch(midi, fifths) {
-    const pc = (((midi % 12) + 12) % 12);
-    const order = [];
-    for (let i = fifths - 1; i <= fifths + 5; i++) order.push(i);
-    for (let k = 1; k <= 8; k++) {
-      order.push(fifths < 0 ? fifths - 1 - k : fifths + 5 + k);
-      order.push(fifths < 0 ? fifths + 5 + k : fifths - 1 - k);
-    }
-    let found = 0;
-    for (let n = 0; n < order.length; n++) if (mxlFifthPc(order[n]) === pc) { found = order[n]; break; }
-    const alter = Math.floor((found + 1) / 7);
-    return {
-      step: "FCGDAEB"[(((found + 1) % 7) + 7) % 7],
-      alter: alter,
-      // 변화음만큼 되돌려 놓고 세야 B#·C♭에서 옥타브가 안 밀린다
-      octave: Math.floor((midi - alter) / 12) - 1,
-      // 조표에 이미 든 임시표는 다시 안 적는다(오선보 관행). 0(제자리표)도 적을 것이라
-      // null과 구별해야 하므로 '없음'은 null로만 나타낸다.
-      accidental: (found >= fifths - 1 && found <= fifths + 5) ? null : alter
-    };
-  }
-
-  function xmlEsc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c];
-    });
-  }
-
-  function buildMusicXml() {
+  // 선율 하나 → 오선보 재료 하나.
+  //   { name, abbr, fifths, clef, beats, bpm, measLen, measures: [[음표…]] }
+  //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop }  (units는 SC.DIV 기준)
+  function staffScoreOf(melodyText, meta) {
     const hwangMidi = parseInt($("hwangPitch").value) || 63;
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
-    const fifths = mxlFifths(hwangMidi);
-    const measLen = beats * MXL_JG;
+    const fifths = staffFifths(hwangMidi);
+    // 정간 하나를 점4분음표로 볼지 4분음표로 볼지 — 문서에 딸린 값이다(조 프리셋과 같은
+    // 성격이라 CTRL_IDS에 있고, 남에게 악보를 주면 같이 간다). 화면 배율처럼 '이 브라우저의
+    // 보기 방식'이 아니라 '이 악보를 어떻게 읽나'라서.
+    const unit = ($("staffUnit") && $("staffUnit").value === "plain") ? "plain" : "dotted";
+    const jg = SC.JG[unit];
+    const measLen = beats * jg;
 
     // ① 자리 길이를 정수 단위로. 나눠떨어지지 않는 분박(11등분 등)에서 생기는 반올림
-    //    오차는 그 정간의 마지막 자리에서 걷어, 정간 하나가 늘 딱 MXL_JG가 되게 한다 —
+    //    오차는 그 정간의 마지막 자리에서 걷어, 정간 하나가 늘 딱 jg가 되게 한다 —
     //    안 그러면 오차가 쌓여 뒤쪽 마디부터 마디 길이가 어긋난다.
-    const slots = realizeMelody(hwangMidi);
+    const slots = realizeMelody(hwangMidi, melodyText);
     let cellSum = 0;
     slots.forEach(function (s, i) {
-      s.units = Math.max(1, Math.round(s.dur * MXL_JG));
+      s.units = Math.max(1, Math.round(s.dur * jg));
       cellSum += s.units;
       const next = slots[i + 1];
       if (!next || next.cell !== s.cell || next.gak !== s.gak) {
-        s.units = Math.max(1, s.units + MXL_JG - cellSum);
+        s.units = Math.max(1, s.units + jg - cellSum);
         cellSum = 0;
       }
     });
@@ -5790,88 +5737,34 @@
       cur.push({ rest: true, units: measLen - filled, graces: [], afters: [] });
     }
 
-    // ④ XML로 적기
-    const out = [];
-    function noteEl(o) {
-      out.push("      <note>");
-      if (o.grace) out.push("        <grace slash=\"yes\"/>");
-      if (o.rest) out.push("        <rest/>");
-      else {
-        const p = mxlPitch(o.midi, fifths);
-        out.push("        <pitch>");
-        out.push("          <step>" + p.step + "</step>");
-        if (p.alter) out.push("          <alter>" + p.alter + "</alter>");
-        out.push("          <octave>" + p.octave + "</octave>");
-        out.push("        </pitch>");
-      }
-      if (!o.grace) out.push("        <duration>" + o.units + "</duration>");
-      if (o.tieStop) out.push("        <tie type=\"stop\"/>");
-      if (o.tieStart) out.push("        <tie type=\"start\"/>");
-      out.push("        <voice>1</voice>");
-      // <note> 안의 차례는 규격이 정해 두었다: 음표꼴 → 점 → 임시표 → 표현. 지킬 것.
-      const ty = o.grace ? { type: "16th", dots: 0 } : mxlType(o.units);
-      if (ty) {
-        out.push("        <type>" + ty.type + "</type>");
-        for (let d = 0; d < ty.dots; d++) out.push("        <dot/>");
-      }
-      if (!o.rest) {
-        const acc = mxlPitch(o.midi, fifths).accidental;
-        if (acc != null) out.push("        <accidental>" + MXL_ACC[acc] + "</accidental>");
-      }
-      if (o.tieStart || o.tieStop) {
-        out.push("        <notations>");
-        if (o.tieStop) out.push("          <tied type=\"stop\"/>");
-        if (o.tieStart) out.push("          <tied type=\"start\"/>");
-        out.push("        </notations>");
-      }
-      out.push("      </note>");
-    }
-
     // 음역을 보고 높은음자리표/낮은음자리표를 고른다 — 하배 음역이 잦은 곡을 높은음자리표에
     // 얹으면 덧줄만 잔뜩 생긴다.
     const pitched = notes.filter(function (n) { return !n.rest; });
     const mean = pitched.length
       ? pitched.reduce(function (a, n) { return a + n.midi; }, 0) / pitched.length : 64;
-    const clef = mean < 57 ? { sign: "F", line: 4 } : { sign: "G", line: 2 };
 
-    const title = ($("title").value || "").trim() || "정간보";
-    const sub = ($("subtitle").value || "").trim();
+    return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
+             fifths: fifths, clef: mean < 57 ? "F" : "G", beats: beats, bpm: bpm,
+             unit: unit, jg: jg, measLen: measLen, measures: measures };
+  }
 
-    out.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-    out.push("<!DOCTYPE score-partwise PUBLIC \"-//Recordare//DTD MusicXML 4.0 Partwise//EN\" " +
-             "\"http://www.musicxml.org/dtds/partwise.dtd\">");
-    out.push("<score-partwise version=\"4.0\">");
-    out.push("  <work><work-title>" + xmlEsc(title) + "</work-title></work>");
-    if (sub) out.push("  <movement-title>" + xmlEsc(sub) + "</movement-title>");
-    out.push("  <identification><encoding><software>우물사이</software></encoding></identification>");
-    out.push("  <part-list><score-part id=\"P1\"><part-name>선율</part-name></score-part></part-list>");
-    out.push("  <part id=\"P1\">");
-    measures.forEach(function (m, mi) {
-      out.push("    <measure number=\"" + (mi + 1) + "\">");
-      if (mi === 0) {
-        out.push("      <attributes>");
-        out.push("        <divisions>" + MXL_DIV + "</divisions>");
-        out.push("        <key><fifths>" + fifths + "</fifths></key>");
-        out.push("        <time><beats>" + (beats * 3) + "</beats><beat-type>8</beat-type></time>");
-        out.push("        <clef><sign>" + clef.sign + "</sign><line>" + clef.line + "</line></clef>");
-        out.push("      </attributes>");
-        // 빠르기는 '정간 하나에 몇'이므로 점4분음표를 단위로 적는다. sound tempo는 4분음표
-        // 기준이라 1.5배 — 여기가 어긋나면 재생만 딴 빠르기로 돈다.
-        out.push("      <direction placement=\"above\"><direction-type><metronome>" +
-                 "<beat-unit>quarter</beat-unit><beat-unit-dot/><per-minute>" + bpm +
-                 "</per-minute></metronome></direction-type><sound tempo=\"" + (bpm * 1.5) +
-                 "\"/></direction>");
-      }
-      m.forEach(function (n) {
-        n.graces.forEach(function (g) { noteEl({ midi: g, grace: true }); });
-        noteEl(n);
-        n.afters.forEach(function (g) { noteEl({ midi: g, grace: true }); });
-      });
-      out.push("    </measure>");
+  // 오선보가 무엇을 보여줄까는 **정간보의 '총보' 체크(#scoreView)를 그대로 따른다** —
+  // 켜져 있으면 모든 악기를, 아니면 지금 편집 중인 악기만. 둘이 늘 같은 것을 보여야
+  // 나란히 놓고 견줄 수 있다(그러라고 아래에 붙여 둔 창이다).
+  function buildStaffScores() {
+    stashActivePart();   // parts[]를 읽기 전엔 반드시 — melody는 문자열이라 사본이 낡는다
+    const all = parts.length > 1 && !!($("scoreView") && $("scoreView").checked);
+    const idx = all ? parts.map(function (p, i) { return i; }) : [activePart];
+    return idx.map(function (i) {
+      const p = parts[i];
+      return staffScoreOf(i === activePart ? melodyFull : p.melody,
+                          { name: p.name, abbr: p.abbr });
     });
-    out.push("  </part>");
-    out.push("</score-partwise>");
-    return out.join("\n");
+  }
+
+  function buildMusicXml() {
+    return window.JGB_MUSICXML.build(buildStaffScores(),
+      { title: $("title").value, subtitle: $("subtitle").value });
   }
 
   function exportMusicXml() {
@@ -5883,7 +5776,129 @@
     a.click();
     URL.revokeObjectURL(a.href);
   }
-  window.jgbMusicXml = buildMusicXml;   // 검증용 노출 (jgbShareLink·jgbAudioEvents와 같은 성격)
+  // 검증용 노출 (jgbShareLink·jgbAudioEvents와 같은 성격)
+  window.jgbMusicXml = buildMusicXml;
+  window.jgbStaffScores = buildStaffScores;
+
+  // ---------- 오선보 보기 (정간보 아래 붙박이 칸) ----------
+  // 그리는 일은 js/staff-view.js가 한다 — 이 절은 '언제 다시 그리나'와 창 여닫이만 맡는다.
+  // 붙박이라 정간보를 고치면 곧바로 따라 바뀌어야 하는데, render()는 글자 한 자에도 불리므로
+  // 그때마다 온 곡을 다시 풀면 타이핑이 뻑뻑해진다. 그래서 **열려 있을 때만, 한 박자 늦게**
+  // 그린다(scheduleStaff). 이 절 밖에서 오선보를 직접 그리지 말 것.
+  // var인 건 이 절이 파일 아래쪽에 있어서다 — render()는 여기보다 위에서 정의되고 로드
+  // 도중에도 불릴 수 있는데, let이면 그때 아직 '못 만들어진 변수'라 예외가 난다(TDZ).
+  // var는 hoisting되어 undefined로 읽히므로 scheduleStaff의 빗장이 조용히 지나간다.
+  var staffOpen = false, staffZoom = 1, staffTimer = null, staffHeight = 0;
+
+  // 배율·높이는 **앱 설정**으로 기억한다(다크·테마와 같은 성격) — 그건 '이 악보가 어떤
+  // 악보인가'가 아니라 '내가 이 브라우저에서 어떻게 보는가'라, 문서에 넣으면 남이 내 악보를
+  // 열었을 때 내 보기 방식이 따라간다. 그래서 collectState가 아니라 여기 따로 산다.
+  // **열림은 일부러 안 기억한다** — 칸이 화면을 꽤 차지해서 켜 둔 채 잊으면 다음에 열 때
+  // 종이가 좁아 보인다(2026-08-08 사용자 확정). 늘 닫힌 채로 시작한다.
+  // 높이를 offsetHeight로 재지 않고 따로 들고 있는 건 칸이 닫혀 있을 때 그 값이 0이라서다.
+  const STAFF_LS_KEY = "jgb_staff_v1";
+  function saveStaffPrefs() {
+    try {
+      localStorage.setItem(STAFF_LS_KEY, JSON.stringify({ zoom: staffZoom, height: staffHeight }));
+    } catch (e) {}
+  }
+
+  function staffDraw() {
+    const body = $("staffBody");
+    if (!body || !staffOpen) return;
+    if (!window.JGB_STAFF) { body.innerHTML = "<div class='staff-empty'>오선보 그리기를 불러오지 못했습니다.</div>"; return; }
+    let scores;
+    try {
+      scores = buildStaffScores();
+    } catch (err) {
+      console.error("오선보를 만들지 못했습니다:", err);
+      body.innerHTML = "<div class='staff-empty'>이 악보는 아직 오선보로 옮기지 못합니다.</div>";
+      return;
+    }
+    const notes = scores.reduce(function (a, sc) {
+      return a + sc.measures.reduce(function (b, m) {
+        return b + m.filter(function (n) { return !n.rest; }).length;
+      }, 0);
+    }, 0);
+    if (!notes) {
+      body.innerHTML = "<div class='staff-empty'>정간에 율명을 적으면 여기에 오선보로 나타납니다.</div>";
+      return;
+    }
+    body.innerHTML = window.JGB_STAFF.render(scores, {
+      width: Math.max(320, body.clientWidth - 8), scale: staffZoom
+    });
+  }
+
+  // render()가 부른다. 창이 닫혀 있으면 아무 일도 안 하므로 평소엔 값이 0이다.
+  function scheduleStaff() {
+    if (!staffOpen) return;
+    clearTimeout(staffTimer);
+    staffTimer = setTimeout(staffDraw, 120);
+  }
+
+  function applyStaffOpen(on) {
+    staffOpen = on;
+    const pane = $("staffPane");
+    if (pane) pane.hidden = !on;
+    if ($("btnStaff")) $("btnStaff").classList.toggle("on", on);
+    if (on) staffDraw();
+  }
+
+  function setStaffZoom(z, quiet) {
+    staffZoom = Math.min(3, Math.max(0.6, Math.round(z * 20) / 20));
+    if ($("staffZoomVal")) $("staffZoomVal").textContent = Math.round(staffZoom * 100) + "%";
+    staffDraw();
+    if (!quiet) saveStaffPrefs();   // quiet = 저장분을 되살리는 중(그대로 다시 쓸 필요 없음)
+  }
+
+  function setStaffHeight(px, quiet) {
+    staffHeight = Math.min(window.innerHeight - 180, Math.max(90, px));
+    if ($("staffPane")) $("staffPane").style.height = staffHeight + "px";
+    if (!quiet) saveStaffPrefs();
+  }
+
+  if ($("btnStaff")) {
+    $("btnStaff").addEventListener("click", function () {
+      applyStaffOpen(!staffOpen);
+      if (staffOpen) track("staff_open");
+    });
+    $("staffClose").addEventListener("click", function () { applyStaffOpen(false); });
+    $("staffZoomIn").addEventListener("click", function () { setStaffZoom(staffZoom + 0.15); });
+    $("staffZoomOut").addEventListener("click", function () { setStaffZoom(staffZoom - 0.15); });
+    // 저장해 둔 보기 설정 되살리기 — 열림은 뺀다(늘 닫힌 채 시작). 값이 이상하면 그냥 무시하고
+    // 기본값으로 둔다: 보기 설정 하나 때문에 앱이 안 뜨면 안 된다.
+    try {
+      const pref = JSON.parse(localStorage.getItem(STAFF_LS_KEY) || "null");
+      if (pref && typeof pref === "object") {
+        if (typeof pref.zoom === "number" && isFinite(pref.zoom)) setStaffZoom(pref.zoom, true);
+        if (typeof pref.height === "number" && isFinite(pref.height) && pref.height > 0) {
+          setStaffHeight(pref.height, true);
+        }
+      }
+    } catch (e) {}
+    $("staffExport").addEventListener("click", exportMusicXml);
+    // 정간을 무엇으로 보나 — 문서 값이라 saveState까지 부른다(배율·높이와 다른 자리에 산다)
+    $("staffUnit").addEventListener("change", function () { staffDraw(); saveState(); });
+    // 창 폭이 바뀌면 줄 나눔이 달라지므로 다시 그린다(열려 있을 때만).
+    window.addEventListener("resize", scheduleStaff);
+    // 높이 끌기 — #melodyResizer와 같은 손놀림. 위로 끌면 커진다.
+    const grip = $("staffResizer");
+    grip.addEventListener("mousedown", function (e) {
+      e.preventDefault();
+      const y0 = e.clientY, h0 = $("staffPane").offsetHeight;
+      // 끄는 동안에는 저장하지 않는다 — 손을 뗄 때 한 번만(마우스가 움직일 때마다
+      // localStorage를 쓰면 끌기가 뻑뻑해진다).
+      const move = function (ev) { setStaffHeight(h0 + (y0 - ev.clientY), true); };
+      const up = function () {
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        saveStaffPrefs();
+        staffDraw();   // 높이가 바뀌면 보이는 줄 수가 달라진다
+      };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    });
+  }
 
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
@@ -5892,7 +5907,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView"];
+    "scoreView", "staffUnit"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -7985,7 +8000,8 @@
   // Cmd+Shift+R은 HTTP 캐시만 비우고 localStorage는 그대로 두므로 아무리 새로고침해도 첫 방문이
   // 될 수 없다(브라우저가 '지금 강력 새로고침'인지 JS에 알려주지도 않아 그 동작을 훅으로 잡을 수도
   // 없다). 진짜 첫 방문과 100% 같은 건 시크릿 창이고, 이건 '지금 창에서 빠르게 확인'용이다.
-  //  · 보관(jgb_snapshots_v1)과 화면 설정(jgb_dark_v1·jgb_theme_v1)은 **일부러 남긴다** —
+  //  · 보관(jgb_snapshots_v1)과 화면 설정(jgb_dark_v1·jgb_theme_v1·jgb_staff_v1)은
+  //    **일부러 남긴다** —
   //    온보딩과 무관한데 지우면 남의 자료·설정이 날아간다. 그래서 localStorage.clear()를 쓰지 않는다.
   //  · 지금 편집 중인 곡(LS_KEY)은 지울 수밖에 없다(남아 있으면 restored라 환영 카드가 안 뜬다)
   //    → confirm()으로 한 번 묻는다.

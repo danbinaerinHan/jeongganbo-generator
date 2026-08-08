@@ -93,7 +93,9 @@ export async function loadApp(names, fields, prelude) {
 
   // melodyFull·track은 app.js에선 바깥에 사는 것들이라 여기서 채워 준다
   // (melodyFull은 검사가 곡을 갈아 끼울 수 있게 setter로 연다).
-  const factory = new Function("$", "SYM_REG", "BASESET", `
+  // window — app.js는 형제 모듈을 window.JGB_*로 잡는다. Node에는 window가 없으니
+  // globalThis를 그 이름으로 건네준다(검사 쪽에서 미리 import해 둔 모듈이 거기 붙어 있다).
+  const factory = new Function("$", "SYM_REG", "BASESET", "window", `
     "use strict";
     const SYM_SND = SYM_REG.sound;
     const ORN_LIST = SYM_REG.ornList;
@@ -109,7 +111,7 @@ export async function loadApp(names, fields, prelude) {
   `);
 
   const api = factory($, SYM_REG,
-    new Set(["황", "대", "태", "협", "고", "중", "유", "임", "이", "남", "무", "응"]));
+    new Set(["황", "대", "태", "협", "고", "중", "유", "임", "이", "남", "무", "응"]), globalThis);
 
   return {
     fields: state.fields,

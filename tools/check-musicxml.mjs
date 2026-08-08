@@ -2,26 +2,32 @@
 //
 //   node tools/check-musicxml.mjs
 //
-// js/app.js의 buildMusicXml을 이름으로 떼어 와 그대로 돌린다(tools/lib/app-sandbox.mjs).
+// XML을 쓰는 것은 js/musicxml.js(순수 모듈)이고, 재료를 만드는 것은 js/app.js의
+// buildStaffScores다 — 후자만 이름으로 떼어 와 돌린다(tools/lib/app-sandbox.mjs).
 // 보는 것은 셋이다: ① 마디 길이가 딱 맞나(어긋나면 악보 프로그램이 마디를 다시 짠다)
 // ② 음높이가 재생과 같은가(같은 realizeMelody를 보므로 어긋나면 어느 한쪽이 깨진 것)
 // ③ 시김새가 제 꼴로 적히나(붙임=꾸밈음, 독립=제 자리를 나눈 실음).
 
 import { loadApp } from "./lib/app-sandbox.mjs";
+await import("../js/staff-core.js");
+await import("../js/musicxml.js");
 
 const app = await loadApp(
-  ["const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
+  ["const:SC", "const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
-   "const:MXL_DIV", "const:MXL_JG", "const:MXL_TYPES", "const:MXL_ACC",
    "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "mxlType", "mxlFifthPc", "mxlFifths", "mxlPitch", "xmlEsc", "buildMusicXml"],
+   "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
   { beats: "4", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "" }
+    title: "검사용", subtitle: "", staffUnit: "dotted" },
+  // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
+  `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
+   let activePart = 0;
+   function stashActivePart() { parts[0].melody = melodyFull; }`
 );
 const buildMusicXml = app.fn("buildMusicXml");
-const mxlPitch = app.fn("mxlPitch");
-const mxlFifths = app.fn("mxlFifths");
+const mxlFifths = app.fn("staffFifths");
+const mxlPitch = globalThis.JGB_STAFF_CORE.pitchAt;
 const JG = 2520;   // 정간 하나 = 점4분음표
 
 function xmlOf(text, beats) {
@@ -114,13 +120,13 @@ console.log("\n조표 — 음계 다섯 음이 임시표 없이 적히는 조를
   ok(`황=E♭ 평조 → 내림표 ${-f1}개 (E♭장조)`, f1 === -3, `나온 값: ${f1}`);
   const scale = ["황", "태", "중", "임", "남"].map((n) => 63 + YUL.indexOf(n));
   ok("다섯 음 모두 임시표 없이 적힌다",
-     scale.every((m) => mxlPitch(m, f1).accidental === null),
+     scale.every((m) => mxlPitch(m, f1).acc === null),
      scale.map((m) => `${m}:${mxlPitch(m, f1).step}${mxlPitch(m, f1).alter}`).join(" "));
   app.fields.joPreset = "hwang-gyemyeon";   // 황협중임무
   const f2 = mxlFifths(63);
   const gye = ["황", "협", "중", "임", "무"].map((n) => 63 + YUL.indexOf(n));
   ok(`계면조도 임시표 없이 (내림표 ${-f2}개)`,
-     gye.every((m) => mxlPitch(m, f2).accidental === null));
+     gye.every((m) => mxlPitch(m, f2).acc === null));
   app.fields.joPreset = "hwang-pyeong";
 }
 
@@ -129,6 +135,32 @@ console.log("\n음이름 되읽기 — 옥타브가 밀리지 않는가");
   const p = mxlPitch(m, -4);
   eq(`midi ${m} → ${s}${a < 0 ? "♭" : ""}${o}`, [p.step, p.alter, p.octave], [s, a, o]);
 });
+
+console.log("\n정간을 무엇으로 보나 — 박자표·빠르기가 따라 바뀌는가");
+{
+  app.fields.staffUnit = "dotted";
+  const d = xmlOf("황|태|중|임", 4);
+  ok("점4분음표 → 4정간 각이 12/8", d.includes("<beats>12</beats><beat-type>8</beat-type>"));
+  ok("메트로놈에 점이 붙는다", d.includes("<beat-unit>quarter</beat-unit><beat-unit-dot/>"));
+  ok("재생 빠르기는 4분음표 기준 1.5배", d.includes('<sound tempo="90"/>'));
+  ok("정간 하나가 2520", parseMeasures(d)[0].filter((n) => !n.grace)[0].dur === JG);
+
+  app.fields.staffUnit = "plain";
+  const q = xmlOf("황|태|중|임", 4);
+  ok("4분음표 → 4정간 각이 4/4", q.includes("<beats>4</beats><beat-type>4</beat-type>"));
+  ok("메트로놈에 점이 없다",
+     q.includes("<beat-unit>quarter</beat-unit><per-minute>") && !q.includes("<beat-unit-dot/>"));
+  ok("재생 빠르기는 그대로", q.includes('<sound tempo="60"/>'));
+  ok("정간 하나가 1680", parseMeasures(q)[0].filter((n) => !n.grace)[0].dur === 1680);
+  const sums = parseMeasures(q).map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+  ok("4분음표로 봐도 마디가 딱 찬다", sums.every((v) => v === 4 * 1680), `마디 길이: [${sums}]`);
+  // 3분박은 4분음표로 보면 딱 안 떨어진다 → 음표꼴을 비우고 길이만 정확히 적는다
+  const t = xmlOf("황태중|임|남|중", 4);
+  const first = parseMeasures(t)[0].filter((n) => !n.grace)[0];
+  ok("3분박을 4분음표로 보면 길이는 정확하되 음표꼴은 비운다",
+     first.dur === 560 && !t.split("<note>")[1].includes("<type>"));
+  app.fields.staffUnit = "dotted";
+}
 
 console.log("\n악보 꼴 — 열고 닫는 짝이 맞는가");
 {
