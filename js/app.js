@@ -237,6 +237,16 @@
     return gaks;
   }
 
+  // 정간을 고르면 커서를 **그 칸 글자의 맨 끝**에 둔다(에디터 모드). 예전엔 칸 내용을 통째로
+  // 골라 뒀는데(바로 덮어쓰라고), 그러면 이미 적은 율명에 시김새 하나를 덧붙이려 해도 첫 자를
+  // 치는 순간 다 지워졌다. 정간은 '율명 + 시김새'로 자라는 칸이라 **고쳐 쓰는 일이 덮어쓰는
+  // 일보다 잦다**(2026-08-10 사용자 확정). 직접 입력 카드(openCellEditor)와 같은 규칙이고,
+  // 통째로 지우려면 ⌘A가 있다. 선율·장단·곁줄 세 줄이 이 함수 하나를 나눠 쓴다.
+  function caretAtCellEnd(ta, c) {
+    const p = c ? c.start + c.text.length : ta.value.length;
+    ta.setSelectionRange(p, p);
+  }
+
   // 세로 칸 제목이 첫 줄에서 먹는 '각 자리' 수. 이 값이 곧 첫 페이지에 들어가는 각 수를
   // 정하고(capacity), 각 너비는 페이지 폭에 맞춰 자동으로 다시 계산된다 — 그래서 '제목 칸을
   // 얼마나 넓게 쓸까'만 정하면 나머지가 따라온다.
@@ -1368,8 +1378,7 @@
       if (railBtn && !railBtn.classList.contains("active")) railBtn.click();
       ta.focus();
     }
-    if (c) ta.setSelectionRange(c.start, c.start + c.text.length);   // 내용 선택 → 바로 덮어쓰기
-    else ta.setSelectionRange(ta.value.length, ta.value.length);
+    caretAtCellEnd(ta, c);
   }
 
   // ---------- 정간 위 인라인 입력(장단) — 장단은 맨 처음 각 옆 한 줄뿐이라 gi는 늘 0 ----------
@@ -1399,8 +1408,7 @@
     }
     const cells = parseMelodyOffsets(ta.value)[0] || [];
     const c = cells[Math.min(ci, Math.max(0, cells.length - 1))];
-    if (c) ta.setSelectionRange(c.start, c.start + c.text.length);
-    else ta.setSelectionRange(ta.value.length, ta.value.length);
+    caretAtCellEnd(ta, c);
   }
 
   // ---------- 정간 위 인라인 입력(가사) ----------
@@ -1439,8 +1447,7 @@
     const local = gi - (edLyRange ? edLyRange.start : 0);
     const cells = parseMelodyOffsets(ta.value)[local] || [];
     const c = cells[Math.min(ci, Math.max(0, cells.length - 1))];
-    if (c) ta.setSelectionRange(c.start, c.start + c.text.length);
-    else ta.setSelectionRange(ta.value.length, ta.value.length);
+    caretAtCellEnd(ta, c);
   }
 
   // ---------- 도메인별 정간 입력 어댑터 ----------
@@ -1604,7 +1611,12 @@
     area.appendChild(card);
     cellEditor = card; cellEditInput = inp; cellEditDomain = domain;
     cellEditGi = gi; cellEditCi = ci;
-    inp.focus(); inp.select();
+    inp.focus();
+    // 커서는 **글자 맨 끝**에 둔다. 예전엔 select()로 내용을 통째로 골라 뒀는데(바로 덮어쓰라고),
+    // 그러면 이미 적은 율명에 시김새 하나를 덧붙이려 해도 첫 자를 치는 순간 다 지워졌다.
+    // 정간은 '율명 + 시김새'로 자라는 칸이라 **고쳐 쓰는 일이 덮어쓰는 일보다 잦다**
+    // (2026-08-10 사용자 확정). 통째로 지우려면 ⌘A가 있다.
+    inp.setSelectionRange(inp.value.length, inp.value.length);
 
     // 치는 대로 실시간 반영 — 카드가 악보 밖에 있어 render()가 조합(IME)을 깨지 않는다
     inp.addEventListener("input", function () {
