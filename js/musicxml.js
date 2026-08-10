@@ -98,11 +98,10 @@
           out.push("      <attributes>");
           out.push("        <divisions>" + C.DIV + "</divisions>");
           out.push("        <key><fifths>" + s.fifths + "</fifths></key>");
-          // 각 하나가 한 마디다. 정간을 점4분음표로 보면 한 각이 8분음표 3N개, 4분음표로
-          // 보면 4분음표 N개 — 그 둘이 곧 박자표다.
-          const dotted = s.unit !== "plain";
-          out.push("        <time><beats>" + (dotted ? s.beats * 3 : s.beats) +
-                   "</beats><beat-type>" + (dotted ? 8 : 4) + "</beat-type></time>");
+          // 각 하나가 한 마디다 — 박자표는 staff-core가 정한다(화면과 같은 답이라야 한다).
+          const ts = C.timeSig(s.unit, s.beats);
+          out.push("        <time><beats>" + ts.beats +
+                   "</beats><beat-type>" + ts.type + "</beat-type></time>");
           out.push("        <clef><sign>" + clef.sign + "</sign><line>" + clef.line + "</line></clef>");
           out.push("      </attributes>");
           // 빠르기 표시는 첫 악기에만 — 악기마다 붙이면 같은 말이 겹쳐 찍힌다.
@@ -111,9 +110,9 @@
           // 여기가 어긋나면 악보 프로그램에서 재생만 딴 빠르기로 돈다.
           if (pi === 0) {
             out.push("      <direction placement=\"above\"><direction-type><metronome>" +
-                     "<beat-unit>quarter</beat-unit>" + (dotted ? "<beat-unit-dot/>" : "") +
+                     "<beat-unit>" + ts.beatUnit + "</beat-unit>" + (ts.dot ? "<beat-unit-dot/>" : "") +
                      "<per-minute>" + s.bpm + "</per-minute></metronome></direction-type>" +
-                     "<sound tempo=\"" + (s.bpm * (dotted ? 1.5 : 1)) + "\"/></direction>");
+                     "<sound tempo=\"" + (s.bpm * C.quarterRatio(s.unit)) + "\"/></direction>");
           }
         }
         m.forEach(function (n) {

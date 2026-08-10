@@ -5544,16 +5544,16 @@
       const name = document.createElement("input");
       name.type = "text"; name.className = "part-name";
       name.value = p.name; name.placeholder = partLabel(p, i);
-      name.title = "이름 — 총보 곡 머리(첫 줄)의 열 위에 붙습니다 (비우면 악기·번호로 부릅니다)";
+      name.title = "이름 — 총보 곡 머리(첫 줄)의 열 위와 오선보 왼쪽에 붙습니다 (비우면 악기·번호로 부릅니다)";
       name.addEventListener("change", function () { p.name = name.value.trim(); render(); });
       const abbr = document.createElement("input");
       abbr.type = "text"; abbr.className = "part-abbr";
       abbr.value = p.abbr || ""; abbr.placeholder = "약어";
-      abbr.title = "약어 — 총보 둘째 줄부터 열 위에 붙습니다 (비우면 곡 머리에만 이름이 붙습니다)";
+      abbr.title = "약어 — 총보·오선보의 둘째 줄부터 붙습니다 (비우면 첫 줄에만 이름이 붙습니다)";
       abbr.addEventListener("change", function () { p.abbr = abbr.value.trim(); render(); });
       const inst = document.createElement("select");
       inst.className = "part-inst";
-      inst.title = "악기 — 시김새 팔레트의 우선순위가 이 악기를 따릅니다";
+      inst.title = "악기 — 시김새 팔레트의 우선순위가 이 악기를 따릅니다. 이름을 비워 두면 오선보에는 이 악기 이름이 적힙니다";
       [["all", "악기 선택"]].concat(Object.keys(INSTRUMENT_PRIORITY).map(function (k) { return [k, k]; }))
         .forEach(function (pair) {
           const o = document.createElement("option");
@@ -5564,6 +5564,9 @@
         p.instrument = inst.value;
         if (i === activePart) setOrnInstrument(inst.value);   // saveState 포함
         else saveState();
+        // 악기는 정간보를 안 바꾸지만 **오선보에는 이름으로 적힌다** — 여기서 안 부르면
+        // 위에서 악기를 골라도 아래 오선보가 옛 이름인 채로 남는다.
+        scheduleStaff();
       });
       const mute = document.createElement("button");
       mute.type = "button"; mute.className = "mel-btn part-mute";
@@ -5669,10 +5672,12 @@
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
     const fifths = staffFifths(hwangMidi);
-    // 정간 하나를 점4분음표로 볼지 4분음표로 볼지 — 문서에 딸린 값이다(조 프리셋과 같은
-    // 성격이라 CTRL_IDS에 있고, 남에게 악보를 주면 같이 간다). 화면 배율처럼 '이 브라우저의
-    // 보기 방식'이 아니라 '이 악보를 어떻게 읽나'라서.
-    const unit = ($("staffUnit") && $("staffUnit").value === "plain") ? "plain" : "dotted";
+    // 정간 하나를 무엇으로 볼지(점4분음표·4분음표·8분음표) — 문서에 딸린 값이다(조 프리셋과
+    // 같은 성격이라 CTRL_IDS에 있고, 남에게 악보를 주면 같이 간다). 화면 배율처럼 '이
+    // 브라우저의 보기 방식'이 아니라 '이 악보를 어떻게 읽나'라서.
+    // 무엇이 있나는 SC.JG가 정한다 — 여기서 이름을 다시 세면 새 단위를 늘릴 때 어긋난다.
+    const pick = $("staffUnit") && $("staffUnit").value;
+    const unit = SC.JG[pick] ? pick : "dotted";
     const jg = SC.JG[unit];
     const measLen = beats * jg;
 
@@ -5743,9 +5748,13 @@
     const mean = pitched.length
       ? pitched.reduce(function (a, n) { return a + n.midi; }, 0) / pitched.length : 64;
 
+    // 대강 분절을 함께 실어 보낸다 — 정간을 8분음표로 보면 정간 하나가 한 박이 아니라서
+    // 오선보의 빔이 대강으로 묶여야 한다(js/staff-view.js '빔 묶음' 참고). 비어 있으면 null.
+    const daegang = parseDaegang($("daegang").value, beats).groups;
+
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
              fifths: fifths, clef: mean < 57 ? "F" : "G", beats: beats, bpm: bpm,
-             unit: unit, jg: jg, measLen: measLen, measures: measures };
+             unit: unit, jg: jg, measLen: measLen, daegang: daegang, measures: measures };
   }
 
   // 오선보가 무엇을 보여줄까는 **정간보의 '총보' 체크(#scoreView)를 그대로 따른다** —
@@ -5757,8 +5766,14 @@
     const idx = all ? parts.map(function (p, i) { return i; }) : [activePart];
     return idx.map(function (i) {
       const p = parts[i];
+      // 오선보에 적을 이름 — 이름을 안 적고 **악기만 고른 경우에도** 그 악기가 보여야 한다
+      // (위에서 고른 것과 아래 오선보가 같은 것을 가리켜야 하므로). 총보는 열을 가려야 하니
+      // partLabel의 '파트 N'까지 쓰지만, 악기 하나짜리 파트보는 이름도 악기도 없으면 빈
+      // 채로 둔다 — 거기 '파트 1'이라 적히면 알려 주는 것 없이 자리만 먹는다.
+      const named = (p.name || "").trim()
+        || (p.instrument && p.instrument !== "all" ? p.instrument : "");
       return staffScoreOf(i === activePart ? melodyFull : p.melody,
-                          { name: p.name, abbr: p.abbr });
+                          { name: all ? partLabel(p, i) : named, abbr: p.abbr });
     });
   }
 

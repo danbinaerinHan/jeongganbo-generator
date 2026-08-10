@@ -9,14 +9,30 @@
   "use strict";
 
   // 길이의 단위. 4분음표 하나를 DIV로 나눠 센다.
-  // DIV를 1680으로 고른 건 정간이 점4분음표(2520)든 4분음표(1680)든 1~10과 12로
+  // DIV를 1680으로 고른 건 정간이 점4분음표(2520)든 4분음표(1680)든 8분음표(840)든 잘게
   // 나눠떨어져서 — 분박을 몇으로 쪼개든 길이가 정수로 떨어진다.
   const DIV = 1680;
-  // 정간 하나를 무엇으로 볼 것인가. 이건 취향이 아니라 **그 곡이 정간을 몇으로 쪼개느냐**에
-  // 달렸다: 3분박이면 점4분음표라야 분박이 8분음표로 딱 떨어지고, 2분박이면 4분음표라야
-  // 그렇다. 안 맞는 쪽을 고르면 음표꼴(<type>)이 딱 안 떨어져 비게 된다.
-  // 정악은 3분박이 흔해 **점4분음표가 기본**이다.
-  const JG = { dotted: DIV * 3 / 2, plain: DIV };
+  // 정간 하나를 무엇으로 볼 것인가. 이건 취향이 아니라 **그 곡이 정간을 몇으로 쪼개느냐**와
+  // **한 각이 몇 정간인가**에 달렸다.
+  //   점4분음표 — 3분박이라야 분박이 8분음표로 딱 떨어진다. 정악에 흔해 **기본**.
+  //   4분음표   — 2분박일 때.
+  //   8분음표   — 2분박이면서 **각이 길 때**. 20정간 각을 4분음표로 보면 20/4이 되어 한
+  //               마디가 서양 악보에서 터무니없이 길어지는데, 8분음표로 보면 20/8이 된다.
+  //               민요·산조처럼 정간이 잘게 흐르는 악보에서 이쪽이 읽힌다.
+  // 안 맞는 쪽을 고르면 음표꼴(<type>)이 딱 안 떨어져 비게 된다.
+  const JG = { dotted: DIV * 3 / 2, plain: DIV, eighth: DIV / 2 };
+
+  // 박자표 — **각 하나가 한 마디**이므로 '한 각이 몇 박인가'가 곧 여기 적히는 수다.
+  // 화면(staff-view)과 파일(musicxml)이 같은 답을 써야 하므로 셈은 여기 한 곳에만 둔다.
+  //   beats = 아랫수 단위로 센 한 각의 박수 · type = 아랫수
+  //   beatUnit·dot = MusicXML <metronome>이 쓰는 '정간 하나'의 이름
+  function timeSig(unit, beats) {
+    if (unit === "plain") return { beats: beats, type: 4, beatUnit: "quarter", dot: false };
+    if (unit === "eighth") return { beats: beats, type: 8, beatUnit: "eighth", dot: false };
+    return { beats: beats * 3, type: 8, beatUnit: "quarter", dot: true };
+  }
+  // 정간 하나가 4분음표의 몇 배인가 — <sound tempo>가 4분음표 기준이라 필요하다.
+  function quarterRatio(unit) { return (JG[unit] || JG.dotted) / DIV; }
 
   const LETTERS = "CDEFGAB";
   // MusicXML의 <accidental> 이름. 0(제자리표)도 적을 것이 있으므로 '없음'은 null로만 나타낸다.
@@ -109,6 +125,7 @@
 
   root.JGB_STAFF_CORE = {
     DIV: DIV, JG: JG, ACC: ACC,
+    timeSig: timeSig, quarterRatio: quarterRatio,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
     exactValue: exactValue, nearestValue: nearestValue
   };

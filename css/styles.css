@@ -541,7 +541,6 @@
   .staff-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
                 padding: 4px 10px 4px 12px; border-bottom: 1px solid var(--line); }
   .staff-head b { font-size: 12.5px; }
-  .staff-head small { color: var(--muted); font-size: 11px; }
   .staff-tools { margin-left: auto; display: flex; align-items: center; gap: 4px; }
   .staff-tools #staffZoomVal { font-size: 11px; color: var(--muted); min-width: 34px;
                                text-align: center; }

@@ -15,11 +15,11 @@ await import("../js/musicxml.js");
 const app = await loadApp(
   ["const:SC", "const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
-   "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
+   "parseDaegang", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
    "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
   { beats: "4", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
@@ -159,6 +159,23 @@ console.log("\n정간을 무엇으로 보나 — 박자표·빠르기가 따라 
   const first = parseMeasures(t)[0].filter((n) => !n.grace)[0];
   ok("3분박을 4분음표로 보면 길이는 정확하되 음표꼴은 비운다",
      first.dur === 560 && !t.split("<note>")[1].includes("<type>"));
+
+  // 8분음표 — 2분박이면서 각이 길 때. 20정간 각이 4분음표로는 20/4이라 한 마디가
+  // 터무니없이 길어지는데, 8분음표로 보면 20/8이 된다.
+  app.fields.staffUnit = "eighth";
+  const e = xmlOf("황|태|중|임", 4);
+  ok("8분음표 → 4정간 각이 4/8", e.includes("<beats>4</beats><beat-type>8</beat-type>"));
+  ok("메트로놈 단위가 8분음표",
+     e.includes("<beat-unit>eighth</beat-unit><per-minute>") && !e.includes("<beat-unit-dot/>"));
+  ok("재생 빠르기는 4분음표 기준 절반", e.includes('<sound tempo="30"/>'));
+  ok("정간 하나가 840", parseMeasures(e)[0].filter((n) => !n.grace)[0].dur === 840);
+  const eSums = parseMeasures(e).map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+  ok("8분음표로 봐도 마디가 딱 찬다", eSums.every((v) => v === 4 * 840), `마디 길이: [${eSums}]`);
+  // 2분박이면 16분음표로 딱 떨어져 음표꼴이 적힌다 — 이게 8분음표를 고르는 값어치다
+  const e2 = xmlOf("황태|중|임|남", 4);
+  const eFirst = parseMeasures(e2)[0].filter((n) => !n.grace)[0];
+  ok("8분음표의 2분박은 16분음표로 딱 떨어진다",
+     eFirst.dur === 420 && e2.split("<note>")[1].includes("<type>16th</type>"));
   app.fields.staffUnit = "dotted";
 }
 
