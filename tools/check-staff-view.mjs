@@ -321,6 +321,32 @@ console.log("\n굵기가 오선 칸에 비례하는가 (고정 px면 크게 볼�
   });
 }
 
+console.log("\n자리표 고르기 — 낮은 악보는 낮은음자리표로 (덧줄이 적은 쪽)");
+{
+  // 거문고처럼 낮은 음만으로 된 악보를 높은음자리표에 얹으면 덧줄만 잔뜩 생긴다.
+  // 고르는 기준은 **덧줄 수**다 — 예전엔 '평균 음높이 < 57'이라는 대리 지표였다.
+  const clefOf = (mel) => scoresOf(mel, 4)[0].clef;
+  const ledgerCount = (mel) => {
+    const svg = STAFF.render(scoresOf(mel, 4), { width: 1600, scale: 1.6 });
+    return (svg.match(/class="sv-ledger"/g) || []).length;
+  };
+  ok("거문고 음역(하배)은 낮은음자리표", clefOf("하배황|하배태|하배중|하배임") === "F");
+  ok("배 음역도 낮은음자리표", clefOf("배황|배태|배중|배임") === "F");
+  ok("보통 음역은 높은음자리표", clefOf("황|태|중|임") === "G");
+  ok("높은 음역도 높은음자리표", clefOf("청황|청태|청중|청임") === "G");
+  // 평균으로 고르던 때 어긋나던 경계 — 평균은 59.3이라 높은음자리표였는데 덧줄은 F가 적다
+  ok("경계에서도 덧줄이 적은 쪽으로", clefOf("배중|배임|배남|황") === "F");
+  // 고른 자리표가 정말 덧줄을 줄이는가 — 규칙이 뒤집혀도 위 항목들은 통과할 수 있다
+  ok("낮은 악보의 덧줄이 몇 줄 안 된다", ledgerCount("하배황|하배태|하배중|하배임") <= 4,
+     `덧줄 ${ledgerCount("하배황|하배태|하배중|하배임")}줄`);
+  // 음이 하나도 없으면 기본값
+  ok("빈 악보는 높은음자리표", CORE.pickClef([]) === "G");
+  // 자리표 표가 셋(고르는 쪽·화면·파일)에서 한 벌인지
+  ok("자리표 표가 staff-core 한 곳에 있다",
+     CORE.CLEF.G.sign === "G" && CORE.CLEF.F.line === 4 &&
+     CORE.CLEF.G.glyph === "gClef" && CORE.CLEF.F.dia === 2 * 7 + 4);
+}
+
 console.log("\n악기 이름 — 파트보에도 보이는가 (위에서 고른 악기와 같은 것을 가리켜야 한다)");
 {
   const name = (svg) => (svg.match(/class="sv-name"[^>]*>([^<]*)</g) || [])

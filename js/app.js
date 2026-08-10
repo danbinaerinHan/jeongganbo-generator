@@ -5742,18 +5742,25 @@
       cur.push({ rest: true, units: measLen - filled, graces: [], afters: [] });
     }
 
-    // 음역을 보고 높은음자리표/낮은음자리표를 고른다 — 하배 음역이 잦은 곡을 높은음자리표에
-    // 얹으면 덧줄만 잔뜩 생긴다.
-    const pitched = notes.filter(function (n) { return !n.rest; });
-    const mean = pitched.length
-      ? pitched.reduce(function (a, n) { return a + n.midi; }, 0) / pitched.length : 64;
+    // 음역을 보고 높은음자리표/낮은음자리표를 고른다 — 거문고처럼 낮은 음만으로 된 곡을
+    // 높은음자리표에 얹으면 덧줄만 잔뜩 생겨 읽을 수가 없다. **악기 이름이 아니라 적힌 음을
+    // 본다** — 같은 악기라도 곡에 따라 음역이 다르고, 악기를 안 고른 악보도 있어서.
+    // 셈은 staff-core에 있다(꾸밈음까지 함께 세어야 하므로 실제로 그려질 음을 다 넘긴다).
+    const dias = [];
+    notes.forEach(function (n) {
+      if (n.rest) return;
+      dias.push(SC.pitchAt(n.midi, fifths).dia);
+      (n.graces || []).forEach(function (m) { dias.push(SC.pitchAt(m, fifths).dia); });
+      (n.afters || []).forEach(function (m) { dias.push(SC.pitchAt(m, fifths).dia); });
+    });
+    const clef = SC.pickClef(dias);
 
     // 대강 분절을 함께 실어 보낸다 — 정간을 8분음표로 보면 정간 하나가 한 박이 아니라서
     // 오선보의 빔이 대강으로 묶여야 한다(js/staff-view.js '빔 묶음' 참고). 비어 있으면 null.
     const daegang = parseDaegang($("daegang").value, beats).groups;
 
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
-             fifths: fifths, clef: mean < 57 ? "F" : "G", beats: beats, bpm: bpm,
+             fifths: fifths, clef: clef, beats: beats, bpm: bpm,
              unit: unit, jg: jg, measLen: measLen, daegang: daegang, measures: measures };
   }
 

@@ -90,7 +90,7 @@
     out.push("  </part-list>");
 
     list.forEach(function (s, pi) {
-      const clef = s.clef === "F" ? { sign: "F", line: 4 } : { sign: "G", line: 2 };
+      const clef = C.CLEF[s.clef] || C.CLEF.G;
       out.push("  <part id=\"P" + (pi + 1) + "\">");
       s.measures.forEach(function (m, mi) {
         out.push("    <measure number=\"" + (mi + 1) + "\">");

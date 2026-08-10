@@ -38,6 +38,37 @@
   // MusicXML의 <accidental> 이름. 0(제자리표)도 적을 것이 있으므로 '없음'은 null로만 나타낸다.
   const ACC = { "-2": "flat-flat", "-1": "flat", "0": "natural", "1": "sharp", "2": "double-sharp" };
 
+  // 자리표 — 화면(staff-view)·파일(musicxml)·고르는 쪽(app.js)이 같은 표를 봐야 한다.
+  //   dia   = 오선 맨 아랫줄의 음이름 자리(높은음자리표는 E4, 낮은음자리표는 G2)
+  //   at    = 그 자리표가 가리키는 줄(맨 아랫줄을 0으로 센 반칸 수) = 글리프의 기준점
+  //   glyph = js/staff-glyphs.js의 키 · sign·line = MusicXML <clef>
+  const CLEF = {
+    G: { dia: 4 * 7 + 2, at: 2, glyph: "gClef", sign: "G", line: 2 },
+    F: { dia: 2 * 7 + 4, at: 6, glyph: "fClef", sign: "F", line: 4 }
+  };
+
+  // 음 하나가 그 자리표에서 먹는 덧줄 수. 오선은 base ~ base+8을 덮는다.
+  function ledgersFor(dia, base) {
+    if (dia < base) return Math.floor((base - dia) / 2);
+    if (dia > base + 8) return Math.floor((dia - base - 8) / 2);
+    return 0;
+  }
+
+  // 자리표 고르기 — **덧줄이 적은 쪽**. 거문고처럼 낮은 음만으로 된 악보를 높은음자리표에
+  // 얹으면 덧줄만 잔뜩 생겨 읽을 수가 없다.
+  // 예전엔 '평균 음높이 < 57이면 낮은음자리표'였다. 대개 같은 답이 나오지만 그건 대리 지표일
+  // 뿐이라, 여기서는 **정말로 재려는 것**(덧줄이 몇 줄이나 생기나)을 직접 센다. 같으면
+  // 높은음자리표 — 둘이 비긴다면 더 흔한 쪽이 낫다.
+  // dias = 음이름 자리 목록(pitchAt(...).dia). 음이 없으면 높은음자리표.
+  function pickClef(dias) {
+    let g = 0, f = 0;
+    for (let i = 0; i < dias.length; i++) {
+      g += ledgersFor(dias[i], CLEF.G.dia);
+      f += ledgersFor(dias[i], CLEF.F.dia);
+    }
+    return f < g ? "F" : "G";
+  }
+
   // 5도권에서 i번째 자리의 음높이(도=0 기준). -1=F, 0=C, 1=G … 6=F♯, -2=B♭.
   function fifthPc(i) { return (((7 * i) % 12) + 12) % 12; }
 
@@ -124,8 +155,9 @@
   }
 
   root.JGB_STAFF_CORE = {
-    DIV: DIV, JG: JG, ACC: ACC,
+    DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF,
     timeSig: timeSig, quarterRatio: quarterRatio,
+    ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
     exactValue: exactValue, nearestValue: nearestValue
   };

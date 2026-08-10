@@ -36,12 +36,8 @@
 
   const C = root.JGB_STAFF_CORE;
   const G = root.JGB_STAFF_GLYPHS || {};
-  // 오선 맨 아랫줄의 음이름 자리 — 높은음자리표는 E4, 낮은음자리표는 G2.
-  // 크기·자리는 여기 안 적는다 — 글리프가 제 기준점을 갖고 있다(js/staff-glyphs.js).
-  //   dia  = 오선 맨 아랫줄의 음이름 자리
-  //   at   = 자리표가 가리키는 줄(맨 아랫줄을 0으로 센 반칸 수) = 글리프의 기준점
-  const CLEF = { G: { dia: 4 * 7 + 2, key: "gClef", at: 2 },
-                 F: { dia: 2 * 7 + 4, key: "fClef", at: 6 } };
+  // 자리표 표는 staff-core에 있다 — 고르는 쪽(app.js)·파일(musicxml)과 같은 것을 봐야 한다.
+  const CLEF = C.CLEF;
   // 조표에서 임시표가 붙는 자리(높은음자리표 기준, 맨 아랫줄을 0으로 센 반칸 수).
   // 내림표 B♭4는 가운뎃줄(4), 올림표 F♯5는 맨 윗줄(8)에서 시작한다.
   // 올림표 G♯이 오선 위(9)로 올라가는 건 관행이 그래서다 — 낮춰 적으면 안 된다.
@@ -230,7 +226,7 @@
     // 악기마다 자리표가 다를 수 있으므로(총보) 폭은 가장 넓은 것에 맞춘다.
     const clefLead = SP * 0.55;
     const clefW = clefLead + Math.max.apply(null, list.map(function (s) {
-      return gink((CLEF[s.clef] || CLEF.G).key);
+      return gink((CLEF[s.clef] || CLEF.G).glyph);
     })) * SP + SP * 0.7;
 
     // 조표 — 임시표 잉크 폭에 틈을 더해 한 칸씩 나아간다.
@@ -287,8 +283,8 @@
         for (let k = 0; k < 5; k++) line(out, "sv-staff", leftX, top + k * SP, right, top + k * SP, M.line);
 
         // 자리표 — 기준점이 '이 자리표가 가리키는 줄'이라 그 줄에 그대로 놓는다.
-        glyph(out, "sv-clef", L.base.key,
-              leftX + clefLead - gbox(L.base.key).box[0] * SP,
+        glyph(out, "sv-clef", L.base.glyph,
+              leftX + clefLead - gbox(L.base.glyph).box[0] * SP,
               bottom - L.base.at * (SP / 2), SP);
 
         const rows = L.s.fifths < 0 ? FLAT_ROWS : SHARP_ROWS;
