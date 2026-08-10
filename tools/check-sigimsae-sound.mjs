@@ -15,10 +15,10 @@ const app = await loadApp(
   ["const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
-   "jangguSoundOn", "stripSymBracket", "midiToFreq", "scaleNotes", "makeScale",
+   "jangguSoundOn", "sigimsaeSoundOn", "stripSymBracket", "midiToFreq", "scaleNotes", "makeScale",
    "realizeMelody", "buildAudioEvents"],
   { beats: "20", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
-    jangdan: "", wantJangdan: false, playJanggu: false },
+    jangdan: "", wantJangdan: false, playJanggu: false, playSigimsae: true },
   // 합주 파트는 이 검사의 관심 밖이라 '파트 하나'로 세워 둔다 — 여기서 보는 것은 한 가락이
   // 어떤 음높이로 풀리나이지, 여러 파트를 어떻게 겹치나가 아니다(그건 재생 쪽 몫).
   `let parts = [{ melody: "", muted: false }];
@@ -103,6 +103,23 @@ eq("꾸밈이 붙어도 총 길이 그대로",
    [Math.round(totalOf("중{니레}|중{느니르}", 2) * 1e6),
     Math.round(totalOf("중|{느나르나니}", 2) * 1e6)],
    [Math.round(plain * 1e6), Math.round(plain * 1e6)]);
+
+console.log("\n민음으로 듣기 (재생 설정의 '시김새대로 연주' 끔)");
+{
+  // 시김새를 뺀 '가락의 뼈대'만 울려야 한다. 오선보는 이 옵션과 무관하다 — 여기선 소리만 본다.
+  app.fields.playSigimsae = false;
+  eq("붙임 꾸밈음이 사라진다(중{니레} → 중 하나)", pitchesOf("중{니레}|임"), [P("중"), P("임")]);
+  eq("본음 자리를 가르는 붙임도 안 가른다", pitchesOf("중{나니나}|임"), [P("중"), P("임")]);
+  eq("독립 시김새는 앞 음이 이어진다", pitchesOf("중|{느나르나니}|임"), [P("중"), P("임")]);
+  eq("적힌 율명은 그대로", pitchesOf("황|태|중|임"), [P("황"), P("태"), P("중"), P("임")]);
+  // 박은 여기서도 그대로여야 한다 — 시김새를 빼도 총 길이가 달라지면 안 된다
+  eq("민음이어도 총 길이 그대로",
+     [Math.round(totalOf("중{니레}|{느나르나니}", 2) * 1e6)],
+     [Math.round(plain * 1e6)]);
+  app.fields.playSigimsae = true;
+  eq("도로 켜면 꾸밈음이 돌아온다(니 = 그 음계의 이웃 음)",
+     pitchesOf("중{니레}|임"), [P("임"), P("중"), P("임")]);
+}
 
 console.log(`\n${fail ? "✗" : "✓"} ${pass}개 통과${fail ? `, ${fail}개 실패` : ""}`);
 process.exit(fail ? 1 : 0);

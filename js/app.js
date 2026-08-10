@@ -4963,7 +4963,11 @@
   //   kind      "note" 새 소리 · "rest" 쉼표 · "hold" 앞 음을 잇는다(새로 시작하지 않음)
   //   seq       이 자리를 고르게 나눠 채울 음높이(midi)들 — kind가 "note"일 때만
   //   pre·post  본음 앞뒤를 스치는 꾸밈음(midi). 제 길이가 따로 없어 자리에서 떼어 쓴다.
-  function realizeMelody(hwangMidi, melodyText) {
+  // opts.plain — **시김새를 빼고 적힌 율명만** 푼다(재생 설정의 '시김새대로 연주' 끔).
+  // 가락의 뼈대만 듣고 싶을 때가 있어서 둔 길이고, 기본은 늘 켬(시김새대로)이다.
+  // **재생만 이 옵션을 준다** — 오선보·MusicXML은 늘 시김새를 그리므로 안 준다.
+  function realizeMelody(hwangMidi, melodyText, opts) {
+    const plain = !!(opts && opts.plain);
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const sc = makeScale(hwangMidi);
     // melodyText를 주면 그 선율을(합주에서 파트마다), 안 주면 활성 파트 작업 사본을 푼다
@@ -4985,7 +4989,10 @@
     function resolveGroup(grp) {
       const tk = grp.main;
       const atts = [];
-      grp.att.forEach(function (a) { if (a.sym && SYM_SND[a.sym]) atts.push(SYM_SND[a.sym]); });
+      // 민음으로 들을 땐 붙은 시김새를 아예 안 본다 — 꾸밈음도, 본음 자리를 가르는 꼴도 없다
+      if (!plain) {
+        grp.att.forEach(function (a) { if (a.sym && SYM_SND[a.sym]) atts.push(SYM_SND[a.sym]); });
+      }
 
       let ref, degs;
       if (tk.base) {
@@ -4994,6 +5001,8 @@
         // 나니나처럼 본음의 자리를 가르는 붙임이 있으면 그 꼴이 본음 하나를 대신한다
         for (let i = 0; i < atts.length; i++) if (atts[i].seq) { degs = atts[i].seq; break; }
       } else {
+        // 독립 시김새는 적힌 율명이 아니라 시김새 그 자체다 — 민음에서는 앞 음이 이어진다
+        if (plain) return null;
         const own = tk.sym ? SYM_SND[tk.sym] : null;
         if (!own || !own.seq || prevMidi == null) return null;
         ref = prevMidi;   // 독립 시김새의 기준음은 앞 음
@@ -5045,6 +5054,13 @@
   // 앞 음을 지속(새 음을 시작하지 않고 직전 이벤트 길이를 늘림). 쉼표만 실제 무음.
   // 소리가 있는 시김새(사전의 snd)는 제 자리를 나눠 갖거나 본음 앞뒤에 짧게 붙는다.
   function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+
+  // 시김새대로 연주할까 — 재생 설정의 체크. 칸이 없으면(옛 저장분·검사) 켠 것으로 본다.
+  // **오선보는 이 값과 무관하다** — 거기선 늘 시김새를 그린다. 이건 '어떻게 들을까'일 뿐이다.
+  function sigimsaeSoundOn() {
+    const el = $("playSigimsae");
+    return !el || el.checked;
+  }
 
   // 장구 소리를 낼 조건 — 장단 줄이 켜져 있고(악보에 그 줄이 있고) 실제로 적힌 구음이 있으며
   // 재생 설정에서 끄지 않았을 때. '줄은 켰지만 비어 있음'도 자연히 소리가 없다.
@@ -5113,7 +5129,7 @@
         t += dur;
       }
       let curGak = -1, curCell = -1;
-      realizeMelody(hwangMidi, melodyText).forEach(function (s) {
+      realizeMelody(hwangMidi, melodyText, { plain: !sigimsaeSoundOn() }).forEach(function (s) {
         // 정간 하나가 늘 1박이므로, 그 정간의 첫 자리가 시작되는 시각이 곧 장단 타점의 시작
         if (opts.janggu && (s.gak !== curGak || s.cell !== curCell)) {
           jangguCell(t, s.cell); curGak = s.gak; curCell = s.cell;
@@ -5927,7 +5943,7 @@
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
-    "hwangPitch", "tempoBpm", "playJanggu", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
+    "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
     "scoreView", "staffUnit"];
   const LS_KEY = "jgb_state_v1";
@@ -7053,6 +7069,7 @@
   });
   // 장구 소리 켜기/끄기 — 재생 중에 바꾸면 다음 재생부터 반영된다(이미 예약된 소리는 그대로)
   $("playJanggu").addEventListener("change", saveState);
+  $("playSigimsae").addEventListener("change", saveState);
   // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
   $("palInsert").addEventListener("change", saveState);
