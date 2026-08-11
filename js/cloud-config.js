@@ -27,5 +27,5 @@
 window.JGB_CLOUD = {
   url: "https://uszzhreidfdopvgdzzqs.supabase.co",
   key: "sb_publishable_wMhSNubRaoeSchqunxVN2w_9Ib5XpiC",
-  browse: false,
+  browse: true,
 };
