@@ -4921,21 +4921,49 @@
   // 이면 악보에 많이 나온 율명 다섯을 세어 정한다. 조 칸은 본래 팔레트를 추리는 자리지만
   // 이 앱에서 악조를 적어 두는 곳이 거기 하나뿐이라, 적혀 있으면 그게 곧 이 곡의 음계다.
   // 율명이 넷도 안 되는 악보(빈 악보·쓰다 만 악보)는 셀 것이 없어 황종 평조로 둔다.
+  // 조(음계) 판단 — 조 프리셋이 정해져 있으면 그것, '12율 전체'(기본)면 **곡이 어느 조인지
+  // 먼저 판단한다**(2026-08-14 사용자 확정). 예전엔 많이 나온 율명 다섯을 그냥 뽑았는데,
+  // 시김새가 스치는 이웃 음이 순위에 끼면 어느 조도 아닌 음계가 나와 '한음 위'가 어긋났다.
+  // 판단: 평조 꼴(궁에서 0·2·5·7·9 반음)을 12율 어디에나 앉혀 본 12벌 가운데 **곡의 음을
+  // 가장 많이 담는** 것을 고른다. 계면조(0·3·5·7·10)는 따로 안 훑는다 — 같은 5음 집합을
+  // 다른 궁에서 부른 이름이라(황종 계면조 = 무역 평조의 집합) 12벌이 이미 다 덮고,
+  // 시김새 '한음 위'가 보는 것은 이름이 아니라 집합이다. 황종평조·황종계면조·중려평조도
+  // 전부 이 12벌 안에 있다.
   function scaleNotes() {
     const jo = JO_PRESETS[$("joPreset").value];
     if (jo) return jo.notes;
-    const cnt = {};
+    const PYEONG = [0, 2, 5, 7, 9];
+    const cnt = new Array(12).fill(0);
+    let total = 0, distinct = 0;
     parseMelodyOffsets(melodyFull).forEach(function (gak) {
       gak.forEach(function (cell) {
         cell.text.split(/\s+/).forEach(function (row) {
           tokenizeNotes(row).forEach(function (tk) {
-            if (tk.base) cnt[tk.base] = (cnt[tk.base] || 0) + 1;
+            if (!tk.base) return;
+            const i = SCALE.indexOf(tk.base);
+            if (i < 0) return;
+            if (!cnt[i]) distinct++;
+            cnt[i]++; total++;
           });
         });
       });
     });
-    const names = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 5);
-    return names.length >= 4 ? names : JO_PRESETS["hwang-pyeong"].notes;
+    // 셀 것이 너무 적으면 황종 평조로 둔다(예전 규칙 그대로)
+    if (total < 4 || distinct < 4) return JO_PRESETS["hwang-pyeong"].notes;
+    let best = null;
+    for (let r = 0; r < 12; r++) {
+      let inn = 0, cover = 0;
+      PYEONG.forEach(function (p) {
+        const c = cnt[(r + p) % 12];
+        inn += c;
+        if (c) cover++;
+      });
+      // 담는 음 수가 같으면 곡에 실제로 나온 음계음이 많은 쪽(cover) — 빈 자리로 이긴
+      // 조는 곡과 덜 닮은 것이다
+      const score = inn * 100 + cover;
+      if (!best || score > best.score) best = { score: score, root: r };
+    }
+    return PYEONG.map(function (p) { return SCALE[(best.root + p) % 12]; });
   }
 
   // 음계 사다리. 절대 음높이가 나오려면 황의 음고를 알아야 하므로 재생할 때 만든다.

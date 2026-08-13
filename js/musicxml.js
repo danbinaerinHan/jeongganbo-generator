@@ -145,45 +145,51 @@
           });
         }
         // 셋잇단 — 표준 음표값으로 안 떨어지되(4분음표 정간의 3분박 등) 3/2배가 딱 떨어지면
-        // 그 꼴에 3:2를 달아 적는다(음길이·마디 합은 그대로). 괄호(숫자 3)는 같은 정간에서
-        // 난 이웃끼리 한 묶음 — cell 꼬리표가 그 경계다. 5·7분박은 여전히 음표꼴 없이 간다
-        // (쓰지 않기로 확정, 2026-08-14 — 억지 잇단보다 비워 두는 쪽이 정직하다).
+        // 그 꼴에 3:2를 달아 적는다(음길이·마디 합은 그대로). 5·7분박은 여전히 음표꼴 없이
+        // 간다(쓰지 않기로 확정, 2026-08-14 — 억지 잇단보다 비워 두는 쪽이 정직하다).
         const tups = m.map(function (n) {
           if (C.exactValue(n.units) || (n.units * 3) % 2) return null;
           const ty = C.exactValue(n.units * 3 / 2);
           return ty ? { actual: 3, normal: 2, ty: ty } : null;
         });
-        // 잇단 묶음 안에서 꼬리 있는 같은 꼴끼리는 빔으로 잇는다(8분 셋잇단이 낱개
-        // 깃발 셋으로 흩어지지 않게). 꼴이 섞인 묶음은 안 잇는다 — 겹 수가 다른 빔의
-        // 부분 연결(hook)까지 적으려면 셈이 한 층 더 필요한데 그런 악보가 아직 없다.
-        const FLAG_N = { eighth: 1, "16th": 2, "32nd": 3, "64th": 4 };
-        const beams = new Array(m.length).fill(null);
-        let run = [];
-        function flushRun() {
-          if (run.length >= 2) {
-            beams[run[0]] = "begin";
-            beams[run[run.length - 1]] = "end";
-            for (let k = 1; k < run.length - 1; k++) beams[run[k]] = "continue";
-          }
-          run = [];
-        }
+        // 잇단 묶음(괄호·숫자 3)의 경계 — 같은 정간 안에서 **길이 합이 표준 음표값이 되는
+        // 자리**에서 닫는다. 정간 통째로 한 묶음이면 3분박×3(16분 셋잇단 아홉 개)이 9개짜리
+        // 한 묶음이 되어 3:2라는 비율과 안 맞고 조판기가 못 그린다(2026-08-14 사용자 제보) —
+        // 280×3=840(8분음표)에서 닫아야 분박마다 제 괄호가 붙는다.
+        const groups = [];
+        let run = [], runSum = 0;
+        function closeRun() { if (run.length) groups.push(run); run = []; runSum = 0; }
         m.forEach(function (n, i) {
           const t = tups[i];
-          const beamable = t && !n.rest && FLAG_N[t.ty.type] && !t.ty.dots;
-          const joins = run.length && beamable &&
-            m[run[0]].cell === n.cell && tups[run[0]].ty.type === t.ty.type;
-          if (!joins) flushRun();
-          if (beamable) run.push(i);
+          if (!t) { closeRun(); return; }
+          if (run.length && m[run[0]].cell !== n.cell) closeRun();
+          run.push(i); runSum += n.units;
+          if (C.exactValue(runSum)) closeRun();
         });
-        flushRun();
+        closeRun();
+        // 묶음마다 tuplet 시작/끝을, 꼬리 있는 같은 꼴로만 채워진 묶음이면 빔도 잇는다
+        // (8분 셋잇단이 낱개 깃발로 흩어지지 않게). 꼴이 섞인 묶음은 안 잇는다 — 겹 수가
+        // 다른 빔의 부분 연결(hook)까지 적으려면 셈이 한 층 더 필요한데 그런 악보가 아직 없다.
+        const FLAG_N = { eighth: 1, "16th": 2, "32nd": 3, "64th": 4 };
+        const marks = new Array(m.length).fill(null);
+        groups.forEach(function (g) {
+          const beamOk = g.length >= 2 && g.every(function (i) {
+            return !m[i].rest && FLAG_N[tups[i].ty.type] && !tups[i].ty.dots &&
+                   tups[i].ty.type === tups[g[0]].ty.type;
+          });
+          g.forEach(function (i, k) {
+            marks[i] = {
+              tupStart: k === 0, tupStop: k === g.length - 1,
+              beam: !beamOk ? null : k === 0 ? "begin" : k === g.length - 1 ? "end" : "continue"
+            };
+          });
+        });
         m.forEach(function (n, i) {
           graceRun(n.graces);
-          const t = tups[i];
-          const joinPrev = t && i > 0 && tups[i - 1] && m[i - 1].cell === n.cell;
-          const joinNext = t && i < m.length - 1 && tups[i + 1] && m[i + 1].cell === n.cell;
+          const t = tups[i], mk = marks[i] || {};
           noteEl(Object.assign({}, n, {
-            tup: t, tupStart: t && !joinPrev, tupStop: t && !joinNext,
-            beam: beams[i], beamN: t ? FLAG_N[t.ty.type] : 1
+            tup: t, tupStart: t && mk.tupStart, tupStop: t && mk.tupStop,
+            beam: mk.beam, beamN: t ? FLAG_N[t.ty.type] : 1
           }), s.fifths);
           graceRun(n.afters);
         });
