@@ -21,6 +21,14 @@
     --danger-line: #ddb0aa; /* 지우기 테두리 */
     --tip-bg: #2b2b2b;      /* 호버 말풍선(원래도 어두움) */
     --tip-ink: #ffffff;
+    /* ---- 온보딩 화면(환영·둘러보기·도움말·새 문서)의 공통 재료 ----
+       이 앱의 '떠 있는 판'은 각지고(모서리 0) 얇은 선으로 경계를 긋는다. 그림자는
+       '띄우는 장치'가 아니라 판을 종이에서 떼는 최소한의 표시라 흐림을 줄이고 옅게 준다
+       — 크고 흐린 그림자 + 둥근 모서리는 어느 웹 앱에나 있는 기본값이라 이 앱의 얼굴이
+       못 된다. 자세한 규칙은 아래 '온보딩 네 화면' 절 머리말 참고. */
+    --ui-shadow: 0 1px 2px rgba(0,0,0,.05), 0 14px 34px rgba(0,0,0,.15);
+    /* 메타 라벨(단계 번호·소제목 등) 전용 — 본문 산세리프와 성격을 갈라 '값'으로 읽히게 */
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   }
   /* ---- 밝은 테마 프리셋 (상단바 색상 메뉴 #screenPop에서 선택, jgb_theme_v1) ----
      :root(미색)가 기본이고, 아래 두 클래스는 라이트 값만 갈아끼운다. 다크(body.dark,
@@ -480,36 +488,59 @@
               padding: 6px 10px; margin-bottom: 8px; }
   .gak-warn.on { display: block; }
 
-  /* 새 문서 마법사 — 화면 전체를 덮는 반투명 오버레이 + 가운데 상자. .field/.row/.chk/.btns는
-     레이아웃 탭에서 쓰던 스타일을 그대로 재사용한다. */
-  .modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(28,27,25,.4);
-                    display: flex; align-items: center; justify-content: center; }
-  .modal-box { background: var(--panel); border-radius: 12px; padding: 22px 24px;
-               width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px);
-               overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
-  .modal-box h3 { margin: 0 0 16px; font-size: 16px; }
+  /* ---------- 온보딩 네 화면의 공통 뼈대 (새 문서 마법사 · 악보 게시 창) ----------
+     .field/.row/.chk/.btns는 레이아웃 탭에서 쓰던 스타일을 그대로 재사용한다.
 
-  .btns { display: flex; gap: 8px; margin-top: 8px; }
+     ★ 이 앱의 '떠 있는 판'이 지키는 네 가지 (환영·둘러보기·도움말·마법사 공통):
+     ① 모서리는 각지게(radius 0). 인라인 조각(.key 등)만 2px까지.
+     ② 깊이는 그림자가 아니라 선이 만든다 — 1px 테두리 + 옅은 --ui-shadow.
+     ③ 강조색은 화면당 한 점만. 채워진 버튼은 '지금 눌러야 할 것' 하나뿐이고,
+        나머지는 테두리(.secondary)나 글자만(.ghost).
+     ④ 번호·소제목 같은 메타는 --mono + 넓은 자간으로 본문과 성격을 가른다.
+     새 온보딩 UI를 만들 때 이 넷을 깨지 말 것 — 하나만 어겨도 '어느 웹 앱에나 있는 카드'로
+     돌아간다(둥근 모서리 + 크고 흐린 그림자 + 채운 버튼 여러 개가 그 조합이었다). */
+  .modal-overlay { position: fixed; inset: 0; z-index: 500; background: rgba(20,19,15,.5);
+                    display: flex; align-items: center; justify-content: center; }
+  .modal-box { background: var(--panel); border: 1px solid var(--line); border-radius: 0;
+               padding: 20px 22px;
+               width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px);
+               overflow-y: auto; box-shadow: var(--ui-shadow); }
+  /* 제목 아래 실선 — 머리와 몸을 선으로 가른다(여백만으로 가르면 판이 물러 보인다) */
+  .modal-box h3 { margin: 0 0 14px; padding-bottom: 11px; border-bottom: 1px solid var(--line);
+                  font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+  /* 모달 안 입력칸만 각지게 — 사이드바의 둥근 폼 컨트롤은 그대로 둔다(범위를 여기로 가둔 것) */
+  #newDocModal input, #newDocModal select, #newDocModal textarea,
+  #pubModal input, #pubModal select, #pubModal textarea { border-radius: 0; }
+  /* [＋ 악기 추가]는 .at-add를 사이드바·도구창과 함께 쓰므로 마법사 안으로만 가둬 손본다.
+     여기서 채워진 버튼은 [만들기] 하나뿐이라야 하므로(위 ③) 줄 하나를 더하는 이 버튼은
+     테두리꼴로 낮춘다. 바깥 .at-add는 그대로 둘 것 — 이 개편의 범위가 아니다. */
+  #newDocModal .at-add { border-radius: 0; background: var(--panel);
+                         border-color: var(--line); color: var(--ink); }
+  #newDocModal .at-add:hover { border-color: var(--muted); background: var(--hover); }
+
+  .btns { display: flex; gap: 6px; margin-top: 10px; }
   .btns button {
-    flex: 1; padding: 10px;
+    flex: 1; padding: 9px;
     border: 1px solid var(--accent); background: var(--accent); color: #fff;
-    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    border-radius: 0; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
-  .btns button.secondary { background: var(--panel); color: var(--accent); }
+  /* 보조 버튼은 강조색을 안 쓴다 — 강조색을 둘이 나눠 가지면 어느 쪽이 '진행'인지 안 보인다 */
+  .btns button.secondary { background: var(--panel); border-color: var(--line); color: var(--muted); }
+  .btns button.secondary:hover { border-color: var(--muted); color: var(--ink); background: var(--hover); }
   .btns button:hover { opacity: .9; }
   /* 서버에 다녀오는 동안(게시·갱신·삭제) 누름을 막는다 — 두 번 눌러 두 번 올라가지 않게 */
   .btns button:disabled, .pub-del:disabled { opacity: .5; cursor: default; }
 
   /* 악보 게시 창(#pubModal) 전용 — 나머지는 새 문서 마법사의 .field/.row/.chk/.btns 그대로 */
   .pub-copy { flex: 0 0 auto; padding: 8px 12px; border: 1px solid var(--accent);
-              background: var(--panel); color: var(--accent); border-radius: 6px;
+              background: var(--panel); color: var(--accent); border-radius: 0;
               font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
   .pub-copy:hover { background: var(--hover); }
   /* [내리기]는 되돌릴 수 없는 명령이라 [게시]·[취소]와 같은 줄에 세우지 않는다 —
      버튼 셋이 나란하면 손이 미끄러진다. 한 칸 떨어뜨리고 테두리만 있는 옅은 꼴로. */
   .pub-del { display: block; width: 100%; margin-top: 12px; padding: 8px;
              border: 1px solid var(--danger-line); background: transparent; color: var(--danger);
-             border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+             border-radius: 0; font-size: 12px; cursor: pointer; font-family: inherit; }
   .pub-del:hover { background: var(--danger-soft); }
 
   /* ---------- 미리보기 + 멜로디 에디터 ---------- */
@@ -1051,7 +1082,18 @@
     font-size: 8px; font-weight: 700; line-height: 1;
   }
   body.orn-add-on .ornchip:not(.orn-no-key) .orn-key-badge { display: inline-flex; }
-  .ornchip.orn-armed { background: var(--accent-tint); outline: 1.5px solid var(--accent); border-radius: 6px; }
+  /* 골라둔 칩 — 둘러보기 강조 상자(.tour-ring)와 같은 수법이다: 바탕을 꽉 채우지 않고
+     안쪽으로 옅게 번지게(16%→5%) 해서 '칠한 칸'이 아니라 '고른 자리'로 읽히게 한다.
+     예전엔 --accent-tint(#f4e2c2)를 통짜로 깔아, 칩 격자에서 그 칸만 진한 덩어리로 튀고
+     기호 그림도 탁한 바탕에 묻혔다. 색은 var(--accent)에서 뽑으므로 테마·다크를 따라간다
+     (악보 위 상자와 달리 팔레트는 앱 UI라 여기선 테마를 따라가는 게 맞다).
+     바깥으로 번지는 띠(#tourHole의 두 번째 겹)는 일부러 안 넣었다 — 칩 사이가 3px뿐이라
+     이웃 칸을 침범한다. 모서리는 팔레트의 기존 어휘(6px)를 그대로 둔다.
+     color-mix를 모르는 옛 브라우저에선 background 선언만 통째로 무시되어 테두리만 남는다 —
+     '고른 칩'은 그래도 알아볼 수 있으니 이대로 둔다. */
+  .ornchip.orn-armed { outline: 1.5px solid var(--accent); border-radius: 6px;
+    background: linear-gradient(155deg, color-mix(in oklab, var(--accent) 16%, transparent),
+                                        color-mix(in oklab, var(--accent) 5%, transparent)); }
 
   /* 뜬(도킹 안 된) 시김새 창도 폭이 좁아, '시김새 편집(위치·삭제)'+'단축키 변환'이
      한 줄을 넘어 삐져나갔다. 도킹 상태(위 body.ribbon-left 규칙)와 똑같이 머리줄을
@@ -1271,12 +1313,21 @@
                            color: var(--muted); font-size: 15px; font-family: inherit; }
   .palette .sym-search-x:hover { background: var(--hover); color: var(--ink); }
   .palette .sym-empty { font-size: 11px; color: var(--muted); padding: 6px 3px; }
-  /* 시김새 그룹 제목(붙임표/독립 기호) — 악보 서체로 크게, 오른쪽으로 가는 괘선과 함께 */
-  .palette .orn-sec { display: flex; align-items: baseline; gap: 8px; margin: 12px 2px 7px; }
+  /* 팔레트 그룹 제목(붙임표·독립 기호·운지·빠르기 / 기호·장구 / 구음) — 오른쪽으로 가는 괘선과 함께.
+     ★ 여기는 **악보 서체(궁서 계열)를 쓰지 않는다.** 이 앱에서 궁서 계열은 '종이에 실릴
+     글자'의 표시다 — 율명 표(.phead/.pch)나 빠르기 미리보기(.gn-preview)는 누르면 그 글씨
+     그대로 악보에 찍히므로 서체가 같아야 하지만, '붙임표'·'운지'는 분류 이름일 뿐 악보에
+     나오는 일이 없다. 게다가 그 스택(Kaiti SC→바탕→AppleMyungjo)은 OS마다 다른 글씨로
+     떨어져, 악보 글자라면 치를 값어치가 있는 대가지만 UI 라벨엔 손해뿐이다.
+     그래서 도움말 절 머리(.help-pane h4)와 같은 **메타 라벨 어휘**(모노·넓은 자간)로 맞췄다 —
+     '절 머리는 앱 어디서나 한 꼴'. 자간이 .09em인 건 한글이 길게 들어오기 때문(그쪽과 같은 이유).
+     제목이 --ink, 곁말이 --muted인 건 둘을 가르려는 것(예전엔 제목이 강조색 16px이라
+     칩보다 무거웠다). */
+  .palette .orn-sec { display: flex; align-items: baseline; gap: 8px; margin: 14px 2px 7px; }
   .palette .orn-sec:first-child { margin-top: 2px; }
-  .palette .orn-sec b { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif;
-                        font-size: 16px; font-weight: 700; color: var(--accent);
-                        letter-spacing: 2px; white-space: nowrap; }
+  .palette .orn-sec b { font-family: var(--mono);
+                        font-size: 11px; font-weight: 700; color: var(--ink);
+                        letter-spacing: .09em; white-space: nowrap; }
   .palette .orn-sec span { font-size: 10px; color: var(--muted); white-space: nowrap; }
   .palette .orn-sec::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--line); }
   #paletteWrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
@@ -1469,23 +1520,34 @@
               padding: 0; display: flex; flex-direction: column; overflow: hidden; }
   .help-head { display: flex; align-items: center; justify-content: space-between;
                padding: 14px 18px 10px; border-bottom: 1px solid var(--line); flex: 0 0 auto; }
-  .help-head h3 { margin: 0; }
+  /* 머리줄 자체가 이미 아래 실선을 갖고 있으므로 .modal-box h3의 선·여백은 걷는다(선 두 겹 방지) */
+  .help-head h3 { margin: 0; padding-bottom: 0; border-bottom: none; }
   .help-body { display: flex; flex: 1; min-height: 0; }
   /* 사이드바 탭과 클래스가 겹치면 안 됨(.tab/.tabpanel은 app.js가 문서 전체를 토글) —
      도움말 전용 .help-tab/.help-pane을 쓴다 */
   .help-tabs { flex: 0 0 118px; display: flex; flex-direction: column; gap: 2px;
                padding: 12px 8px; border-right: 1px solid var(--line); background: var(--soft); }
+  /* 탭은 알약이 아니라 '왼쪽 기둥에 꽂힌 줄' — 고른 탭은 채우지 않고 왼쪽에 2px 강조 막대만
+     세운다(inset box-shadow라 글자 자리가 안 밀린다. border-left면 활성 탭만 2px 밀린다). */
   .help-tab { text-align: left; border: none; background: none; color: var(--muted);
               font-family: inherit; font-size: 12px; font-weight: 600;
-              padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+              padding: 8px 10px; border-radius: 0; cursor: pointer; }
   .help-tab:hover { background: var(--hover); color: var(--ink); }
-  .help-tab.active { color: var(--accent); background: var(--accent-soft); }
+  .help-tab.active { color: var(--ink); background: var(--hover);
+                     box-shadow: inset 2px 0 0 var(--accent); }
   .help-panes { flex: 1; min-width: 0; display: flex; }
   .help-pane { display: none; flex: 1; min-width: 0; overflow-y: auto;
                padding: 16px 20px; font-size: 12.5px; line-height: 1.7; color: var(--ink); }
   .help-pane.active { display: block; }
-  .help-pane h4 { margin: 14px 0 6px; font-size: 12px; color: var(--accent); letter-spacing: .5px; }
-  .help-pane h4:first-child { margin-top: 0; }
+  /* 절 머리 = 메타 라벨(모노·넓은 자간·옅은 색) + 위쪽 실선. 강조색으로 칠하지 않는다 —
+     강조색은 화면당 한 점(고른 탭)뿐이고, 절을 가르는 일은 선과 자간이 한다. */
+  /* 자간이 .14em인 짧은 라벨(단계 번호·머리 라벨)과 달리 여기는 .09em이다 — 이 절 머리는
+     한 문장에 가까운 한글이 들어와(예: '정간보(井間譜)란?') 자간을 그대로 주면 괄호 앞뒤가
+     벌어져 낱글자로 흩어진다. 한글이 길게 들어오는 라벨은 자간을 낮출 것. */
+  .help-pane h4 { margin: 18px 0 8px; padding-top: 12px; border-top: 1px solid var(--line);
+                  font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+                  color: var(--muted); letter-spacing: .09em; }
+  .help-pane h4:first-child { margin-top: 0; padding-top: 0; border-top: none; }
   .help-pane p, .help-pane ul, .help-pane ol { margin: 0 0 8px; }
   .help-pane ul, .help-pane ol { padding-left: 18px; }
   .help-pane li { margin-bottom: 3px; }
@@ -1493,27 +1555,43 @@
   .help-pane th, .help-pane td { border-bottom: 1px solid var(--line); padding: 5px 8px;
                                  text-align: left; vertical-align: top; }
   .help-pane th { color: var(--muted); font-size: 11px; font-weight: 600; }
-  .key { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px;
-         background: var(--soft); border: 1px solid var(--line); border-radius: 4px;
+  /* 인라인 조각은 각짐 규칙의 유일한 예외 — 2px까지(0이면 글줄 안에서 각목처럼 딱딱해진다) */
+  .key { font-family: var(--mono); font-size: 11px;
+         background: var(--soft); border: 1px solid var(--line); border-radius: 2px;
          padding: 1px 5px; white-space: nowrap; }
   .help-fig { display: block; margin: 10px auto; max-width: 320px; width: 100%; height: auto; }
   .help-pane p.help-credit { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
                              font-size: 11px; line-height: 1.6; color: var(--muted); }
   .help-foot { padding: 10px 18px; border-top: 1px solid var(--line); text-align: right;
                flex: 0 0 auto; }
-  .help-foot button { border: 1px solid var(--accent); background: var(--panel); color: var(--accent);
-                      border-radius: 6px; padding: 7px 14px; font-size: 12px; font-weight: 600;
+  /* 발의 [둘러보기]는 이 화면에서 '지금 눌러야 할 것'이라 유일하게 채워진 버튼 */
+  .help-foot button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
+                      border-radius: 0; padding: 7px 14px; font-size: 12px; font-weight: 600;
                       cursor: pointer; font-family: inherit; }
   .help-foot button:hover { opacity: .9; }
 
-  /* 환영 카드 — 진짜 첫 방문에만 한 번. 버튼 3개가 세로로 쌓인 작은 카드 */
-  .welcome-box { width: 380px; text-align: center; }
-  .welcome-sub { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin: 0 0 4px; }
-  .welcome-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  /* 환영 카드 — 진짜 첫 방문에만 한 번. 버튼 3개가 세로로 쌓인 작은 카드.
+     가운데 정렬이 아니라 왼쪽 정렬이다: 글이 왼쪽 한 축에서 시작해야 '읽고 고르는 화면'으로
+     읽힌다(가운데 정렬은 광고 랜딩의 말투다). 버튼 셋의 무게도 갈랐다 —
+     둘러보기=채움 / 도움말=테두리 / 바로 시작=글자만. 셋 다 채우면 첫 화면부터 고민이 된다. */
+  .welcome-box { width: 380px; }
+  /* 이름 위 작은 메타 라벨 — 이 판이 무엇인지 한 마디로 얹는다(::before로 마크업 없이) */
+  .welcome-box h3 { position: relative; }
+  .welcome-box h3::before { content: "환영합니다"; display: block; margin-bottom: 7px;
+                            font-family: var(--mono); font-size: 10px; font-weight: 700;
+                            color: var(--muted); letter-spacing: .18em; }
+  .welcome-sub { color: var(--muted); font-size: 12.5px; line-height: 1.7; margin: 0; }
+  .welcome-btns { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; }
   .welcome-btns button { padding: 10px; border: 1px solid var(--accent); background: var(--accent);
-                         color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600;
-                         cursor: pointer; font-family: inherit; }
-  .welcome-btns button.secondary { background: var(--panel); color: var(--accent); }
+                         color: #fff; border-radius: 0; font-size: 13px; font-weight: 600;
+                         cursor: pointer; font-family: inherit; text-align: left; }
+  .welcome-btns button.secondary { background: var(--panel); border-color: var(--line);
+                                   color: var(--ink); font-weight: 500; }
+  .welcome-btns button.secondary:hover { border-color: var(--muted); background: var(--hover); }
+  /* 가장 조용한 선택지 — 테두리도 없이 글자만. 눌러도 되지만 권하지는 않는 길. */
+  .welcome-btns button.ghost { background: none; border-color: transparent; color: var(--muted);
+                               font-weight: 500; }
+  .welcome-btns button.ghost:hover { color: var(--ink); background: var(--hover); }
   .welcome-btns button:hover { opacity: .9; }
 
   /* 둘러보기(투어) — 화면 전체를 덮는 레이어(z 800: 모달 500 위, 툴팁 9999 아래).
@@ -1523,50 +1601,83 @@
   #tourLayer { position: fixed; inset: 0; z-index: 800; overflow: hidden; }
   /* 어둠 + 구멍 오버레이 — 맨 아래에 깔린다(테두리·링·카드가 그 위에). */
   #tourSpot { position: absolute; inset: 0; pointer-events: none; }
-  /* 완료 축하 카드 — 화면 정중앙, 구멍 없는 어둠 위에 뜬다(둘러보기 끝까지 본 뒤). */
+  /* 완료 축하 카드 — 화면 정중앙, 구멍 없는 어둠 위에 뜬다(둘러보기 끝까지 본 뒤).
+     예전엔 46px 이모지가 계속 흔들리고 카드가 통통 튀어 들어왔는데, 그 두 가지가
+     '아무 웹 앱에나 붙는 축하 연출'이라 지웠다 — 여기서 축하는 글이 하고, 움직임은
+     6px 떠오르며 나타나는 것으로 끝낸다. 되살리지 말 것. */
   #tourFinale { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    width: 340px; max-width: calc(100vw - 24px); text-align: center;
+    width: 340px; max-width: calc(100vw - 24px);
     background: var(--panel); color: var(--ink); border: 1px solid var(--line);
-    border-radius: 16px; padding: 28px 24px 24px;
-    box-shadow: 0 18px 50px rgba(0,0,0,.35); }
-  #tourFinale.pop { animation: tourPop .42s cubic-bezier(.2,1.3,.5,1) both; }
-  @keyframes tourPop { 0% { transform: translate(-50%,-50%) scale(.7); opacity: 0; }
-                       100% { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
-  #tourFinale .tf-emoji { font-size: 46px; line-height: 1; margin-bottom: 8px;
-    animation: tourWiggle 1.1s ease-in-out infinite; transform-origin: 50% 80%; }
-  @keyframes tourWiggle { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
-  #tourFinale h4 { margin: 0 0 10px; font-size: 19px; color: var(--accent); }
-  #tourFinaleBody { font-size: 13px; line-height: 1.65; color: var(--ink); margin-bottom: 18px; }
+    border-radius: 0; padding: 22px;
+    box-shadow: var(--ui-shadow); }
+  #tourFinale.pop { animation: tourPop .2s cubic-bezier(.2,0,0,1) both; }
+  @keyframes tourPop { from { transform: translate(-50%, calc(-50% + 6px)); opacity: 0; }
+                       to   { transform: translate(-50%, -50%); opacity: 1; } }
+  /* 제목 위 메타 라벨 — 제목 글은 tour-text.js가 넣으므로 마크업 없이 ::before로 얹는다 */
+  #tourFinale h4::before { content: "둘러보기 완료"; display: block; margin-bottom: 8px;
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    color: var(--muted); letter-spacing: .18em; }
+  #tourFinale h4 { margin: 0 0 10px; font-size: 17px; font-weight: 700;
+    color: var(--ink); letter-spacing: -.01em; }
+  #tourFinaleBody { font-size: 13px; line-height: 1.7; color: var(--muted); margin-bottom: 18px; }
   #tourFinaleBody div + div { margin-top: 4px; }
-  #tourFinaleBtn { width: 100%; padding: 11px 0; font-size: 14px; font-weight: 700;
-    border: none; border-radius: 9px; background: var(--accent); color: #fff; cursor: pointer; }
+  #tourFinaleBtn { width: 100%; padding: 10px 0; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--accent); border-radius: 0; background: var(--accent); color: #fff;
+    cursor: pointer; font-family: inherit; }
   #tourFinaleBtn:hover { filter: brightness(1.06); }
-  /* #tourHole은 이제 어둠을 만들지 않고 메인 대상의 강조 '테두리'만 담당한다. */
-  #tourHole { position: absolute; border-radius: 10px; pointer-events: none;
-              outline: 2px solid var(--accent);
+  /* #tourHole은 이제 어둠을 만들지 않고 메인 대상의 강조 '테두리'만 담당한다.
+     선 하나가 아니라 **두 겹**이다: 안쪽 1.5px 실선이 경계를 긋고, 그 바깥 4px가 강조색이
+     옅게 번진 띠(--accent-glow, 원래 입력 포커스 글로우용으로 있던 값). 2px 실선 하나만
+     그으면 대상에 테이프를 붙인 것처럼 딱딱한데, 바깥으로 한 번 풀어 주면 '빛이 닿은 자리'로
+     읽힌다. 여기만은 var(--accent)를 쓴다 — 보조 상자(.tour-ring)와 달리 이 상자는 흰 종이가
+     아니라 상단바·사이드바·도구창 위에도 얹히므로 테마·다크를 따라가야 파묻히지 않는다.
+     outline이 아니라 box-shadow인 건 두 겹을 한 속성으로 그리려는 것(둘 다 자리를 안 먹는다). */
+  #tourHole { position: absolute; border-radius: 0; pointer-events: none;
+              box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 5.5px var(--accent-glow);
               transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
   /* 카드 폭·글자 크기는 한 묶음 — 본문을 13px로 키우면서 300px에서 넓혔다(줄이 자주
-     접혀 목록이 길어 보이는 걸 막는 용). 크기를 더 만지면 폭도 같이 볼 것. */
+     접혀 목록이 길어 보이는 걸 막는 용). 크기를 더 만지면 폭도 같이 볼 것.
+     ★ 안쪽 여백(18/20px)은 아래 칩·진행바·버튼줄이 음수 마진으로 되받아 '가장자리까지
+     닿는 띠'를 만드는 기준값이다 — 여기를 고치면 그 세 곳의 음수 마진도 함께 고칠 것. */
   #tourCard { position: absolute; width: 330px; max-width: calc(100vw - 24px);
               background: var(--panel); color: var(--ink); border: 1px solid var(--line);
-              border-radius: 10px; padding: 18px 20px;
-              box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+              border-radius: 0; padding: 18px 20px;
+              box-shadow: var(--ui-shadow);
+              /* 카드는 자리 아홉 곳에 고정돼 웬만하면 안 움직인다(app.js placeTourCard).
+                 그래도 옮겨야 할 때가 있으므로, 순간이동 대신 미끄러지게 한다 — 어디서
+                 어디로 갔는지 눈이 따라가야 [다음]을 다시 찾지 않는다. #tourHole과 같은 값. */
+              transition: left .22s ease, top .22s ease;
+              /* 화면보다 길어지지 않게 가두고 본문만 스크롤한다. 이게 있어야 아래줄 자리의
+                 셈(y = 화면높이 − 카드높이 − 8)이 음수로 안 가고, 카드가 아래에 붙어 있는
+                 한 발(버튼줄)은 단계가 바뀌어도 늘 같은 높이에 남는다. */
+              display: flex; flex-direction: column; max-height: calc(100vh - 16px); }
+  /* 본문만 늘고 줄어드는 칸 — 나머지(칩·진행바·번호·제목·그림·버튼줄)는 제 높이를 지킨다.
+     min-height:0이 없으면 flex 자식이 안 줄어들어 max-height가 무시된다. */
+  #tourBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  #tourChips, #tourProgress, #tourStepNum, #tourCard h4, #tourFig, .tour-btns { flex: 0 0 auto; }
   /* 장 칩 — 카드 맨 위의 큰 목차(1 개요 · 2 입력 · 3 꾸미기 · 4 마무리). 현재 장은 .on.
-     누르면 그 장 첫 단계로 건너뛰므로 버튼답게, 그러나 본문보다 조용하게. */
-  #tourChips { display: flex; gap: 4px; margin-bottom: 8px; }
-  #tourChips button { flex: 1; font-size: 11px; padding: 3px 0; border: 1px solid var(--line);
-    background: var(--panel); border-radius: 6px; cursor: pointer; color: var(--muted);
-    white-space: nowrap; }
-  #tourChips button:hover { border-color: var(--accent); color: var(--accent); }
-  #tourChips button.on { background: var(--accent); border-color: var(--accent);
-    color: #fff; font-weight: 700; }   /* 강조색 위 흰 글자 — 테마 무관 고정 */
-  /* 전체 진행 바 — 칩 아래 얇은 줄. 채움 폭은 (현재 단계+1)/전체 (app.js) */
-  #tourProgress { height: 3px; background: var(--track); border-radius: 2px;
-    margin-bottom: 8px; overflow: hidden; }
+     알약 넷이 아니라 가장자리까지 닿는 '분절 막대' 하나다(사이는 1px 선으로만 가른다).
+     고른 장은 강조색으로 채우지 않는다 — 이 카드에서 강조색은 진행 바와 [다음] 두 곳뿐이고,
+     칩까지 채우면 눈이 어디를 봐야 할지 흩어진다. */
+  #tourChips { display: flex; gap: 0; margin: -18px -20px 0; }
+  #tourChips button { flex: 1; font-size: 11px; padding: 9px 2px; border: none;
+    border-right: 1px solid var(--line);
+    background: none; border-radius: 0; cursor: pointer; color: var(--muted);
+    white-space: nowrap; font-family: inherit; }
+  #tourChips button:last-child { border-right: none; }
+  #tourChips button:hover { color: var(--ink); background: var(--hover); }
+  #tourChips button.on { background: var(--hover); color: var(--ink); font-weight: 700; }
+  /* 전체 진행 바 — 칩 줄과 본문을 가르는 '선' 노릇까지 겸한다(별도 구분선을 두면 가로줄이
+     두 겹이 된다). 채움 폭은 (현재 단계+1)/전체 (app.js) */
+  #tourProgress { height: 2px; background: var(--track); border-radius: 0;
+    margin: 0 -20px 14px; overflow: hidden; }
   #tourProgress i { display: block; height: 100%; background: var(--accent);
     width: 0; transition: width .2s; }
-  #tourStepNum { font-size: 12px; color: var(--muted); }
-  #tourCard h4 { margin: 2px 0 8px; font-size: 15px; color: var(--accent); }
+  /* 단계 번호(1-2 · 개요) — 모노·넓은 자간으로 '값'처럼. 본문 산세리프와 성격을 가른다. */
+  #tourStepNum { font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: .14em; color: var(--muted); }
+  #tourCard h4 { margin: 6px 0 10px; font-size: 15px; font-weight: 700;
+    color: var(--ink); letter-spacing: -.01em; }
   /* 본문은 • 글머리표 한 줄(div) 단위 — showTourStep이 body의 \n마다 div로 쪼개 넣는다.
      내어쓰기(padding-left + 음수 text-indent): 긴 줄이 접히면 둘째 줄이 • 밑이 아니라
      글자 밑에 맞아야 글머리표 목록으로 읽힌다(통짜 p + pre-line로는 못 함 —
@@ -1576,33 +1687,47 @@
   #tourBody div { padding-left: 1.1em; text-indent: -1.1em; word-break: keep-all; }
   #tourBody div + div { margin-top: 8px; }
   /* 소제목(줄 앞 "## ") — 한 단계 안 글머리표 묶음이 둘일 때의 나눔 머리. 내어쓰기 해제. */
-  #tourBody div.tour-sub { padding-left: 0; text-indent: 0; font-weight: 700; color: var(--accent); }
-  #tourBody div + div.tour-sub { margin-top: 11px; }
-  /* 팁(줄 앞 "!! ") — 기능 안내가 아니라 권장 사용법. 연한 강조 배경 상자로 본문과 구분. */
-  #tourBody div.tour-tip { padding: 9px 12px; text-indent: 0; background: var(--accent-tint);
-                           border-radius: 7px; }
-  #tourBody div.tour-tip b:first-child { color: var(--accent); }
+  /* 자간 .09em — 소제목엔 한글이 길게 들어오므로(.help-pane h4와 같은 이유) */
+  #tourBody div.tour-sub { padding-left: 0; text-indent: 0; font-family: var(--mono);
+                           font-size: 10.5px; font-weight: 700; letter-spacing: .09em;
+                           color: var(--muted); }
+  #tourBody div + div.tour-sub { margin-top: 14px; }
+  /* 팁(줄 앞 "!! ") — 기능 안내가 아니라 권장 사용법. 강조색으로 칠하지 않고 옅은 바탕 +
+     왼쪽 2px 막대로 세운다(칠한 상자는 본문보다 무거워져 정작 안내를 덮었다). */
+  #tourBody div.tour-tip { padding: 9px 12px; text-indent: 0; background: var(--soft);
+                           border-left: 2px solid var(--accent); border-radius: 0; }
+  #tourBody div.tour-tip b:first-child { color: var(--ink); }
   #tourBody div + div.tour-tip { margin-top: 10px; }
   /* 보조 하이라이트 링(step.also) — 컷아웃 구멍은 하나뿐이라, 본문이 가리키는 나머지
      '실제 누를 버튼'에 살짝 두르는 테두리. positionTour가 만들고 자리도 잡는다. */
-  .tour-ring { position: absolute; border: 2px solid var(--accent); border-radius: 8px;
-               pointer-events: none; opacity: .75; }
+  /* 상자 색 셋은 **앱의 세 테마 강조색(미색·은청색·옥색)을 종이용으로 조금 짙게 한 형제**다.
+     예전엔 첫 상자만 var(--accent)이고 나머지가 #2f6fbf·#1f8a5f라 서로 남남인 원색 조합이었고,
+     테마색을 쓴 탓에 다크모드에선 흰 종이 위에 형광 파랑이 얹혔다. 셋 다 **고정값**이어야
+     맞다 — 이 상자들은 다크에서도 흰 종이인 악보 위에 놓이기 때문(같은 이유로 tone-b/c는
+     원래부터 고정값이었다). 색은 rgb 세 숫자(--rc)로만 갈아끼우고, 꼴은 아래 한 곳에서 정한다.
+     테두리만 긋지 않고 안쪽으로 옅게 번지게(11%→3% 그러데이션) 해서 '선'이 아니라 '자리'로
+     읽히게 했다 — 종이가 흰색이라 이 정도 농도면 밑의 율명·격자가 그대로 보인다. */
+  .tour-ring { position: absolute; --rc: 138,106,53;   /* 미색 계열 — 기본 */
+               border: 1.5px solid rgb(var(--rc)); border-radius: 0;
+               background: linear-gradient(155deg, rgba(var(--rc), .11), rgba(var(--rc), .03));
+               pointer-events: none; }
   /* 상자 이름표 — '정간·대강·각'처럼 무엇을 가리키는 상자인지 글로 붙인다. 상자가 서로
      포개질 수 있어 자리를 둘로 나눠 둔다(기본 위, .at-side는 오른쪽 바깥 —
-     말풍선 카드가 대개 왼쪽에 앉아서 왼쪽에 두면 가린다). opacity가 걸린
-     .tour-ring 안이라 글자도 함께 옅어지지 않게 색은 진하게 준다. */
-  .tour-ring-lab { position: absolute; bottom: 100%; left: -2px; margin-bottom: 4px;
-                   padding: 2px 7px; border-radius: 6px; white-space: nowrap;
-                   background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
-                   line-height: 1.4; box-shadow: 0 1px 4px rgba(31,26,18,.35); }
+     말풍선 카드가 대개 왼쪽에 앉아서 왼쪽에 두면 가린다).
+     색은 제 상자 것을 그대로 물려받는다(--rc는 .tour-ring에서 상속) — 상자와 이름표가 한
+     물건으로 읽혀야 어느 이름이 어느 상자 것인지 눈이 바로 잇는다. 예전엔 .tour-ring에 걸린
+     opacity 때문에 글자까지 옅어져 색을 따로 진하게 줘야 했는데, 이제 투명도가 색 안에
+     들어 있어(rgba) 그 보정이 필요 없다. */
+  .tour-ring-lab { position: absolute; bottom: 100%; left: -1.5px; margin-bottom: 3px;
+                   padding: 2px 7px; border-radius: 0; white-space: nowrap;
+                   background: rgb(var(--rc)); color: #fff; font-size: 10.5px; font-weight: 700;
+                   letter-spacing: .04em; line-height: 1.45; }
   .tour-ring-lab.at-side { bottom: auto; left: 100%; right: auto; top: 50%;
                            margin: 0 0 0 6px; transform: translateY(-50%); }
-  /* 상자 색 가르기(tone) — 정간·대강·각처럼 여러 상자를 한 장면에 놓을 때. 악보는 다크에서도
-     흰 종이라 색을 테마 변수로 두지 않고 종이 위에서 또렷한 값으로 고정한다. */
-  .tour-ring.tone-b { border-color: #2f6fbf; }
-  .tour-ring.tone-b .tour-ring-lab { background: #2f6fbf; }
-  .tour-ring.tone-c { border-color: #1f8a5f; }
-  .tour-ring.tone-c .tour-ring-lab { background: #1f8a5f; }
+  /* 상자 색 가르기(tone) — 정간·대강·각처럼 여러 상자를 한 장면에 놓을 때. 색만 갈아끼우면
+     테두리·번짐·이름표가 다 따라온다(꼴은 .tour-ring 한 곳에서 정한다). */
+  .tour-ring.tone-b { --rc: 63,107,150; }    /* 은청색 계열 */
+  .tour-ring.tone-c { --rc: 53,120,106; }    /* 옥색 계열 */
   /* 예시 그림(fig 있는 단계만) — '입력 칩 ↓ 캡처 이미지 / 설명' 세로 묶음 4개의 가로
      그리드. 이미지는 앱이 실제 그린 악보의 캡처(흰 종이)라 다크에서도 흰 배경 그대로 —
      악보가 다크에서도 흰 종이인 것과 같은 원칙이니 반전하지 말 것. */
@@ -1612,19 +1737,28 @@
   #tourFig .tf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 8px; }
   #tourFig .tf-grid > div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   #tourFig .tf-in { font-size: 11px; color: var(--ink); background: var(--soft);
-                    border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+                    border: 1px solid var(--line); border-radius: 2px; padding: 1px 5px;
                     white-space: nowrap; }
   #tourFig .tf-arrow { font-size: 10px; color: var(--muted); line-height: 1; }
   /* 높이 기준(폭 auto) — 정간 캡처는 정사각이지만 가사 캡처는 가사 줄까지 가로로 길어서,
      폭을 고정하면 가사 예시만 작아진다. 높이를 맞추면 어느 예시든 '정간 한 칸 높이'가 같다. */
   #tourFig img { height: 50px; width: auto; max-width: 100%; }
   #tourFig .tf-cap { font-size: 11px; color: var(--muted); }
-  .tour-btns { display: flex; gap: 6px; }
+  /* 버튼줄 — 카드 가장자리까지 닿는 발(음수 마진은 #tourCard 여백 18/20px과 짝).
+     위쪽 실선이 본문과 가른다. 무게는 셋이 다르다: 건너뛰기=글자만 / 이전=테두리 /
+     다음=채움. '지금 눌러야 할 것'이 하나뿐이라야 카드가 스스로 길을 가리킨다. */
+  .tour-btns { display: flex; gap: 6px; margin: 2px -20px -18px; padding: 11px 20px;
+               border-top: 1px solid var(--line); }
   .tour-btns #tourSkip { margin-right: auto; }
   .tour-btns button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
-                      border-radius: 6px; padding: 6px 13px; font-size: 13px; font-weight: 600;
+                      border-radius: 0; padding: 6px 13px; font-size: 12.5px; font-weight: 600;
                       cursor: pointer; font-family: inherit; }
-  .tour-btns button.secondary { background: var(--panel); color: var(--accent); }
+  .tour-btns button.secondary { background: var(--panel); border-color: var(--line);
+                                color: var(--ink); font-weight: 500; }
+  .tour-btns button.secondary:hover { border-color: var(--muted); background: var(--hover); }
+  .tour-btns button.ghost { background: none; border-color: transparent; color: var(--muted);
+                            font-weight: 500; }
+  .tour-btns button.ghost:hover { color: var(--ink); background: var(--hover); }
   .tour-btns button:hover { opacity: .9; }
 
   /* ============ 다크 모드 ============ */
@@ -1650,6 +1784,9 @@
     --danger-2: #e2857b;
     --danger-soft: #3a201d; /* 지우기 옅은 바탕 */
     --danger-line: #6b423d; /* 지우기 테두리 */
+    /* 어두운 바탕에선 검은 그림자가 거의 안 보인다 — 더 짙게 줘도 '뿌옇게' 보이지 않으므로
+       진하게 깔고, 판을 떼는 일은 어차피 1px 테두리(--line)가 맡는다 */
+    --ui-shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.5);
   }
   /* 셀렉트 화살표 아이콘은 CSS 안 data-URI라 변수로 안 바뀜 — 다크에선 밝은 획으로 교체 */
   body.dark select {

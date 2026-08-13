@@ -7691,6 +7691,10 @@
     { ch: 3, sel: "#btnHelp", id: "help", }
   ];
   let tourIdx = -1, tourOnEnd = null;
+  // 말풍선이 지금 앉아 있는 자리(TOUR_SLOTS의 인덱스). 단계를 넘겨도 이 값을 그대로 들고
+  // 가는 것이 핵심이다 — 자세한 규칙은 positionTour 머리말 참고. 투어를 새로 시작할 때만
+  // null로 되돌린다(startTour).
+  let tourSlot = null;
   // 하이라이트 대상 하나를 사각형으로. 세 가지 꼴을 받는다:
   //   "선택자"            — 첫 번째로 잡히는 요소(예전부터의 기본)
   //   { union: "선택자" } — 잡히는 것 **전부를 감싸는** 한 상자. 정간 줄·곁줄 줄처럼 칸이
@@ -7858,43 +7862,106 @@
     hole.style.height = (r.height + pad * 2) + "px";
     // 어둠에 밝은 구멍 뚫기 — 메인 대상 + 보조(also) 대상 모두
     buildSpotlight([{ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 }].concat(alsoRects));
-    // 말풍선은 대상 아래 우선 → 위 → 옆(오른쪽 우선) → 화면 안으로 클램핑.
-    // '옆'은 대상이 화면 높이를 거의 다 쓰는 경우(시김새 팔레트 전체 등) 위아래 어디에도
-    // 안 들어가서 — 그때 대상을 덮고 앉는 것보단 옆이 낫다.
+    placeTourCard({ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 },
+                  alsoRects);
+  }
+  // 말풍선 자리 아홉 곳 — 화면 모서리·변에 붙는 고정 자리다. 화면 크기와 카드 크기로만
+  // 정해지므로 대상이 어디로 가든 자리 자체는 그대로 있다.
+  // ★ 차례가 곧 선호도다(앞이 먼저). 아래줄을 앞에 둔 건 카드 높이가 단계마다 달라지기
+  //   때문 — 아래에 붙여 놓으면 본문이 길어져도 발(버튼줄)이 같은 높이에 남아 [다음]이
+  //   제자리를 지킨다. 위에 붙이면 본문 길이만큼 버튼이 아래위로 뛴다.
+  const TOUR_SLOTS = [
+    { hx: "left", vy: "bottom" }, { hx: "right", vy: "bottom" }, { hx: "center", vy: "bottom" },
+    { hx: "left", vy: "middle" }, { hx: "right", vy: "middle" },
+    { hx: "left", vy: "top" },    { hx: "right", vy: "top" },
+    { hx: "center", vy: "top" },  { hx: "center", vy: "middle" },
+  ];
+  const TOUR_SLOT_M = 8;   // 화면 가장자리에서 띄우는 여백
+  // ★ 세로는 '카드 윗변을 어디에 두나'가 아니라 **'카드 밑변을 어디에 두나'**로 정한다.
+  //    그래서 카드는 어느 줄에 앉든 늘 **위로 자란다** — 본문이 209px이든 753px이든 발
+  //    (버튼줄)이 그 줄의 밑선에 남으므로 [다음] 버튼의 높이가 안 변한다.
+  //    윗변 기준이던 때는 위줄에 앉는 순간 카드가 아래로 자라 [다음]이 254px~780px을
+  //    오르내렸다(2026-08-11 실측). vy 값(bottom/middle/top)은 '줄 이름'이지 붙는 변이 아니다.
+  //    밑선이 카드보다 높으면(아주 긴 카드) 위로 넘칠 수 없으니 화면 위에 붙여 클램프한다.
+  function tourSlotBox(slot, cw, ch) {
+    const m = TOUR_SLOT_M, vw = window.innerWidth, vh = window.innerHeight;
+    const x = slot.hx === "left" ? m : slot.hx === "right" ? vw - cw - m : (vw - cw) / 2;
+    const foot = slot.vy === "bottom" ? vh - m : slot.vy === "middle" ? vh * 0.62 : vh * 0.36;
+    return { x: Math.max(m, x), y: Math.max(m, foot - ch), w: cw, h: ch };
+  }
+  function tourOverlap(a, b) {
+    const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    return (w > 0 && h > 0) ? w * h : 0;
+  }
+  // 말풍선 앉히기 — **머무는 것이 기본이고 옮기는 것이 예외**다.
+  //
+  // 예전엔 단계마다 '대상 아래 → 위 → 옆'을 새로 계산해 대상을 따라다녔다. 그러면 단계를
+  // 넘길 때마다 카드가 화면을 가로질러 날아가고, 사람은 [다음] 버튼을 마우스로 쫓아다녀야
+  // 한다 — 안내를 읽는 것보다 버튼 찾는 일이 더 힘들어진다(2026-08-11 사용자 지적).
+  //
+  // 그래서 자리를 아홉 곳으로 고정해 두고, 지금 앉은 자리가 '봐줄 만하면' 그냥 둔다.
+  // 옮겨야 할 때도 아무 데로나 가지 않고 **지금 자리에서 가장 가까운** 쓸 만한 자리로 간다.
+  // 가리는 정도는 두 가지로 나눠 센다:
+  //   · also 상자(본문이 '이걸 누르세요'라고 짚는 것) — 가리면 그 단계가 통째로 무의미해지니
+  //     1000배 무겁게 친다. 사실상 절대 안 가린다.
+  //   · 주 대상(hole) — 가리면 아쉽지만 대상이 화면만큼 클 때(악보 전체 등)는 피할 자리가
+  //     아예 없다. 그래서 넓이로만 세고, 카드 넓이의 STAY_TOL(15%)까지는 참고 머문다.
+  const TOUR_STAY_TOL = 0.15;
+  function placeTourCard(holeRect, alsoRects) {
     const card = $("tourCard");
-    const cw = card.offsetWidth, ch = card.offsetHeight, gap = 12;
-    let top = r.bottom + pad + gap;
-    if (top + ch > window.innerHeight - 8) top = r.top - pad - gap - ch;
-    if (top < 8) {
-      const rightX = r.right + pad + gap, leftX = r.left - pad - gap - cw;
-      const sideLeft = (rightX + cw <= window.innerWidth - 8) ? rightX : (leftX >= 8 ? leftX : null);
-      if (sideLeft !== null) {
-        card.style.left = sideLeft + "px";
-        card.style.top = Math.max(8, Math.min(window.innerHeight - ch - 8,
-          r.top + r.height / 2 - ch / 2)) + "px";
-        return;
-      }
-      top = Math.max(8, Math.min(window.innerHeight - ch - 8, r.top));
+    // 크기는 **실수 그대로**(offsetWidth/Height는 정수로 반올림된다) 재야 한다 — 밑변 기준으로
+    // 앉히므로 높이가 1px만 어긋나도 카드 밑선이 그만큼 밀려 [다음] 버튼이 미세하게 떤다.
+    const cr = card.getBoundingClientRect();
+    const cw = cr.width, ch = cr.height;
+    const cardArea = Math.max(1, cw * ch);
+    // 허용치(카드 넓이의 15%) 안쪽 가림은 **0으로 친다**. 이 한 줄이 자리 차례(선호도)를
+    // 살린다 — 안 그러면 아래줄 자리가 주 대상을 2천px²(허용치의 11%)만 스쳐도 위줄 자리에
+    // 밀려, 카드가 화면 위에 붙고 본문 길이만큼 아래로 자란다. 그러면 자리는 안 옮겨도
+    // [다음] 버튼이 세로로 500px씩 뛰어 결국 버튼을 쫓아다니게 된다(2026-08-11 실측).
+    // 아래줄 자리라야 카드가 위로 자라 발이 제자리에 남는다(TOUR_SLOTS 차례 주석 참고).
+    const tol = cardArea * TOUR_STAY_TOL;
+    function cost(box, slot) {
+      let a = 0, h = tourOverlap(box, holeRect);
+      alsoRects.forEach(function (r) { a += tourOverlap(box, r); });
+      // 아래줄이 아닌 자리에 무거운 벌점 — **[다음] 버튼을 제자리에 묶는 것이 이 벌점의 목적**이다.
+      // 카드는 자리 안에서 위로 자라거나 아래로 자란다. 아래줄에 붙으면 카드 밑변이 늘
+      // '화면 아래 8px'이라 본문이 209px이든 753px이든 발(버튼줄)이 같은 높이에 남지만,
+      // 위줄·가운뎃줄에 붙으면 본문 길이만큼 발이 따라 내려간다(실측: 15단계 내내 [다음]이
+      // 매번 다른 높이 — 176px에서 780px까지). 자리를 고정해도 버튼이 움직이면 결국
+      // 버튼을 쫓아다니게 되므로, **위줄·가운뎃줄은 아래줄이 짚는 상자(also)를 가릴 때만** 쓴다.
+      // 벌점을 카드 넓이로 잡은 것이 그 뜻이다 — 주 대상 가림(hole)은 아무리 커도 카드 넓이를
+      // 못 넘으므로, hole 차이만으로는 절대 아래줄을 벗어나지 못한다. 넘어서는 건 1000배로
+      // 세는 also뿐. 즉 '주 대상을 좀 가리더라도 버튼은 제자리'를 고른 것이고, 이건
+      // "최대한 고정, 불가피하면 어쩔 수 없이"라는 사용자 주문 그대로다(2026-08-11).
+      const pen = slot.vy === "bottom" ? 0 : cardArea;
+      return { also: a, hole: h, score: a * 1000 + (h <= tol ? 0 : h) + pen };
     }
-    let left = r.left + r.width / 2 - cw / 2;
-    // 보조 상자(also)를 덮지 않게 옆으로 비킨다 — 구멍이 화면만큼 커서(악보 전체 등) 말풍선이
-    // 대상 위에 앉을 수밖에 없을 때, 정작 가리키는 상자를 덮어버리면 단계가 무의미해진다.
-    // 상자들이 한쪽에 몰려 있으므로 그 덩어리의 빈 쪽으로 옮긴다.
-    if (alsoRects.length) {
-      const aL = Math.min.apply(null, alsoRects.map(function (a) { return a.x; }));
-      const aR = Math.max.apply(null, alsoRects.map(function (a) { return a.x + a.w; }));
-      const aT = Math.min.apply(null, alsoRects.map(function (a) { return a.y; }));
-      const aB = Math.max.apply(null, alsoRects.map(function (a) { return a.y + a.h; }));
-      const hitsY = top < aB && top + ch > aT;
-      if (hitsY && left < aR && left + cw > aL) {
-        const toLeft = aL - gap - cw, toRight = aR + gap;
-        if (toLeft >= 8) left = toLeft;
-        else if (toRight + cw <= window.innerWidth - 8) left = toRight;
-      }
+    const boxes = TOUR_SLOTS.map(function (s) { return tourSlotBox(s, cw, ch); });
+    const costs = boxes.map(function (b, i) { return cost(b, TOUR_SLOTS[i]); });
+    // ① 지금 자리가 '봐줄 만하면' 그대로 — 짚는 상자를 안 가리고, 주 대상도 조금만 가릴 때
+    if (tourSlot != null && costs[tourSlot] &&
+        costs[tourSlot].also === 0 && costs[tourSlot].hole <= tol) {
+      card.style.left = boxes[tourSlot].x + "px";
+      card.style.top = boxes[tourSlot].y + "px";
+      return;
     }
-    left = Math.max(8, Math.min(left, window.innerWidth - cw - 8));
-    card.style.left = left + "px";
-    card.style.top = top + "px";
+    // ② 옮겨야 한다 — 덜 가리는 자리 중에서 **지금 자리와 가장 가까운** 곳으로(움직임 최소화).
+    //    아직 앉은 적이 없으면(투어 첫 단계) 거리는 0으로 두고 위 선호 차례가 정한다.
+    const cur = (tourSlot != null && boxes[tourSlot]) ? boxes[tourSlot] : null;
+    let best = 0;
+    for (let i = 1; i < boxes.length; i++) {
+      const d = costs[i].score - costs[best].score;
+      if (d < -0.5) { best = i; continue; }
+      if (d > 0.5) continue;
+      if (!cur) continue;   // 점수가 같고 기준점도 없으면 앞 차례(선호도)가 이긴다
+      const di = Math.hypot(boxes[i].x - cur.x, boxes[i].y - cur.y);
+      const db = Math.hypot(boxes[best].x - cur.x, boxes[best].y - cur.y);
+      if (di < db) best = i;
+    }
+    tourSlot = best;
+    card.style.left = boxes[best].x + "px";
+    card.style.top = boxes[best].y + "px";
   }
   function tourGo(i, dir) {
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
@@ -7955,6 +8022,7 @@
     $("helpModal").style.display = "none";
     $("welcomeModal").style.display = "none";
     tourOnEnd = onEnd || null;
+    tourSlot = null;   // 자리는 투어를 새로 시작할 때만 다시 고른다(placeTourCard 참고)
     track("tour_start");
     $("tourLayer").style.display = "block";
     tourGo(0, 1);
@@ -7969,7 +8037,6 @@
     document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
     $("tourHole").style.display = "none";
     $("tourCard").style.display = "none";
-    if ($("tourFinaleEmoji")) $("tourFinaleEmoji").textContent = t.emoji || "🎉";
     if ($("tourFinaleTitle")) $("tourFinaleTitle").textContent = t.title || "축하합니다!";
     renderTourBody($("tourFinaleBody"), t.body || "");
     if ($("tourFinaleBtn")) $("tourFinaleBtn").textContent = t.button || "시작하기";
