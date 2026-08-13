@@ -866,8 +866,8 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     (음표머리는 <use>가 defs를 참조하는데 원본 path에 준 fill이 복제본까지 못 간다, 실측).
     **꾸밈음이 둘 이상이면 musicxml.js가 빔(begin/continue/end 두 겹)으로 꼬리를 잇는다**
     (2026-08-14 사용자 확정) — 화면(Verovio)과 내보낸 파일(뮤즈스코어)이 같은 빔을 본다.
-    **인쇄·PNG(아래 절)는 아직 staff-view가 그린다** — 쪽 나눔이 staff-view의 줄 경계
-    표시에 물려 있어서다. Verovio로 옮기려면 그 절을 통째로 손봐야 한다.
+    **인쇄·PNG(아래 절)도 같은 조판기가 접는다**(vrvSheetPages) — 화면과 종이가 같은
+    그림이어야 하므로. 못 불러왔을 때만 staff-view 쪽 나눔(staffSheetPages)으로 물러난다.
   - **무엇을 보여주나는 정간보의 '총보' 체크(#scoreView)를 그대로 따른다** — 켜져 있으면 모든
     악기를 오선 여러 줄로, 아니면 지금 편집 중인 악기만. 둘이 늘 같은 것을 보여야 나란히 놓고
     견줄 수 있다(그러라고 아래에 붙여 둔 창이다). 왼쪽 세로줄이 한 벌임을 보이고, 각 번호는
@@ -943,12 +943,17 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     검사는 `node tools/check-staff-view.mjs`.
 - **오선보 인쇄·PNG**(오선보 창 머리줄 [뽑기 ▾] = #staffOutToggle → #staffOutPop,
   app.js '오선보 인쇄·PNG' 절): MusicXML 파일로 · 오선보만 인쇄/PNG · 정간보와 나란히 인쇄/PNG.
-  - **쪽 나눔은 줄(system) 경계에서만** 한다 — 오선 한 줄을 반으로 잘라 다음 장에 넘기는 악보는
-    없다. 줄 높이·줄 수와 **줄 경계 표시(`<!--sys-->` 주석)** 를 staff-view가 그림에 적어 보내고
-    (`data-sys-h`·`data-sys-count`·`data-top`), `staffSheetPages()`가 그 자리에서 갈라 쪽마다
-    **제 줄만** 싣는다. 통째로 싣고 viewBox로 오려 내면 그림은 맞아도 쪽마다 곡 전체를 품어
-    (쪽 수 × 줄 수) 긴 곡에서 파일이 터진다. **그리기 셈을 인쇄 쪽에 옮겨 적지 말 것** —
-    자를 자리는 staff-view가 말해 주는 것이지 여기서 다시 세는 것이 아니다.
+  - **쪽은 Verovio가 접는다**(`vrvSheetPages`) — 종이 상자(mm)를 픽셀로 셈해 pageWidth/
+    pageHeight로 주면 저들이 줄 경계에서 쪽을 가른다(오선 한 줄을 반으로 자르지 않는 규칙도
+    저들 것). 나온 쪽 SVG의 루트를 mm 상자로 갈아입혀 종이에 앉힌다. 조판기 로드를 기다려야
+    해서 staffOnlyPages·sideBySidePages는 **프로미스**를 주고, [뽑기] 핸들러가 .then으로 받는다.
+    화면 배율과 무관한 크기(STAFF_PRINT_SCALE×40)는 화면 칸과 같은 원칙.
+  - **staffSheetPages(staff-view 쪽 나눔)는 대비책으로 남는다** — 조판기를 못 불러왔을 때
+    같은 계약({svg})으로 갈아끼워진다. 줄 높이·줄 수와 **줄 경계 표시(`<!--sys-->` 주석)** 를
+    staff-view가 그림에 적어 보내고(`data-sys-h`·`data-sys-count`·`data-top`), 그 자리에서 갈라
+    쪽마다 **제 줄만** 싣는 방식이다(통째로 싣고 viewBox로 오려 내면 쪽마다 곡 전체를 품어
+    긴 곡에서 파일이 터진다). **그리기 셈을 인쇄 쪽에 옮겨 적지 말 것**은 두 길 다 같다 —
+    자를 자리는 조판기가 말해 주는 것이지 여기서 다시 세는 것이 아니다.
   - 종이 크기·방향·여백은 **정간보와 같은 값**(#paperSize·#orientation·페이지 채움). 오선 크기만
     `STAFF_PRINT_SCALE`로 따로 잡는다 — 화면 배율은 '내가 어떻게 보나'라 종이에 따라오면 안 된다.
   - **나란히 = 왼쪽 오선보 · 오른쪽 정간보.** 정간보가 종이 오른쪽 끝에서 시작해 왼쪽으로

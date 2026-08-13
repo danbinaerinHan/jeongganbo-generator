@@ -7,7 +7,9 @@
 //   build(scores, meta) → XML 문자열
 //   scores = [{ name, fifths, clef:"G"|"F", beats, bpm, unit, jg, measures:[[음표…]] }] (악기 하나면 길이 1)
 //   음표   = { midi, rest, units, graces:[midi], afters:[midi], tieStart, tieStop }
-//   meta   = { title, subtitle }
+//   meta   = { title, subtitle, measStart }
+//            measStart = 첫 마디 번호(없으면 1) — 나란히 인쇄가 각 범위를 잘라 쪽마다
+//            따로 만들 때 마디 번호가 쪽마다 1로 되돌지 않게 하는 용도.
 //
 // ── 환산 ─────────────────────────────────────────────────────────────
 //   정간 하나 = 점4분음표(3/8) 또는 4분음표(1/4) — 악보가 unit으로 알려 준다.
@@ -99,7 +101,7 @@
       const clef = C.CLEF[s.clef] || C.CLEF.G;
       out.push("  <part id=\"P" + (pi + 1) + "\">");
       s.measures.forEach(function (m, mi) {
-        out.push("    <measure number=\"" + (mi + 1) + "\">");
+        out.push("    <measure number=\"" + ((meta.measStart || 1) + mi) + "\">");
         if (mi === 0) {
           out.push("      <attributes>");
           out.push("        <divisions>" + C.DIV + "</divisions>");

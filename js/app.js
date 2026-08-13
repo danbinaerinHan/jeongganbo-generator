@@ -5847,6 +5847,8 @@
   // 검증용 노출 (jgbShareLink·jgbAudioEvents와 같은 성격)
   window.jgbMusicXml = buildMusicXml;
   window.jgbStaffScores = buildStaffScores;
+  window.jgbStaffPages = function () { return staffOnlyPages(); };   // 인쇄 쪽 SVG들(프로미스)
+  window.jgbSidePages = function () { return sideBySidePages(); };
 
   // ---------- 오선보 보기 (정간보 아래 붙박이 칸) ----------
   // 그리는 일은 js/staff-view.js가 한다 — 이 절은 '언제 다시 그리나'와 창 여닫이만 맡는다.
@@ -5895,6 +5897,22 @@
     };
     s.onerror = function () { vrvState = "failed"; scheduleStaff(); };
     document.head.appendChild(s);
+  }
+
+  // 인쇄·PNG처럼 '지금 꼭 필요한' 쪽이 기다리는 창구 — 준비되면 조판기를, 실패하면 null을
+  // 준다(받는 쪽이 staff-view로 물러난다). 15초를 넘겨도 안 오면 실패로 친다.
+  function vrvReady() {
+    if (vrvTk) return Promise.resolve(vrvTk);
+    if (vrvState === "failed") return Promise.resolve(null);
+    loadVerovio();
+    return new Promise(function (res) {
+      let waited = 0;
+      (function poll() {
+        if (vrvTk) return res(vrvTk);
+        if (vrvState === "failed" || (waited += 100) > 15000) return res(null);
+        setTimeout(poll, 100);
+      })();
+    });
   }
 
   // scores → Verovio SVG(쪽들을 이어 붙인 HTML). 배율은 staff-view와 딴 단위라
@@ -6041,6 +6059,46 @@
     return pages;
   }
 
+  // ── Verovio 쪽 나눔 — 화면과 같은 조판기가 종이도 접는다 ──
+  // staff-view의 staffSheetPages(위)가 줄 경계 주석으로 쪽을 갈랐다면, Verovio는 종이
+  // 크기(pageWidth/pageHeight)를 주면 **스스로 쪽을 접는다** — 줄을 반으로 자르지 않는
+  // 규칙도 저들이 지킨다. staffSheetPages는 조판기를 못 불러왔을 때의 대비책으로 남는다.
+  //   box(mm) 안에 앉는 쪽들을 [{svg}]로 준다 — svg는 종이(mm) 좌표에 앉힌 조각(같은 계약).
+  //   measStart = 첫 마디 번호(나란히가 각 범위를 잘라 쪽마다 만들 때 번호가 이어지게).
+  function vrvSheetPages(scores, box, measStart) {
+    // 3.78 = 1mm를 그리기 단위 몇으로 볼 것인가(96dpi 어림) — staffSheetPages와 같은 값.
+    // scale은 화면 100%(40)에 인쇄 배율(STAFF_PRINT_SCALE)을 곱한 것 — 화면 배율과 무관.
+    const pxW = box.w * 3.78, pxH = box.h * 3.78;
+    const scale = Math.round(40 * STAFF_PRINT_SCALE);
+    vrvTk.setOptions({
+      pageWidth: Math.max(100, Math.round(pxW * 100 / scale)),
+      pageHeight: Math.max(100, Math.round(pxH * 100 / scale)),
+      scale: scale,
+      adjustPageHeight: false,   // 인쇄는 쪽 높이가 한결같아야 한다(화면 칸과 다른 점)
+      breaks: "auto",
+      header: "none", footer: "none"
+    });
+    const xml = window.JGB_MUSICXML.build(scores,
+      { title: $("title").value, subtitle: $("subtitle").value, measStart: measStart });
+    if (!vrvTk.loadData(xml)) return [];
+    const pages = [];
+    const n = vrvTk.getPageCount();
+    for (let i = 1; i <= n; i++) {
+      // 루트 <svg width="Wpx" height="Hpx">를 종이(mm) 좌표의 상자로 갈아입힌다 —
+      // 비율은 pageWidth/Height를 box에서 셈했으니 그대로 맞는다(반올림 오차뿐).
+      const svg = vrvTk.renderToSVG(i, {});
+      const m = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
+      if (!m) continue;
+      const W = parseFloat(m[1]), H = parseFloat(m[2]);
+      pages.push({
+        svg: svg.replace(/^<svg width="[\d.]+px" height="[\d.]+px"/,
+          "<svg x=\"" + box.x + "\" y=\"" + box.y + "\" width=\"" + box.w +
+          "\" height=\"" + (box.w * H / W) + "\" viewBox=\"0 0 " + W + " " + H + "\"")
+      });
+    }
+    return pages;
+  }
+
   // 쪽 SVG 하나를 종이 크기 상자에 담는다(정간보 페이지와 같은 꼴 — 흰 바탕 + mm viewBox).
   function paperWrap(innerSvg) {
     const P = paperWH();
@@ -6117,18 +6175,28 @@
     });
   }
 
+  // 조판기 로드를 기다려야 해서 **프로미스**를 준다 — 준비 전에 눌러도 기다렸다 뽑고,
+  // 못 불러오면 staff-view 쪽 나눔으로 물러난다(화면 칸과 같은 규칙).
   function staffOnlyPages() {
     const scores = staffScoresOrWarn();
-    if (!scores) return [];
-    return staffSheetPages(scores).map(function (p) { return paperWrap(p.svg); });
+    if (!scores) return Promise.resolve([]);
+    return vrvReady().then(function (tk) {
+      const P = paperWH(), M = paperMargin();
+      const pages = tk
+        ? vrvSheetPages(scores, { x: M, y: M, w: P.w - 2 * M, h: P.h - 2 * M }, 1)
+        : staffSheetPages(scores);
+      return pages.map(function (p) { return paperWrap(p.svg); });
+    });
   }
-  function printStaffOnly() { printPages(staffOnlyPages(), "staff"); }
+  function printStaffOnly() {
+    staffOnlyPages().then(function (pages) { printPages(pages, "staff"); });
+  }
   function pngStaffOnly() {
-    const pages = staffOnlyPages();
-    if (pages.length) {
+    staffOnlyPages().then(function (pages) {
+      if (!pages.length) return;
       track("export_png", { v: "staff" + pages.length + "p" });
       downloadSvgPngs(pages, (($("title").value || "").trim() || "정간보") + "-오선보");
-    }
+    });
   }
 
   // ── 나란히 — 한 장을 좌우로 갈라 **왼쪽 오선보 / 오른쪽 정간보** ──
@@ -6141,14 +6209,14 @@
   // 각마다 오선 한 줄을 강제해야 하는데, 그러면 짧은 각에서 오선보가 뭉텅뭉텅 빈다.
   function sideBySidePages() {
     const scores = staffScoresOrWarn();
-    if (!scores) return [];
+    if (!scores) return Promise.resolve([]);
     const P = paperWH(), M = paperMargin();
     const halfW = P.w / 2;
     // 사용자 지정 종이는 60mm가 아래끝이다(그보다 좁으면 배치가 터져 기본값으로 되돌려진다).
     // 반으로 갈라 그 아래로 내려가면 나란히는 애초에 될 일이 아니다.
     if (halfW < 60) {
       alert("종이가 좁아 나란히 뽑을 수 없습니다.\n종이를 키우거나 가로로 두고 다시 해보세요.");
-      return [];
+      return Promise.resolve([]);
     }
 
     // ① 정간보를 반 폭으로 다시 앉히고 쪽마다 그림과 각 범위를 걷는다.
@@ -6179,32 +6247,40 @@
       $("orientation").value = keep.orient;
       render();
     }
-    if (!jgPages.length) return [];
+    if (!jgPages.length) return Promise.resolve([]);
 
-    // ② 쪽마다 그 각 범위의 오선보를 왼쪽 반에 앉힌다
-    return jgPages.map(function (jp) {
-      const cut = scores.map(function (s) {
-        return Object.assign({}, s, { measures: s.measures.slice(jp.start, jp.end) });
+    // ② 쪽마다 그 각 범위의 오선보를 왼쪽 반에 앉힌다 — 조판은 화면과 같은 Verovio,
+    //    못 불러왔으면 staff-view(같은 상자·같은 계약이라 갈아끼우기만 하면 된다).
+    return vrvReady().then(function (tk) {
+      return jgPages.map(function (jp) {
+        const cut = scores.map(function (s) {
+          return Object.assign({}, s, { measures: s.measures.slice(jp.start, jp.end) });
+        });
+        const box = { x: M, y: M, w: halfW - M * 1.5, h: P.h - 2 * M };
+        // 마디 번호는 jp.start+1부터 — 쪽마다 잘라 만들어도 번호가 곡 전체로 이어진다
+        const left = tk ? vrvSheetPages(cut, box, jp.start + 1)
+                        : staffSheetPages(cut, { box: box });
+        // 각이 많아 왼쪽 반에 다 안 들어가면 첫 쪽만 넣는다 — 넘치는 줄은 잘린다.
+        // 한 쪽에 정간보 각이 몇이나 들어가나는 정간보 배치가 정하므로, 여기서 더 나누면
+        // 오른쪽 정간보와 짝이 어긋난다(짝이 맞는 것이 이 인쇄의 전부다).
+        const staffSvg = left.length ? left[0].svg : "";
+        // 오른쪽 반에 정간보 쪽 그림을 통째로 앉힌다(제 viewBox가 반 폭 종이라 그대로 들어간다)
+        const jgSvg = jp.xml
+          .replace(/^<svg /, "<svg x=\"" + halfW + "\" y=\"0\" width=\"" + halfW +
+                             "\" height=\"" + P.h + "\" ");
+        return paperWrap(staffSvg + jgSvg);
       });
-      const left = staffSheetPages(cut, { box: { x: M, y: M, w: halfW - M * 1.5, h: P.h - 2 * M } });
-      // 각이 많아 왼쪽 반에 다 안 들어가면 첫 쪽만 넣는다 — 넘치는 줄은 잘린다.
-      // 한 쪽에 정간보 각이 몇이나 들어가나는 정간보 배치가 정하므로, 여기서 더 나누면
-      // 오른쪽 정간보와 짝이 어긋난다(짝이 맞는 것이 이 인쇄의 전부다).
-      const staffSvg = left.length ? left[0].svg : "";
-      // 오른쪽 반에 정간보 쪽 그림을 통째로 앉힌다(제 viewBox가 반 폭 종이라 그대로 들어간다)
-      const jgSvg = jp.xml
-        .replace(/^<svg /, "<svg x=\"" + halfW + "\" y=\"0\" width=\"" + halfW +
-                           "\" height=\"" + P.h + "\" ");
-      return paperWrap(staffSvg + jgSvg);
     });
   }
-  function printSideBySide() { printPages(sideBySidePages(), "side"); }
+  function printSideBySide() {
+    sideBySidePages().then(function (pages) { printPages(pages, "side"); });
+  }
   function pngSideBySide() {
-    const pages = sideBySidePages();
-    if (pages.length) {
+    sideBySidePages().then(function (pages) {
+      if (!pages.length) return;
       track("export_png", { v: "side" + pages.length + "p" });
       downloadSvgPngs(pages, (($("title").value || "").trim() || "정간보") + "-나란히");
-    }
+    });
   }
 
   if ($("btnStaff")) {
