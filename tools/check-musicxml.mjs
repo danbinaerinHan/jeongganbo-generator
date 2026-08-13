@@ -112,14 +112,15 @@ console.log("\n마디를 넘는 긴 음은 붙임줄로 잇는가");
   eq("셋째 마디는 새 음(태)으로 시작", [ms[2].filter((n) => !n.grace)[0].tie], [""]);
 }
 
-console.log("\n조표 — 궁(宮)을 으뜸음으로 삼는 조를 고르는가");
+console.log("\n조표 — 음계의 '도'를 으뜸음으로 삼는 조를 고르는가");
 {
   // 5음 음계는 임시표 없이 적히는 조표가 셋이라(황종 평조면 ♭5·♭4·♭3) '임시표가 가장
   // 적은 것'으로는 못 고른다 — 셋 다 음정은 안 틀리고 무엇을 do로 선언하는가만 갈린다.
-  // 관행은 궁을 으뜸음으로 삼는다: 황종 평조는 궁이 중려라 ♭4(세종 자료도 ♭4).
+  // 평조를 솔라도레미로 읽으면 황종 평조의 '도'는 중려라 ♭4(세종 자료도 ♭4).
+  // 이 '도'는 악조의 궁이 아니다 — 궁은 황종이고(그래서 '황종 평조'다) 도가 중려다.
   app.fields.joPreset = "hwang-pyeong";     // 황태중임남 = E♭ F A♭ B♭ C
   const f1 = mxlFifths(63);
-  ok(`황=E♭ 평조 → 내림표 4개 (A♭장조, 궁=중려)`, f1 === -4, `나온 값: ${f1}`);
+  ok(`황=E♭ 평조 → 내림표 4개 (A♭장조, 도=중려)`, f1 === -4, `나온 값: ${f1}`);
   const scale = ["황", "태", "중", "임", "남"].map((n) => 63 + YUL.indexOf(n));
   ok("다섯 음 모두 임시표 없이 적힌다",
      scale.every((m) => mxlPitch(m, f1).acc === null),
@@ -127,7 +128,7 @@ console.log("\n조표 — 궁(宮)을 으뜸음으로 삼는 조를 고르는가
   app.fields.joPreset = "hwang-gyemyeon";   // 황협중임무 = 라·도·레·미·솔 → 협종이 do
   const f2 = mxlFifths(63);
   const gye = ["황", "협", "중", "임", "무"].map((n) => 63 + YUL.indexOf(n));
-  ok(`계면조 → 내림표 6개 (G♭장조, 궁=협종)`, f2 === -6, `나온 값: ${f2}`);
+  ok(`계면조 → 내림표 6개 (G♭장조, 도=협종)`, f2 === -6, `나온 값: ${f2}`);
   ok("계면조도 임시표 없이", gye.every((m) => mxlPitch(m, f2).acc === null));
   app.fields.joPreset = "hwang-pyeong";
 }
@@ -162,8 +163,8 @@ console.log("\n기준음 — 정간보에 적어 둔 황 음고를 그대로 따
   const c = xmlOf("황|태|중|임", 4);
   const n0 = parseMeasures(c)[0].filter((x) => !x.grace)[0];
   ok("황=C면 첫 음도 C", n0.step === "C" && n0.alter === 0, `나온 값: ${n0.step}${n0.alter}`);
-  // 황=C 평조(황태중임남 = C D F G A) → 5도권 맨 아래가 F라 궁은 중려, 조표는 ♭1개
-  ok("조표도 따라 옮겨진다 — ♭1개(바장조, 궁=중려)", c.includes("<fifths>-1</fifths>"),
+  // 황=C 평조(황태중임남 = C D F G A) → 5도권 맨 아래가 F라 '도'는 중려, 조표는 ♭1개
+  ok("조표도 따라 옮겨진다 — ♭1개(바장조, 도=중려)", c.includes("<fifths>-1</fifths>"),
      (c.match(/<fifths>-?\d+<\/fifths>/) || [])[0]);
   app.fields.hwangPitch = "63";
 }
