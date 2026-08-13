@@ -3857,7 +3857,9 @@
     if (ps) ps.textContent =
       "@page { size: " + (paper.css ? paper.css + " " + (landscape ? "landscape" : "portrait")
                                     : PW + "mm " + PH + "mm") + "; margin: 0; }\n" +
-      "@media print { .page svg { width: " + PW + "mm !important; height: " + PH + "mm !important; } }";
+      // 직계(>)여야 한다 — 오선보 인쇄 종이는 안에 <svg>를 한 겹 더 품고 있어(줄을 오려
+      // 내는 상자) `.page svg`로 걸면 그 속엣것까지 종이 크기로 부풀어 그림이 터진다.
+      "@media print { .page > svg { width: " + PW + "mm !important; height: " + PH + "mm !important; } }";
 
     // 페이지 채움(0~100%) — 키울수록 페이지 여백을 줄이되, 100%여도 최소 여백(MARGIN_MIN)은 남긴다
     const pageFillPct = Math.max(0, Math.min(100, parseFloat($("pageFill").value) || 0));
@@ -5923,6 +5925,238 @@
     if (!quiet) saveStaffPrefs();
   }
 
+  // ---------- 오선보 인쇄·PNG ----------
+  // 화면 칸의 오선보는 창 너비에 맞춰 줄을 접은 **한 덩어리**다. 종이로 옮기려면 종이 폭에
+  // 맞춰 다시 접고 높이만큼 잘라 여러 쪽으로 나눠야 한다. 자르는 자리는 **줄(system)
+  // 경계**뿐이다 — 오선 한 줄을 반으로 잘라 다음 장으로 넘기는 악보는 없다.
+  // 줄 높이·줄 수는 staff-view가 그림에 적어 보낸다(data-sys-h·data-sys-count). 그리기 셈을
+  // 여기 한 벌 더 적으면 오선보를 고칠 때 인쇄만 옛 자리에서 자른다.
+  //
+  // 종이 크기·방향·여백은 **정간보와 같은 값**을 쓴다(#paperSize·#orientation·페이지 채움).
+  // 두 표기를 나란히 놓고 볼 때 여백이 다르면 딴 종이에 찍은 것처럼 보인다.
+  const STAFF_PRINT_SCALE = 1.15;   // 인쇄용 오선 크기 — 화면 배율(보는 사람 사정)과 무관하다
+
+  function paperWH() {
+    const paper = paperSize();
+    const landscape = $("orientation").value === "landscape";
+    return { w: landscape ? paper.h : paper.w, h: landscape ? paper.w : paper.h };
+  }
+  function paperMargin() {
+    const pct = Math.max(0, Math.min(100, parseFloat($("pageFill").value) || 0));
+    return MARGIN_MIN + (MARGIN_BASE - MARGIN_MIN) * (1 - pct / 100);
+  }
+
+  // 오선보 그림 하나 → 종이에 앉힌 쪽 목록(SVG 문자열).
+  //   box = { x, y, w, h }  종이 안에서 오선보가 앉을 자리(mm). 없으면 여백 안 전체.
+  // 되돌려주는 것은 { pages: [{ y0, sysCount }], svgAt(i) } 가 아니라 그냥 쪽 SVG 문자열들.
+  function staffSheetPages(scores, opts) {
+    opts = opts || {};
+    const P = paperWH(), M = paperMargin();
+    const box = opts.box || { x: M, y: M, w: P.w - 2 * M, h: P.h - 2 * M };
+    // 그림 폭(사용자 단위)은 종이 폭에 비례해 잡는다 — 종이가 좁으면 줄이 짧게 접힌다.
+    // 3.78 = 1mm를 그리기 단위 몇으로 볼 것인가(96dpi 어림). 이 값이 곧 '종이에서의 오선 크기'를
+    // 정하므로 STAFF_PRINT_SCALE과 짝이다.
+    const unitPerMm = 3.78;
+    const inner = window.JGB_STAFF.render(scores, {
+      width: Math.max(320, box.w * unitPerMm), scale: STAFF_PRINT_SCALE
+    });
+    if (!inner) return [];
+    const m = inner.match(/data-sys-h="([\d.]+)" data-sys-count="(\d+)" data-top="([\d.]+)"/);
+    const vb = inner.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/);
+    if (!m || !vb) return [];
+    const sysH = parseFloat(m[1]), sysN = parseInt(m[2], 10), top = parseFloat(m[3]);
+    const W = parseFloat(vb[1]);
+    const k = box.w / W;                                   // 사용자 단위 → mm
+    const perPage = Math.max(1, Math.floor((box.h / k) / sysH));
+    // 줄 단위로 가른다 — 쪽마다 **제 줄만** 싣기 위해서다. 통째로 싣고 viewBox로 오려 내면
+    // 그림은 맞게 나오지만 쪽마다 곡 전체를 품게 되어(쪽 수 × 줄 수) 200각짜리에서 파일이
+    // 터진다. 가르는 자리는 staff-view가 찍어 둔 <!--sys--> 주석이다.
+    const body = inner.replace(/^<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
+    const chunks = body.split("<!--sys-->");
+    const pre = chunks.shift() || "";     // 줄보다 앞에 그려지는 것(지금은 없다)
+    const pages = [];
+    for (let i = 0; i < sysN; i += perPage) {
+      const n = Math.min(perPage, sysN - i);
+      pages.push({
+        // 그 쪽에 실린 줄 범위 — 나란히 인쇄가 '어느 각까지 실렸나'를 이걸로 안다
+        sys0: i, sysCount: n,
+        // 안쪽 <svg>가 그 줄들이 놓인 자리만 보이게 오려 낸다(y 자리는 원래 그대로 두고
+        // viewBox를 옮긴다 — 줄마다 좌표를 다시 셈하면 그리기 셈을 여기 옮겨 적는 꼴이 된다)
+        svg: "<svg x=\"" + box.x + "\" y=\"" + box.y + "\" width=\"" + box.w +
+             "\" height=\"" + (n * sysH * k) + "\" viewBox=\"0 " + (top + i * sysH) + " " +
+             W + " " + (n * sysH) + "\" overflow=\"hidden\">" + pre +
+             chunks.slice(i, i + n).join("") + "</svg>"
+      });
+    }
+    return pages;
+  }
+
+  // 쪽 SVG 하나를 종이 크기 상자에 담는다(정간보 페이지와 같은 꼴 — 흰 바탕 + mm viewBox).
+  function paperWrap(innerSvg) {
+    const P = paperWH();
+    return "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + P.w + " " + P.h +
+           "\" class=\"staff-page-svg\"><rect x=\"0\" y=\"0\" width=\"" + P.w + "\" height=\"" +
+           P.h + "\" fill=\"#fff\"/>" + innerSvg + "</svg>";
+  }
+
+  // 오선보 재료 — 못 만들면 왜인지 알려 주고 멈춘다(인쇄 대화상자가 빈 종이로 뜨는 것보다 낫다)
+  function staffScoresOrWarn() {
+    try {
+      const sc = buildStaffScores();
+      const notes = sc.reduce(function (a, s) {
+        return a + s.measures.reduce(function (b, m) {
+          return b + m.filter(function (n) { return !n.rest; }).length;
+        }, 0);
+      }, 0);
+      if (!notes) { alert("정간에 율명을 적으면 오선보를 뽑을 수 있습니다."); return null; }
+      return sc;
+    } catch (err) {
+      console.error("오선보를 만들지 못했습니다:", err);
+      alert("이 악보는 아직 오선보로 옮기지 못합니다.");
+      return null;
+    }
+  }
+
+  // 인쇄용 종이들을 #staffSheet에 깔고 인쇄한다. body.print-staff가 정간보(#sheet)를 감추고
+  // 이쪽을 내놓는다 — 인쇄가 끝나면(afterprint) 도로 걷는다.
+  function printPages(htmlPages, what) {
+    const holder = $("staffSheet");
+    if (!holder || !htmlPages.length) return;
+    holder.innerHTML = htmlPages.map(function (s) {
+      return "<div class=\"page\">" + s + "</div>";
+    }).join("");
+    document.body.classList.add("print-staff");
+    track("export_print", { v: what });
+    const done = function () {
+      document.body.classList.remove("print-staff");
+      holder.innerHTML = "";
+      window.removeEventListener("afterprint", done);
+    };
+    window.addEventListener("afterprint", done);
+    window.print();
+    // afterprint를 안 주는 브라우저 대비 — 인쇄 대화상자는 print()를 막고 서므로 여기 오면 끝난 뒤다
+    setTimeout(done, 1000);
+  }
+
+  // SVG 문자열 목록 → PNG 파일들(정간보 저장과 같은 300dpi). 종이 크기 상자라 viewBox가 mm다.
+  function downloadSvgPngs(svgs, base) {
+    const multi = svgs.length > 1;
+    svgs.forEach(function (svgText, idx) {
+      const vb = (svgText.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/) || [0, 210, 297]);
+      const pw = parseFloat(vb[1]) || 210, ph = parseFloat(vb[2]) || 297;
+      const img = new Image();
+      img.onload = function () {
+        const s = 300 / 25.4;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(pw * s);
+        canvas.height = Math.round(ph * s);
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function (blob) {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = base + (multi ? "-" + (idx + 1) : "") + ".png";
+          a.click();
+          URL.revokeObjectURL(a.href);
+        });
+      };
+      img.src = "data:image/svg+xml;base64," +
+                btoa(unescape(encodeURIComponent(svgText)));
+    });
+  }
+
+  function staffOnlyPages() {
+    const scores = staffScoresOrWarn();
+    if (!scores) return [];
+    return staffSheetPages(scores).map(function (p) { return paperWrap(p.svg); });
+  }
+  function printStaffOnly() { printPages(staffOnlyPages(), "staff"); }
+  function pngStaffOnly() {
+    const pages = staffOnlyPages();
+    if (pages.length) {
+      track("export_png", { v: "staff" + pages.length + "p" });
+      downloadSvgPngs(pages, (($("title").value || "").trim() || "정간보") + "-오선보");
+    }
+  }
+
+  // ── 나란히 — 한 장을 좌우로 갈라 **왼쪽 오선보 / 오른쪽 정간보** ──
+  // 정간보가 종이 오른쪽 끝에서 시작해 왼쪽으로 읽으므로 오른쪽 반을 정간보에 준다.
+  // 정간보는 '반 폭 종이'로 **다시 앉혀** 넣는다 — 전체 폭 배치를 그대로 줄이면 아래 반이
+  // 통째로 비기 때문. 그래서 종이 칸을 잠깐 반 폭으로 바꿔 render()를 한 번 돌리고,
+  // 그린 것을 걷은 뒤 원래 값으로 되돌려 다시 그린다(render는 컨트롤을 읽어 그릴 뿐
+  // 저장·되돌리기를 건드리지 않는다).
+  // 대응은 **쪽 단위**다: 그 쪽의 정간보에 담긴 각 = 그 쪽 오선보의 마디. 줄 단위까지 맞추려면
+  // 각마다 오선 한 줄을 강제해야 하는데, 그러면 짧은 각에서 오선보가 뭉텅뭉텅 빈다.
+  function sideBySidePages() {
+    const scores = staffScoresOrWarn();
+    if (!scores) return [];
+    const P = paperWH(), M = paperMargin();
+    const halfW = P.w / 2;
+    // 사용자 지정 종이는 60mm가 아래끝이다(그보다 좁으면 배치가 터져 기본값으로 되돌려진다).
+    // 반으로 갈라 그 아래로 내려가면 나란히는 애초에 될 일이 아니다.
+    if (halfW < 60) {
+      alert("종이가 좁아 나란히 뽑을 수 없습니다.\n종이를 키우거나 가로로 두고 다시 해보세요.");
+      return [];
+    }
+
+    // ① 정간보를 반 폭으로 다시 앉히고 쪽마다 그림과 각 범위를 걷는다.
+    //    방향(가로/세로)도 잠깐 세로로 둔다 — render가 가로일 때 폭·높이를 뒤집으므로
+    //    가로인 채로 반 폭을 적어 넣으면 뒤집혀 엉뚱한 종이가 된다.
+    const keep = { size: $("paperSize").value, w: $("paperW").value, h: $("paperH").value,
+                   orient: $("orientation").value };
+    $("paperSize").value = "custom";
+    $("paperW").value = String(Math.round(halfW * 10) / 10);
+    $("paperH").value = String(P.h);
+    $("orientation").value = "portrait";
+    let jgPages = [];
+    try {
+      render();
+      jgPages = Array.prototype.map.call($("sheet").querySelectorAll(".page svg"), function (svg, i) {
+        const node = svg.cloneNode(true);
+        node.querySelectorAll(".no-print").forEach(function (n) { n.remove(); });
+        if ($("gakNumMode").value === "screen") {
+          node.querySelectorAll(".gak-num").forEach(function (n) { n.remove(); });
+        }
+        const r = pageGakRanges[i] || { start: 0, end: 0 };
+        return { xml: new XMLSerializer().serializeToString(node), start: r.start, end: r.end };
+      });
+    } finally {
+      $("paperSize").value = keep.size;
+      $("paperW").value = keep.w;
+      $("paperH").value = keep.h;
+      $("orientation").value = keep.orient;
+      render();
+    }
+    if (!jgPages.length) return [];
+
+    // ② 쪽마다 그 각 범위의 오선보를 왼쪽 반에 앉힌다
+    return jgPages.map(function (jp) {
+      const cut = scores.map(function (s) {
+        return Object.assign({}, s, { measures: s.measures.slice(jp.start, jp.end) });
+      });
+      const left = staffSheetPages(cut, { box: { x: M, y: M, w: halfW - M * 1.5, h: P.h - 2 * M } });
+      // 각이 많아 왼쪽 반에 다 안 들어가면 첫 쪽만 넣는다 — 넘치는 줄은 잘린다.
+      // 한 쪽에 정간보 각이 몇이나 들어가나는 정간보 배치가 정하므로, 여기서 더 나누면
+      // 오른쪽 정간보와 짝이 어긋난다(짝이 맞는 것이 이 인쇄의 전부다).
+      const staffSvg = left.length ? left[0].svg : "";
+      // 오른쪽 반에 정간보 쪽 그림을 통째로 앉힌다(제 viewBox가 반 폭 종이라 그대로 들어간다)
+      const jgSvg = jp.xml
+        .replace(/^<svg /, "<svg x=\"" + halfW + "\" y=\"0\" width=\"" + halfW +
+                           "\" height=\"" + P.h + "\" ");
+      return paperWrap(staffSvg + jgSvg);
+    });
+  }
+  function printSideBySide() { printPages(sideBySidePages(), "side"); }
+  function pngSideBySide() {
+    const pages = sideBySidePages();
+    if (pages.length) {
+      track("export_png", { v: "side" + pages.length + "p" });
+      downloadSvgPngs(pages, (($("title").value || "").trim() || "정간보") + "-나란히");
+    }
+  }
+
   if ($("btnStaff")) {
     $("btnStaff").addEventListener("click", function () {
       applyStaffOpen(!staffOpen);
@@ -5942,7 +6176,13 @@
         }
       }
     } catch (e) {}
+    // 뽑기 메뉴 — 파일(MusicXML) · 오선보만 인쇄/PNG · 정간보와 나란히 인쇄/PNG
+    wireTopMenu("staffOutToggle", "staffOutPop");
     $("staffExport").addEventListener("click", exportMusicXml);
+    $("staffPrint").addEventListener("click", printStaffOnly);
+    $("staffPng").addEventListener("click", pngStaffOnly);
+    $("staffPrintSide").addEventListener("click", printSideBySide);
+    $("staffPngSide").addEventListener("click", pngSideBySide);
     // 정간을 무엇으로 보나 · 조표를 무엇으로 적나 — 둘 다 문서 값이라 saveState까지 부른다
     // (배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
     $("staffUnit").addEventListener("change", function () { staffDraw(); saveState(); });

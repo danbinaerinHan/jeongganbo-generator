@@ -1831,4 +1831,10 @@
        여기 210/297mm를 박아 두면 종이 크기를 바꿔도 인쇄만 A4로 나온다. */
     /* 편집·재생 하이라이트는 화면 확인용이라 인쇄에는 나오지 않아야 한다 */
     .no-print { display: none !important; }
+    /* 오선보 인쇄 — 그때만 정간보(#sheet) 대신 #staffSheet가 나간다. .no-print보다 뒤에
+       적어야 한다(#staffPane이 .no-print라 감춰지는 것과 별개로, 여기 종이는 나와야 함). */
+    body.print-staff #sheet { display: none !important; }
+    body.print-staff #staffSheet { display: block !important; }
   }
+  /* 인쇄용 종이 그릇 — 화면에는 없는 셈이다(인쇄가 끝나면 app.js가 내용을 도로 비운다) */
+  #staffSheet { display: none; }

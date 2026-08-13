@@ -21,9 +21,13 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffScoreOf", "buildStaffScores"],
+   "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SCALE",
+   "staffHwang", "staffFifths", "staffScoreOf", "buildStaffScores",
+   "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],
   { beats: "4", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", daegang: "" },
+    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto",
+    daegang: "", paperSize: "A4", orientation: "portrait", pageFill: "0",
+    paperW: "210", paperH: "297" },
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
    function stashActivePart() { parts[activePart].melody = melodyFull; }`
@@ -415,6 +419,58 @@ console.log("\n총보 — 악기가 여럿이면 오선도 여럿");
     }
     ok(`총보도 모두 상자 안 (${W}×${H})`, !bad.length, bad[0]);
   }
+}
+
+console.log("\n인쇄 — 종이에 맞춰 쪽을 나누는가");
+{
+  // 화면 칸은 한 덩어리지만 종이는 여러 장이다. 자르는 자리는 줄(system) 경계뿐이고,
+  // 쪽마다 **제 줄만** 실려야 한다(통째로 싣고 오려 내면 200각짜리에서 파일이 터진다).
+  const sheetPages = app.fn("staffSheetPages");
+  const paperWH = app.fn("paperWH"), paperMargin = app.fn("paperMargin");
+  const gak = "황태중|임|남|황|태 중|임|남|무|황|태|중|임";     // 12정간
+  app.fields.beats = "12";
+  app.setMelody(Array.from({ length: 24 }, () => gak).join("\n"));
+  const scores = buildStaffScores();
+  ok("각 24개가 재료에 들어왔다", scores[0].measures.length === 24);
+
+  const pages = sheetPages(scores);
+  const sysTotal = pages.reduce((a, p) => a + p.sysCount, 0);
+  ok("여러 쪽으로 나뉜다", pages.length > 1, `쪽 수: ${pages.length}`);
+  ok("줄이 겹치거나 빠지지 않는다",
+     pages.every((p, i) => p.sys0 === pages.slice(0, i).reduce((a, q) => a + q.sysCount, 0)),
+     pages.map((p) => `${p.sys0}+${p.sysCount}`).join(" "));
+  ok("모든 줄이 어느 쪽엔가 실린다", sysTotal === 24, `실린 줄: ${sysTotal}`);
+  ok("쪽마다 제 줄만 싣는다",
+     pages.every((p) => (p.svg.match(/class="sv-clef"/g) || []).length === p.sysCount),
+     pages.map((p) => (p.svg.match(/class="sv-clef"/g) || []).length).join(" "));
+  ok("종이 여백 안에 앉는다", pages.every((p) => {
+    const m = p.svg.match(/^<svg x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/);
+    const P = paperWH(), M = paperMargin();
+    return m && +m[1] >= M - 0.01 && +m[2] >= M - 0.01 &&
+           +m[1] + +m[3] <= P.w - M + 0.01 && +m[2] + +m[4] <= P.h - M + 0.01;
+  }), pages[0].svg.slice(0, 90));
+
+  app.fields.orientation = "landscape";
+  const land = sheetPages(scores);
+  ok("가로로 두면 한 쪽에 드는 줄이 준다(종이가 낮아지므로)",
+     land[0].sysCount < pages[0].sysCount, `가로 ${land[0].sysCount} / 세로 ${pages[0].sysCount}`);
+  app.fields.orientation = "portrait";
+
+  // 나란히 인쇄가 쓰는 반 폭 자리 — 좁아도 줄이 잘려 나가지 않아야 한다
+  const P = paperWH(), M = paperMargin();
+  const half = sheetPages(scores, { box: { x: M, y: M, w: P.w / 2 - M * 1.5, h: P.h - 2 * M } });
+  ok("반 폭에서도 모든 줄이 실린다",
+     half.reduce((a, p) => a + p.sysCount, 0) === 24);
+  ok("반 폭 상자를 넘지 않는다",
+     half.every((p) => {
+       const m = p.svg.match(/width="([\d.]+)"/);
+       return m && +m[1] <= P.w / 2 - M * 1.5 + 0.01;
+     }));
+
+  const wrapped = app.fn("paperWrap")(pages[0].svg);
+  ok("종이 상자는 mm 좌표에 흰 바탕", wrapped.includes('viewBox="0 0 210 297"') &&
+     wrapped.includes('fill="#fff"'));
+  app.fields.beats = "4";
 }
 
 console.log(`\n${fail ? "✗" : "✓"} ${pass}개 통과${fail ? `, ${fail}개 실패` : ""}`);

@@ -262,11 +262,19 @@
 
     const out = [];
     const H = sysH * systems.length + SP;
+    // 줄(system) 높이와 줄 수를 붙여 내보낸다 — 인쇄가 이 그림을 **줄 경계에서** 잘라 쪽을
+    // 나눈다(app.js '오선보 인쇄'). 줄마다 높이가 같으므로 자를 자리를 밖에서 셀 수 있고,
+    // 그리기 셈을 인쇄 쪽에 한 벌 더 적지 않아도 된다.
     out.push("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + Math.round(width) +
              "\" height=\"" + Math.round(H) + "\" viewBox=\"0 0 " + Math.round(width) + " " +
-             Math.round(H) + "\" class=\"staff-svg\">");
+             Math.round(H) + "\" class=\"staff-svg\" data-sys-h=\"" + f(sysH) +
+             "\" data-sys-count=\"" + systems.length + "\" data-top=\"" + f(SP * 0.5) + "\">");
 
     systems.forEach(function (m0, si) {
+      // 줄 경계 표시 — 인쇄가 이 자리에서 그림을 갈라 쪽마다 제 줄만 싣는다(app.js
+      // staffSheetPages). 주석인 까닭은 <g>로 묶으면 안쪽 <g>와 짝이 헷갈리기 때문이고,
+      // 브라우저·PNG·인쇄 어디서도 그려지지 않아 그림에 영향이 없다.
+      out.push("<!--sys-->");
       const count = Math.min(perSys, nMeas - m0);
       const musicX = leftX + headW(si);
       const right = musicX + count * measW;

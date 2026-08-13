@@ -165,30 +165,7 @@
         <button type="button" id="zoomFitW" title="페이지 너비를 화면에 맞춤">가로 맞춤</button>
       </div>
     </div>
-    <!-- 색상 메뉴 — 색상 테마(미색/은청색/옥색) + 다크 전환. 예전엔 다크 단독 토글이었는데
-         테마 프리셋이 생기며 '화면을 어떻게 볼지'를 한 메뉴로 묶었다(상단바 버튼 수 유지,
-         테마는 가끔 정하는 값이라 접는 게 빈도 규칙에도 맞다). 배율·입력 방식과 같은
-         .tb-menu 문법이되 글씨는 '색상' 고정 — 지금 테마는 메뉴 안 .sel 표시가 말한다.
-         (글씨에 지금 테마 이름을 쓰는 안과 물건 이름(한지·수정·청자)은 사용자가 물렸다 —
-         테마 이름은 한국어 색상 이름으로, 둘 다 되돌리지 말 것. 아이콘(해/달)은 지금 모드.)
-         테마·다크 모두 앱 설정(localStorage)이라 문서에는 저장되지 않는다.
-         코드 식별자(theme-crystal·crystal 등)는 옛 이름 그대로다. -->
-    <div id="screenBox">
-      <button type="button" id="screenToggle" class="topbar-cmd tip"
-        data-tip="색상 테마 · 다크 전환
-· 악보(종이)는 늘 흰색으로 유지됩니다">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        <span class="lbl">색상</span>
-      </button>
-      <div id="screenPop" class="tb-menu">
-        <button type="button" id="themeHanji">미색</button>
-        <button type="button" id="themeCrystal">은청색</button>
-        <button type="button" id="themeCeladon">옥색</button>
-        <hr>
-        <button type="button" id="darkModeItem">어두운 화면으로</button>
-      </div>
-    </div>
+    
     <!-- 오선보 보기 — 정간보를 서양 악보로 바꾼 결과를 화면 아래에 띄운다. '화면을 어떻게
          볼지'를 정하는 짝(배율·색상)의 일원이라 여기 둔다. 파일 메뉴의 [오선보 내보내기]와는
          하는 일이 다르다(보기 ↔ 파일로 내보내기)라 중복이 아니다. -->
@@ -290,6 +267,30 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
       <span class="lbl">모아보기</span>
     </a>
+    <!-- 색상 메뉴 — 색상 테마(미색/은청색/옥색) + 다크 전환. 예전엔 다크 단독 토글이었는데
+         테마 프리셋이 생기며 '화면을 어떻게 볼지'를 한 메뉴로 묶었다(상단바 버튼 수 유지,
+         테마는 가끔 정하는 값이라 접는 게 빈도 규칙에도 맞다). 배율·입력 방식과 같은
+         .tb-menu 문법이되 글씨는 '색상' 고정 — 지금 테마는 메뉴 안 .sel 표시가 말한다.
+         (글씨에 지금 테마 이름을 쓰는 안과 물건 이름(한지·수정·청자)은 사용자가 물렸다 —
+         테마 이름은 한국어 색상 이름으로, 둘 다 되돌리지 말 것. 아이콘(해/달)은 지금 모드.)
+         테마·다크 모두 앱 설정(localStorage)이라 문서에는 저장되지 않는다.
+         코드 식별자(theme-crystal·crystal 등)는 옛 이름 그대로다. -->
+    <div id="screenBox">
+      <button type="button" id="screenToggle" class="topbar-cmd tip"
+        data-tip="색상 테마 · 다크 전환
+· 악보(종이)는 늘 흰색으로 유지됩니다">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span class="lbl">색상</span>
+      </button>
+      <div id="screenPop" class="tb-menu">
+        <button type="button" id="themeHanji">미색</button>
+        <button type="button" id="themeCrystal">은청색</button>
+        <button type="button" id="themeCeladon">옥색</button>
+        <hr>
+        <button type="button" id="darkModeItem">어두운 화면으로</button>
+      </div>
+    </div>
     <!-- 도움말 센터 열기 — 정간보 기초부터 사용법·단축키까지 담은 모달(#helpModal).
          첫 방문 환영 카드·둘러보기(투어)도 여기서 다시 열 수 있다. -->
     <button type="button" id="btnHelp" class="topbar-cmd tip"
@@ -733,6 +734,12 @@
         <button type="button" id="textPanelDelete" class="orn-reset text-panel-del">삭제</button>
       </div>
       <div id="sheet"></div>
+      <!-- 오선보 인쇄용 종이 — 평소엔 비어 있고 화면에도 안 나온다. [오선보만 인쇄]·[나란히
+           인쇄]가 여기에 종이들을 깔고 body.print-staff를 켜면, 인쇄에서만 정간보(#sheet)
+           대신 이쪽이 나간다(app.js printPages가 끝나고 도로 비운다). 종이를 따로 두는
+           까닭은 정간보 배치를 건드리지 않으려는 것 — #sheet를 갈아 끼우면 인쇄 뒤
+           화면을 되돌려야 하고 그 사이 편집 상태가 흔들린다. -->
+      <div id="staffSheet" aria-hidden="true"></div>
     </div>
     <!-- 오선보 — 정간보 바로 아래에 나란히 둔다(고치면 곧바로 여기도 다시 그려진다).
          뜬 창이 아니라 붙박이인 건 '둘을 견주는 자리'라서다 — 떠 있으면 정간보를 가린다.
@@ -799,9 +806,26 @@
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>
-          <button type="button" id="staffExport" class="tip"
-            data-tip="MusicXML 파일로 내보내기
-· 뮤즈스코어·피날레·시벨리우스에서 열립니다">파일로</button>
+          <!-- 뽑기 — 오선보를 밖으로 내보내는 길을 한자리에 모은 메뉴(.tb-menu, wireTopMenu).
+               예전엔 [파일로](MusicXML) 하나뿐이었는데 인쇄·PNG가 붙으면서 머리줄이 버튼
+               넷으로 불었다. 자주 안 쓰는 명령은 늘어놓지 말고 접는다는 상단바 규칙과 같다.
+               '나란히'는 정간보와 오선보를 한 장에 좌우로 앉힌다(왼쪽 오선보·오른쪽 정간보) —
+               정간보가 오른쪽에서 시작해 왼쪽으로 읽으므로 종이 오른쪽 반을 정간보에 준다. -->
+          <span id="staffOutBox">
+            <button type="button" id="staffOutToggle" class="tip"
+              data-tip="오선보를 파일·종이로 뽑기
+· MusicXML은 뮤즈스코어·피날레·시벨리우스에서 열립니다
+· 인쇄·PNG는 정간보와 같은 종이 크기·여백을 씁니다">뽑기 ▾</button>
+            <div id="staffOutPop" class="tb-menu">
+              <button type="button" id="staffExport">MusicXML 파일로</button>
+              <hr>
+              <button type="button" id="staffPrint">오선보만 인쇄</button>
+              <button type="button" id="staffPng">오선보만 PNG</button>
+              <hr>
+              <button type="button" id="staffPrintSide">정간보와 나란히 인쇄</button>
+              <button type="button" id="staffPngSide">정간보와 나란히 PNG</button>
+            </div>
+          </span>
           <button type="button" id="staffClose" class="icon-btn" title="닫기">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
