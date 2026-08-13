@@ -427,9 +427,9 @@
     padding: 6px 16px; z-index: 3; transform: translateY(-3px);
     box-shadow: 0 3px 7px rgba(31,26,18,.28);
   }
-  /* 입력 방식(에디터/직접 입력)은 #topBar로 옮겨졌다 — 이 레일에 남은 안내(단축키)만
-     쓰는 규칙. 안내 패널이 좁은 레일 밖 오른쪽으로 펼쳐지게 한다. */
-  #dockRail .melody-guide { top: 0; left: calc(100% + 8px); }
+  /* 예전엔 여기서 레일 안내를 '버튼 오른쪽'으로 밀어 두는 규칙이 있었다 — 안내가 fixed로
+     바뀌며 자리는 전부 app.js placeGuide()가 잡으므로 지웠다(자리 규칙을 두 군데 두면
+     한쪽만 고쳐져 어긋난다). */
   #dockRail .rail-sep { height: 1px; background: var(--line); margin: 2px 4px 8px; }
   .pal-seg .seg-btn { padding: 4px 10px; border: none; background: var(--panel); font-size: 12px;
                       white-space: nowrap;
@@ -734,13 +734,9 @@
                         color: var(--muted); transition: background .12s ease, color .12s ease; }
   .rail-shortcuts-btn:hover, .rail-shortcuts-btn.on { background: var(--hover); color: var(--ink); }
   .rail-shortcuts-btn svg { width: 14px; height: 14px; flex: 0 0 auto; }
-  /* 단축키 버튼이 사이드바 맨 아래라 안내 패널이 기본값(아래로 펼침)대로 뜨면 화면 아래로
-     넘어가 잘려 보인다 — 버튼 오른쪽에서 위로 펼친다. #dockRail .melody-guide의 top:0보다
-     특이도를 높여야 top/bottom이 동시에 걸려 상자가 짜부라지는 일이 없다. */
-  #dockRail #shortcutsGuide, #shortcutsGuide {
-    top: auto; bottom: 0; left: calc(100% + 8px);
-    max-height: 74vh; overflow: auto;
-  }
+  /* 단축키 안내는 목록이 길어 화면을 다 먹지 않게 높이만 묶어 둔다. 자리(위/아래/좌우)는
+     placeGuide()가 알아서 잡으므로 여기서 top/bottom/left를 정하지 않는다. */
+  #shortcutsGuide { max-height: 74vh; overflow: auto; }
   .dock-panels { flex: 1 1 auto; min-width: 0; }
   .dock-panel { display: none; padding: 8px 14px 14px; }
   .dock-panel.active { display: block; }
@@ -1497,14 +1493,21 @@
 
   /* 입력 방법 가이드 (?) 토글 — 다른 아이콘 버튼과 같은 부품(.icon-btn) 사용 */
   .guide-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
-  .melody-guide { position: absolute; top: 26px; left: 0; z-index: 20; display: none;
+  /* ★ position:fixed다(absolute 아님). 이 안내는 도구창 안에 들어 있는데 창들이
+     overflow:auto라(#lyricsArea·#jangdanArea 등) absolute면 **창 경계에서 잘린다** —
+     240px 상자가 창보다 넓어 오른쪽이 뭉텅 잘려 나갔다(2026-08-11 사용자 제보).
+     fixed는 조상의 overflow를 벗어나므로 그 자리에서 풀린다. 리본 툴팁(#ribbonTipFloat)이
+     같은 이유로 이미 쓰는 수법이다.
+     그래서 top/left를 CSS에 두지 않는다 — app.js placeGuide()가 버튼 좌표를 재서 넣는다
+     (화면 좌우·아래까지 함께 챙긴다). 도구창은 transform이 아니라 left/top으로 끌기 때문에
+     fixed의 기준이 어긋나지 않는다(끌기를 transform으로 바꾸면 이게 깨진다 — 주의).
+     z-index 60은 도구창(.direct-win)보다 위, 모달(500)·둘러보기(800)보다 아래. */
+  .melody-guide { position: fixed; z-index: 60; display: none;
                   background: var(--overlay); border: 1px solid var(--accent); border-radius: 10px;
                   padding: 10px 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 240px;
                   font-size: 12px; font-weight: 400; color: var(--ink); line-height: 1.6;
                   white-space: normal; }   /* .melody-head의 nowrap을 되돌림 — 안 그러면 문장이 박스 밖으로 넘침 */
   .melody-guide.on { display: block; }
-  /* 화면 아래로 넘칠 때 JS(makeGuideToggle)가 붙이는 위로 펼침 상태 */
-  .melody-guide.up { top: auto; bottom: calc(100% + 8px); }
   .melody-guide b { color: var(--accent); font-size: 11px; letter-spacing: .5px; }
   .melody-guide .mg-sec { margin-top: 8px; }
   .melody-guide .mg-sec:first-child { margin-top: 0; }

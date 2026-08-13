@@ -308,6 +308,19 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - 도구창의 ?(`makeGuideToggle`/`.melody-guide`)와 달리 **띄우지 않고 제자리에서 편다** —
     #sidebar가 `overflow-y:auto`라 가로도 auto가 되어 떠 있는 패널이 잘리고 스크롤하면 버튼과
     따로 논다. 버튼만 같은 부품(`.icon-btn`)이라 '같은 ?'로 읽힌다.
+- **도구창의 ? 안내(`.melody-guide`)는 `position: fixed` + JS 자리잡기**(app.js `placeGuide`).
+  도구창들이 `overflow: auto`라(#lyricsArea·#jangdanArea…) absolute로 두면 **창 경계에서
+  잘린다** — 폭 240px 상자가 창보다 넓어 오른쪽이 뭉텅 날아갔다(2026-08-11 사용자 제보).
+  리본 툴팁(#ribbonTipFloat)이 같은 이유로 이미 쓰던 수법이다.
+  - **자리 규칙은 `placeGuide` 한 곳에만 둘 것.** 예전엔 CSS에 `#dockRail .melody-guide`·
+    `#shortcutsGuide`의 top/bottom/left 예외가 따로 있어, 자리 규칙이 두 군데로 갈려
+    있었다(둘 다 지웠다). `#shortcutsGuide`에 남은 건 높이 제한(`max-height:74vh`)뿐이다.
+  - 규칙은 '버튼 아래 왼쪽 맞춤'이 기본이고 ① 화면 오른쪽을 넘으면 안으로 당김 ② 아래가
+    모자라면 버튼 위로 뒤집음 ③ 위아래 다 모자라면 넓은 쪽 + `max-height`로 눌러 스크롤.
+  - **도구창 끌기가 `left/top`이라서 fixed의 기준이 어긋나지 않는다.** 끌기를 `transform`으로
+    바꾸면 그 창이 fixed의 기준 상자가 되어 안내가 엉뚱한 데로 간다 — 함께 볼 것.
+  - 열려 있는 동안 `resize`·`scroll`(캡처 단계)로 따라다닌다. fixed라 가만두면 버튼만
+    움직인다.
   - 체크박스 항목은 이름표가 `<label class="chk">`라 그 안의 클릭이 체크박스를 뒤집는다 —
     토글 핸들러의 `preventDefault()`+`stopPropagation()`을 빼지 말 것.
   - **버튼이 이름줄을 밀면 안 된다** — 상자(18px)가 글줄(13px ≈ 15.5px)보다 커서 그냥 두면

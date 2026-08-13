@@ -7367,34 +7367,42 @@
   // 입력 방법 가이드(?) 팝오버
   // 안내(?) 팝오버 공통 — 버튼 클릭으로 열고 닫기, 바깥 클릭으로 닫기
   // (선율/장단/가사/텍스트 입력 방법 · 시김새 조정 설명)
+  // ? 안내 패널 자리잡기 — 패널이 position:fixed라 **화면 좌표**로 넣는다(까닭은 styles.css
+  // .melody-guide 주석: 도구창이 overflow:auto라 absolute면 창 경계에서 잘렸다).
+  // 자리 규칙은 '버튼 아래 왼쪽 맞춤'이 기본이고, 세 방향을 차례로 챙긴다:
+  //   ① 가로 — 폭 240px가 화면 오른쪽을 넘으면 안으로 당긴다(왼쪽 여백도 지킨다).
+  //   ② 세로 — 아래가 모자라면 버튼 위로 뒤집는다.
+  //   ③ 위아래 둘 다 모자라면 넓은 쪽을 골라 max-height로 눌러 패널 안에서 스크롤시킨다.
+  // (에디터 모드는 ? 버튼이 하단 독에 있어 아래가, 직접 입력은 도구창이 위쪽에 떠 있어
+  //  위가 모자랄 수 있다 — 방향을 고정하면 어느 한쪽이 반드시 잘린다.)
+  const GUIDE_M = 8;      // 화면 가장자리 여백
+  const GUIDE_GAP = 6;    // 버튼과 패널 사이
+  function placeGuide(g, btn) {
+    g.style.maxHeight = ""; g.style.overflowY = "";
+    const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+    const b = btn.getBoundingClientRect();
+    const w = g.offsetWidth, h = g.offsetHeight;
+    const left = Math.max(GUIDE_M, Math.min(b.left, vw - w - GUIDE_M));
+    const below = vh - b.bottom - GUIDE_M - GUIDE_GAP;
+    const above = b.top - GUIDE_M - GUIDE_GAP;
+    let top;
+    if (h <= below) top = b.bottom + GUIDE_GAP;
+    else if (h <= above) top = b.top - GUIDE_GAP - h;
+    else {
+      const useUp = above > below;
+      const cap = Math.max(120, useUp ? above : below);
+      g.style.maxHeight = cap + "px"; g.style.overflowY = "auto";
+      top = useUp ? Math.max(GUIDE_M, b.top - GUIDE_GAP - Math.min(h, cap)) : b.bottom + GUIDE_GAP;
+    }
+    g.style.left = left + "px";
+    g.style.top = top + "px";
+  }
   function makeGuideToggle(guideId, btnId) {
     const fn = function (show) {
       const on = typeof show === "boolean" ? show : !$(guideId).classList.contains("on");
       $(guideId).classList.toggle("on", on);
       $(btnId).classList.toggle("on", on);
-      // 화면 밖 방지 — 기본(아래로 펼침)이 화면 아래로 넘치면 위로 뒤집고(.up),
-      // 위도 모자라면 넓은 쪽을 골라 max-height로 눌러 패널 안에서 스크롤되게 한다.
-      // (에디터 모드에선 ? 버튼이 하단 독에 있어 아래 공간이, 직접 입력 모드에선
-      // 도구창이 화면 위쪽에 떠 있어 위 공간이 부족할 수 있다 — 방향 고정으론 안 됨)
-      if (on) {
-        const g = $(guideId);
-        g.classList.remove("up"); g.style.maxHeight = ""; g.style.overflowY = "";
-        const vh = document.documentElement.clientHeight, margin = 8;
-        let r = g.getBoundingClientRect();
-        if (r.bottom > vh) {
-          const wrapR = g.parentNode.getBoundingClientRect();
-          const spaceAbove = wrapR.top - margin * 2;
-          const spaceBelow = vh - wrapR.bottom - margin * 2;
-          if (r.height <= spaceAbove) {
-            g.classList.add("up");
-          } else {
-            const useUp = spaceAbove > spaceBelow;
-            g.classList.toggle("up", useUp);
-            g.style.maxHeight = Math.max(120, useUp ? spaceAbove : spaceBelow) + "px";
-            g.style.overflowY = "auto";
-          }
-        }
-      }
+      if (on) placeGuide($(guideId), $(btnId));
     };
     $(btnId).addEventListener("click", function (e) { e.stopPropagation(); fn(); });
     document.addEventListener("click", function (e) {
@@ -7402,6 +7410,14 @@
         fn(false);
       }
     });
+    // 열려 있는 동안 창 크기가 바뀌거나 어딘가 스크롤되면 버튼이 움직인다 — fixed 패널은
+    // 따라가지 않으므로 다시 잡아 준다(스크롤은 도구창 안쪽에서도 나므로 캡처 단계로 듣는다).
+    const follow = function () {
+      const g = $(guideId);
+      if (g && g.classList.contains("on")) placeGuide(g, $(btnId));
+    };
+    window.addEventListener("resize", follow);
+    window.addEventListener("scroll", follow, true);
     return fn;
   }
   const toggleMelodyGuide = makeGuideToggle("melodyGuide", "melodyGuideToggle");   // 처음 방문 안내에 재사용
