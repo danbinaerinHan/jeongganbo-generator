@@ -587,6 +587,15 @@
   /* 종이(흰 SVG)와 달리 오선보는 화면의 일부라 테마·다크를 따라간다 — currentColor로 그려
      여기 color 하나만 정하면 된다. */
   #staffBody .staff-empty { padding: 18px 14px; color: var(--muted); font-size: 12px; }
+  /* Verovio 조판 결과 — 저들 내장 스타일이 선(stroke)만 currentColor로 긋고 채움(음표머리·
+     글자)은 SVG 기본값(검정)에 맡겨서, 다크에선 채움이 안 보인다. 잉크색을 입힌다.
+     staff-view SVG(흰 채움을 쓰는 데가 있다)를 안 건드리게 .vrv-out 안으로 가둔다.
+     안쪽 svg의 color="black" **속성**이 currentColor를 검정에 묶으므로 CSS로 눌러 되찾는다
+     (속성은 CSS보다 약하다) — 이 줄이 없으면 다크에서 악보가 통째로 안 보인다. */
+  #staffBody .vrv-out svg { color: inherit; }
+  /* use가 꼭 있어야 한다 — 음표머리·글리프는 <use>가 defs를 참조하는데, 원본 path에 준
+     fill이 복제본까지는 못 가서 use 자신에 줘야 붙는다(실측 2026-08-14). */
+  #staffBody .vrv-out :is(path, ellipse, rect, polygon, polyline, text, use) { fill: currentColor; }
 
   /* 게시된 악보를 열었을 때의 알림 줄 — 상단바 바로 아래, 화면 전체 폭 한 줄(마크업 자리가
      #topBar와 #appRow 사이인 까닭은 index.html 주석 참고: #main 안에 두면 왼쪽 도킹에서

@@ -5871,6 +5871,53 @@
     } catch (e) {}
   }
 
+  // ----- Verovio 조판 -----
+  // 화면 오선보는 Verovio(www.verovio.org, LGPL)가 그린다 — 재료는 그대로 buildStaffScores()
+  // 이고, 그것을 MusicXML(js/musicxml.js)로 적어 먹인다. MEI로 미리 바꿀 필요는 없다 —
+  // Verovio가 안에서 스스로 바꾸므로 결과가 같다(2026-08-14 좌표 단위까지 대조).
+  // js/vendor/verovio-toolkit-wasm.js(6.7MB, wasm 내장 단일 파일)는 오선보를 열 때만
+  // <script>로 불러온다(janggu-audio와 같은 지연 로드 수법). 로드 전·실패 시엔 staff-view가
+  // 예전처럼 그린다 — 조판기 하나 때문에 오선보가 통째로 막히면 안 된다.
+  var vrvTk = null, vrvState = "";   // "" 안 불림 · "loading" · "failed"
+  function loadVerovio() {
+    if (vrvTk || vrvState) return;
+    vrvState = "loading";
+    const s = document.createElement("script");
+    s.src = "js/vendor/verovio-toolkit-wasm.js";
+    s.onload = function () {
+      // 공식 초기화 절차 — wasm이 풀리면 불린다. 콜백을 script 실행 직후(onload)에 걸므로
+      // 늦지 않는다(wasm 컴파일은 비동기라 이 시점엔 아직 안 끝나 있다).
+      window.verovio.module.onRuntimeInitialized = function () {
+        vrvTk = new window.verovio.toolkit();
+        vrvState = "";
+        scheduleStaff();
+      };
+    };
+    s.onerror = function () { vrvState = "failed"; scheduleStaff(); };
+    document.head.appendChild(s);
+  }
+
+  // scores → Verovio SVG(쪽들을 이어 붙인 HTML). 배율은 staff-view와 딴 단위라
+  // (Verovio scale 40 ≈ 지금 100%) staffZoom을 40에 곱해 옮긴다.
+  function vrvRender(scores, width) {
+    const scale = Math.max(15, Math.round(40 * staffZoom));
+    vrvTk.setOptions({
+      pageWidth: Math.max(600, Math.round(width * 100 / scale)),
+      scale: scale,
+      adjustPageHeight: true,
+      pageHeight: 60000,     // 한 쪽에 담을 수 있는 최대 — 넘치면 쪽이 늘고 아래로 이어 붙인다
+      breaks: "auto",
+      header: "none", footer: "none"   // 제목·쪽번호는 칸에 안 그린다(staff-view와 같음)
+    });
+    const xml = window.JGB_MUSICXML.build(scores,
+      { title: $("title").value, subtitle: $("subtitle").value });
+    if (!vrvTk.loadData(xml)) throw new Error("Verovio가 MusicXML을 읽지 못했습니다");
+    let html = "";
+    const n = vrvTk.getPageCount();
+    for (let i = 1; i <= n; i++) html += vrvTk.renderToSVG(i, {});
+    return "<div class=\"vrv-out\">" + html + "</div>";
+  }
+
   function staffDraw() {
     const body = $("staffBody");
     if (!body || !staffOpen) return;
@@ -5892,9 +5939,12 @@
       body.innerHTML = "<div class='staff-empty'>정간에 율명을 적으면 여기에 오선보로 나타납니다.</div>";
       return;
     }
-    body.innerHTML = window.JGB_STAFF.render(scores, {
-      width: Math.max(320, body.clientWidth - 8), scale: staffZoom
-    });
+    const width = Math.max(320, body.clientWidth - 8);
+    if (vrvTk) {
+      try { body.innerHTML = vrvRender(scores, width); return; }
+      catch (err) { console.error("Verovio 조판 실패 — staff-view로 물러납니다:", err); }
+    } else if (!vrvState) loadVerovio();   // 처음 그릴 때 뒤에서 불러 두고 우선 staff-view로
+    body.innerHTML = window.JGB_STAFF.render(scores, { width: width, scale: staffZoom });
   }
 
   // render()가 부른다. 창이 닫혀 있으면 아무 일도 안 하므로 평소엔 값이 0이다.
@@ -5909,7 +5959,7 @@
     const pane = $("staffPane");
     if (pane) pane.hidden = !on;
     if ($("btnStaff")) $("btnStaff").classList.toggle("on", on);
-    if (on) staffDraw();
+    if (on) { loadVerovio(); staffDraw(); }   // 조판기는 여는 순간부터 뒤에서 불러 둔다
   }
 
   function setStaffZoom(z, quiet) {

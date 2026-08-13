@@ -59,6 +59,12 @@
         const acc = C.pitchAt(o.midi, fifths).acc;
         if (acc != null) out.push("        <accidental>" + C.ACC[acc] + "</accidental>");
       }
+      // 꾸밈음이 둘 이상이면 꼬리를 빔으로 잇는다 — 16분음표꼴이라 빔이 두 겹이다.
+      // 낱개 꼬리로 두면 꾸밈음마다 깃발이 따로 붙어 어수선하다(2026-08-14 사용자 확정).
+      if (o.beam) {
+        out.push("        <beam number=\"1\">" + o.beam + "</beam>");
+        out.push("        <beam number=\"2\">" + o.beam + "</beam>");
+      }
       if (o.tieStart || o.tieStop) {
         out.push("        <notations>");
         if (o.tieStop) out.push("          <tied type=\"stop\"/>");
@@ -115,10 +121,19 @@
                      "<sound tempo=\"" + (s.bpm * C.quarterRatio(s.unit)) + "\"/></direction>");
           }
         }
+        // 꾸밈음 묶음 — 둘 이상이면 begin/continue/end로 빔을 잇는다(하나면 빔 없음)
+        function graceRun(list) {
+          list.forEach(function (g, i) {
+            noteEl({ midi: g, grace: true,
+                     beam: list.length < 2 ? null
+                       : i === 0 ? "begin" : i === list.length - 1 ? "end" : "continue" },
+                   s.fifths);
+          });
+        }
         m.forEach(function (n) {
-          n.graces.forEach(function (g) { noteEl({ midi: g, grace: true }, s.fifths); });
+          graceRun(n.graces);
           noteEl(n, s.fifths);
-          n.afters.forEach(function (g) { noteEl({ midi: g, grace: true }, s.fifths); });
+          graceRun(n.afters);
         });
         out.push("    </measure>");
       });

@@ -80,6 +80,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   예전엔 app.js(mxlPitch)와 staff-view(pitchAt)에 같은 셈이 두 벌이라 1155자리 대조 검사로
   겨우 맞춰 두고 있었다 — staff-core로 합치며 그 대조가 필요 없어졌다. **새 오선보 기능은
   app.js가 아니라 이 셋 중 하나에 붙일 것.**
+- `js/vendor/verovio-toolkit-wasm.js` — 오선보 **화면 조판기**(Verovio 6.2, LGPL, wasm 내장
+  단일 파일 6.7MB). index.html에 안 실리고 오선보 칸을 열 때 app.js가 지연 로드한다
+  (janggu-audio와 같은 수법). 규칙은 아래 '오선보 보기' 절.
 - `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
   호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
   로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
@@ -853,6 +856,18 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   뮤즈스코어뿐이라 연 자리다.
   - **재료는 내보내기와 같은 `buildStaffScores()`** — 화면에서 본 것과 파일로 나간 것이 다르면
     보는 뜻이 없다.
+  - **화면 조판은 Verovio가 한다**(app.js 오선보 보기 절의 vrvTk·loadVerovio·vrvRender).
+    재료(buildStaffScores)를 MusicXML(js/musicxml.js)로 적어 그대로 먹인다 — **MEI로 미리
+    바꾸지 않는다**(Verovio가 안에서 스스로 바꿔 결과가 같음을 2026-08-14 좌표 단위까지 대조).
+    6.7MB 조판기는 칸을 열 때만 지연 로드하고, 로드 전·실패 시엔 staff-view가 예전처럼
+    그린다 — 조판기 하나 때문에 오선보가 통째로 막히면 안 된다(staff-view를 지우지 말 것).
+    다크모드는 styles.css `.vrv-out` 규칙이 맡는다: 안쪽 svg의 `color="black"` **속성**을
+    CSS(color:inherit)로 누르고 fill을 currentColor로 — 선택자에 **use가 꼭 있어야 한다**
+    (음표머리는 <use>가 defs를 참조하는데 원본 path에 준 fill이 복제본까지 못 간다, 실측).
+    **꾸밈음이 둘 이상이면 musicxml.js가 빔(begin/continue/end 두 겹)으로 꼬리를 잇는다**
+    (2026-08-14 사용자 확정) — 화면(Verovio)과 내보낸 파일(뮤즈스코어)이 같은 빔을 본다.
+    **인쇄·PNG(아래 절)는 아직 staff-view가 그린다** — 쪽 나눔이 staff-view의 줄 경계
+    표시에 물려 있어서다. Verovio로 옮기려면 그 절을 통째로 손봐야 한다.
   - **무엇을 보여주나는 정간보의 '총보' 체크(#scoreView)를 그대로 따른다** — 켜져 있으면 모든
     악기를 오선 여러 줄로, 아니면 지금 편집 중인 악기만. 둘이 늘 같은 것을 보여야 나란히 놓고
     견줄 수 있다(그러라고 아래에 붙여 둔 창이다). 왼쪽 세로줄이 한 벌임을 보이고, 각 번호는
