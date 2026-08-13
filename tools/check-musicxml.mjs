@@ -193,11 +193,23 @@ console.log("\n정간을 무엇으로 보나 — 박자표·빠르기가 따라 
   ok("정간 하나가 1680", parseMeasures(q)[0].filter((n) => !n.grace)[0].dur === 1680);
   const sums = parseMeasures(q).map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
   ok("4분음표로 봐도 마디가 딱 찬다", sums.every((v) => v === 4 * 1680), `마디 길이: [${sums}]`);
-  // 3분박은 4분음표로 보면 딱 안 떨어진다 → 음표꼴을 비우고 길이만 정확히 적는다
+  // 3분박은 4분음표로 보면 딱 안 떨어진다 → **셋잇단**(8분음표꼴 + 3:2)으로 적는다
+  // (2026-08-14 사용자 요청 — 예전엔 음표꼴을 비웠는데 조판기가 머리만 그렸다).
+  // 길이(<duration>)는 그대로 560이라 마디 합은 안 바뀐다.
   const t = xmlOf("황태중|임|남|중", 4);
   const first = parseMeasures(t)[0].filter((n) => !n.grace)[0];
-  ok("3분박을 4분음표로 보면 길이는 정확하되 음표꼴은 비운다",
-     first.dur === 560 && !t.split("<note>")[1].includes("<type>"));
+  const n1 = t.split("<note>")[1];
+  ok("3분박을 4분음표로 보면 셋잇단 — 8분음표꼴 + 3:2, 길이는 그대로",
+     first.dur === 560 && n1.includes("<type>eighth</type>") &&
+     n1.includes("<actual-notes>3</actual-notes><normal-notes>2</normal-notes>") &&
+     n1.includes("<tuplet type=\"start\"/>"));
+  // 잇단 괄호는 그 정간 안에서 닫힌다 — 셋째 음이 stop, 다음 정간(임)은 잇단이 아니다
+  const n3 = t.split("<note>")[3], n4 = t.split("<note>")[4];
+  ok("잇단 괄호가 정간 끝에서 닫힌다",
+     n3.includes("<tuplet type=\"stop\"/>") && !n4.includes("time-modification"));
+  // 5분박은 여전히 음표꼴 없이 — 억지 잇단보다 비워 두는 쪽(쓰지 않기로 확정)
+  const f5 = xmlOf("황태중임남|임|남|황", 4).split("<note>")[1];
+  ok("5분박은 음표꼴 없이 길이만 적는다", !f5.includes("<type>") && !f5.includes("time-modification"));
 
   // 8분음표 — 2분박이면서 각이 길 때. 20정간 각이 4분음표로는 20/4이라 한 마디가
   // 터무니없이 길어지는데, 8분음표로 보면 20/8이 된다.

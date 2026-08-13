@@ -51,8 +51,9 @@
       if (o.tieStop) out.push("        <tie type=\"stop\"/>");
       if (o.tieStart) out.push("        <tie type=\"start\"/>");
       out.push("        <voice>1</voice>");
-      // <note> 안의 차례는 규격이 정해 두었다: 음표꼴 → 점 → 임시표 → 표현. 지킬 것.
-      const ty = o.grace ? { type: "16th", dots: 0 } : C.exactValue(o.units);
+      // <note> 안의 차례는 규격이 정해 두었다: 음표꼴 → 점 → 임시표 → 잇단 → 표현. 지킬 것.
+      // 잇단이면 음표꼴은 '적히는 꼴'(tup.ty — 실제 길이의 3/2배 자리)이다.
+      const ty = o.grace ? { type: "16th", dots: 0 } : o.tup ? o.tup.ty : C.exactValue(o.units);
       if (ty) {
         out.push("        <type>" + ty.type + "</type>");
         for (let d = 0; d < ty.dots; d++) out.push("        <dot/>");
@@ -61,16 +62,27 @@
         const acc = C.pitchAt(o.midi, fifths).acc;
         if (acc != null) out.push("        <accidental>" + C.ACC[acc] + "</accidental>");
       }
-      // 꾸밈음이 둘 이상이면 꼬리를 빔으로 잇는다 — 16분음표꼴이라 빔이 두 겹이다.
-      // 낱개 꼬리로 두면 꾸밈음마다 깃발이 따로 붙어 어수선하다(2026-08-14 사용자 확정).
-      if (o.beam) {
-        out.push("        <beam number=\"1\">" + o.beam + "</beam>");
-        out.push("        <beam number=\"2\">" + o.beam + "</beam>");
+      if (o.tup) {
+        out.push("        <time-modification><actual-notes>" + o.tup.actual +
+                 "</actual-notes><normal-notes>" + o.tup.normal +
+                 "</normal-notes></time-modification>");
       }
-      if (o.tieStart || o.tieStop) {
+      // 꼬리를 빔으로 잇는다 — 꾸밈음 묶음(16분음표꼴 = 두 겹)과 셋잇단 묶음이 쓴다.
+      // 낱개 꼬리로 두면 음마다 깃발이 따로 붙어 어수선하다(2026-08-14 사용자 확정).
+      // beamN = 빔 겹 수(음표꼴이 정한다: 8분=1, 16분=2, …).
+      if (o.beam) {
+        for (let b = 1; b <= (o.beamN || 1); b++) {
+          out.push("        <beam number=\"" + b + "\">" + o.beam + "</beam>");
+        }
+      }
+      const nots = [];
+      if (o.tieStop) nots.push("          <tied type=\"stop\"/>");
+      if (o.tieStart) nots.push("          <tied type=\"start\"/>");
+      if (o.tupStart) nots.push("          <tuplet type=\"start\"/>");
+      if (o.tupStop) nots.push("          <tuplet type=\"stop\"/>");
+      if (nots.length) {
         out.push("        <notations>");
-        if (o.tieStop) out.push("          <tied type=\"stop\"/>");
-        if (o.tieStart) out.push("          <tied type=\"start\"/>");
+        nots.forEach(function (n) { out.push(n); });
         out.push("        </notations>");
       }
       out.push("      </note>");
@@ -126,15 +138,53 @@
         // 꾸밈음 묶음 — 둘 이상이면 begin/continue/end로 빔을 잇는다(하나면 빔 없음)
         function graceRun(list) {
           list.forEach(function (g, i) {
-            noteEl({ midi: g, grace: true,
+            noteEl({ midi: g, grace: true, beamN: 2,
                      beam: list.length < 2 ? null
                        : i === 0 ? "begin" : i === list.length - 1 ? "end" : "continue" },
                    s.fifths);
           });
         }
-        m.forEach(function (n) {
+        // 셋잇단 — 표준 음표값으로 안 떨어지되(4분음표 정간의 3분박 등) 3/2배가 딱 떨어지면
+        // 그 꼴에 3:2를 달아 적는다(음길이·마디 합은 그대로). 괄호(숫자 3)는 같은 정간에서
+        // 난 이웃끼리 한 묶음 — cell 꼬리표가 그 경계다. 5·7분박은 여전히 음표꼴 없이 간다
+        // (쓰지 않기로 확정, 2026-08-14 — 억지 잇단보다 비워 두는 쪽이 정직하다).
+        const tups = m.map(function (n) {
+          if (C.exactValue(n.units) || (n.units * 3) % 2) return null;
+          const ty = C.exactValue(n.units * 3 / 2);
+          return ty ? { actual: 3, normal: 2, ty: ty } : null;
+        });
+        // 잇단 묶음 안에서 꼬리 있는 같은 꼴끼리는 빔으로 잇는다(8분 셋잇단이 낱개
+        // 깃발 셋으로 흩어지지 않게). 꼴이 섞인 묶음은 안 잇는다 — 겹 수가 다른 빔의
+        // 부분 연결(hook)까지 적으려면 셈이 한 층 더 필요한데 그런 악보가 아직 없다.
+        const FLAG_N = { eighth: 1, "16th": 2, "32nd": 3, "64th": 4 };
+        const beams = new Array(m.length).fill(null);
+        let run = [];
+        function flushRun() {
+          if (run.length >= 2) {
+            beams[run[0]] = "begin";
+            beams[run[run.length - 1]] = "end";
+            for (let k = 1; k < run.length - 1; k++) beams[run[k]] = "continue";
+          }
+          run = [];
+        }
+        m.forEach(function (n, i) {
+          const t = tups[i];
+          const beamable = t && !n.rest && FLAG_N[t.ty.type] && !t.ty.dots;
+          const joins = run.length && beamable &&
+            m[run[0]].cell === n.cell && tups[run[0]].ty.type === t.ty.type;
+          if (!joins) flushRun();
+          if (beamable) run.push(i);
+        });
+        flushRun();
+        m.forEach(function (n, i) {
           graceRun(n.graces);
-          noteEl(n, s.fifths);
+          const t = tups[i];
+          const joinPrev = t && i > 0 && tups[i - 1] && m[i - 1].cell === n.cell;
+          const joinNext = t && i < m.length - 1 && tups[i + 1] && m[i + 1].cell === n.cell;
+          noteEl(Object.assign({}, n, {
+            tup: t, tupStart: t && !joinPrev, tupStop: t && !joinNext,
+            beam: beams[i], beamN: t ? FLAG_N[t.ty.type] : 1
+          }), s.fifths);
           graceRun(n.afters);
         });
         out.push("    </measure>");

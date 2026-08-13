@@ -5744,18 +5744,21 @@
 
     // ② 자리 → 음표. 'hold'(빈 정간·이음·소리 없는 기호)는 새 음이 아니라 앞 음이 이어지는
     //    것이므로 앞 음의 길이에 더한다(재생의 extend와 같은 규칙). 이을 앞 음이 없으면 쉼표.
+    //    cell(어느 정간에서 났나)은 musicxml.js가 셋잇단 묶음의 경계로 쓴다 — 같은 정간에서
+    //    난 잇단 음들만 한 괄호(숫자 3)로 묶여야 해서.
     const notes = [];
     let prev = null;
     slots.forEach(function (s) {
+      const cellKey = s.gak + ":" + s.cell;
       if (s.kind !== "note") {
         if (s.kind === "hold" && prev) { prev.units += s.units; return; }
-        notes.push({ rest: true, units: s.units });
+        notes.push({ rest: true, units: s.units, cell: cellKey });
         prev = null;
         return;
       }
       const each = s.units / s.seq.length;
       s.seq.forEach(function (m, i) {
-        prev = { midi: m, units: each, grace: i === 0 ? s.pre : [], after: [] };
+        prev = { midi: m, units: each, grace: i === 0 ? s.pre : [], after: [], cell: cellKey };
         notes.push(prev);
       });
       if (s.post.length) prev.after = s.post;
@@ -5774,7 +5777,7 @@
         if (filled >= measLen) newMeasure();
         const take = Math.min(left, measLen - filled);
         cur.push({
-          midi: n.midi, rest: n.rest, units: take,
+          midi: n.midi, rest: n.rest, units: take, cell: n.cell,
           // 꾸밈은 앞쪽은 첫 조각에, 뒤쪽은 마지막 조각에만 붙는다
           graces: first ? (n.grace || []) : [],
           afters: (left - take <= 0) ? (n.after || []) : [],
