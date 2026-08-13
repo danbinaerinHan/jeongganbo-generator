@@ -15,10 +15,10 @@ await import("../js/musicxml.js");
 const app = await loadApp(
   ["const:SC", "const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
-   "parseDaegang", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
+   "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
    "staffHwang", "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
-  { beats: "4", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
+  { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
@@ -99,17 +99,23 @@ console.log("\n음높이 — 오선보에서 되읽은 음이 시김새 규칙�
      `길이: [${five.map((n) => n.dur)}]`);
 }
 
-console.log("\n마디를 넘는 긴 음은 붙임줄로 잇는가");
+console.log("\n각을 넘는 지속 — 소리가 끊기고 쉼표로 적히는가");
 {
+  // 2026-08-14 사용자 확정 — 빈 정간·이음은 **제 각(=한 장단) 안에서만** 앞 음을 잇는다.
+  // 각이 바뀌면 지속이 끊기고 쉼표가 된다. 재생도 같은 realizeMelody를 보므로 소리도
+  // 함께 끊긴다(그래서 마디를 넘는 붙임줄은 이제 안 나온다).
   const ms = parseMeasures(xmlOf("황| | | \n | | | \n태| | | ", 4));
   const first = ms[0].filter((n) => !n.grace);
-  eq("첫 마디는 한 음이 마디를 꽉 채우고 tie 시작", [first.length, first[0].dur, first[0].tie],
-     [1, 4 * JG, '<tie type="start"/>']);
-  // 황은 두 마디를 채우고 셋째 마디에서 태로 바뀌므로, 둘째 마디는 받기만 하고 안 넘긴다
+  eq("첫 마디는 한 음이 제 각을 채우고 붙임줄 없이 끝난다",
+     [first.length, first[0].dur, first[0].tie], [1, 4 * JG, ""]);
   const second = ms[1].filter((n) => !n.grace);
-  eq("둘째 마디는 이어받고 거기서 끝난다", [second.length, second[0].tie],
-     [1, '<tie type="stop"/>']);
-  eq("셋째 마디는 새 음(태)으로 시작", [ms[2].filter((n) => !n.grace)[0].tie], [""]);
+  ok("둘째 마디(빈 각)는 전부 쉼표", second.length > 0 && second.every((n) => n.rest),
+     JSON.stringify(second));
+  const third = ms[2].filter((n) => !n.grace)[0];
+  eq("셋째 마디는 새 음(태)으로 시작", [third.rest, midiOf(third)], [false, P("태")]);
+  // 같은 각 안의 빈 정간은 예전대로 잇는다 — 위 '빈 정간(앞 음 지속)' 검사와 짝
+  const within = parseMeasures(xmlOf("황| | |임", 4))[0].filter((n) => !n.grace);
+  eq("제 각 안의 빈 정간은 그대로 잇는다(음 둘뿐)", [within.length, within[0].dur], [2, 3 * JG]);
 }
 
 console.log("\n조표 — 음계의 '도'를 으뜸음으로 삼는 조를 고르는가");
