@@ -17,9 +17,9 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
   { beats: "4", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted", daegang: "" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
@@ -112,22 +112,60 @@ console.log("\n마디를 넘는 긴 음은 붙임줄로 잇는가");
   eq("셋째 마디는 새 음(태)으로 시작", [ms[2].filter((n) => !n.grace)[0].tie], [""]);
 }
 
-console.log("\n조표 — 음계 다섯 음이 임시표 없이 적히는 조를 고르는가");
+console.log("\n조표 — 궁(宮)을 으뜸음으로 삼는 조를 고르는가");
 {
+  // 5음 음계는 임시표 없이 적히는 조표가 셋이라(황종 평조면 ♭5·♭4·♭3) '임시표가 가장
+  // 적은 것'으로는 못 고른다 — 셋 다 음정은 안 틀리고 무엇을 do로 선언하는가만 갈린다.
+  // 관행은 궁을 으뜸음으로 삼는다: 황종 평조는 궁이 중려라 ♭4(세종 자료도 ♭4).
   app.fields.joPreset = "hwang-pyeong";     // 황태중임남 = E♭ F A♭ B♭ C
   const f1 = mxlFifths(63);
-  // 세종 자료는 ♭4개로 박아 두었지만 우리는 음계에서 끌어낸다 → E♭장조(♭3). 소리는 같다.
-  ok(`황=E♭ 평조 → 내림표 ${-f1}개 (E♭장조)`, f1 === -3, `나온 값: ${f1}`);
+  ok(`황=E♭ 평조 → 내림표 4개 (A♭장조, 궁=중려)`, f1 === -4, `나온 값: ${f1}`);
   const scale = ["황", "태", "중", "임", "남"].map((n) => 63 + YUL.indexOf(n));
   ok("다섯 음 모두 임시표 없이 적힌다",
      scale.every((m) => mxlPitch(m, f1).acc === null),
      scale.map((m) => `${m}:${mxlPitch(m, f1).step}${mxlPitch(m, f1).alter}`).join(" "));
-  app.fields.joPreset = "hwang-gyemyeon";   // 황협중임무
+  app.fields.joPreset = "hwang-gyemyeon";   // 황협중임무 = 라·도·레·미·솔 → 협종이 do
   const f2 = mxlFifths(63);
   const gye = ["황", "협", "중", "임", "무"].map((n) => 63 + YUL.indexOf(n));
-  ok(`계면조도 임시표 없이 (내림표 ${-f2}개)`,
-     gye.every((m) => mxlPitch(m, f2).acc === null));
+  ok(`계면조 → 내림표 6개 (G♭장조, 궁=협종)`, f2 === -6, `나온 값: ${f2}`);
+  ok("계면조도 임시표 없이", gye.every((m) => mxlPitch(m, f2).acc === null));
   app.fields.joPreset = "hwang-pyeong";
+}
+
+console.log("\n조표 고르기 — 사람이 정한 값이 자동을 이기는가");
+{
+  // 5음 음계는 임시표 없이 적히는 조표가 하나가 아니고 채보 관행도 갈린다(교과서 표준악보집은
+  // 가야금 연주곡을 본청=사음으로 옮겨 ♯1개로 적는다). 그래서 자동으로 정해 주되 열어 둔다 —
+  // 다만 조표를 바꿔도 **소리는 그대로**여야 한다(적는 방식만 달라지는 것이므로).
+  const midisOf = (xml) => parseMeasures(xml).flat().filter((n) => !n.rest).map(midiOf);
+  const auto = xmlOf("황|태|중|임", 4);
+  app.fields.staffKey = "1";
+  const sharp = xmlOf("황|태|중|임", 4);
+  ok("♯1개를 고르면 그 값이 나간다", mxlFifths() === 1, `나온 값: ${mxlFifths()}`);
+  ok("파일의 조표도 ♯1개", sharp.includes("<fifths>1</fifths>"));
+  eq("조표를 바꿔도 음높이는 그대로", midisOf(sharp), midisOf(auto));
+  ok("적는 방식만 달라진다 — 자동은 ♭4개", auto.includes("<fifths>-4</fifths>"));
+  app.fields.staffKey = "99";     // 범위 밖 값은 자동으로 물러난다
+  ok("모르는 값이면 자동", mxlFifths() === -4, `나온 값: ${mxlFifths()}`);
+  app.fields.staffKey = "auto";
+}
+
+console.log("\n기준음 — 정간보에 적어 둔 황 음고를 그대로 따라가는가");
+{
+  // 정간보와 오선보가 같은 곡을 가리키는데 기준음이 갈리면 그건 다른 곡이다. 황을 C로 두고
+  // 쓰는 악보면 오선보도 C로 적혀야 하고, 조표도 그 자리에서 다시 잡혀야 한다.
+  ok("황=E♭이면 첫 음이 E♭", (() => {
+    const n = parseMeasures(xmlOf("황|태|중|임", 4))[0].filter((x) => !x.grace)[0];
+    return n.step === "E" && n.alter === -1;
+  })());
+  app.fields.hwangPitch = "60";     // 황 = C
+  const c = xmlOf("황|태|중|임", 4);
+  const n0 = parseMeasures(c)[0].filter((x) => !x.grace)[0];
+  ok("황=C면 첫 음도 C", n0.step === "C" && n0.alter === 0, `나온 값: ${n0.step}${n0.alter}`);
+  // 황=C 평조(황태중임남 = C D F G A) → 5도권 맨 아래가 F라 궁은 중려, 조표는 ♭1개
+  ok("조표도 따라 옮겨진다 — ♭1개(바장조, 궁=중려)", c.includes("<fifths>-1</fifths>"),
+     (c.match(/<fifths>-?\d+<\/fifths>/) || [])[0]);
+  app.fields.hwangPitch = "63";
 }
 
 console.log("\n음이름 되읽기 — 옥타브가 밀리지 않는가");

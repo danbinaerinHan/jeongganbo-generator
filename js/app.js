@@ -5680,10 +5680,26 @@
   //   · 붙임 시김새 = 꾸밈음(길이를 안 먹음) · 독립 시김새 = 제 자리를 나눈 실음.
   const SC = window.JGB_STAFF_CORE;
 
-  // 조표 — 그 곡 음계의 다섯 음이 모두 임시표 없이 적히는 조를 고른다. 세종 자료는 ♭4개로
-  // 박아 두었지만 우리는 황 음고와 조를 사용자가 고를 수 있어 고정값이 맞을 수가 없다
-  // (황=E♭ 평조면 우리 ♭3, 그쪽 ♭4 — 적는 방식이 다를 뿐 소리는 같다).
-  function staffFifths(hwangMidi) {
+  // 오선보의 기준음 = **정간보 쪽에 적어 둔 황 음고**(#hwangPitch, 기본 E♭=63). 황을 C로
+  // 두고 쓰는 악보면 오선보도 C로 적혀야 한다 — 정간보와 오선보가 같은 곡을 가리키는데
+  // 기준음이 갈리면 그건 다른 곡이다.
+  // 다만 **곡 하나에 기준음은 하나**다. 이 값이 어디서 오는지를 여기 한 줄로 못 박아 두는
+  // 것은, 예전처럼 조표·음이름·재생이 저마다 다른 데서 기준음을 집어 오면 어긋나기 때문.
+  function staffHwang() { return parseInt($("hwangPitch").value) || 63; }
+
+  // 조표 — 기본은 **궁(宮)이 정하고**(js/staff-core.js의 fifthsFor) 오선보 창의 '조표'
+  // 칸에서 사람이 고르면 그 값이 이긴다. 5음 음계는 임시표 없이 적을 수 있는 조표가 셋이라
+  // 어느 쪽도 음정이 틀리지 않고, 채보하는 사람마다 관행이 다르다(국립국악원 교과서
+  // 표준악보집은 가야금 연주곡을 아예 본청=사음으로 옮겨 ♯1개로 적는다). 그래서 자동으로
+  // 정해 주되 잠그지는 않는다. **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면
+  // 조표도 같이 간다(#staffUnit·#joPreset과 같은 성격).
+  function staffFifths() {
+    const pick = $("staffKey") && $("staffKey").value;
+    if (pick && pick !== "auto") {
+      const f = parseInt(pick, 10);
+      if (f >= -7 && f <= 7) return f;
+    }
+    const hwangMidi = staffHwang();
     const pcs = [];
     scaleNotes().forEach(function (n) {
       const i = SCALE.indexOf(n);
@@ -5696,10 +5712,10 @@
   //   { name, abbr, fifths, clef, beats, bpm, measLen, measures: [[음표…]] }
   //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop }  (units는 SC.DIV 기준)
   function staffScoreOf(melodyText, meta) {
-    const hwangMidi = parseInt($("hwangPitch").value) || 63;
+    const hwangMidi = staffHwang();   // 곡 하나에 기준음 하나 (위 주석)
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const bpm = Math.max(1, parseInt($("tempoBpm").value) || 60);
-    const fifths = staffFifths(hwangMidi);
+    const fifths = staffFifths();
     // 정간 하나를 무엇으로 볼지(점4분음표·4분음표·8분음표) — 문서에 딸린 값이다(조 프리셋과
     // 같은 성격이라 CTRL_IDS에 있고, 남에게 악보를 주면 같이 간다). 화면 배율처럼 '이
     // 브라우저의 보기 방식'이 아니라 '이 악보를 어떻게 읽나'라서.
@@ -5927,8 +5943,10 @@
       }
     } catch (e) {}
     $("staffExport").addEventListener("click", exportMusicXml);
-    // 정간을 무엇으로 보나 — 문서 값이라 saveState까지 부른다(배율·높이와 다른 자리에 산다)
+    // 정간을 무엇으로 보나 · 조표를 무엇으로 적나 — 둘 다 문서 값이라 saveState까지 부른다
+    // (배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
     $("staffUnit").addEventListener("change", function () { staffDraw(); saveState(); });
+    $("staffKey").addEventListener("change", function () { staffDraw(); saveState(); });
     // 창 폭이 바뀌면 줄 나눔이 달라지므로 다시 그린다(열려 있을 때만).
     window.addEventListener("resize", scheduleStaff);
     // 높이 끌기 — #melodyResizer와 같은 손놀림. 위로 끌면 커진다.
@@ -5957,7 +5975,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView", "staffUnit"];
+    "scoreView", "staffUnit", "staffKey"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).

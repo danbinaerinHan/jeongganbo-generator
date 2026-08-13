@@ -762,6 +762,40 @@
               <option value="eighth">8분음표</option>
             </select>
           </label>
+          <!-- 조표 — 기본은 '자동'이고 궁(宮)을 으뜸음으로 삼는 조표가 잡힌다. 5음 음계는
+               임시표 없이 적을 수 있는 조표가 셋이라 어느 것도 음정이 틀리지 않고, 채보하는
+               사람마다 관행이 달라(교과서 표준악보집은 가야금 연주곡을 본청=사음으로 옮겨
+               ♯1개로 적는다) 열어 둔 칸이다. 음높이의 기준은 황 음고(재생 설정)가 따로 지므로
+               조표를 바꿔도 소리는 그대로고 적는 방식(음이름·임시표)만 달라진다.
+               자동이 궁을 못 짚으면 조표 없이 임시표로 적는다(js/staff-core.js 참고).
+               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다. -->
+          <label class="staff-unit tip"
+            data-tip="조표를 무엇으로 적을지
+· 자동은 궁(宮)을 으뜸음으로 삼는 조표를 고릅니다
+· 기준음(황 음고)은 따로 정하므로 조표를 바꿔도 음높이는 그대로입니다">조표
+            <select id="staffKey">
+              <option value="auto" selected>자동 (궁 기준)</option>
+              <option value="0">없음 (다장조)</option>
+              <optgroup label="내림표 ♭">
+                <option value="-1">♭ 1개 (바장조)</option>
+                <option value="-2">♭ 2개 (내림나장조)</option>
+                <option value="-3">♭ 3개 (내림마장조)</option>
+                <option value="-4">♭ 4개 (내림가장조)</option>
+                <option value="-5">♭ 5개 (내림라장조)</option>
+                <option value="-6">♭ 6개 (내림사장조)</option>
+                <option value="-7">♭ 7개 (내림다장조)</option>
+              </optgroup>
+              <optgroup label="올림표 ♯">
+                <option value="1">♯ 1개 (사장조)</option>
+                <option value="2">♯ 2개 (라장조)</option>
+                <option value="3">♯ 3개 (가장조)</option>
+                <option value="4">♯ 4개 (마장조)</option>
+                <option value="5">♯ 5개 (나장조)</option>
+                <option value="6">♯ 6개 (올림바장조)</option>
+                <option value="7">♯ 7개 (올림다장조)</option>
+              </optgroup>
+            </select>
+          </label>
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>
