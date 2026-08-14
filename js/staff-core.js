@@ -182,6 +182,32 @@
     return best;
   }
 
+  // ── 빔 묶음의 단위 ───────────────────────────────────────────────────
+  // 꼬리 있는 음표는 **한 박 안에서만** 빔으로 잇는다. 무엇이 한 박인지는 **정간 단위**가
+  // 정한다: 점4분음표·4분음표면 정간 하나가 곧 한 박이지만, **8분음표면 정간 하나는 한
+  // 박이 아니다** — 정간마다 8분음표 하나씩 따로 꼬리가 붙어 꼬리 숲이 되고, 12/8을 그렇게
+  // 적는 악보는 없다. 그때는 **대강이 곧 박**이다(정간보가 이미 갖고 있는 정보라 새로 물을
+  // 것이 없다). 대강이 안 적힌 악보는 셋씩, 셋으로 안 나뉘면 둘씩 — 정악에 세 박이 흔해서다.
+  //
+  // 돌려주는 것은 **정간 번호 → 묶음 번호** 표. 화면(staff-view)과 파일(musicxml)이 같은
+  // 답을 봐야 빔이 어긋나지 않으므로, 이 셈을 어느 한쪽에 다시 적지 말 것.
+  //   unit = "dotted"|"plain"|"eighth" · beats = 셀 정간 수 · daegang = 대강 분절(없으면 null)
+  function beatGroups(unit, beats, daegang) {
+    const n = Math.max(1, Math.floor(beats) || 1);
+    const out = [];
+    if (unit !== "eighth") {
+      for (let i = 0; i < n; i++) out[i] = i;      // 정간 하나 = 한 박
+      return out;
+    }
+    const gs = (daegang && daegang.length) ? daegang : [n % 3 === 0 ? 3 : 2];
+    let gi = 0, k = 0;
+    for (let i = 0; i < n; i++) {
+      out[i] = gi;
+      if (++k >= (gs[gi] || gs[gs.length - 1])) { k = 0; gi++; }
+    }
+    return out;
+  }
+
   // ── 붙임줄로 가르기 ───────────────────────────────────────────────────
   // 음표 하나로 안 떨어지는 길이를 **붙임줄로 이을 음표값 목록**으로 가른다.
   // 이런 길이는 잇고 있는 음에서 흔하다 — 한 음을 세 정간 끌면 점4분음표 셋(7560)인데
@@ -254,6 +280,7 @@
     timeSig: timeSig, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
-    exactValue: exactValue, nearestValue: nearestValue, tiedSplit: tiedSplit
+    exactValue: exactValue, nearestValue: nearestValue,
+    beatGroups: beatGroups, tiedSplit: tiedSplit
   };
 })(typeof window !== "undefined" ? window : globalThis);

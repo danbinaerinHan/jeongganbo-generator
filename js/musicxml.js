@@ -71,14 +71,12 @@
                  "</actual-notes><normal-notes>" + o.tup.normal +
                  "</normal-notes></time-modification>");
       }
-      // 꼬리를 빔으로 잇는다 — 꾸밈음 묶음(16분음표꼴 = 두 겹)과 셋잇단 묶음이 쓴다.
-      // 낱개 꼬리로 두면 음마다 깃발이 따로 붙어 어수선하다(2026-08-14 사용자 확정).
-      // beamN = 빔 겹 수(음표꼴이 정한다: 8분=1, 16분=2, …).
-      if (o.beam) {
-        for (let b = 1; b <= (o.beamN || 1); b++) {
-          out.push("        <beam number=\"" + b + "\">" + o.beam + "</beam>");
-        }
-      }
+      // 꼬리를 빔으로 잇는다 — 낱개 꼬리로 두면 음마다 깃발이 따로 붙어 어수선하다
+      // (2026-08-14 사용자 확정). o.beams = 겹마다의 값 배열([1겹, 2겹, …]) — 8분과 16분이
+      // 한 묶음에 섞이면 겹마다 값이 달라야 하므로 한 값이 아니라 배열로 받는다.
+      (o.beams || []).forEach(function (v, i) {
+        if (v) out.push("        <beam number=\"" + (i + 1) + "\">" + v + "</beam>");
+      });
       const nots = [];
       if (o.tieStop) nots.push("          <tied type=\"stop\"/>");
       if (o.tieStart) nots.push("          <tied type=\"start\"/>");
@@ -149,13 +147,13 @@
                    "</beats><beat-type>" + ts2.type + "</beat-type></time></attributes>");
         }
         prevMb = mb;
-        // 꾸밈음 묶음 — 둘 이상이면 begin/continue/end로 빔을 잇는다(하나면 빔 없음)
+        // 꾸밈음 묶음 — 둘 이상이면 begin/continue/end로 빔을 잇는다(하나면 빔 없음).
+        // 꾸밈음은 16분음표꼴로 적으므로 두 겹이고, 겹마다 같은 값이다.
         function graceRun(list) {
-          list.forEach(function (g, i) {
-            noteEl({ midi: g, grace: true, beamN: 2,
-                     beam: list.length < 2 ? null
-                       : i === 0 ? "begin" : i === list.length - 1 ? "end" : "continue" },
-                   s.fifths);
+          (list || []).forEach(function (g, i) {
+            const v = (list.length < 2) ? null
+              : i === 0 ? "begin" : i === list.length - 1 ? "end" : "continue";
+            noteEl({ midi: g, grace: true, beams: v ? [v, v] : null }, s.fifths);
           });
         }
         // 셋잇단 — 표준 음표값으로 안 떨어지되(4분음표 정간의 3분박 등) 3/2배가 딱 떨어지면
@@ -198,36 +196,98 @@
             };
           });
         });
+        // ── 낼 음표로 펴기 ──
         // 음표꼴이 없는 길이는 **붙임줄로 갈라** 적는다 — 조판기는 음표꼴을 모르면 기둥도
         // 꼬리도 없는 머리만 그린다. 가르는 자리는 모음박(정간 = s.jg)이 정하고, 셈은
         // staff-core의 tiedSplit 한 곳에 있다(2026-08-14 사용자 요청).
         // 잇단으로 적히는 것(tups)은 이미 제 꼴이 있으므로 대상이 아니고, 2의 거듭제곱으로
         // 안 나뉘는 5·7분박은 tiedSplit이 null을 주어 예전처럼 음표꼴 없이 나간다.
+        // 가른 조각까지 여기서 다 펴 두어야 **그 위에 빔을 얹을 수 있다** — 조각도 꼬리가
+        // 있으면 이웃과 묶여야 하므로, 가르기와 빔을 한 벌의 목록 위에서 잇달아 셈한다.
         const beat = s.jg || C.JG[s.unit] || C.JG.dotted;
+        const items = [];
         let off = 0;
         m.forEach(function (n, i) {
-          graceRun(n.graces);
           const t = tups[i], mk = marks[i] || {};
           const cut = (!t && !n.rest && !C.exactValue(n.units))
             ? C.tiedSplit(n.units, off, beat) : null;
           if (cut) {
+            let at = off;
             cut.forEach(function (u, k) {
-              noteEl(Object.assign({}, n, {
-                units: u,
+              items.push({ src: n, off: at, units: u, rest: false,
                 // 조각 사이는 늘 이어지고, 양 끝은 원래 음이 지고 있던 붙임줄을 물려받는다
                 tieStop: k > 0 || n.tieStop,
                 tieStart: k < cut.length - 1 || n.tieStart,
-                noAcc: k > 0
-              }), s.fifths);
+                noAcc: k > 0,
+                graces: k === 0 ? n.graces : null,
+                afters: k === cut.length - 1 ? n.afters : null });
+              at += u;
             });
           } else {
-            noteEl(Object.assign({}, n, {
-              tup: t, tupStart: t && mk.tupStart, tupStop: t && mk.tupStop,
-              beam: mk.beam, beamN: t ? FLAG_N[t.ty.type] : 1
-            }), s.fifths);
+            items.push({ src: n, off: off, units: n.units, rest: !!n.rest,
+                         tup: t, tupStart: t && mk.tupStart, tupStop: t && mk.tupStop,
+                         tupBeam: mk.beam, tupN: t ? FLAG_N[t.ty.type] : 0,
+                         tieStart: n.tieStart, tieStop: n.tieStop,
+                         graces: n.graces, afters: n.afters });
           }
           off += n.units;
-          graceRun(n.afters);
+        });
+
+        // ── 빔 ──
+        // 꼬리 있는 음표(8분음표 이하)를 **한 박 안에서** 잇는다 — 낱개 깃발로 두면 꼬리
+        // 숲이 되어 못 읽는다(2026-08-14 사용자 요청). 무엇이 한 박인지는 정간 단위가
+        // 정하고(8분음표 단위면 대강이 곧 박) 그 셈은 staff-core의 beatGroups에 있다 —
+        // 화면(staff-view)도 같은 표를 보므로 둘의 빔이 어긋날 수 없다.
+        // 끊는 자리 넷: 쉼표 · 꼬리 없는 음표(4분음표 이상) · 박 경계 · 잇단(제 빔이 따로 있다).
+        const jgGroup = C.beatGroups(s.unit, mb, s.daegang);
+        const beatOf = function (o) {
+          const j = Math.floor(o / beat + 1e-6);
+          return jgGroup[Math.max(0, Math.min(jgGroup.length - 1, j))];
+        };
+        const beamRuns = [];
+        let openRun = null;
+        items.forEach(function (it) {
+          const ty = it.tup ? null : C.exactValue(it.units);
+          it.flags = (!it.rest && ty) ? (FLAG_N[ty.type] || 0) : 0;
+          if (!it.flags) { openRun = null; return; }
+          if (openRun && beatOf(openRun[0].off) === beatOf(it.off)) openRun.push(it);
+          else { openRun = [it]; beamRuns.push(openRun); }
+        });
+        beamRuns.forEach(function (r) {
+          if (r.length < 2) return;   // 혼자면 묶을 데가 없다 — 제 깃발로 둔다
+          r.forEach(function (it) { it.beams = []; });
+          const deep = Math.max.apply(null, r.map(function (it) { return it.flags; }));
+          // 첫 겹은 묶음 전체를 가로지르고, 둘째 겹부터는 **그만큼 짧은 음표가 이어지는
+          // 자리에만** 얹힌다(8분+16분이 섞이면 16분 쪽에만 둘째 빔이 붙는 조판 규칙).
+          // 그 자리가 혼자면 이을 데가 없으므로 몽당빔(hook)으로 적는다 — 앞이 있으면
+          // 뒤쪽으로, 없으면 앞쪽으로 내민다.
+          for (let L = 1; L <= deep; L++) {
+            let i = 0;
+            while (i < r.length) {
+              if (r[i].flags < L) { i++; continue; }
+              let j = i;
+              while (j + 1 < r.length && r[j + 1].flags >= L) j++;
+              if (i === j) r[i].beams[L - 1] = i > 0 ? "backward hook" : "forward hook";
+              else for (let k = i; k <= j; k++) {
+                r[k].beams[L - 1] = k === i ? "begin" : k === j ? "end" : "continue";
+              }
+              i = j + 1;
+            }
+          }
+        });
+
+        items.forEach(function (it) {
+          graceRun(it.graces);
+          noteEl(Object.assign({}, it.src, {
+            units: it.units, rest: it.rest, noAcc: it.noAcc,
+            tup: it.tup, tupStart: it.tupStart, tupStop: it.tupStop,
+            tieStart: it.tieStart, tieStop: it.tieStop,
+            // 잇단은 제 묶음이 정한 빔을 겹 수만큼 그대로 쓴다(겹마다 값이 같다)
+            beams: it.tup
+              ? (it.tupBeam ? new Array(it.tupN || 1).fill(it.tupBeam) : null)
+              : it.beams
+          }), s.fifths);
+          graceRun(it.afters);
         });
         out.push("    </measure>");
       });

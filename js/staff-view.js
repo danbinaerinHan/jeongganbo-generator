@@ -182,24 +182,9 @@
       return (measWOf(mi) - tsExtra(mi) - noteInset) / (mBeats(mi) * jgUnits);
     };
 
-    // ── 빔 묶음의 단위는 '한 박'이다 ──
-    // 정간을 점4분음표·4분음표로 보면 정간 하나가 곧 한 박이라 그 안이 묶음이다. 그런데
-    // **8분음표로 보면 정간 하나는 한 박이 아니다** — 정간마다 8분음표 하나씩 따로 꼬리가
-    // 붙어 꼬리 숲이 되고, 12/8을 그렇게 적는 악보는 없다. 그때는 **대강이 곧 박**이므로
-    // 대강으로 묶는다(정간보가 이미 갖고 있는 정보라 새로 물을 것이 없다).
-    // 대강이 안 적힌 악보는 셋씩, 셋으로 안 나뉘면 둘씩 — 정악에 세 박이 흔해서다.
-    const jgGroup = [];
-    if (list[0].unit === "eighth") {
-      const dg = list[0].daegang;
-      const gs = (dg && dg.length) ? dg : [beats % 3 === 0 ? 3 : 2];
-      let gi = 0, k = 0;
-      for (let i = 0; i < maxBeats; i++) {
-        jgGroup[i] = gi;
-        if (++k >= (gs[gi] || gs[gs.length - 1])) { k = 0; gi++; }
-      }
-    } else {
-      for (let i = 0; i < maxBeats; i++) jgGroup[i] = i;
-    }
+    // 빔 묶음의 단위는 '한 박'이고, 무엇이 한 박인지는 정간 단위가 정한다 —
+    // 셈은 staff-core의 beatGroups 한 곳에 있다(파일 쪽 musicxml.js와 같은 답을 봐야 한다).
+    const jgGroup = C.beatGroups(list[0].unit, maxBeats, list[0].daegang);
     const beamKey = function (cum) {
       const jg = Math.floor(cum / jgUnits + 1e-6);
       return jgGroup[Math.max(0, Math.min(maxBeats - 1, jg))];

@@ -170,6 +170,52 @@ console.log("\n음표꼴이 없는 길이 — 붙임줄로 갈라 적는가");
      [nAcc[0].includes("<accidental>"), nAcc[1].includes("<accidental>")], [true, false]);
 }
 
+console.log("\n빔 — 꼬리 있는 음표를 한 박 안에서 잇는가");
+{
+  // 낱개 깃발로 두면 꼬리 숲이 되어 못 읽는다(2026-08-14 사용자 요청). 무엇이 한 박인지는
+  // 정간 단위가 정하고(8분음표 단위면 대강이 곧 박) 그 셈은 staff-core의 beatGroups에
+  // 있다 — 화면(staff-view)도 같은 표를 보므로 둘의 빔이 어긋날 수 없다.
+  const notesOf = (xml) => xml.split("<measure ")[1].split("<note>").slice(1)
+    .filter((n) => !n.includes("<grace"));
+  const beamsOf = (n) => (n.match(/<beam number="(\d)">([^<]+)<\/beam>/g) || [])
+    .map((b) => { const g = b.match(/number="(\d)">([^<]+)</); return g[1] + ":" + g[2]; });
+  const allBeams = (mel, beats) => notesOf(xmlOf(mel, beats)).map(beamsOf);
+
+  eq("3분박 8분음표 셋이 한 빔", allBeams("황태중|임|남|황", 4).slice(0, 3),
+     [["1:begin"], ["1:continue"], ["1:end"]]);
+  ok("꼬리 없는 음표(점4분)엔 빔이 없다",
+     allBeams("황태중|임|남|황", 4).slice(3).every((b) => !b.length));
+
+  // 박(=정간)을 넘겨 묶으면 정간보와 딴 그림이 된다 — 정간마다 새로 시작해야 한다
+  eq("박 경계에서 끊고 새로 시작한다", allBeams("황태중|임남황|태중임|남", 4).map((b) => b.join()),
+     ["1:begin", "1:continue", "1:end", "1:begin", "1:continue", "1:end",
+      "1:begin", "1:continue", "1:end", ""]);
+
+  // 쉼표가 끼면 끊는다
+  const rest = allBeams("황태중|쉼|남황태|중", 4);
+  eq("쉼표에서 끊긴다", [rest[3].length, rest[4].join(), rest[6].join()], [0, "1:begin", "1:end"]);
+
+  // 8분+16분이 섞이면 첫 겹은 묶음 전체, 둘째 겹은 16분 쪽에만(조판 관행)
+  eq("겹이 섞이면 둘째 빔은 짧은 쪽에만", allBeams("황{느나}태|임|남|황", 4).slice(0, 4),
+     [["1:begin"], ["1:continue", "2:begin"], ["1:continue", "2:end"], ["1:end"]]);
+
+  // 붙임줄로 가른 조각도 꼬리가 있으면 이웃과 묶인다(가르기와 빔이 한 목록 위에서 셈된다)
+  eq("가른 조각도 이웃과 묶인다", allBeams("황태|  | |임", 4).map((b) => b.join()),
+     ["1:begin", "1:end", "", ""]);
+
+  // 혼자면 이을 데가 없다 — 제 깃발로 둔다
+  ok("꼬리 있는 음표가 혼자면 빔을 안 단다",
+     allBeams("황|태중임|남|황", 4)[0].length === 0);
+
+  // 8분음표 단위는 정간 하나가 한 박이 아니다 — 대강이 곧 박이라 대강으로 묶는다
+  app.fields.staffUnit = "eighth";
+  app.fields.daegang = "3 3";
+  eq("8분음표 단위는 대강이 한 박", allBeams("황|태|중|임|남|황", 6).map((b) => b.join()),
+     ["1:begin", "1:continue", "1:end", "1:begin", "1:continue", "1:end"]);
+  app.fields.daegang = "";
+  app.fields.staffUnit = "dotted";
+}
+
 console.log("\n조표 — 음계의 '도'를 으뜸음으로 삼는 조를 고르는가");
 {
   // 5음 음계는 임시표 없이 적히는 조표가 셋이라(황종 평조면 ♭5·♭4·♭3) '임시표가 가장
