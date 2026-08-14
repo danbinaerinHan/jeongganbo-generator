@@ -1,6 +1,7 @@
 // 국악원 OMR 변환본(.jgb.json)을 게시 서버에 올리고 관리한다.
 //
 //   node tools/publish-ngc-omr.mjs publish                 게시 (이미 올린 곡은 건너뜀 — 몇 번을 돌려도 안전)
+//   node tools/publish-ngc-omr.mjs update                  문서·그림을 파일의 지금 내용으로 다시 올림(공개 설정은 그대로)
 //   node tools/publish-ngc-omr.mjs visibility unlisted     전부 비공개(주소를 아는 사람만)로
 //   node tools/publish-ngc-omr.mjs visibility public       전부 모아보기 목록으로 되올림
 //   node tools/publish-ngc-omr.mjs delete --really         전부 삭제
@@ -109,6 +110,22 @@ if (cmd === "publish") {
     }
   }
   console.log(`끝 — 모두 ${tok.scores.length}곡이 올라가 있습니다.`);
+
+} else if (cmd === "update") {
+  // 변환기를 고쳐 문서를 다시 뽑았을 때(레이아웃·형식 손질) 쓴다 — 게시 빈도 제한은
+  // publish에만 있어 여기는 한달음에 끝난다. 그림도 _thumbs의 지금 것을 함께 싣는다.
+  const tok = loadTokens();
+  for (const s of tok.scores) {
+    const doc = JSON.parse(readFileSync(join(SRC, s.file), "utf8"));
+    const thPath = join(THUMBS, sid(s.file) + ".txt");
+    const thumb = existsSync(thPath) ? readFileSync(thPath, "utf8").trim() : null;
+    try {
+      await rpc("update_score", { p_id: s.id, p_token: s.token, p_doc: doc, p_public: null, p_thumb: thumb });
+      console.log(`갱신  ${s.id}  ${s.title}${thumb ? "" : "  (그림 없음)"}`);
+    } catch (e) {
+      console.error(`실패  ${s.id}  ${s.title}: ${e.message}`);
+    }
+  }
 
 } else if (cmd === "visibility") {
   const to = process.argv[3];
