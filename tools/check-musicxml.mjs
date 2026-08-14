@@ -267,6 +267,23 @@ console.log("\n빔 — 꼬리 있는 음표를 한 박 안에서 잇는가");
   ok("꼬리 있는 음표가 혼자면 빔을 안 단다",
      allBeams("황|태중임|남|황", 4)[0].length === 0);
 
+  // 잇단도 함께 묶는다 — 빔으로 묶인 잇단에는 조판기가 숫자만 얹고, 안 묶으면 각진
+  // 대괄호를 그린다(길타령에서 잇단 32개 중 26개가 괄호였다, 2026-08-14 사용자 제보)
+  app.fields.staffUnit = "plain";
+  eq("같은 꼴 셋잇단은 한 빔", allBeams("황태중|임|남|중", 4).slice(0, 3).map((b) => b.join()),
+     ["1:begin", "1:continue", "1:end"]);
+  // 겹이 섞여도 한 묶음·한 빔이라야 한다 — 예전엔 '꼴이 섞이면 안 잇는다'였고, 묶음도
+  // 합이 떨어지는 자리(560+280=840)에서 두 음만에 갈렸다
+  eq("겹이 섞인 셋잇단도 한 빔(둘째 겹은 짧은 쪽만)",
+     allBeams("황{느나}태|임|남|중", 4).slice(0, 4),
+     [["1:begin"], ["1:continue", "2:begin"], ["1:continue", "2:end"], ["1:end"]]);
+  app.fields.staffUnit = "dotted";
+  // 그래도 정간 통째로 한 묶음이 되면 안 된다 — 분박마다 셋씩 끊긴다
+  eq("16분 셋잇단 아홉은 셋씩 끊긴다",
+     allBeams("황태중 황태중 황태중|임|남|중", 4).slice(0, 9).map((b) => b[0]),
+     ["1:begin", "1:continue", "1:end", "1:begin", "1:continue", "1:end",
+      "1:begin", "1:continue", "1:end"]);
+
   // 8분음표 단위는 정간 하나가 한 박이 아니다 — 대강이 곧 박이라 대강으로 묶는다
   app.fields.staffUnit = "eighth";
   app.fields.daegang = "3 3";

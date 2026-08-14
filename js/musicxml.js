@@ -15,8 +15,8 @@
 //   정간 하나 = 점4분음표(3/8) 또는 4분음표(1/4) — 악보가 unit으로 알려 준다.
 //   각(=한 마디)의 박자표가 거기서 정해진다: 점4분음표면 3N/8, 4분음표면 N/4.
 //   각 = 마디. 마디를 넘는 음은 붙임줄(tie)로 잇는다(그 자르기는 app.js가 이미 해 둔다).
-//   음표 하나로 안 떨어지는 길이(세 정간을 끄는 음 등)도 붙임줄로 가른다 — 셈은
-//   staff-core의 tiedSplit이 하고, 여기는 그 조각들을 이어 적기만 한다.
+//   **길이 하나를 어떻게 적을지(그대로·셋잇단·붙임줄로 가르기)는 staff-core의 writeAs가
+//   정하고**, 여기는 그 조각들을 펴서 잇단 묶음과 빔을 얹어 적기만 한다.
 //   붙임 시김새 = 꾸밈음(<grace>, 길이를 안 먹음) · 독립 시김새 = 제 자리를 나눈 실음.
 // 정간을 점4분음표로 보는 환산은 MALerLab/SejongMusic 자료와 같게 맞춘 것이라 그쪽 악보와
 // 나란히 놓고 견줄 수 있다 — 바꿀 땐 그 점을 생각할 것.
@@ -195,19 +195,13 @@
         // 흩어지지 않게). 꼴이 섞인 묶음은 안 잇는다 — 겹 수가 다른 빔의 부분 연결까지
         // 적으려면 셈이 한 층 더 필요한데 그런 악보가 아직 없다.
         const beatNo = function (o) { return Math.floor(o / beat + 1e-6); };
-        let run = [], runSum = 0;
+        let run = [], runSum = 0, grpNo = 0;
         function closeRun() {
           if (run.length) {
-            const beamOk = run.length >= 2 && run.every(function (it) {
-              return !it.rest && FLAG_N[it.tup.ty.type] && !it.tup.ty.dots &&
-                     it.tup.ty.type === run[0].tup.ty.type;
-            });
+            const id = grpNo++;
             run.forEach(function (it, k) {
+              it.grp = id;   // 빔이 묶음 경계를 안 넘게 하는 표(아래 '빔')
               it.tupStart = k === 0; it.tupStop = k === run.length - 1;
-              if (beamOk) {
-                const v = k === 0 ? "begin" : k === run.length - 1 ? "end" : "continue";
-                it.beams = new Array(FLAG_N[it.tup.ty.type]).fill(v);
-              }
             });
           }
           run = []; runSum = 0;
@@ -216,7 +210,11 @@
           if (!it.tup) { closeRun(); return; }
           if (run.length && beatNo(run[0].off) !== beatNo(it.off)) closeRun();
           run.push(it); runSum += it.units;
-          if (C.exactValue(runSum)) closeRun();
+          // **셋 이상 모였을 때만** 일찍 닫는다. '합이 떨어지면 무조건'으로 두면 길이가
+          // 섞인 박에서 두 음만에 닫혀 묶음이 한가운데서 갈린다(560+280=840에서 끊겨
+          // [8분³ 16분³][16분³ 8분³]가 됐다) — 그러면 빔도 따라 갈라진다. 셋을 채우기 전에는
+          // 박 끝까지 가고, 박이 바뀌거나 잇단이 끊기면 위에서 닫힌다.
+          if (run.length >= 3 && C.exactValue(runSum)) closeRun();
         });
         closeRun();
 
@@ -225,19 +223,25 @@
         // 숲이 되어 못 읽는다(2026-08-14 사용자 요청). 무엇이 한 박인지는 정간 단위가
         // 정하고(8분음표 단위면 대강이 곧 박) 그 셈은 staff-core의 beatGroups에 있다 —
         // 화면(staff-view)도 같은 표를 보므로 둘의 빔이 어긋날 수 없다.
-        // 끊는 자리 넷: 쉼표 · 꼬리 없는 음표(4분음표 이상) · 박 경계 · 잇단(제 빔이 따로 있다).
+        // 끊는 자리 넷: 쉼표 · 꼬리 없는 음표(4분음표 이상) · 박 경계 · 잇단 묶음 경계.
+        // **잇단도 여기서 함께 묶는다** — 예전엔 '꼴이 섞인 잇단은 안 잇는다'며 미뤄 뒀는데,
+        // 그러면 조판기가 빔 대신 **각진 대괄호**를 그린다(빔으로 묶인 잇단에는 숫자만 얹는
+        // 것이 조판 관행이라 저들도 그렇게 한다 — 길타령에서 잇단 32개 중 26개가 괄호였다,
+        // 2026-08-14 사용자 제보). 겹이 다른 자리를 잇는 몽당빔 셈이 아래에 이미 있으므로
+        // 갈래를 나눌 까닭이 없어졌다. 잇단과 보통 음표를 한 빔에 섞지는 않는다(it.grp).
         const jgGroup = C.beatGroups(s.unit, mb, s.daegang);
         const beatOf = function (o) {
           const j = Math.floor(o / beat + 1e-6);
           return jgGroup[Math.max(0, Math.min(jgGroup.length - 1, j))];
         };
+        const runKey = function (it) { return beatOf(it.off) + "/" + (it.grp == null ? "-" : it.grp); };
         const beamRuns = [];
         let openRun = null;
         items.forEach(function (it) {
-          const ty = it.tup ? null : C.exactValue(it.units);
+          const ty = it.tup ? it.tup.ty : C.exactValue(it.units);
           it.flags = (!it.rest && ty) ? (FLAG_N[ty.type] || 0) : 0;
           if (!it.flags) { openRun = null; return; }
-          if (openRun && beatOf(openRun[0].off) === beatOf(it.off)) openRun.push(it);
+          if (openRun && runKey(openRun[0]) === runKey(it)) openRun.push(it);
           else { openRun = [it]; beamRuns.push(openRun); }
         });
         beamRuns.forEach(function (r) {
@@ -265,7 +269,7 @@
 
         items.forEach(function (it) {
           graceRun(it.graces);
-          // 빔은 잇단 묶음이 얹었거나(위 closeRun) 이 절이 얹은 것 — 둘 다 it.beams에 있다
+          // 빔은 위 절이 잇단·보통 음표를 가리지 않고 한 벌로 얹었다
           noteEl(Object.assign({}, it.src, {
             units: it.units, rest: it.rest, noAcc: it.noAcc,
             tup: it.tup, tupStart: it.tupStart, tupStop: it.tupStop,
