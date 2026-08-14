@@ -252,6 +252,10 @@
   #fileBox { position: relative; }   /* relative: 파일 메뉴(.tb-menu)의 기준점 */
   #screenBox { position: relative; } /* relative: 화면 메뉴(.tb-menu)의 기준점 */
   #viewBox { position: relative; }   /* relative: 보기(총보/파트보) 메뉴의 기준점 */
+  /* relative: 오선보 [뽑기] 메뉴의 기준점. 이게 없으면 .tb-menu의 top:100%가 엉뚱한 조상을
+     기준으로 재어 메뉴가 화면 아래로 떨어져 **열려도 안 보인다**(2026-08-14 사용자 제보).
+     .tb-menu를 새로 놓을 땐 감싼 상자에 이 줄을 꼭 함께 둘 것. */
+  #staffOutBox { position: relative; }
   /* 화면 메뉴에서 지금 쓰는 테마 표시 — '선택된 옵션 바탕' 변수 그대로 */
   #screenPop button.sel { background: var(--accent-tint); }
   @media print { .tb-menu { display: none !important; } }

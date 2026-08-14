@@ -1076,6 +1076,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     검사는 `node tools/check-staff-view.mjs`.
 - **오선보 인쇄·PNG**(오선보 창 머리줄 [뽑기 ▾] = #staffOutToggle → #staffOutPop,
   app.js '오선보 인쇄·PNG' 절): MusicXML 파일로 · 오선보만 인쇄/PNG · 정간보와 나란히 인쇄/PNG.
+  - **`.tb-menu`를 감싼 상자엔 `position: relative`가 있어야 한다** — 없으면 `top:100%`가
+    엉뚱한 조상을 기준으로 재어 메뉴가 화면 밖으로 떨어지고, 열려도 아무 일도 안 일어난 것처럼
+    보인다(#staffOutBox에 그게 빠져 있었다, 2026-08-14 사용자 제보). 덧붙여 `wireTopMenu`가
+    **아래가 모자라면 위로 뒤집는다** — 오선보 칸은 화면 아래쪽이라 칸을 낮추면 펼 자리가 없다.
   - **쪽은 Verovio가 접는다**(`vrvSheetPages`) — 종이 상자(mm)를 픽셀로 셈해 pageWidth/
     pageHeight로 주면 저들이 줄 경계에서 쪽을 가른다(오선 한 줄을 반으로 자르지 않는 규칙도
     저들 것). 나온 쪽 SVG의 루트를 mm 상자로 갈아입혀 종이에 앉힌다. 조판기 로드를 기다려야

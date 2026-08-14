@@ -7980,8 +7980,19 @@
   function wireTopMenu(btnId, popId) {
     $(btnId).addEventListener("click", function (e) {
       e.stopPropagation();
-      $(popId).classList.toggle("on");
+      const on = $(popId).classList.toggle("on");
       $(btnId).classList.toggle("on");
+      // 아래가 모자라면 위로 뒤집는다 — 오선보 [뽑기]처럼 화면 아래쪽에 사는 메뉴는
+      // 창을 낮추면 아래로 펼 자리가 없어 열려도 안 보인다(도구창 ? 안내의 placeGuide와
+      // 같은 취지). 상단바 메뉴들은 늘 자리가 남아 이 가지를 안 탄다.
+      if (on) {
+        const pop = $(popId);
+        pop.style.top = ""; pop.style.bottom = "";   // 먼저 제자리로 두고 재야 참값이 나온다
+        if (pop.getBoundingClientRect().bottom > window.innerHeight - 8) {
+          pop.style.top = "auto";
+          pop.style.bottom = "calc(100% + 10px)";
+        }
+      }
     });
     $(popId).addEventListener("click", function () {
       $(popId).classList.remove("on");
