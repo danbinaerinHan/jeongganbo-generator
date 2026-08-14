@@ -145,6 +145,58 @@
     return { groups: parts, ok: true };
   }
 
+  // ---------- 각별 정간 수 ----------
+  // 곡 안에서 각 길이가 바뀌는 악보가 있다 — 가곡은 곡이 각의 한가운데에서 시작해 한 바퀴
+  // 돌아 끝나서 첫·끝 각이 짧고(5 + 16×14 + 11), 수제천·취타는 장이 바뀌는 자리에 짧은 각이
+  // 낀다. 기본은 #beats 하나이고 **다른 각만** #gakBeats에 '각 번호:정간 수'로 적는다 —
+  // 각마다 칸을 만들면 50각짜리 곡에서 목록만 50줄이 된다(사용자 확정, 2026-08-14).
+  // 각 번호는 사람이 세는 1부터. 그리기·재생·오선보가 모두 beatsAt(gi) 하나를 본다.
+  function defBeats() { return Math.max(1, parseInt($("beats").value) || 1); }
+  function parseGakBeats(str) {
+    const m = new Map();
+    String(str || "").split(/[,;\n]/).forEach(function (s) {
+      const t = s.split(":");
+      if (t.length !== 2) return;
+      const gi = parseInt(t[0], 10) - 1, n = parseInt(t[1], 10);
+      if (gi >= 0 && n >= 1 && n <= 64) m.set(gi, n);
+    });
+    return m;
+  }
+  // 캐시는 함수 자신에 붙인다 — 바깥 let에 두면 tools/lib/app-sandbox.mjs가 함수만 떼어
+  // 올 때 그 변수가 안 따라와 검사에서 터진다(실제로 그랬다).
+  function gakBeatsMap() {
+    const src = $("gakBeats") ? $("gakBeats").value : "";
+    if (src !== gakBeatsMap.src) { gakBeatsMap.src = src; gakBeatsMap.map = parseGakBeats(src); }
+    return gakBeatsMap.map;
+  }
+  // 각 gi(0부터)의 정간 수
+  function beatsAt(gi) { return gakBeatsMap().get(gi) || defBeats(); }
+  // 예외 목록을 글로 되쓴다 — 각을 넣고 뺄 때 번호가 밀리므로(shiftGakNames와 짝)
+  function writeGakBeats(map) {
+    if (!$("gakBeats")) return;
+    const txt = [...map.keys()].sort(function (a, b) { return a - b; })
+      .map(function (gi) { return (gi + 1) + ":" + map.get(gi); }).join(", ");
+    $("gakBeats").value = txt;
+    gakBeatsMap.src = txt; gakBeatsMap.map = map;
+  }
+  // 대강은 '각 번호'가 아니라 **각 길이**가 정한다 — 같은 길이의 각은 저절로 같은 대강을 쓴다.
+  // 문법: 앞머리(길이 없는 것)가 기본 각의 분절이고, `N: …`이 N정간 각의 분절이다.
+  //   `3 3 3 3, 5: 3 2`  →  기본 12정간은 3·3·3·3, 5정간 각만 3·2
+  // '숫자:'로 안 읽히는 조각은 전부 기본 분절로 본다 — 옛 문서의 `3,3,3,3`(쉼표로 나눈 숫자)이
+  // 그대로 읽혀야 하기 때문이다. 안 적은 길이는 DAEGANG_PRESET의 대표 패턴을 쓴다.
+  function daegangTextFor(n) {
+    const src = $("daegang").value;
+    const defParts = []; const by = {};
+    src.split(",").forEach(function (s) {
+      const m = s.match(/^\s*(\d+)\s*:\s*(.+)$/);
+      if (m) by[parseInt(m[1], 10)] = m[2].trim();
+      else defParts.push(s);
+    });
+    if (by[n] != null) return by[n];
+    if (n === defBeats()) return defParts.join(" ");
+    return DAEGANG_PRESET[n] || "";
+  }
+
   function el(name, attrs) {
     const e = document.createElementNS(NS, name);
     // null·undefined는 건너뛴다 — 안 그러면 class: null이 class="null"로 박혀
@@ -546,7 +598,9 @@
     const lines = [];
     for (let g = 0; g < target; g++) {
       const cells = [];
-      for (let c = 0; c < beats; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
+      // 각마다 정간 수가 다를 수 있다 — 그 각의 수만큼만 칸을 만든다(beatsAt)
+      const nb = beatsAt(g);
+      for (let c = 0; c < nb; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
       lines.push(cells.join(" | "));
     }
     melodyFull = lines.join("\n");
@@ -588,7 +642,8 @@
     const lines = [];
     for (let g = 0; g < target; g++) {
       const cells = [];
-      for (let c = 0; c < beats; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
+      const nb = beatsAt(g);   // 가사는 선율과 1:1이라 같은 각별 정간 수를 쓴다
+      for (let c = 0; c < nb; c++) cells.push((parsed[g] && parsed[g][c]) ? parsed[g][c].text : "");
       lines.push(cells.join(" | "));
     }
     lyricsFull = lines.join("\n");
@@ -764,9 +819,12 @@
 
   // ---------- 구간 지우기(직접 입력) ----------
   // 정간을 순서(각 → 정간) 기준 한 줄로 폈을 때의 위치. 드래그 시작~끝 사이(양끝 포함)를 구간으로 본다.
-  function melCellSeq(gi, ci) {
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
-    return gi * beats + ci;
+  function melCellSeq(gi, ci) { return gakCellOffset(gi) + ci; }
+  // 각 gi 앞에 놓인 정간의 수 — 각마다 길이가 달라도 '한 줄로 편 번호'가 어긋나지 않는다
+  function gakCellOffset(gi) {
+    let acc = 0;
+    for (let g = 0; g < gi; g++) acc += beatsAt(g);
+    return acc;
   }
   // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi) 안의 음·시김새를 모두 지운다(빈 정간으로).
   // 매 렌더마다 전역 스냅샷(saveState)이 남으므로 전역 되돌리기(Cmd/Ctrl+Z)로 복구할 수 있다.
@@ -803,8 +861,9 @@
     return { lo: Math.min(a, b), hi: Math.max(a, b) };
   }
   function seqToCell(seq) {
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
-    return { gi: Math.floor(seq / beats), ci: seq % beats };
+    let gi = 0;
+    while (gi < 5000 && seq >= beatsAt(gi)) { seq -= beatsAt(gi); gi += 1; }
+    return { gi: gi, ci: seq };
   }
   // 서식은 얕게 담으면 안 된다 — border는 변마다 객체라 그대로 두면 붙여넣은 칸과 원본이
   // 같은 객체를 가리켜, 한쪽 모양을 고치면 다른 쪽도 따라 바뀐다.
@@ -826,19 +885,18 @@
   // start 자리부터 cells를 차례로 덮어쓴다. 악보 끝을 넘는 몫은 조용히 버린다 — 각을 새로
   // 만들며 늘리면 붙여넣기가 '구조를 바꾸는 일'이 되어 페이지 배치까지 흔들린다.
   function pasteMelCells(start, cells) {
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
     const melRows = cellTextRows(melodyFull);
     const lyRows = cellTextRows(lyricsFull);
     let touchedLy = false;
     cells.forEach(function (cell, k) {
       const p = seqToCell(start + k);
       if (p.gi >= melRows.length) return;               // 악보 끝을 넘는 몫
-      while (melRows[p.gi].length < beats) melRows[p.gi].push("");
+      while (melRows[p.gi].length < beatsAt(p.gi)) melRows[p.gi].push("");
       melRows[p.gi][p.ci] = cell.mel;
       // 곁줄은 줄이 아직 없을 수도 있다(내용 없이 시작한 악보) — 넣을 게 있거나 이미 있을 때만 만든다
       if (cell.ly || (lyRows[p.gi] && lyRows[p.gi][p.ci])) {
         while (lyRows.length <= p.gi) lyRows.push([]);
-        while (lyRows[p.gi].length < beats) lyRows[p.gi].push("");
+        while (lyRows[p.gi].length < beatsAt(p.gi)) lyRows[p.gi].push("");
         lyRows[p.gi][p.ci] = cell.ly;
         touchedLy = true;
       }
@@ -1346,11 +1404,10 @@
     const rows = parseMelodyOffsets(melodyFull).map(function (g) {
       return g.map(function (c) { return c.text; });
     });
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
     while (rows.length <= gi) rows.push([]);
     while (rows[gi].length <= ci) rows[gi].push("");
     rows[gi][ci] = val;
-    while (rows[gi].length < beats) rows[gi].push("");   // 편집한 각은 박수만큼 칸 채움
+    while (rows[gi].length < beatsAt(gi)) rows[gi].push("");   // 편집한 각은 그 각의 정간 수만큼 칸 채움
     melodyFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
     render();
     refreshEditorSlices();
@@ -1388,7 +1445,7 @@
   }
   function setJangdanText(gi, ci, val) {
     val = String(val).replace(/[|\n]+/g, " ").replace(/\s+/g, " ").trim();
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
+    const beats = defBeats();   // 장단 줄은 곡의 장단 — 첫 각이 짧아도 온전한 한 각이다
     const cells = parseMelodyOffsets($("jangdan").value)[0] || [];
     const arr = cells.map(function (c) { return c.text; });
     while (arr.length <= ci) arr.push("");
@@ -1421,11 +1478,10 @@
     const rows = parseMelodyOffsets(lyricsFull).map(function (g) {
       return g.map(function (c) { return c.text; });
     });
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
     while (rows.length <= gi) rows.push([]);
     while (rows[gi].length <= ci) rows[gi].push("");
     rows[gi][ci] = val;
-    while (rows[gi].length < beats) rows[gi].push("");
+    while (rows[gi].length < beatsAt(gi)) rows[gi].push("");
     lyricsFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
     render();
     refreshEditorSlices();
@@ -1472,9 +1528,8 @@
       getText: currentCellText, setText: setCellText, setCursor: setEditorCursorToCell,
       label: function (gi, ci) { return (gi + 1) + "각 · " + (ci + 1) + "정간"; },
       next: function (gi, ci) {
-        const beats = Math.max(1, parseInt($("beats").value) || 1);
         let ng = gi, ni = ci + 1;
-        if (ni >= beats) { ni = 0; ng = gi + 1; }
+        if (ni >= beatsAt(gi)) { ni = 0; ng = gi + 1; }
         return this.geom(ng, ni) ? { gi: ng, ci: ni } : null;
       },
       move: function (gi, ci, key) { return gridMove(this, gi, ci, key); }
@@ -1484,7 +1539,7 @@
       getText: currentJangdanText, setText: setJangdanText, setCursor: setJangdanCursor,
       label: function (gi, ci) { return (ci + 1) + "정간 · 장단"; },
       next: function (gi, ci) {
-        const beats = Math.max(1, parseInt($("beats").value) || 1);
+        const beats = defBeats();   // 장단은 곡의 장단이라 늘 표준 정간 수
         const ni = ci + 1;
         return (ni < beats && jdGeom[ni]) ? { gi: 0, ci: ni } : null;   // 장단은 한 줄뿐 — 다음 각으로 안 넘어감
       },
@@ -1503,9 +1558,8 @@
       getText: currentLyricText, setText: setLyricText, setCursor: setLyricCursor,
       label: function (gi, ci) { return (gi + 1) + "각 · " + (ci + 1) + "정간 곁줄"; },
       next: function (gi, ci) {
-        const beats = Math.max(1, parseInt($("beats").value) || 1);
         let ng = gi, ni = ci + 1;
-        if (ni >= beats) { ni = 0; ng = gi + 1; }
+        if (ni >= beatsAt(gi)) { ni = 0; ng = gi + 1; }
         return this.geom(ng, ni) ? { gi: ng, ci: ni } : null;
       },
       move: function (gi, ci, key) { return gridMove(this, gi, ci, key); }
@@ -2230,6 +2284,14 @@
       nextO[gi >= from ? gi + delta : gi] = gakNameOffs[k];
     });
     gakNameOffs = nextO;
+    // 각별 정간 수 예외도 같은 각에 붙어 다닌다 — 각을 끼우면 뒤 번호가 한 칸씩 밀린다
+    const map = gakBeatsMap(); const nextB = new Map();
+    map.forEach(function (n, gi) {
+      if (delta < 0 && gi >= from && gi < from - delta) return;
+      nextB.set(gi >= from ? gi + delta : gi, n);
+    });
+    if (nextB.size !== map.size || [...nextB].some(function (e, i) { return e[0] !== [...map][i][0]; }))
+      writeGakBeats(nextB);
   }
   function setGakName(gi, raw) {
     raw = String(raw || "").trim();
@@ -3816,7 +3878,7 @@
     // 템포 글자 크기 배율 — 각/장 이름(gakNameSize)과 따로 논다. 아래 높이 예약과 실제
     // 그리기가 같은 값을 써야 키운 만큼 진짜로 커진다(예약을 안 늘리면 avail에 걸려 잘린다).
     const tempoMul = Math.max(0.3, parseFloat($("tempoSize").value) || 1);
-    const dg = parseDaegang($("daegang").value, beats);
+    const dg = parseDaegang(daegangTextFor(beats), beats);   // 기본 각의 대강(경고문·둘러보기용)
     noteMode = $("noteMode").value;   // "font" | "hangul"
 
     const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
@@ -3914,14 +3976,24 @@
       const pcap = isFirst ? page0cap : pageNcap;
       const perBand = isFirst ? cap0 : gakPerRow;
       const take = Math.min(pcap, remaining);
-      const bands = [];
+      const bands = [], bandStart = [];
       let leftover = take;
       while (leftover > 0 && bands.length < stack) {
         const capThis = Math.max(1, perBand - ((isFirst && bands.length === 0) ? jdSlot : 0));
-        const bn = Math.min(capThis, leftover); bands.push(bn); leftover -= bn;
+        const bn = Math.min(capThis, leftover);
+        bandStart.push(wantGak - remaining + (take - leftover));   // 이 밴드 첫 각의 번호(0부터)
+        bands.push(bn); leftover -= bn;
       }
-      pages.push({ bands: bands, hasTitle: isFirst && titleGak > 0 });
+      pages.push({ bands: bands, bandStart: bandStart, hasTitle: isFirst && titleGak > 0 });
       remaining -= take;
+    }
+    // 밴드 높이는 그 밴드에서 **가장 긴 각**이 정한다(각 길이가 섞이면 아래끝이 들쭉날쭉해진다 —
+    // 정간 크기를 고정하고 각 길이를 다르게 두는 쪽이 실제 악보의 모습이다).
+    // 맨 처음 밴드의 장단 줄은 곡의 장단이라 표준 정간 수를 쓰므로 그것도 함께 센다.
+    function bandBeatsOf(p, i) {
+      let mx = (wantJangdan && p.bandStart[i] === 0) ? defBeats() : 1;
+      for (let g = p.bandStart[i]; g < p.bandStart[i] + p.bands[i]; g++) mx = Math.max(mx, beatsAt(g));
+      return mx;
     }
 
     // 텍스트 에디터 페이지 넘김용: 페이지별 각(줄) 범위 기록
@@ -3972,7 +4044,13 @@
     const desiredJdW = wantJangdan ? desiredCell : 0;
     const headRatio = wantHeader ? 1.1 : 0;
     const wNeed = wCells * desiredCell + wGaps * desiredGap + wLys * desiredLyExtra;
-    const hNeed = maxBands * (beats + headRatio) * desiredCell + (maxBands - 1) * desiredBandGap;
+    // 세로 예산 — 각 길이가 섞이면 페이지마다 높이가 달라지므로 가장 높은 페이지를 기준으로
+    // 정간 크기(cell)를 정한다. 모든 각이 같은 길이면 예전 식(maxBands×(beats+머리단))과 같다.
+    let hNeed = 1;
+    pages.forEach(function (p) {
+      const units = p.bands.reduce(function (a, _, i) { return a + bandBeatsOf(p, i) + headRatio; }, 0);
+      hNeed = Math.max(hNeed, units * desiredCell + (p.bands.length - 1) * desiredBandGap);
+    });
     const scale = Math.min(1, availW / wNeed, availH / hNeed);
 
     const cell = desiredCell * scale;
@@ -4002,7 +4080,7 @@
     // (위 여백 + 밴드 사이 간격들 + 아래 여백)에 고르게 나눠 넣는다 — 밴드 사이만
     // 무작정 벌어지지 않고 전체가 비율 있게 넓어진다. 남은 몫은 가운데 정렬 여백이 된다.
     if (maxBands > 1 && pageFillPct > 0) {
-      const hUsedAtScale = maxBands * (beats + headRatio) * cell + (maxBands - 1) * bandGap;
+      const hUsedAtScale = hNeed * scale;   // hNeed는 desired 단위라 배율만 곱하면 실제 높이
       const leftoverH = availH - tempoH - titleTopH - hUsedAtScale;   // 템포·가로 제목 높이 제외
       if (leftoverH > 0.01) bandGap += (pageFillPct / 100) * leftoverH / (maxBands + 1);
     }
@@ -4017,7 +4095,7 @@
     // 한 각(묶음)의 폭 — 파트 정간 열 P개 + 켜진 곁줄들. 파트보(P=1)면 예전 그대로.
     const gakW = P * cell + lyOnCount * lyExtraFull;
     const slot = gakW + gap;
-    const bandH = headH + beats * cell;
+    // 밴드 높이는 이제 밴드마다 다르다(각 길이가 섞이면) — 페이지 루프에서 bandBeatsOf로 잡는다
     const titleGutter = gap;   // 격자 ↔ 제목 칸 사이 여유(다른 각 사이 간격과 동일)
     const gridTotalW = wCells * cell + wGaps * gap + wLys * lyExtraFull;
     const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
@@ -4048,8 +4126,16 @@
     }
     const visibleW = gridTotalW - rightInset;
 
-    const dgSet = new Set();
-    if (dg.groups) { let a = 0; for (let k = 0; k < dg.groups.length - 1; k++) { a += dg.groups[k]; dgSet.add(a); } }
+    // 대강 자리(정간 수별) — 각 길이가 다르면 대강도 다르므로 길이로 캐시해 둔다.
+    const dgCache = {};
+    function dgSetFor(n) {
+      if (dgCache[n]) return dgCache[n];
+      const set = new Set();
+      const g = parseDaegang(daegangTextFor(n), n).groups;
+      if (g) { let a = 0; for (let k = 0; k < g.length - 1; k++) { a += g[k]; set.add(a); } }
+      dgCache[n] = set;
+      return set;
+    }
     // 둘러보기 '악보' 단계가 정간·대강·각을 상자로 짚어 준다. 대강은 **두 번째** 묶음을 가리킨다 —
     // 첫 대강은 각과 같은 줄 맨 위에서 시작해 두 상자가 겹쳐 보인다.
     const tourDg = (dg.groups && dg.groups.length > 1)
@@ -4074,7 +4160,10 @@
       svg.appendChild(bgRect);
 
       const usedBands = page.bands.length;
-      const gridTotalH = usedBands * bandH + (usedBands - 1) * bandGap;
+      // 밴드마다 높이가 다를 수 있다(각 길이가 섞이면) — 미리 재어 두고 위치는 누적으로 잡는다
+      const bandHs = page.bands.map(function (_, i) { return headH + bandBeatsOf(page, i) * cell; });
+      const bandTops = []; { let acc = 0; bandHs.forEach(function (h) { bandTops.push(acc); acc += h + bandGap; }); }
+      const gridTotalH = bandHs.reduce(function (a, h) { return a + h; }, 0) + (usedBands - 1) * bandGap;
       // 격자(+제목 칸) 상자는 페이지 가로 중앙에 — 예전엔 오른쪽 여백선에 붙여 그려서
       // (오른쪽 정렬) 내용이 페이지보다 좁으면(전체 배율 축소·A4 맞춤 등) 남는 여백이
       // 전부 왼쪽으로 몰려 치우쳐 보였다. 각 진행(오른쪽→왼쪽)과 상자 위치는 별개.
@@ -4116,11 +4205,18 @@
       // 라벨 위에 얹히는 바람에 마우스(드래그·클릭)를 다 가로챘다.
       const gnRaiseEls = [];
       for (let b = 0; b < usedBands; b++) {
-        const bandTop = gridY + b * (bandH + bandGap);
+        const bandTop = gridY + bandTops[b];
         const gridTop = bandTop + headH;
-        const gridBottom = gridTop + beats * cell;
+        // 밴드 상자의 아래끝 = 이 밴드에서 가장 긴 각의 끝. 각 하나하나의 아래끝(gBottom)은
+        // 아래 각 루프에서 제 정간 수로 따로 잡는다 — 길이가 섞이면 서로 다르다.
+        const bandBeats = bandBeatsOf(page, b);
+        const gridBottom = gridTop + bandBeats * cell;
         const hasTitle = (b === 0 && page.hasTitle);
         const nMusic = page.bands[b];
+        // 이 밴드의 각들이 다 같은 길이인가 — 그러면 밴드 아래 통줄·대강선을 예전처럼
+        // 밴드 폭 전체에 한 줄로 긋는다(각 사이 간격에서 끊기지 않게). 섞여 있을 때만 각별로 끊는다.
+        let bandUniform = true;
+        for (let g = gakAccum; g < gakAccum + nMusic; g++) if (beatsAt(g) !== bandBeats) bandUniform = false;
 
         // 제목 칸은 페이지 단위로 한 통(프레임 위~아래)으로 그려지므로,
         // 자리는 그 페이지의 모든 밴드에서 똑같이 비워둔다(무조건 오른쪽 정렬).
@@ -4162,6 +4258,10 @@
           const gakRight = musicRightEdge - m * slot - bandJdExtra;   // 이 각(묶음)의 오른쪽 끝
           const gakLeft = gakRight - gakW;
           const melIdx = gakAccum + m;
+          // 이 각의 정간 수·아래끝·대강 자리 — 각 길이가 섞이면 각마다 다르다
+          const gBeats = beatsAt(melIdx);
+          const gBottom = gridTop + gBeats * cell;
+          const gDg = dgSetFor(gBeats);
           // 묶음 가운데 — 각 번호·각/장 이름이 여기 온다(파트보에선 정간 열 가운데 그대로)
           const gakCx = scoreMode ? (gakLeft + gakRight) / 2
                                   : gakRight - (partLyOn[0] ? lyExtraFull : 0) - cell / 2;
@@ -4177,12 +4277,12 @@
           const gakCells = parsedBy[pi][melIdx];
 
           // 이 각에 실제로 채워진 정간(|로 나뉜 칸) 수 — 글자를 그릴 범위(내용이 없으면 0).
-          // 테두리·칸 구분선은 타이핑 중이라 |가 덜 채워져도 끊기지 않게 항상 beats 전체 높이로 그린다.
+          // 테두리·칸 구분선은 타이핑 중이라 |가 덜 채워져도 끊기지 않게 항상 그 각의 정간 수(gBeats) 전체 높이로 그린다.
           const cellCount = gakCells ? gakCells.length : 0;
-          const filled = cellCount > 0 ? Math.min(beats, cellCount) : 0;
+          const filled = cellCount > 0 ? Math.min(gBeats, cellCount) : 0;
 
           // 정간 배경색 — 글자·격자선보다 먼저 그려서 뒤에 깔리게 한다(출력에도 포함되어야 하므로 no-print 아님)
-          for (let j = 0; j < beats; j++) {
+          for (let j = 0; j < gBeats; j++) {
             const cs = styles[melIdx] && styles[melIdx][j];
             if (cs && cs.fill) {
               svg.appendChild(rect(x, gridTop + j * cell, cell, cell, 0, { fill: cs.fill, stroke: "none" }));
@@ -4200,23 +4300,23 @@
           // 밴드 통줄과 같은 방식으로 각 사이 간격까지 끊기지 않게 따로 그린다(굵게, 밴드 전체 폭).
           // 총보에선 묶음 안 열 사이는 가는 선, 묶음의 양쪽 벽만 굵은 선 — '이 열들이 같은 각'
           // 으로 읽히게(사용자 확정). 파트보(P=1)는 양쪽 다 굵은 선 그대로.
-          svg.appendChild(line(x, gridTop, x, gridBottom, pi === P - 1 ? T_THICK : T_THIN));
-          svg.appendChild(line(x + cell, gridTop, x + cell, gridBottom, pi === 0 ? T_THICK : T_THIN));
-          for (let i = 1; i < beats; i++) {
-            if (dgSet.has(i)) continue;          // 대강선은 아래에서 밴드 폭으로 따로(구조선이라 마스크 뒤에 다시 그림)
+          svg.appendChild(line(x, gridTop, x, gBottom, pi === P - 1 ? T_THICK : T_THIN));
+          svg.appendChild(line(x + cell, gridTop, x + cell, gBottom, pi === 0 ? T_THICK : T_THIN));
+          for (let i = 1; i < gBeats; i++) {
+            if (gDg.has(i)) continue;          // 대강선은 아래에서 밴드 폭으로 따로(구조선이라 마스크 뒤에 다시 그림)
             const cy = gridTop + i * cell;
             svg.appendChild(line(x, cy, x + cell, cy, T_THIN));
             // 없애기의 세로 마스크가 이 줄의 반쪽을 갉는 자리면 구조선에 얹어 마스크 뒤에 다시 긋는다
             if (cellBoundaryNibbled(melIdx, i, styles)) structuralSegs.push([x, cy, x + cell, cy, T_THIN]);
           }
           // 정간 커스텀 테두리 — 선분만 모아두고 그리기는 밴드 루프가 끝난 뒤에(위 주석 참고)
-          collectCellBorderSegs(cellBorderSegs, melIdx, x, gridTop, cell, beats, styles);
+          collectCellBorderSegs(cellBorderSegs, melIdx, x, gridTop, cell, gBeats, styles);
 
           // 각 번호(보조) — 각 아래 옅은 회색 작은 숫자 (문서 탭 옵션, '화면에만'이면 출력에서 제외)
           // 묶음에 하나(가운데) — 파트 열마다 달면 같은 번호가 P번 반복된다
           if (gakNumMode !== "none" && pi === 0) {
             const gnFont = cell * 0.26;
-            const gn = el("text", { x: gakCx, y: gridBottom + gnFont * 1.25,
+            const gn = el("text", { x: gakCx, y: gBottom + gnFont * 1.25,
               "text-anchor": "middle", "font-size": gnFont, fill: "#c9c9c9", "class": "gak-num" });
             gn.textContent = String(melIdx + 1);
             svg.appendChild(gn);
@@ -4241,9 +4341,9 @@
             }
           }
 
-          // 클릭·하이라이트 영역은 숨은 정간 포함 전체 beats (여전히 입력 가능)
+          // 클릭·하이라이트 영역은 숨은 정간 포함 그 각의 정간 전부 (여전히 입력 가능)
           // — 활성 파트 열에만 단다(총보에서 남의 열을 누르는 라우팅은 다음 단계).
-          if (isActiveCol) for (let j = 0; j < beats; j++) {
+          if (isActiveCol) for (let j = 0; j < gBeats; j++) {
             const cyTop = gridTop + j * cell;
             (cellGeom[melIdx] = cellGeom[melIdx] || {})[j] = { page: pageIdx, x: x, y: cyTop, w: cell, h: cell };
             // 둘러보기가 '여기가 정간입니다'를 가리킬 수 있게 **첫 각(맨 오른쪽)만** 표시해 둔다.
@@ -4292,7 +4392,7 @@
           // 총보에서 남의 파트 열을 누르면 그 파트로 갈아타고 누른 칸을 곧장 연다 —
           // 눌리는 곳이 곧 편집 대상(피날레와 같은 감각). 드래그 선택·시김새 추가 같은
           // 나머지 동작은 갈아탄 다음부터 활성 열에서 그대로 된다.
-          else if (scoreMode) for (let j = 0; j < beats; j++) {
+          else if (scoreMode) for (let j = 0; j < gBeats; j++) {
             const hit = rect(x, gridTop + j * cell, cell, cell, 0,
               { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
             hit.style.cursor = "text";
@@ -4441,6 +4541,9 @@
           // 장단 줄(악곡 맨 처음 자리, 가장 오른쪽) — 켜져 있고, 악곡 맨 처음 각일 때만.
           // 곡에 한 줄뿐이라 파트 루프에선 한 번만(pi===0) 그린다.
           if (wantJangdan && melIdx === 0 && pi === 0) {
+            // 장단은 **곡의 장단**이라 표준 정간 수를 쓴다 — 첫 각이 짧아도(가곡 5정간) 장단
+            // 줄은 온전한 한 각이다. 아래 셈이 각별 값 대신 이 값을 보도록 여기서 가린다.
+            const gBeats = defBeats(), gBottom = gridTop + gBeats * cell, gDg = dgSetFor(gBeats);
             // 장단 자리는 한 각(묶음) 자리 폭 — 장단 칸은 그 자리의 맨 왼쪽(각들의 선 끝)에 맞춘다
             const jdRight = musicRightEdge - (gakW - cell), jdLeft = jdRight - jdW;
             // 템포 표기 — 장단이 있으면 첫 각 대신 장단 칸 위에(같은 각/장 규칙)
@@ -4450,25 +4553,25 @@
             // '화면에만'이면 gak-num 클래스로 인쇄·PNG에서도 각 번호와 같이 빠진다)
             if (gakNumMode !== "none") {
               const jdLabelFont = cell * 0.26;
-              const jdLabel = el("text", { x: (jdLeft + jdRight) / 2, y: gridBottom + jdLabelFont * 1.25,
+              const jdLabel = el("text", { x: (jdLeft + jdRight) / 2, y: gBottom + jdLabelFont * 1.25,
                 "text-anchor": "middle", "font-size": jdLabelFont, "font-family": CJK,
                 fill: "#c9c9c9", "class": "gak-num" });
               jdLabel.textContent = "장단";
               svg.appendChild(jdLabel);
             }
             // 장단 에디터 커서 하이라이트용 칸 좌표 (내용 유무와 무관하게 전체 박)
-            for (let j = 0; j < beats; j++) {
+            for (let j = 0; j < gBeats; j++) {
               jdGeom[j] = { page: pageIdx, x: jdLeft, y: gridTop + j * cell, w: jdW, h: cell };
             }
             const jdCells = jdParsed && jdParsed[0];
             const jdCount = jdCells ? jdCells.length : 0;
-            const jdFilled = jdCount > 0 ? Math.min(beats, jdCount) : 0;
+            const jdFilled = jdCount > 0 ? Math.min(gBeats, jdCount) : 0;
             for (let j = 0; j < jdFilled; j++) {
               const content = jdCells[j] ? jdCells[j].text : "";
               if (content) drawJangdanCell(svg, jdLeft, gridTop + j * cell, jdW, cell, content);
             }
             // 클릭 영역 — 글자 그림(image) 위로 올려야(뒤에 appendChild) 그 위를 클릭해도 먹힌다
-            for (let j = 0; j < beats; j++) {
+            for (let j = 0; j < gBeats; j++) {
               const jdHit = rect(jdLeft, gridTop + j * cell, jdW, cell, 0,
                 { fill: "transparent", stroke: "none", "pointer-events": "all",
                   class: "tour-lane-jd" });   // 장단은 곡에 한 줄뿐이라 전부 표적
@@ -4487,14 +4590,14 @@
             // 장단 각은 선율(율명) 각과 구분되게 네 변 모두 조금 굵게 두른다
             // (1.8배는 너무 두꺼웠음 — 기본 각 선이 얇아진 만큼 1.5배로도 충분히 구분됨)
             const jdLineW = T_THICK * 1.5;
-            svg.appendChild(line(jdLeft, gridTop, jdLeft, gridBottom, jdLineW));
-            svg.appendChild(line(jdRight, gridTop, jdRight, gridBottom, jdLineW));
+            svg.appendChild(line(jdLeft, gridTop, jdLeft, gBottom, jdLineW));
+            svg.appendChild(line(jdRight, gridTop, jdRight, gBottom, jdLineW));
             svg.appendChild(line(jdLeft, gridTop, jdRight, gridTop, jdLineW));
-            svg.appendChild(line(jdLeft, gridBottom, jdRight, gridBottom, jdLineW));
+            svg.appendChild(line(jdLeft, gBottom, jdRight, gBottom, jdLineW));
             // 다른 정간과 똑같이 박(정간) 구분선을 그림(대강은 굵게)
-            for (let i = 1; i < beats; i++) {
+            for (let i = 1; i < gBeats; i++) {
               svg.appendChild(line(jdLeft, gridTop + i * cell, jdRight, gridTop + i * cell,
-                dgSet.has(i) ? T_DAEGANG : T_THIN));
+                gDg.has(i) ? T_DAEGANG : T_THIN));
             }
           }
 
@@ -4503,16 +4606,16 @@
             const lyLeft = x + cell + lyGap;
             const lyCells = lyParsedBy[pi] && lyParsedBy[pi][melIdx];
             const lyCount = lyCells ? lyCells.length : 0;
-            const lyFilled = lyCount > 0 ? Math.min(beats, lyCount) : 0;
+            const lyFilled = lyCount > 0 ? Math.min(gBeats, lyCount) : 0;
             for (let j = 0; j < lyFilled; j++) {
               const content = lyCells[j] ? lyCells[j].text : "";
               // 옆 정간의 율명 내용을 같이 넘겨 분박 행 위치에 가사를 나란히 앉힌다
               const melTxt = gakCells && gakCells[j] ? gakCells[j].text : "";
               if (content) drawLyricCell(svg, lyLeft, gridTop + j * cell, lyW, cell, content, lyricsFontFam, melTxt);
             }
-            // 클릭 영역 — 숨은 정간 포함 전체 beats, 글자 위로 올려야 그 위를 클릭해도 먹힌다.
+            // 클릭 영역 — 숨은 정간 포함 그 각의 정간 전부, 글자 위로 올려야 그 위를 클릭해도 먹힌다.
             // 활성 파트의 곁줄에만(총보에서 남의 곁줄 편집 라우팅은 다음 단계).
-            if (isActiveCol) for (let j = 0; j < beats; j++) {
+            if (isActiveCol) for (let j = 0; j < gBeats; j++) {
               const lyHit = rect(lyLeft, gridTop + j * cell, lyW, cell, 0,
                 { fill: "transparent", stroke: "none", "pointer-events": "all",
                   class: melIdx === 0 ? "tour-lane-ly" : null });
@@ -4537,7 +4640,7 @@
             }
             // 총보에서 남의 파트 곁줄 — 더블클릭하면 그 파트로 갈아타고 그 칸을 연다
             // (곁줄은 원래 더블클릭 편집이라 규칙이 같다)
-            else if (scoreMode) for (let j = 0; j < beats; j++) {
+            else if (scoreMode) for (let j = 0; j < gBeats; j++) {
               const lyHit = rect(lyLeft, gridTop + j * cell, lyW, cell, 0,
                 { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
               lyHit.style.cursor = "text";
@@ -4561,7 +4664,7 @@
             // 곁줄만 없으면 누를 데조차 없어서, 처음 쓰는 사람은 곁줄을 리본에서 켜야 한다는
             // 걸 알아낼 방법이 없었다(정간은 되는데 곁줄은 안 된다는 비대칭).
             // 더블클릭으로만 반응한다 — 정간 드래그 선택이 이 틈을 지날 때 걸리지 않게.
-            for (let j = 0; j < beats; j++) {
+            for (let j = 0; j < gBeats; j++) {
               const lyOpen = rect(x + cell, gridTop + j * cell, gap, cell, 0,
                 { fill: "transparent", stroke: "none", "pointer-events": "all",
                   class: "no-print" + (melIdx === 0 ? " tour-lane-ly" : "") });
@@ -4588,11 +4691,28 @@
         }
         gakAccum += nMusic;
 
-        // 밴드 위/아래 통줄 (전체 폭 — 각 사이 간격까지 끊기지 않게 한 줄로)
+        // 밴드 위/아래 통줄 (전체 폭 — 각 사이 간격까지 끊기지 않게 한 줄로).
+        // 위 통줄은 각이 다 같은 자리에서 시작하므로 늘 한 줄이고, **아래 통줄만** 각 길이가
+        // 섞인 밴드에서 각별로 끊어 긋는다(각마다 아래끝이 다르므로). 길이가 같으면 예전 그대로.
         svg.appendChild(line(capLeft, gridTop, capRight, gridTop, T_THICK));
-        svg.appendChild(line(capLeft, gridBottom, capRight, gridBottom, T_THICK));
-        structuralSegs.push([capLeft, gridTop, capRight, gridTop, T_THICK],
-                            [capLeft, gridBottom, capRight, gridBottom, T_THICK]);
+        structuralSegs.push([capLeft, gridTop, capRight, gridTop, T_THICK]);
+        if (bandUniform) {
+          svg.appendChild(line(capLeft, gridBottom, capRight, gridBottom, T_THICK));
+          structuralSegs.push([capLeft, gridBottom, capRight, gridBottom, T_THICK]);
+        } else {
+          for (let m = 0; m < nMusic; m++) {
+            const gi = gakAccum - nMusic + m;   // gakAccum은 위에서 이미 nMusic만큼 늘었다
+            const gRight = musicRightEdge - m * slot - bandJdExtra;
+            const yb = gridTop + beatsAt(gi) * cell;
+            svg.appendChild(line(gRight - gakW, yb, gRight, yb, T_THICK));
+            structuralSegs.push([gRight - gakW, yb, gRight, yb, T_THICK]);
+          }
+          if (bandJdExtra) {   // 장단 칸은 제 높이(표준 각)로 따로 마감
+            const jdR = musicRightEdge - (gakW - cell), yb = gridTop + defBeats() * cell;
+            svg.appendChild(line(jdR - jdW, yb, jdR, yb, T_THICK));
+            structuralSegs.push([jdR - jdW, yb, jdR, yb, T_THICK]);
+          }
+        }
         // 맨 오른쪽이 내용 있는 가사 열이면, 통줄이 그 자리까지 덮으므로 오른쪽 끝을 세로선으로 마감.
         // 제목이 있는 페이지는 통줄이 제목 칸 세로선까지 이어져 그 선이 마감을 겸하므로 긋지 않는다.
         if (closeLyricCol && !page.hasTitle) {
@@ -4601,10 +4721,31 @@
 
         // 대강선 — 각마다 끊어 그리지 않고, 통줄처럼 밴드 폭 전체(제목 칸 앞까지)로 한 번에 그림
         const daegangRight = Math.min(capBase, musicRightEdge);
-        dgSet.forEach(function (i) {
-          svg.appendChild(line(musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG));
-          structuralSegs.push([musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG]);
-        });
+        if (bandUniform) {
+          dgSetFor(bandBeats).forEach(function (i) {
+            svg.appendChild(line(musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG));
+            structuralSegs.push([musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG]);
+          });
+        } else {
+          // 길이가 섞인 밴드 — 대강도 각마다 다르므로 각 폭에서 끊어 긋는다
+          for (let m = 0; m < nMusic; m++) {
+            const gi = gakAccum - nMusic + m;
+            const gRight = Math.min(musicRightEdge - m * slot - bandJdExtra, daegangRight);
+            dgSetFor(beatsAt(gi)).forEach(function (i) {
+              const y = gridTop + i * cell;
+              svg.appendChild(line(gRight - gakW, y, gRight, y, T_DAEGANG));
+              structuralSegs.push([gRight - gakW, y, gRight, y, T_DAEGANG]);
+            });
+          }
+          if (bandJdExtra) {
+            const jdR = musicRightEdge - (gakW - cell);
+            dgSetFor(defBeats()).forEach(function (i) {
+              const y = gridTop + i * cell;
+              svg.appendChild(line(jdR - jdW, y, jdR, y, T_DAEGANG));
+              structuralSegs.push([jdR - jdW, y, jdR, y, T_DAEGANG]);
+            });
+          }
+        }
       }
 
       // 정간 커스텀 테두리 — 마스크 전부를 먼저, 선 전부를 나중에(두 단계). 순서를 섞으면
@@ -4626,12 +4767,11 @@
           svg.appendChild(line(panelX, boxTop, panelX, boxBottom, T_THICK));
         } else {
           for (let b = 0; b < usedBands; b++) {
-            const t = gridY + b * (bandH + bandGap) + headH;
-            svg.appendChild(line(panelX, t, panelX, t + beats * cell, T_THICK));
+            const t = gridY + bandTops[b] + headH;
+            svg.appendChild(line(panelX, t, panelX, t + bandBeatsOf(page, b) * cell, T_THICK));
           }
         }
-        const pBottom = wantFrame ? boxBottom
-          : gridY + (usedBands - 1) * (bandH + bandGap) + headH + beats * cell;
+        const pBottom = wantFrame ? boxBottom : gridY + bandTops[usedBands - 1] + bandHs[usedBands - 1];
         const cx = (panelX + panelRight) / 2;
         const panelW = panelRight - panelX;
         // '//'로 여러 세로줄이면 줄 묶음 전체가 제목 칸 폭에 들어가게 글자를 줄인다
@@ -5010,7 +5150,6 @@
   // **재생만 이 옵션을 준다** — 오선보·MusicXML은 늘 시김새를 그리므로 안 준다.
   function realizeMelody(hwangMidi, melodyText, opts) {
     const plain = !!(opts && opts.plain);
-    const beats = Math.max(1, parseInt($("beats").value) || 1);
     const sc = makeScale(hwangMidi);
     // melodyText를 주면 그 선율을(합주에서 파트마다), 안 주면 활성 파트 작업 사본을 푼다
     const gaks = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull);
@@ -5071,7 +5210,9 @@
 
     for (let g = 0; g < gaks.length; g++) {
       const gakCells = gaks[g];
-      const filled = gakCells.length > 0 ? Math.min(beats, gakCells.length) : beats;
+      // 각마다 정간 수가 다를 수 있다 — 그 각의 수만큼 시간이 흐른다(빈 각도 제 길이만큼)
+      const gb = beatsAt(g);
+      const filled = gakCells.length > 0 ? Math.min(gb, gakCells.length) : gb;
       for (let j = 0; j < filled; j++) {
         const text = gakCells[j] ? gakCells[j].text : "";
         const rows = text.split(/\s+/).filter(Boolean);
@@ -5763,7 +5904,12 @@
     const pick = $("staffUnit") && $("staffUnit").value;
     const unit = SC.JG[pick] ? pick : "dotted";
     const jg = SC.JG[unit];
-    const measLen = beats * jg;
+    // 각 하나가 한 마디인데 **각마다 정간 수가 다를 수 있으므로** 마디 길이도 마디마다다.
+    // 정간 하나는 위 ①에서 늘 딱 jg가 되게 다듬으므로, 각의 총 길이 = 그 각의 정간 수 × jg다.
+    const gakN = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull).length;
+    const measBeats = [];
+    for (let g = 0; g < gakN; g++) measBeats.push(beatsAt(g));
+    const capAt = function (i) { return (measBeats[i] || beats) * jg; };
 
     // ① 자리 길이를 정수 단위로. 나눠떨어지지 않는 분박(11등분 등)에서 생기는 반올림
     //    오차는 그 정간의 마지막 자리에서 걷어, 정간 하나가 늘 딱 jg가 되게 한다 —
@@ -5804,8 +5950,8 @@
 
     // ③ 마디(=각)에 채워 넣기. 마디를 넘는 음은 잘라 붙임줄로 잇는다.
     const measures = [];
-    let cur = null, filled = 0;
-    function newMeasure() { cur = []; measures.push(cur); filled = 0; }
+    let cur = null, filled = 0, measLen = capAt(0);
+    function newMeasure() { cur = []; measures.push(cur); filled = 0; measLen = capAt(measures.length - 1); }
     newMeasure();
     notes.forEach(function (n) {
       let left = Math.round(n.units);
@@ -5844,11 +5990,13 @@
 
     // 대강 분절을 함께 실어 보낸다 — 정간을 8분음표로 보면 정간 하나가 한 박이 아니라서
     // 오선보의 빔이 대강으로 묶여야 한다(js/staff-view.js '빔 묶음' 참고). 비어 있으면 null.
-    const daegang = parseDaegang($("daegang").value, beats).groups;
+    const daegang = parseDaegang(daegangTextFor(beats), beats).groups;
 
+    // beats = 기본 각의 정간 수(박자표의 기준) · measBeats = 마디(=각)마다의 정간 수.
+    // 길이가 다 같으면 measBeats가 전부 같은 값이라 예전과 똑같이 그려진다.
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
-             fifths: fifths, clef: clef, beats: beats, bpm: bpm,
-             unit: unit, jg: jg, measLen: measLen, daegang: daegang, measures: measures };
+             fifths: fifths, clef: clef, beats: beats, measBeats: measBeats, bpm: bpm,
+             unit: unit, jg: jg, daegang: daegang, measures: measures };
   }
 
   // 오선보가 무엇을 보여줄까는 **정간보의 '총보' 체크(#scoreView)를 그대로 따른다** —
@@ -6376,7 +6524,7 @@
   }
 
   // ---------- 저장 / 불러오기 ----------
-  const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
+  const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakBeats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
@@ -6911,6 +7059,9 @@
   }
   // 구조(칸 수)에 영향을 주는 숫자 칸 → 확정 시 멜로디 재구성 후 렌더
   wireConfirm($("beats"), function () { fillDaegangPreset(); onFormChange(); });
+  // 각 개수·길이를 바꾸는 값이라 [확인]/Enter로만 적용한다(wireLive가 아니다 — 치는 도중
+  // "1:"만 적힌 상태가 렌더에 들어가면 배치가 매번 뒤집힌다)
+  wireConfirm($("gakBeats"), onFormChange);
   // 총 각 수를 직접 확정하면 '페이지 꽉 채우기' 자동 추종을 멈춘다
   wireConfirm($("gakCount"), function () { gakUserSet = true; onFormChange(); });
   ["gakPerRow", "stackCount"].forEach(id => wireConfirm($(id), onFormChange));
@@ -7341,8 +7492,8 @@
       if (!melClip || !melClip.length) return;
       e.preventDefault();
       // 붙인 만큼으로 선택을 넓혀 무엇이 들어갔는지 눈에 보이게 한다(악보 끝에서 잘린 만큼은 빼고).
-      const beats = Math.max(1, parseInt($("beats").value) || 1);
-      const lastSeq = Math.max(0, parseMelodyOffsets(melodyFull).length * beats - 1);
+      // 악보 전체의 마지막 정간 번호 — 각 길이가 섞이면 각 수×정간 수로는 못 센다
+      const lastSeq = Math.max(0, gakCellOffset(parseMelodyOffsets(melodyFull).length) - 1);
       const end = Math.min(r.lo + melClip.length - 1, lastSeq);
       melSelStart = seqToCell(r.lo); melSelEnd = seqToCell(end);
       pasteMelCells(r.lo, melClip);

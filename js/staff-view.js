@@ -133,6 +133,9 @@
     const M = metrics(SP);
     const staffH = SP * 4;
     const beats = list[0].beats;
+    // 가장 긴 마디의 정간 수 — 빔 묶음 표(jgGroup)를 그만큼 만들어 둔다
+    let maxBeats = beats;
+    (list[0].measBeats || []).forEach(function (n) { if (n > maxBeats) maxBeats = n; });
 
     // 정간 하나가 먹는 가로 자리 — **가장 짧은 음이 제 자리를 갖도록** 잡는다. 비례 간격이라
     // 자리는 늘 길이에 비례하므로, 가장 짧은 음이 MIN_STEP만큼 벌어지면 나머지는 저절로 그보다
@@ -153,9 +156,31 @@
     });
     const jgW = Math.max(SP * 4, Math.min(jgUnits / shortest, SPLIT_MAX) * MIN_STEP);
     const pxPer = jgW / jgUnits;
-    const measW = beats * jgUnits * pxPer;
+    // 마디(=각)마다 정간 수가 다를 수 있다 — 폭도, 박자표도 마디마다다.
+    // 길이가 다 같으면 tsExtra가 늘 0이라 예전과 똑같은 값이 나온다.
+    const mBeats = function (mi) {
+      const mb = list[0].measBeats;
+      return (mb && mb[mi]) || beats;
+    };
+    const digitsW = function (str) {
+      let w = 0;
+      for (let i = 0; i < str.length; i++) w += gw("time" + str[i]);
+      return w * SP;
+    };
+    const tsOf = function (mi) { return C.timeSig(list[0].unit, mBeats(mi)); };
+    const tsInkW = function (mi) {
+      const t = tsOf(mi);
+      return Math.max(digitsW(String(t.beats)), digitsW(String(t.type)));
+    };
+    // 길이가 바뀌는 마디 앞에는 새 박자표를 적는다(조판 관례이자 MusicXML이 내보내는 것과 같다).
+    // 첫 마디는 줄머리에 이미 적히므로 여기서 세지 않는다.
+    const tsChange = function (mi) { return mi > 0 && mBeats(mi) !== mBeats(mi - 1); };
+    const tsExtra = function (mi) { return tsChange(mi) ? tsInkW(mi) + SP * 0.9 : 0; };
     const noteInset = SP * 0.9;                              // 마디줄과 첫 음 사이
-    const pxIn = (measW - noteInset) / (beats * jgUnits);    // 남은 폭을 다시 비례로
+    const measWOf = function (mi) { return mBeats(mi) * jgUnits * pxPer + tsExtra(mi); };
+    const pxInOf = function (mi) {
+      return (measWOf(mi) - tsExtra(mi) - noteInset) / (mBeats(mi) * jgUnits);
+    };
 
     // ── 빔 묶음의 단위는 '한 박'이다 ──
     // 정간을 점4분음표·4분음표로 보면 정간 하나가 곧 한 박이라 그 안이 묶음이다. 그런데
@@ -168,16 +193,16 @@
       const dg = list[0].daegang;
       const gs = (dg && dg.length) ? dg : [beats % 3 === 0 ? 3 : 2];
       let gi = 0, k = 0;
-      for (let i = 0; i < beats; i++) {
+      for (let i = 0; i < maxBeats; i++) {
         jgGroup[i] = gi;
         if (++k >= (gs[gi] || gs[gs.length - 1])) { k = 0; gi++; }
       }
     } else {
-      for (let i = 0; i < beats; i++) jgGroup[i] = i;
+      for (let i = 0; i < maxBeats; i++) jgGroup[i] = i;
     }
     const beamKey = function (cum) {
       const jg = Math.floor(cum / jgUnits + 1e-6);
-      return jgGroup[Math.max(0, Math.min(beats - 1, jg))];
+      return jgGroup[Math.max(0, Math.min(maxBeats - 1, jg))];
     };
 
     // 악기마다 제 자리표·음역이 있으므로 잴 것도 악기마다다. 위아래 여백을 **음역을 재서**
@@ -236,16 +261,7 @@
 
     // 박자표 — 각 하나가 한 마디이므로 여기 적히는 수가 곧 '한 각이 몇 박인가'다.
     // 셈은 staff-core에 있다(파일로 나가는 MusicXML과 같은 답이라야 한다).
-    const ts = C.timeSig(list[0].unit, beats);
-    const timeTop = String(ts.beats);
-    const timeBot = String(ts.type);
-    const digitsW = function (s) {
-      let w = 0;
-      for (let i = 0; i < s.length; i++) w += gw("time" + s[i]);
-      return w * SP;
-    };
-    const timeInkW = Math.max(digitsW(timeTop), digitsW(timeBot));
-    const timeW = timeInkW + SP * 1.2;
+    const timeW = tsInkW(0) + SP * 1.2;
     const pad = SP * 1.6;
     const leftX = pad + labelW + labelPad + (multi ? SP * 0.9 : 0);
     const headW = function (si) { return clefW + keyW + (si === 0 ? timeW : 0); };
@@ -253,12 +269,19 @@
     // ── 마디를 줄(system)로 묶기 ──
     // 각 하나가 창보다 넓으면 줄을 못 나눈다 — 그때는 SVG가 창보다 넓어지고 창이 가로로
     // 스크롤한다. 각을 쪼개 두 줄에 걸치게 하지 않는 건 '각 = 마디'가 이 악보의 뼈대라서다.
-    const width = Math.max(320, Math.max(opts.width || 900, leftX + headW(0) + measW + pad));
-    const perSys = Math.max(1, Math.floor((width - leftX - headW(0) - pad) / measW));
     const nMeas = Math.max.apply(null, list.map(function (s) { return s.measures.length; }));
-    const systems = [];
-    for (let i = 0; i < nMeas; i += perSys) systems.push(i);
-    if (!systems.length) systems.push(0);
+    let widest = 1;
+    for (let i = 0; i < nMeas; i++) widest = Math.max(widest, measWOf(i));
+    const width = Math.max(320, Math.max(opts.width || 900, leftX + headW(0) + widest + pad));
+    // 길이가 다른 마디가 섞이면 '한 줄에 몇 마디'가 고정이 아니다 — 폭을 쌓아 가며 채운다.
+    const avail = width - leftX - headW(0) - pad;
+    const systems = [], sysCount = [];
+    for (let i = 0; i < nMeas; ) {
+      let w = 0, c = 0;
+      while (i + c < nMeas && (c === 0 || w + measWOf(i + c) <= avail)) { w += measWOf(i + c); c++; }
+      systems.push(i); sysCount.push(c); i += c;
+    }
+    if (!systems.length) { systems.push(0); sysCount.push(0); }
 
     const out = [];
     const H = sysH * systems.length + SP;
@@ -275,9 +298,12 @@
       // staffSheetPages). 주석인 까닭은 <g>로 묶으면 안쪽 <g>와 짝이 헷갈리기 때문이고,
       // 브라우저·PNG·인쇄 어디서도 그려지지 않아 그림에 영향이 없다.
       out.push("<!--sys-->");
-      const count = Math.min(perSys, nMeas - m0);
+      const count = sysCount[si];
       const musicX = leftX + headW(si);
-      const right = musicX + count * measW;
+      let right = musicX;
+      for (let i = 0; i < count; i++) right += measWOf(m0 + i);
+      // 이 줄 안에서 마디가 시작하는 자리(왼쪽부터 쌓은 폭)
+      const measX = []; { let acc = musicX; for (let i = 0; i < count; i++) { measX.push(acc); acc += measWOf(m0 + i); } }
       const lastSys = m0 + count >= nMeas;
       let y = SP * 0.5 + si * sysH;
       const laneTops = [];
@@ -306,19 +332,19 @@
 
         // 박자표 — 위아래 숫자를 오선의 위쪽 절반·아래쪽 절반 한가운데에.
         // 숫자 글리프가 제 줄에 세로로 가운데 맞춰져 있어 그 줄에 놓기만 하면 된다.
-        if (si === 0) {
-          const cx = leftX + clefW + keyW + timeW / 2;
-          const num = function (s, cy) {
-            let x = cx - digitsW(s) / 2;
-            for (let i = 0; i < s.length; i++) {
+        // 위아래 숫자를 가운데(cx)에 맞춰 찍는다 — 마디 안에도 같은 함수를 쓴다.
+        const drawTime = function (mi, cx) {
+          const t = tsOf(mi);
+          [[String(t.beats), top + SP], [String(t.type), top + SP * 3]].forEach(function (pair) {
+            let x = cx - digitsW(pair[0]) / 2;
+            for (let i = 0; i < pair[0].length; i++) {
               // 어느 숫자인지는 패스만 봐서는 알 수 없다 — 검사와 디버깅용으로 적어 둔다
-              glyph(out, "sv-time", "time" + s[i], x, cy, SP, 1, " data-t=\"" + s[i] + "\"");
-              x += gw("time" + s[i]) * SP;
+              glyph(out, "sv-time", "time" + pair[0][i], x, pair[1], SP, 1, " data-t=\"" + pair[0][i] + "\"");
+              x += gw("time" + pair[0][i]) * SP;
             }
-          };
-          num(timeTop, top + SP);
-          num(timeBot, top + SP * 3);
-        }
+          });
+        };
+        if (si === 0) drawTime(0, leftX + clefW + keyW + timeW / 2);
 
         // 악기 이름 — 첫 줄은 온이름, 둘째 줄부터 약어(정간보의 곡 머리·둘째 줄 규칙과 같다).
         // 약어가 없으면 둘째 줄부터는 안 적는다 — 솔로 악보에서 줄마다 이름이 되풀이되면
@@ -335,7 +361,11 @@
 
         for (let mi = 0; mi < count; mi++) {
           const meas = L.s.measures[m0 + mi];
-          const mx = musicX + mi * measW;
+          const mx = measX[mi];
+          const pxIn = pxInOf(m0 + mi);
+          // 각 길이가 바뀌는 자리엔 새 박자표를 마디 앞에 적는다(악기마다 — 오선마다 필요하다)
+          const tsW = tsExtra(m0 + mi);
+          if (tsW) drawTime(m0 + mi, mx + tsW / 2);
           // 각 번호는 맨 위 악기에만 — 악기마다 붙이면 같은 숫자가 세로로 겹쳐 찍힌다.
           if (li === 0) {
             out.push("<text class=\"sv-num\" x=\"" + f(mx + SP * 0.2) + "\" y=\"" + f(top - SP * 0.7) +
@@ -348,14 +378,14 @@
             meas.forEach(function (n) {
               // 마디 첫 음은 마디줄에서 조금 띄운다 — 그냥 두면 머리 왼쪽 반이 줄에 물린다.
               // 띄운 만큼 남은 폭을 다시 비례로 나누므로 '길이 = 자리'는 그대로다.
-              laid.push({ n: n, x: mx + noteInset + cum * pxIn, jg: beamKey(cum),
+              laid.push({ n: n, x: mx + tsW + noteInset + cum * pxIn, jg: beamKey(cum),
                           v: C.nearestValue(n.units) });
               cum += n.units;
             });
             drawNotes(out, laid, yOf, M, L.s.fifths, L.base);
           }
           // 마디줄 — 곡의 맨 끝은 마침줄(가는 줄 + 굵은 줄)
-          const bx = mx + measW;
+          const bx = mx + measWOf(m0 + mi);
           if (lastSys && mi === count - 1) {
             // 마침줄의 가는 쪽은 다른 이름을 준다 — 마디 수를 셀 때 한 마디가 둘로 세어지지 않게
             line(out, "sv-bar-thin", bx - M.barThick - SP * 0.3, top, bx - M.barThick - SP * 0.3, bottom, M.bar);

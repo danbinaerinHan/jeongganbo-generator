@@ -112,14 +112,18 @@
     list.forEach(function (s, pi) {
       const clef = C.CLEF[s.clef] || C.CLEF.G;
       out.push("  <part id=\"P" + (pi + 1) + "\">");
+      // 각 하나가 한 마디인데 **각마다 정간 수가 다를 수 있다** — 그러면 박자표가 마디마다
+      // 바뀐다. 안 바뀌는 곡에서는 예전처럼 첫 마디에만 적힌다.
+      let prevMb = null;
       s.measures.forEach(function (m, mi) {
+        const mb = (s.measBeats && s.measBeats[mi]) || s.beats;
         out.push("    <measure number=\"" + ((meta.measStart || 1) + mi) + "\">");
         if (mi === 0) {
           out.push("      <attributes>");
           out.push("        <divisions>" + C.DIV + "</divisions>");
           out.push("        <key><fifths>" + s.fifths + "</fifths></key>");
           // 각 하나가 한 마디다 — 박자표는 staff-core가 정한다(화면과 같은 답이라야 한다).
-          const ts = C.timeSig(s.unit, s.beats);
+          const ts = C.timeSig(s.unit, mb);
           out.push("        <time><beats>" + ts.beats +
                    "</beats><beat-type>" + ts.type + "</beat-type></time>");
           out.push("        <clef><sign>" + clef.sign + "</sign><line>" + clef.line + "</line></clef>");
@@ -134,7 +138,13 @@
                      "<per-minute>" + s.bpm + "</per-minute></metronome></direction-type>" +
                      "<sound tempo=\"" + (s.bpm * C.quarterRatio(s.unit)) + "\"/></direction>");
           }
+        } else if (mb !== prevMb) {
+          // 각 길이가 바뀌는 자리 — 박자표만 다시 적는다(조표·자리표는 그대로다)
+          const ts2 = C.timeSig(s.unit, mb);
+          out.push("      <attributes><time><beats>" + ts2.beats +
+                   "</beats><beat-type>" + ts2.type + "</beat-type></time></attributes>");
         }
+        prevMb = mb;
         // 꾸밈음 묶음 — 둘 이상이면 begin/continue/end로 빔을 잇는다(하나면 빔 없음)
         function graceRun(list) {
           list.forEach(function (g, i) {

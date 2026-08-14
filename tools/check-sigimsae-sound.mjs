@@ -14,10 +14,10 @@ import { loadApp } from "./lib/app-sandbox.mjs";
 const app = await loadApp(
   ["const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
-   "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
+   "matchSpecialNote", "tokenizeNotes", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "parseDaegang", "parseMelodyOffsets", "groupRowTokens",
    "jangguSoundOn", "sigimsaeSoundOn", "stripSymBracket", "midiToFreq", "scaleNotes", "makeScale",
    "realizeMelody", "buildAudioEvents"],
-  { beats: "20", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
+  { beats: "20", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
     jangdan: "", wantJangdan: false, playJanggu: false, playSigimsae: true },
   // 합주 파트는 이 검사의 관심 밖이라 '파트 하나'로 세워 둔다 — 여기서 보는 것은 한 가락이
   // 어떤 음높이로 풀리나이지, 여러 파트를 어떻게 겹치나가 아니다(그건 재생 쪽 몫).
