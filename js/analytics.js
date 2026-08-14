@@ -16,21 +16,53 @@
   // GoatCounter 계정 코드. 예: "jeongganbo" → https://jeongganbo.goatcounter.com
   // 비어 있으면 전송하지 않는다(연동 전 대기 모드). 계정을 만들면 여기 한 줄만 채우면 끝.
   var GOATCOUNTER_CODE = "umulsai";
-  // 기능이 크게 바뀔 때 갱신 — 대시보드에서 "버전별 사용 변화"를 나눠 볼 수 있게 이벤트에 붙는다
-  var APP_VERSION = "2026-07-28";
+  // 기능이 크게 바뀔 때 갱신 — 대시보드에서 "버전별 사용 변화"를 나눠 볼 수 있게 이벤트에 붙는다.
+  // ★ 큰 기능이 들어오면 여기를 올릴 것. 안 올리면 "언제부터 사람들이 이걸 쓰기 시작했나"를
+  //   나눠 볼 수가 없다(실제로 오선보·게시·모아보기가 한 버전에 뭉쳐 찍혔다).
+  var APP_VERSION = "2026-08-14";
 
-  // 대시보드에 보일 한글 라벨 (없으면 이벤트 이름 그대로)
+  // 대시보드에 보일 한글 라벨 (없으면 이벤트 이름 그대로 뜬다).
+  // ★ track("…")을 새로 부르면 여기에도 한 줄 더할 것 — 안 그러면 대시보드에 영문
+  //   이벤트 이름만 남아 무엇인지 알아보기 어렵다.
   var EVENT_LABELS = {
+    // 문서
     doc_new: "새 문서 생성",
-    export_png: "PNG 내보내기",
-    export_print: "인쇄",
-    export_file: "파일 저장(.jgb.json)",
     import_file: "파일 불러오기",
+    save_snapshot: "임시저장",
+    // 내보내기
+    export_png: "PNG 내보내기",
+    export_file: "파일 저장(.jgb.json)",
+    export_musicxml: "MusicXML 내보내기",
+    // ★ '인쇄'가 아니라 '인쇄창 열기'다 — 브라우저는 사용자가 종이에 뽑았는지 PDF로
+    //   저장했는지 그냥 닫았는지 알려주지 않는다. 셀 수 있는 것은 창을 연 것까지다.
+    export_print: "인쇄창 열기(인쇄·PDF)",
+    // 인쇄창에 머문 시간으로 어림잡은 것 — quick(곧장 닫음) / used(무언가 고름).
+    // **추정이다**: 무엇을 골랐는지는 브라우저가 알려주지 않는다(app.js 인쇄 리스너 주석).
+    print_closed: "인쇄창 닫힘(추정)",
+    // 보기·조작
     play: "재생(청음)",
+    staff_open: "오선보 보기",
+    theme: "색상 테마 바꾸기",
     input_mode: "입력 방식 전환",
+    part_add: "악기 추가",
+    part_remove: "악기 삭제",
+    part_switch: "악기 전환",
+    // 공유 — 주소에 악보를 담는 쪽(share_*)과 서버에 올리는 쪽(publish_*)이 다르다
+    share_link: "링크 복사",
+    share_open: "링크로 열기",
+    publish: "악보 게시",
+    publish_update: "게시물 갱신",
+    publish_delete: "게시물 내리기",
+    publish_open: "게시물 열기",
+    // 모아보기
+    browse_open: "모아보기 열기",
+    browse_tab: "모아보기 탭 전환",
+    browse_sort: "모아보기 정렬",
+    browse_search: "모아보기 검색",
+    // 도움말
     help_open: "도움말 열람",
     tour_start: "둘러보기 시작",
-    save_snapshot: "임시저장"
+    tour_done: "둘러보기 완주"
   };
 
   // ── 수집 제외 판정 ────────────────────────────────────────────────────

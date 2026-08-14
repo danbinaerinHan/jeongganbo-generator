@@ -7908,11 +7908,26 @@
   // 동안만 곡 제목으로 바꿨다가 되돌린다. beforeprint/afterprint 이벤트를 쓰므로
   // 인쇄 버튼뿐 아니라 브라우저 메뉴·Cmd/Ctrl+P로 인쇄할 때도 똑같이 적용된다.
   const APP_DOC_TITLE = document.title;
+  // 인쇄창에 머문 시간 — **추정용**이다. 브라우저는 사용자가 종이에 뽑았는지 PDF로 저장했는지
+  // 그냥 닫았는지 알려주지 않는다(규격이 일부러 막아 둔 것). 그래서 셀 수 있는 것은 '창을
+  // 열었다'(export_print)까지인데, 열어보고 곧장 닫은 것과 무언가 고른 것 정도는 머문 시간으로
+  // 어림잡을 수 있다. 이름에 closed·quick/used를 넣어 **추정임이 드러나게** 한다 — 대시보드에서
+  // 이 값을 '진짜 인쇄된 장수'로 읽으면 안 된다.
+  // 인쇄를 다루는 자리가 하나이도록 제목 바꾸기와 같은 리스너에 붙인다.
+  const PRINT_QUICK_SEC = 3;
+  let printOpenedAt = 0;
   window.addEventListener("beforeprint", function () {
+    printOpenedAt = Date.now();
     const t = $("title").value.trim();
     if (t) document.title = t;
   });
-  window.addEventListener("afterprint", function () { document.title = APP_DOC_TITLE; });
+  window.addEventListener("afterprint", function () {
+    document.title = APP_DOC_TITLE;
+    if (!printOpenedAt) return;   // beforeprint 없이 afterprint만 오는 경우는 세지 않는다
+    const sec = (Date.now() - printOpenedAt) / 1000;
+    printOpenedAt = 0;
+    track("print_closed", { v: sec < PRINT_QUICK_SEC ? "quick" : "used" });
+  });
   $("btnExport").addEventListener("click", exportFile);
   $("btnMusicXml").addEventListener("click", exportMusicXml);
   $("btnShareLink").addEventListener("click", shareLinkCopy);
