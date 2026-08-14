@@ -186,7 +186,7 @@
 
   const LICENSE_KO = {
     "none": "저작권 유보", "cc-by": "CC BY", "cc-by-nc": "CC BY-NC",
-    "cc-by-sa": "CC BY-SA", "cc0": "CC0",
+    "cc-by-sa": "CC BY-SA", "cc-by-nc-sa": "CC BY-NC-SA", "cc0": "CC0",
   };
 
   // ---------- 게시 창 ----------

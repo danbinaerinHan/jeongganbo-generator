@@ -43,7 +43,21 @@
 
 <header class="sc-head">
   <h1>모아보기</h1>
-  <p class="sc-lead">사람들이 올린 정간보입니다. 카드를 누르면 그대로 열리고, 고쳐서 내 악보로 다시 올릴 수도 있습니다.</p>
+
+  <!-- 목록 갈래(탭) — 사람들이 올린 악보와 국악원 정악보(OMR 데이터셋 69곡)를 가른다.
+       가르는 열쇠는 지은이 한 값(js/browse.js의 NGC_AUTHOR = 게시 스크립트의 AUTHOR)이고,
+       서버(list_scores의 p_author/p_author_not)가 거른다 — 69곡을 최신순에 섞으면 사람들이
+       올린 악보가 통째로 묻혀서 선반을 따로 뒀다. 정렬(.sc-sorts)과 층위가 다르므로 탭 꼴. -->
+  <div class="sc-tabs">
+    <button type="button" class="sc-tab on" data-tab="all">올라온 악보</button>
+    <button type="button" class="sc-tab" data-tab="ngc">국악원 정악보</button>
+  </div>
+
+  <!-- 탭마다 안내문이 다르다(js/browse.js가 표시를 갈아끼움). 국악원 탭의 출처·이용 조건
+       표기는 CC BY-NC-SA가 요구하는 것이라 카드마다가 아니라 여기 한 번 적는다. -->
+  <p class="sc-lead" id="scLeadAll">사람들이 올린 정간보입니다. 카드를 누르면 그대로 열리고, 고쳐서 내 악보로 다시 올릴 수도 있습니다.</p>
+  <p class="sc-lead" id="scLeadNgc" style="display:none">국립국악원 간행 정악보를 OMR로 읽어 우물사이 악보로 옮긴 것입니다. 카드를 누르면 그대로 열립니다.<br>
+  <span class="sc-lead-src">자료 출처: Kim, Han, Jeong &amp; Valero-Mas, <i>On the Automatic Recognition of Jeongganbo Music Notation</i> (ACM JOCCH 18(3), 2025) · <b>CC BY-NC-SA 4.0</b> · 인코딩: Han et al., <i>Six Dragons Fly Again</i> (TISMIR 9(1), 2026)</span></p>
 
   <div class="sc-controls">
     <input type="search" id="scSearch" class="sc-search" placeholder="제목·지은이로 찾기" autocomplete="off">

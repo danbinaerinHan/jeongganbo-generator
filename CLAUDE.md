@@ -276,6 +276,15 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - **모아보기**(#btnBrowse → browse.html, js/browse.js): 공개로 올라온 악보를 카드 격자로
     보여주는 **별개 페이지**. 카드를 누르면 `index.html#v=<id>`로 넘어가고 거기서 cloud.js가
     받아 연다 — 목록과 편집기 사이의 약속은 그 주소 하나뿐이다.
+    - **탭 둘**(.sc-tabs): '올라온 악보'(사람들 것) | '국악원 정악보'(국악원 OMR 데이터셋 69곡,
+      tools/publish-ngc-omr.mjs로 게시). 가르는 열쇠는 **지은이 한 값**("국립국악원 (OMR)" —
+      browse.js `NGC_AUTHOR` = 게시 스크립트 `AUTHOR`, 글자까지 같아야 한다)이고 서버
+      list_scores의 `p_author`/`p_author_not`(정확 일치)이 거른다 — 69곡을 최신순에 섞으면
+      사람들 악보가 묻혀서 선반을 갈랐다. 데이터셋이 CC BY-NC-SA 4.0이라 라이선스 값
+      `cc-by-nc-sa`를 서버 제약·LICENSE_KO(browse.js·cloud.js)·#pubLicense에 함께 열었고,
+      출처(논문 인용)는 카드마다가 아니라 **탭 안내문(#scLeadNgc)에 한 번** 적는다.
+      수정 열쇠는 `server/ngc-tokens.local.json`(커밋 금지) — 일괄 비공개/공개 전환은
+      `node tools/publish-ngc-omr.mjs visibility unlisted|public`.
     - 게시 창의 **[모아보기 목록에 올리기]가 기본 켬**(visibility=public). 끄면 예전처럼
       주소를 아는 사람만 보는 unlisted가 된다. 여기는 나눠 보는 곳이라 기본값이 공개다.
     - **미리보기 그림은 브라우저가 만든다**(`makeThumb`, 게시할 때 첫 장 SVG → 300px 캔버스

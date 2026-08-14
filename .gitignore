@@ -1,6 +1,7 @@
 # macOS
 .DS_Store
 **/.DS_Store
+__pycache__/
 
 # Claude / 로컬 도구 설정
 .claude/
@@ -27,3 +28,8 @@ NEXT-SESSION.md
 
 # 씨앗 악보의 수정 열쇠 — 서버 게시물을 고치거나 내릴 때 쓴다. 절대 커밋 금지.
 server/tokens.local.json
+# 국악원 OMR 게시물(69곡)의 수정 열쇠 — tools/publish-ngc-omr.mjs가 쓰고 만든다. 커밋 금지.
+server/ngc-tokens.local.json
+
+# 국악원 OMR 데이터셋 — CC BY-NC-SA 원자료·변환물·그림. 리포에는 변환기 코드만 담는다.
+국악원OMR데이터셋/

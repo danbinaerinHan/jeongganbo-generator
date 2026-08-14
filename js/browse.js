@@ -26,9 +26,15 @@
   const PAGE = 24;
   let sort = "recent", q = "", offset = 0, total = 0, loading = false;
 
+  // 탭 — "all"(올라온 악보) | "ngc"(국악원 정악보). 가르는 열쇠는 지은이 한 값이고 서버가
+  // 거른다(list_scores의 p_author/p_author_not). ★ 이 문자열은 게시 스크립트
+  // (tools/publish-ngc-omr.mjs의 AUTHOR)와 글자까지 같아야 한다 — 어긋나면 탭이 빈다.
+  const NGC_AUTHOR = "국립국악원 (OMR)";
+  let tab = "all";
+
   const LICENSE_KO = {
     "none": "저작권 유보", "cc-by": "CC BY", "cc-by-nc": "CC BY-NC",
-    "cc-by-sa": "CC BY-SA", "cc0": "CC0",
+    "cc-by-sa": "CC BY-SA", "cc-by-nc-sa": "CC BY-NC-SA", "cc0": "CC0",
   };
 
   function editorUrl(id) {
@@ -147,7 +153,11 @@
     $("scMore").disabled = true;
     if (reset) setStatus("불러오는 중…");
 
-    rpc("list_scores", { p_sort: sort, p_q: q, p_limit: PAGE, p_offset: offset })
+    rpc("list_scores", {
+      p_sort: sort, p_q: q, p_limit: PAGE, p_offset: offset,
+      p_author: tab === "ngc" ? NGC_AUTHOR : null,        // 국악원 탭 = 그 지은이 것만
+      p_author_not: tab === "all" ? NGC_AUTHOR : null,    // 올라온 악보 탭 = 그것만 빼고
+    })
       .then(function (r) {
         loading = false;
         total = r.total || 0;
@@ -158,7 +168,8 @@
 
         if (total === 0) {
           setStatus(q ? ("'" + q + "'에 해당하는 악보가 없습니다.")
-                      : "아직 올라온 악보가 없습니다. 첫 악보를 올려 보세요.", "sc-empty");
+                      : (tab === "ngc" ? "국악원 정악보가 아직 올라오지 않았습니다."
+                                       : "아직 올라온 악보가 없습니다. 첫 악보를 올려 보세요."), "sc-empty");
         } else {
           setStatus("");
           $("scCount").textContent = total + "곡";
@@ -175,6 +186,20 @@
   }
 
   // ---------- 배선 ----------
+  document.querySelectorAll(".sc-tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      if (b.classList.contains("on")) return;
+      document.querySelectorAll(".sc-tab").forEach(function (o) { o.classList.remove("on"); });
+      b.classList.add("on");
+      tab = b.getAttribute("data-tab");
+      // 탭마다 안내문이 다르다 — 국악원 탭의 출처·CC BY-NC-SA 표기가 그 안내문에 있다
+      $("scLeadAll").style.display = tab === "all" ? "" : "none";
+      $("scLeadNgc").style.display = tab === "ngc" ? "" : "none";
+      track("browse_tab", { v: tab });
+      load(true);
+    });
+  });
+
   document.querySelectorAll(".sc-sort").forEach(function (b) {
     b.addEventListener("click", function () {
       if (b.classList.contains("on")) return;

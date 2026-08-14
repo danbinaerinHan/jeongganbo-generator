@@ -49,7 +49,7 @@ create table if not exists public.scores (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
 
-  constraint scores_license_ok    check (license in ('none','cc-by','cc-by-nc','cc-by-sa','cc0')),
+  constraint scores_license_ok    check (license in ('none','cc-by','cc-by-nc','cc-by-sa','cc-by-nc-sa','cc0')),
   -- private은 로그인 단계용으로 미리 받아 둔다. 지금 게시는 public(둘러보기에 오름) 또는
   -- unlisted(주소를 아는 사람만) 둘 중 하나다.
   constraint scores_visibility_ok check (visibility in ('private','unlisted','public')),
@@ -58,6 +58,13 @@ create table if not exists public.scores (
 
 -- 이미 만들어 둔 표에 뒤늦게 붙이는 칸(처음 설치면 위에서 이미 생겼다)
 alter table public.scores add column if not exists thumb text;
+
+-- 뒤늦게 넓힌 이용 조건 — 국립국악원 OMR 데이터셋(CC BY-NC-SA 4.0)을 들이며 추가(2026-08-14).
+-- 이미 있는 표의 제약은 create table if not exists로는 안 바뀌므로 떨궈서 다시 건다.
+-- (아래 publish_score의 v_lic 검사에도 같은 목록이 있다 — 값을 늘릴 땐 두 곳을 함께.)
+alter table public.scores drop constraint if exists scores_license_ok;
+alter table public.scores add constraint scores_license_ok
+  check (license in ('none','cc-by','cc-by-nc','cc-by-sa','cc-by-nc-sa','cc0'));
 
 -- 둘러보기가 쓰는 차례. 부분 인덱스라 공개분만 담아 가볍다.
 create index if not exists scores_public_recent_idx
@@ -237,7 +244,7 @@ begin
   perform public.check_doc(p_doc);
   perform public.check_thumb(p_thumb);
 
-  if v_lic not in ('none','cc-by','cc-by-nc','cc-by-sa','cc0') then
+  if v_lic not in ('none','cc-by','cc-by-nc','cc-by-sa','cc-by-nc-sa','cc0') then
     raise exception '알 수 없는 이용 조건입니다.' using errcode = '22023';
   end if;
 
@@ -388,11 +395,19 @@ end $$;
 -- 공개(public)로 올린 것만 내보낸다. **doc은 빼고** 목록에 필요한 것만 담는다 —
 -- 악보 본문까지 실으면 한 페이지가 수 MB가 되고, 목록에서는 쓰지도 않는다.
 -- 정렬은 최신순/인기순 둘뿐이고 인덱스도 그 둘에 맞춰 두 개만 뒀다.
+-- p_author/p_author_not — 모아보기 **탭**이 쓰는 지은이 필터(정확 일치). 국악원 OMR 데이터셋
+-- 69곡을 '국악원 정악보' 탭으로 가르고, '올라온 악보' 탭에서는 그 69곡을 뺀다(2026-08-14).
+-- 서버는 '국악원'이라는 이름을 모른다 — 무슨 지은이로 가를지는 클라이언트(js/browse.js)가 정한다.
+-- 인자가 늘어난 판으로 갈아끼운다(옛 4인자 판을 먼저 떨궈야 PostgREST가 안 헷갈린다).
+drop function if exists public.list_scores(text, text, integer, integer);
+
 create or replace function public.list_scores(
-  p_sort   text default 'recent',   -- recent | popular
-  p_q      text default '',
-  p_limit  integer default 24,
-  p_offset integer default 0
+  p_sort       text default 'recent',   -- recent | popular
+  p_q          text default '',
+  p_limit      integer default 24,
+  p_offset     integer default 0,
+  p_author     text default null,       -- 이 지은이 것만
+  p_author_not text default null        -- 이 지은이 것은 빼고
 )
 returns jsonb
 language plpgsql
@@ -411,6 +426,8 @@ begin
   with hits as (
     select * from public.scores
      where visibility = 'public'
+       and (p_author is null or author = p_author)
+       and (p_author_not is null or author <> p_author_not)
        and (v_q = '' or title ilike '%' || v_q || '%' or author ilike '%' || v_q || '%')
   )
   select count(*) into v_total from hits;
@@ -418,6 +435,8 @@ begin
   with hits as (
     select * from public.scores
      where visibility = 'public'
+       and (p_author is null or author = p_author)
+       and (p_author_not is null or author <> p_author_not)
        and (v_q = '' or title ilike '%' || v_q || '%' or author ilike '%' || v_q || '%')
      order by
        case when p_sort = 'popular' then view_count end desc nulls last,
@@ -471,7 +490,7 @@ revoke all on function public.publish_score(jsonb, text, text, text, boolean, te
 revoke all on function public.update_score(text, text, jsonb, boolean, text)        from public, anon, authenticated;
 revoke all on function public.delete_score(text, text)                 from public, anon, authenticated;
 revoke all on function public.fetch_score(text)                        from public, anon, authenticated;
-revoke all on function public.list_scores(text, text, integer, integer) from public, anon, authenticated;
+revoke all on function public.list_scores(text, text, integer, integer, text, text) from public, anon, authenticated;
 
 -- 브라우저(anon)가 부를 수 있는 것은 이 다섯뿐이다.
 -- ★ hash_token·caller_ip_hash·gen_score_id는 일부러 빼 둔다 — 토큰 해시 셈과 id 뽑기를
@@ -480,7 +499,7 @@ grant execute on function public.publish_score(jsonb, text, text, text, boolean,
 grant execute on function public.update_score(text, text, jsonb, boolean, text)        to anon, authenticated;
 grant execute on function public.delete_score(text, text)               to anon, authenticated;
 grant execute on function public.fetch_score(text)                      to anon, authenticated;
-grant execute on function public.list_scores(text, text, integer, integer) to anon, authenticated;
+grant execute on function public.list_scores(text, text, integer, integer, text, text) to anon, authenticated;
 
 -- PostgREST에 스키마가 바뀐 것을 알린다(대시보드에서 실행하면 대개 저절로 된다)
 notify pgrst, 'reload schema';
