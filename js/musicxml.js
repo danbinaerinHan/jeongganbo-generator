@@ -15,6 +15,8 @@
 //   정간 하나 = 점4분음표(3/8) 또는 4분음표(1/4) — 악보가 unit으로 알려 준다.
 //   각(=한 마디)의 박자표가 거기서 정해진다: 점4분음표면 3N/8, 4분음표면 N/4.
 //   각 = 마디. 마디를 넘는 음은 붙임줄(tie)로 잇는다(그 자르기는 app.js가 이미 해 둔다).
+//   음표 하나로 안 떨어지는 길이(세 정간을 끄는 음 등)도 붙임줄로 가른다 — 셈은
+//   staff-core의 tiedSplit이 하고, 여기는 그 조각들을 이어 적기만 한다.
 //   붙임 시김새 = 꾸밈음(<grace>, 길이를 안 먹음) · 독립 시김새 = 제 자리를 나눈 실음.
 // 정간을 점4분음표로 보는 환산은 MALerLab/SejongMusic 자료와 같게 맞춘 것이라 그쪽 악보와
 // 나란히 놓고 견줄 수 있다 — 바꿀 땐 그 점을 생각할 것.
@@ -58,7 +60,9 @@
         out.push("        <type>" + ty.type + "</type>");
         for (let d = 0; d < ty.dots; d++) out.push("        <dot/>");
       }
-      if (!o.rest && !o.grace) {
+      // 임시표는 붙임줄로 이어지는 뒤 조각엔 안 적는다 — 같은 음이 이어지는 것뿐이라
+      // 다시 적으면 마디 안에서 임시표가 두 번 찍힌다(noAcc).
+      if (!o.rest && !o.grace && !o.noAcc) {
         const acc = C.pitchAt(o.midi, fifths).acc;
         if (acc != null) out.push("        <accidental>" + C.ACC[acc] + "</accidental>");
       }
@@ -194,13 +198,35 @@
             };
           });
         });
+        // 음표꼴이 없는 길이는 **붙임줄로 갈라** 적는다 — 조판기는 음표꼴을 모르면 기둥도
+        // 꼬리도 없는 머리만 그린다. 가르는 자리는 모음박(정간 = s.jg)이 정하고, 셈은
+        // staff-core의 tiedSplit 한 곳에 있다(2026-08-14 사용자 요청).
+        // 잇단으로 적히는 것(tups)은 이미 제 꼴이 있으므로 대상이 아니고, 2의 거듭제곱으로
+        // 안 나뉘는 5·7분박은 tiedSplit이 null을 주어 예전처럼 음표꼴 없이 나간다.
+        const beat = s.jg || C.JG[s.unit] || C.JG.dotted;
+        let off = 0;
         m.forEach(function (n, i) {
           graceRun(n.graces);
           const t = tups[i], mk = marks[i] || {};
-          noteEl(Object.assign({}, n, {
-            tup: t, tupStart: t && mk.tupStart, tupStop: t && mk.tupStop,
-            beam: mk.beam, beamN: t ? FLAG_N[t.ty.type] : 1
-          }), s.fifths);
+          const cut = (!t && !n.rest && !C.exactValue(n.units))
+            ? C.tiedSplit(n.units, off, beat) : null;
+          if (cut) {
+            cut.forEach(function (u, k) {
+              noteEl(Object.assign({}, n, {
+                units: u,
+                // 조각 사이는 늘 이어지고, 양 끝은 원래 음이 지고 있던 붙임줄을 물려받는다
+                tieStop: k > 0 || n.tieStop,
+                tieStart: k < cut.length - 1 || n.tieStart,
+                noAcc: k > 0
+              }), s.fifths);
+            });
+          } else {
+            noteEl(Object.assign({}, n, {
+              tup: t, tupStart: t && mk.tupStart, tupStop: t && mk.tupStop,
+              beam: mk.beam, beamN: t ? FLAG_N[t.ty.type] : 1
+            }), s.fifths);
+          }
+          off += n.units;
           graceRun(n.afters);
         });
         out.push("    </measure>");

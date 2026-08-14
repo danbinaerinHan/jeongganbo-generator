@@ -26,7 +26,7 @@ const app = await loadApp(
    "gakCellOffset", "melCellSeq", "seqToCell",
    "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
   { beats: "12", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "" },
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];

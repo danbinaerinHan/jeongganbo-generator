@@ -3809,7 +3809,7 @@
   function render() {
     // 보기(총보/파트보)에 맞는 레이아웃 프로필을 **가장 먼저** 입힌다 — 아래의 모든 컨트롤
     // 읽기(한 줄 각 수·배율·종이…)보다 앞서야 바뀐 보기의 값으로 셈이 시작된다.
-    syncViewLayout(parts.length > 1 && !!($("scoreView") && $("scoreView").checked));
+    syncViewLayout(scoreViewOn());
     const beats = Math.max(1, parseInt($("beats").value) || 1);
     const gakPerRow = Math.max(1, parseInt($("gakPerRow").value) || 1);
 
@@ -3838,7 +3838,7 @@
     // 그린다(한 각 = 파트 열 묶음, 목록 위 파트가 오른쪽 — 읽는 방향이 오른쪽→왼쪽이라).
     // 파트보(기본)는 P=1로 아래 전부가 예전과 완전히 같은 경로를 탄다.
     stashActivePart();   // 비활성 파트 내용도 그리므로 parts[]를 먼저 최신으로
-    const scoreMode = parts.length > 1 && !!($("scoreView") && $("scoreView").checked);
+    const scoreMode = scoreViewOn();
     const partList = scoreMode ? parts : [parts[activePart]];
     const P = partList.length;
     const activeCol = scoreMode ? activePart : 0;   // partList 안에서 활성 파트의 자리
@@ -5351,8 +5351,14 @@
       const n = parseMelodyOffsets(txt).length;
       if (n > hostLen) { hostLen = n; host = i; }
     });
+    // **들리는 것은 보이는 것과 같다** — 총보면 합주, 파트보면 펴 놓은 그 악기만 울린다
+    // (2026-08-14 사용자 요청). 화면엔 한 악기만 있는데 소리는 온 악기가 나면 무엇을 듣고
+    // 있는지 알 수가 없다. 인쇄·PNG가 '보이는 그대로'인 것과 같은 규칙이다.
+    // 장단은 곡에 하나뿐이라 보기와 무관하게 그대로 울린다(악보에도 늘 그려진다).
+    const scoreOn = scoreViewOn();
     parts.forEach(function (p, i) {
-      const opts = { sound: p.muted !== true, marks: i === activePart, janggu: i === host };
+      const inView = scoreOn || i === activePart;
+      const opts = { sound: inView && p.muted !== true, marks: i === activePart, janggu: i === host };
       if (!opts.sound && !opts.marks && !opts.janggu) return;   // 소리도 표식도 장단도 없으면 헛돎
       addPart(texts[i], opts);
     });
@@ -5446,6 +5452,7 @@
     if (playTimer) { clearTimeout(playTimer); playTimer = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
     playHi.forEach(function (h) { h.style.display = "none"; });
+    staffPlayMark(null);
     updatePlayButtons();
   }
 
@@ -5459,6 +5466,9 @@
     for (let i = marks.length - 1; i >= 0; i--) {
       if (now >= marks[i].t) { highlightPlay(marks[i].gak, marks[i].cell); break; }
     }
+    // 오선보도 **같은 시계**를 본다(오선보 보기 절의 '재생 위치 짚기') — 칸이 닫혀 있거나
+    // 조판기로 안 그렸으면 그 안에서 조용히 아무 일도 안 한다.
+    staffPlayMark(now * 1000);
     playTimer = setTimeout(tick, 60);
   }
 
@@ -5631,6 +5641,13 @@
   let nextPartId = 1;
   let parts = [newPart()];   // 늘 1개 이상 — 파트가 하나면 지금까지의 단독 악보와 동일
   let activePart = 0;
+
+  // 지금이 총보인가(악기가 둘 이상 + #scoreView 켬). 정간보 그리기·오선보·레이아웃 프로필·
+  // 재생이 **같은 답을 봐야** 화면과 소리와 종이가 한 가지를 가리킨다 — 이 셈을 여기 말고
+  // 다른 데서 다시 적지 말 것(예전엔 같은 식이 네 군데 복사돼 있었다).
+  function scoreViewOn() {
+    return parts.length > 1 && !!($("scoreView") && $("scoreView").checked);
+  }
 
   // name = 첫 줄(곡 머리)에 붙는 이름 · abbr = 둘째 줄부터 붙는 약어(비우면 생략) ·
   // instrument = 실제 악기 종류(시김새 팔레트 우선순위가 따라감) — 피날레 Score Manager처럼
@@ -6004,7 +6021,7 @@
   // 나란히 놓고 견줄 수 있다(그러라고 아래에 붙여 둔 창이다).
   function buildStaffScores() {
     stashActivePart();   // parts[]를 읽기 전엔 반드시 — melody는 문자열이라 사본이 낡는다
-    const all = parts.length > 1 && !!($("scoreView") && $("scoreView").checked);
+    const all = scoreViewOn();
     const idx = all ? parts.map(function (p, i) { return i; }) : [activePart];
     return idx.map(function (i) {
       const p = parts[i];
@@ -6122,8 +6139,95 @@
     let html = "";
     const n = vrvTk.getPageCount();
     for (let i = 1; i <= n; i++) html += vrvTk.renderToSVG(i, {});
+    grabTimemap();   // 재생 위치를 짚으려면 방금 조판한 이 데이터의 시간표가 필요하다
     return "<div class=\"vrv-out\">" + html + "</div>";
   }
+
+  // ----- 재생 위치 짚기 -----
+  // 재생 중 지금 울리는 음표를 오선보에서도 강조한다 — 정간보가 현재 정간을 상자로 짚는
+  // 그 순간과 같은 것을 가리킨다. 자리를 우리가 다시 세지 않고 **Verovio가 조판과 함께
+  // 내주는 timemap**(시각 → 음표 id)을 그대로 쓴다. 어긋날 수가 없는 것은 MusicXML에 적어
+  // 보낸 <sound tempo>가 재생과 같은 #tempoBpm에서 나오기 때문이다(bpm 60·점4분음표면
+  // tempo=90이 적히고 정간 하나가 딱 1000ms로 떨어짐을 실측, 2026-08-14).
+  // **새 타이머를 두지 않는다** — 재생의 tick()에 얹는다. 시계가 둘이면 둘이 어긋난다.
+  // 그림(staff-view)으로 물러난 경우엔 음표에 id가 없어 이 표시가 조용히 빠진다.
+  var vrvTimemap = null;                     // [{ tstamp(ms), on:[id], off:[id] }]
+  var vrvWalk = { i: 0, ms: -1, on: null };  // 훑어 온 자리 — 재생은 앞으로만 가므로 이어 센다
+  var staffNowEls = [], staffNowKey = "";
+
+  function grabTimemap() {
+    vrvTimemap = null;
+    try {
+      const tm = vrvTk.renderToTimemap({ includeMeasures: false, includeRests: false });
+      // 판에 따라 배열 그대로 주기도 하고 JSON 문자열로 주기도 한다
+      vrvTimemap = typeof tm === "string" ? JSON.parse(tm) : tm;
+    } catch (e) { vrvTimemap = null; }
+    // 새로 그린 SVG라 옛 요소는 이미 떨어져 나갔다 — 훑던 자리도 표시도 처음부터
+    vrvWalk = { i: 0, ms: -1, on: null };
+    staffNowEls = []; staffNowKey = ""; staffNowSys = null;
+  }
+
+  // ms 시점에 **울리고 있는** 음표 id들. on/off를 차례로 걷어 '지금 켜져 있는 것'을 센다 —
+  // 마지막에 시작한 음표만 보면 총보에서 다른 파트의 긴 음이 꺼진다.
+  function vrvNotesAt(ms) {
+    if (!vrvTimemap) return null;
+    if (!vrvWalk.on || ms < vrvWalk.ms) vrvWalk = { i: 0, ms: -1, on: {} };   // 되감김
+    while (vrvWalk.i < vrvTimemap.length && vrvTimemap[vrvWalk.i].tstamp <= ms) {
+      const e = vrvTimemap[vrvWalk.i++];
+      (e.off || []).forEach(function (id) { delete vrvWalk.on[id]; });
+      (e.on || []).forEach(function (id) { vrvWalk.on[id] = 1; });
+    }
+    vrvWalk.ms = ms;
+    return Object.keys(vrvWalk.on);
+  }
+
+  // 현재 음표가 칸 밖으로 나가면 보이는 자리로 끌어온다.
+  // **세로는 줄(system)이 바뀔 때만 움직인다.** 음표마다 세로를 맞추면 음높이를 따라 악보가
+  // 위아래로 출렁여 읽을 수가 없다(2026-08-14 사용자 제보) — 한 줄을 지나는 동안 종이는
+  // 가만히 있어야 한다. 가로는 각을 두 줄에 걸쳐 쪼개지 않는 탓에 각이 창보다 넓을 수
+  // 있어(위 '#staffBody' CSS 주석) 그때만 따라간다.
+  // smooth를 안 쓰는 건 60ms마다 불리는 자리라 부드러운 스크롤이 서로를 밀어내기 때문.
+  var staffNowSys = null;
+  function scrollStaffTo(el) {
+    const body = $("staffBody");
+    if (!body) return;
+    const r = el.getBoundingClientRect();
+    if (!r.width && !r.height) return;      // 아직 그려지지 않았거나 숨은 요소
+    const b = body.getBoundingClientRect(), PAD = 40;
+    if (r.left < b.left + PAD || r.right > b.right - PAD) {
+      body.scrollLeft += (r.left + r.width / 2) - (b.left + b.width / 2);
+    }
+    const sys = el.closest ? el.closest("g.system") : null;
+    if (!sys || sys === staffNowSys) return;   // 같은 줄이면 세로는 손대지 않는다
+    staffNowSys = sys;
+    const sr = sys.getBoundingClientRect();
+    if (sr.top < b.top || sr.bottom > b.bottom) body.scrollTop += sr.top - b.top - 8;
+  }
+
+  // 재생 쪽(tick·stopPlayback)이 부르는 창구. ms=null이면 표시를 걷는다.
+  // 60ms마다 불리므로 **바뀐 것이 없으면 DOM을 안 건드린다** — 매번 다시 칠하면 긴 곡에서
+  // 눈에 띄게 버벅인다.
+  function staffPlayMark(ms) {
+    const body = $("staffBody");
+    if (!body) return;
+    const ids = (staffOpen && ms != null) ? (vrvNotesAt(ms) || []) : [];
+    const key = ids.join(",");
+    if (key === staffNowKey) return;
+    staffNowKey = key;
+    staffNowEls.forEach(function (el) { el.classList.remove("staff-now"); });
+    staffNowEls = [];
+    ids.forEach(function (id) {
+      const el = body.querySelector("[id=\"" + id + "\"]");
+      if (el) { el.classList.add("staff-now"); staffNowEls.push(el); }
+    });
+    if (staffNowEls.length) scrollStaffTo(staffNowEls[0]);
+  }
+  // 재생 표시가 제대로 짚는지는 눈 말고는 볼 길이 없어 창구를 하나 낸다
+  // (window.jgbAudioEvents·jgbShareLink와 같은 성격의 검증용 노출).
+  window.jgbStaffNow = function (ms) {
+    return { timemap: vrvTimemap && vrvTimemap.length, open: staffOpen,
+             at: ms == null ? null : vrvNotesAt(ms), marked: staffNowKey };
+  };
 
   function staffDraw() {
     const body = $("staffBody");
@@ -6167,6 +6271,7 @@
     if (pane) pane.hidden = !on;
     if ($("btnStaff")) $("btnStaff").classList.toggle("on", on);
     if (on) { loadVerovio(); staffDraw(); }   // 조판기는 여는 순간부터 뒤에서 불러 둔다
+    else staffPlayMark(null);                 // 닫으면 재생 표시도 함께 걷는다
   }
 
   function setStaffZoom(z, quiet) {
@@ -6598,7 +6703,7 @@
         viewLayouts[k] = c2;
       });
     }
-    layoutView = (parts.length > 1 && $("scoreView").checked) ? "score" : "part";
+    layoutView = scoreViewOn() ? "score" : "part";
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";

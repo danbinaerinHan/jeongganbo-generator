@@ -16,7 +16,7 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "matchSpecialNote", "tokenizeNotes", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "parseDaegang", "parseMelodyOffsets", "groupRowTokens",
    "jangguSoundOn", "sigimsaeSoundOn", "stripSymBracket", "midiToFreq", "scaleNotes", "makeScale",
-   "realizeMelody", "buildAudioEvents"],
+   "realizeMelody", "scoreViewOn", "buildAudioEvents"],
   { beats: "20", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
     jangdan: "", wantJangdan: false, playJanggu: false, playSigimsae: true },
   // 합주 파트는 이 검사의 관심 밖이라 '파트 하나'로 세워 둔다 — 여기서 보는 것은 한 가락이

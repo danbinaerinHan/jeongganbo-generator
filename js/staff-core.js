@@ -182,11 +182,78 @@
     return best;
   }
 
+  // ── 붙임줄로 가르기 ───────────────────────────────────────────────────
+  // 음표 하나로 안 떨어지는 길이를 **붙임줄로 이을 음표값 목록**으로 가른다.
+  // 이런 길이는 잇고 있는 음에서 흔하다 — 한 음을 세 정간 끌면 점4분음표 셋(7560)인데
+  // 어떤 음표에 점을 둘까지 붙여도 그 값이 없다. 예전엔 <type>을 비워 두고 악보
+  // 프로그램에 맡겼는데, 조판기(Verovio)는 음표꼴을 모르면 **기둥도 꼬리도 없는 머리**만
+  // 그린다(2026-08-14 사용자 제보). 길이는 맞아도 악보로는 못 읽는 그림이다.
+  //
+  // 가르는 자리는 **모음박(beat = 정간 하나)** 이 정한다. 그냥 긴 것부터 집으면
+  // 7560이 온음표(6720) + 8분음표(840)가 되어 박을 가로지르는데, 12/8에서 세 박을
+  // 그렇게 적는 악보는 없다 — 점2분음표 ⌒ 점4분음표라야 박이 보인다.
+  //   ① 박에 **들어가는** 첫 조각은 경계까지 끊고 **짧은 것부터**(관행: 박 앞은 짧게)
+  //   ② 경계에 올라선 뒤로는 **온전한 박을 한 음표로 최대한 길게**(3박은 안 되니 2박+1박)
+  //   ③ 남는 꼬리는 긴 것부터
+  // 2의 거듭제곱으로 안 나뉘는 길이(5·7분박)는 붙임줄로도 못 적으므로 null을 준다 —
+  // 그때는 부르는 쪽이 예전처럼 음표꼴을 비운다(억지로 적느니 비워 두는 쪽이 정직하다).
+  //   units = 가를 길이 · off = 마디 안에서 이 음이 시작하는 자리 · beat = 모음박(정간) 길이
+  const VALUES = (function () {
+    // 길이가 정수인 음표값만 후보다 — <duration>은 정수라야 한다(점 붙은 64분음표는 탈락).
+    const v = [];
+    TYPES.forEach(function (t) {
+      for (let d = 0; d <= 2; d++) {
+        const u = t[1] * 4 * DIV * (2 - Math.pow(0.5, d));
+        if (Number.isInteger(u) && v.indexOf(u) < 0) v.push(u);
+      }
+    });
+    return v.sort(function (a, b) { return b - a; });
+  })();
+
+  function greedyValues(len) {
+    const out = [];
+    let r = len;
+    while (r > 0) {
+      let v = 0;
+      for (let i = 0; i < VALUES.length; i++) if (VALUES[i] <= r) { v = VALUES[i]; break; }
+      if (!v || out.length >= 32) return null;   // 못 적는 길이
+      out.push(v); r -= v;
+    }
+    return out;
+  }
+
+  function tiedSplit(units, off, beat) {
+    if (!(units > 0) || !(beat > 0) || exactValue(units)) return null;
+    const out = [];
+    let r = units;
+    const o = ((off % beat) + beat) % beat;
+    const into = o ? beat - o : 0;      // 다음 모음박 경계까지 남은 길이
+    if (into && r > into) {             // ① 경계까지 끊는다(경계를 못 넘으면 ③이 맡는다)
+      const head = greedyValues(into);
+      if (!head) return null;
+      head.reverse();                   // 박으로 들어가는 쪽은 짧은 것부터
+      head.forEach(function (v) { out.push(v); });
+      r -= into;
+    }
+    while (r >= beat) {                 // ② 온전한 박 — 한 음표로 적히는 가장 긴 묶음부터
+      let k = Math.floor(r / beat), v = 0;
+      for (; k >= 1; k--) if (exactValue(k * beat)) { v = k * beat; break; }
+      if (!v) break;                    // beat 자체가 음표값이라 실제로는 안 걸린다
+      out.push(v); r -= v;
+    }
+    if (r > 0) {                        // ③ 꼬리 — 긴 것부터
+      const tail = greedyValues(r);
+      if (!tail) return null;
+      tail.forEach(function (v) { out.push(v); });
+    }
+    return out.length > 1 ? out : null;
+  }
+
   root.JGB_STAFF_CORE = {
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF,
     timeSig: timeSig, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
-    exactValue: exactValue, nearestValue: nearestValue
+    exactValue: exactValue, nearestValue: nearestValue, tiedSplit: tiedSplit
   };
 })(typeof window !== "undefined" ? window : globalThis);

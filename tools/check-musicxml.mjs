@@ -17,7 +17,7 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffScoreOf", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
@@ -113,9 +113,61 @@ console.log("\n각을 넘는 지속 — 소리가 끊기고 쉼표로 적히는�
      JSON.stringify(second));
   const third = ms[2].filter((n) => !n.grace)[0];
   eq("셋째 마디는 새 음(태)으로 시작", [third.rest, midiOf(third)], [false, P("태")]);
-  // 같은 각 안의 빈 정간은 예전대로 잇는다 — 위 '빈 정간(앞 음 지속)' 검사와 짝
+  // 같은 각 안의 빈 정간은 예전대로 잇는다 — 위 '빈 정간(앞 음 지속)' 검사와 짝.
+  // 세 정간을 끄는 길이(7560)는 음표 하나로 안 떨어져 **붙임줄로 갈라** 적히므로(아래 절)
+  // '음표가 몇 개인가'가 아니라 '이어진 조각의 합이 얼마인가'로 본다 — 소리는 한 음이다.
   const within = parseMeasures(xmlOf("황| | |임", 4))[0].filter((n) => !n.grace);
-  eq("제 각 안의 빈 정간은 그대로 잇는다(음 둘뿐)", [within.length, within[0].dur], [2, 3 * JG]);
+  const heldSum = within.slice(0, -1).reduce((a, n) => a + n.dur, 0);
+  eq("제 각 안의 빈 정간은 그대로 잇는다(이어진 황 + 임)",
+     [heldSum, within[within.length - 1].dur, within.every((n) => !n.rest)],
+     [3 * JG, JG, true]);
+}
+
+console.log("\n음표꼴이 없는 길이 — 붙임줄로 갈라 적는가");
+{
+  // 조판기(Verovio)는 <type>이 없으면 **기둥도 꼬리도 없는 머리**만 그린다(2026-08-14
+  // 사용자 제보). 그래서 음표 하나로 안 떨어지는 길이는 모음박(정간)을 기준으로 갈라
+  // 붙임줄로 잇는다 — 셈은 js/staff-core.js의 tiedSplit 한 곳에 있다.
+  const shape = (n) => (n.match(/<type>(\w+)<\/type>/) || [])[1] + ".".repeat((n.match(/<dot\/>/g) || []).length);
+  const notesOf = (xml) => xml.split("<measure ")[1].split("<note>").slice(1);
+
+  // 세 정간(7560)은 점2분 ⌒ 점4분 — 긴 것부터 집으면 온음표+8분음표가 되어 박을 가로지른다
+  const n3 = notesOf(xmlOf("황| | |임", 4));
+  eq("세 정간 지속 = 점2분음표 ⌒ 점4분음표",
+     [shape(n3[0]), shape(n3[1]), shape(n3[2])], ["half.", "quarter.", "quarter."]);
+  ok("가른 조각은 붙임줄로 이어진다",
+     n3[0].includes("<tie type=\"start\"/>") && n3[0].includes("<tied type=\"start\"/>") &&
+     n3[1].includes("<tie type=\"stop\"/>") && !n3[1].includes("<tie type=\"start\"/>"),
+     n3[0] + n3[1]);
+  ok("이어진 뒤 음은 같은 음높이", midiOf(parseMeasures(xmlOf("황| | |임", 4))[0][0]) === P("황"));
+
+  // 딱 떨어지는 길이는 안 가른다 — 네 정간은 점온음표 하나 그대로
+  const n4 = notesOf(xmlOf("황| | | ", 4));
+  eq("네 정간 지속은 점온음표 하나(가르지 않는다)", [n4.length, shape(n4[0])], [1, "whole."]);
+
+  // 박으로 **들어가는** 조각은 짧은 것부터 — 반 정간에서 시작해 두 정간을 더 끄는 음(6300)은
+  // 점8분 ⌒ 점2분이라야 박이 보인다(점2분 ⌒ 점8분이면 박을 가로지른다)
+  const nIn = notesOf(xmlOf("황태|  | |임", 4));
+  eq("박에 들어가는 조각은 짧은 것부터", [shape(nIn[1]), shape(nIn[2])], ["eighth.", "half."]);
+
+  // 2의 거듭제곱으로 안 나뉘는 길이는 붙임줄로도 못 적는다 — 예전대로 음표꼴을 비운다
+  const n5 = notesOf(xmlOf("황태중임남|임|남|황", 4));
+  ok("5분박은 여전히 음표꼴 없이 하나로", !n5[0].includes("<type>") && n5[0].includes("<duration>504</duration>"));
+
+  // 갈라도 길이의 합은 그대로라야 한다 — 마디가 어긋나면 악보 프로그램이 마디를 다시 짠다
+  [["세 정간 지속", "황| | |임", 4], ["다섯 정간 각을 통째로", "황| | | | ", 5],
+   ["반 정간에서 시작", "황태|  | |임", 4]].forEach(([label, mel, beats]) => {
+    const sums = parseMeasures(xmlOf(mel, beats))
+      .map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+    ok(`가른 뒤에도 마디가 딱 찬다 — ${label}`, sums.every((v) => v === beats * JG),
+       `마디 길이: [${sums}]`);
+  });
+
+  // 임시표는 이어지는 뒤 조각에 다시 안 적힌다(같은 음이 이어지는 것뿐이다).
+  // 대(E♮)는 황종 평조의 조표(♭4 = A♭장조) 밖이라 임시표가 붙는다.
+  const nAcc = notesOf(xmlOf("대| | |임", 4));
+  eq("임시표는 첫 조각에만",
+     [nAcc[0].includes("<accidental>"), nAcc[1].includes("<accidental>")], [true, false]);
 }
 
 console.log("\n조표 — 음계의 '도'를 으뜸음으로 삼는 조를 고르는가");
