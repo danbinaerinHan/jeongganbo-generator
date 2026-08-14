@@ -170,6 +170,66 @@ console.log("\n음표꼴이 없는 길이 — 붙임줄로 갈라 적는가");
      [nAcc[0].includes("<accidental>"), nAcc[1].includes("<accidental>")], [true, false]);
 }
 
+console.log("\n셋잇단과 붙임줄이 얽히는 자리 — 4분음표 정간(3분박)");
+{
+  // 취타 길타령에서 음표꼴이 통째로 비고 잇단이 정간을 넘었던 자리다(2026-08-14 사용자 제보).
+  // 3분박 박에서는 값이 560의 배수라 2의 거듭제곱 값만으로는 못 적는다 — staff-core의
+  // fragment가 3/2배 자리에서 갈라 되돌린다. 잇단 여부도 '한 박 안에 드는가'를 함께 본다.
+  app.fields.staffUnit = "plain";
+  const notesOf = (xml) => xml.split("<measure ")[1].split("<note>").slice(1)
+    .filter((n) => !n.includes("<grace"));
+  const shape = (n) => ((n.match(/<type>(\w+)<\/type>/) || [])[1] || "－") +
+    ".".repeat((n.match(/<dot\/>/g) || []).length) + (n.includes("time-modification") ? "³" : "");
+  const JGP = 1680;   // 4분음표 정간
+
+  // ① 박을 걸친 지속 — 잇단 조각에서 끊고 붙임줄로 잇는다
+  const a = notesOf(xmlOf("황태중|- 태|임|남", 4));
+  eq("박을 걸친 지속은 3잇단 조각 ⌒ 표준값",
+     [shape(a[2]), a[2].includes("<tie type=\"start\"/>"), shape(a[3])],
+     ["eighth³", true, "eighth"]);
+  // ② 두 정간을 더 끄는 지속 — 예전엔 '점점2분음표 3:2' 하나로 나왔다
+  const b = notesOf(xmlOf("황태중| | |임", 4));
+  eq("두 정간을 더 끌면 3잇단 8분 ⌒ 2분음표", [shape(b[2]), shape(b[3])], ["eighth³", "half"]);
+  // ③ 박 한가운데서 시작해 박을 넘는 음은 한 음표로 떨어져도 가른다 — 안 그러면 걸친
+  //    잇단 묶음이 반 토막으로 남는다
+  const c = notesOf(xmlOf("황태중|- - 태|임|남", 4));
+  eq("박 한가운데서 넘는 음도 박에서 가른다", [shape(c[2]), shape(c[3])], ["eighth³", "quarter³"]);
+
+  const MELS = [["황태중|- 태|임|남", 4], ["황태중| | |임", 4], ["황태중|- - 태|임|남", 4]];
+  MELS.forEach(([mel, bt]) => {
+    const ns = notesOf(xmlOf(mel, bt));
+    let off = 0, cross = 0, noType = 0;
+    ns.forEach((n) => {
+      const d = Number((n.match(/<duration>(\d+)</) || [0, 0])[1]);
+      if (!n.includes("<type>")) noType++;
+      if (n.includes("time-modification") && (off % JGP) + d > JGP + 1e-6) cross++;
+      off += d;
+    });
+    ok(`잇단이 박을 안 넘고 음표꼴이 다 있다 — ${mel}`, !cross && !noType,
+       `박을 넘는 잇단 ${cross} · 음표꼴 없음 ${noType}`);
+    ok(`마디가 딱 찬다 — ${mel}`, off === bt * JGP, `마디 길이: ${off}`);
+  });
+  app.fields.staffUnit = "dotted";
+}
+
+console.log("\n정간 단위 '자동' — 각의 정간 수가 정한다");
+{
+  // 12정간을 점4분음표로 보면 36/8이라 한 마디가 터무니없이 길다(2026-08-14 사용자 확정).
+  app.fields.staffUnit = "auto";
+  const twelve = new Array(12).fill("황").join("|");
+  const x12 = xmlOf(twelve, 12);
+  ok("12정간 각은 8분음표 — 12/8, 정간 하나가 840",
+     x12.includes("<beats>12</beats><beat-type>8</beat-type>") &&
+     parseMeasures(x12)[0][0].dur === 840,
+     `정간 길이: ${parseMeasures(x12)[0][0].dur}`);
+  const x4 = xmlOf("황|태|중|임", 4);
+  ok("그 밖의 각은 점4분음표 — 정간 하나가 2520",
+     parseMeasures(x4)[0][0].dur === 2520, `정간 길이: ${parseMeasures(x4)[0][0].dur}`);
+  // 문서에 적힌 값은 그대로 이긴다 — 옛 문서가 조용히 달라지지 않는다
+  app.fields.staffUnit = "dotted";
+  ok("고른 값이 있으면 그 값이 이긴다", parseMeasures(xmlOf(twelve, 12))[0][0].dur === 2520);
+}
+
 console.log("\n빔 — 꼬리 있는 음표를 한 박 안에서 잇는가");
 {
   // 낱개 깃발로 두면 꼬리 숲이 되어 못 읽는다(2026-08-14 사용자 요청). 무엇이 한 박인지는

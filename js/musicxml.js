@@ -156,82 +156,69 @@
             noteEl({ midi: g, grace: true, beams: v ? [v, v] : null }, s.fifths);
           });
         }
-        // 셋잇단 — 표준 음표값으로 안 떨어지되(4분음표 정간의 3분박 등) 3/2배가 딱 떨어지면
-        // 그 꼴에 3:2를 달아 적는다(음길이·마디 합은 그대로). 5·7분박은 여전히 음표꼴 없이
-        // 간다(쓰지 않기로 확정, 2026-08-14 — 억지 잇단보다 비워 두는 쪽이 정직하다).
-        const tups = m.map(function (n) {
-          if (C.exactValue(n.units) || (n.units * 3) % 2) return null;
-          const ty = C.exactValue(n.units * 3 / 2);
-          return ty ? { actual: 3, normal: 2, ty: ty } : null;
-        });
-        // 잇단 묶음(괄호·숫자 3)의 경계 — 같은 정간 안에서 **길이 합이 표준 음표값이 되는
-        // 자리**에서 닫는다. 정간 통째로 한 묶음이면 3분박×3(16분 셋잇단 아홉 개)이 9개짜리
-        // 한 묶음이 되어 3:2라는 비율과 안 맞고 조판기가 못 그린다(2026-08-14 사용자 제보) —
-        // 280×3=840(8분음표)에서 닫아야 분박마다 제 괄호가 붙는다.
-        const groups = [];
-        let run = [], runSum = 0;
-        function closeRun() { if (run.length) groups.push(run); run = []; runSum = 0; }
-        m.forEach(function (n, i) {
-          const t = tups[i];
-          if (!t) { closeRun(); return; }
-          if (run.length && m[run[0]].cell !== n.cell) closeRun();
-          run.push(i); runSum += n.units;
-          if (C.exactValue(runSum)) closeRun();
-        });
-        closeRun();
-        // 묶음마다 tuplet 시작/끝을, 꼬리 있는 같은 꼴로만 채워진 묶음이면 빔도 잇는다
-        // (8분 셋잇단이 낱개 깃발로 흩어지지 않게). 꼴이 섞인 묶음은 안 잇는다 — 겹 수가
-        // 다른 빔의 부분 연결(hook)까지 적으려면 셈이 한 층 더 필요한데 그런 악보가 아직 없다.
         const FLAG_N = { eighth: 1, "16th": 2, "32nd": 3, "64th": 4 };
-        const marks = new Array(m.length).fill(null);
-        groups.forEach(function (g) {
-          const beamOk = g.length >= 2 && g.every(function (i) {
-            return !m[i].rest && FLAG_N[tups[i].ty.type] && !tups[i].ty.dots &&
-                   tups[i].ty.type === tups[g[0]].ty.type;
-          });
-          g.forEach(function (i, k) {
-            marks[i] = {
-              tupStart: k === 0, tupStop: k === g.length - 1,
-              beam: !beamOk ? null : k === 0 ? "begin" : k === g.length - 1 ? "end" : "continue"
-            };
-          });
-        });
         // ── 낼 음표로 펴기 ──
-        // 음표꼴이 없는 길이는 **붙임줄로 갈라** 적는다 — 조판기는 음표꼴을 모르면 기둥도
-        // 꼬리도 없는 머리만 그린다. 가르는 자리는 모음박(정간 = s.jg)이 정하고, 셈은
-        // staff-core의 tiedSplit 한 곳에 있다(2026-08-14 사용자 요청).
-        // 잇단으로 적히는 것(tups)은 이미 제 꼴이 있으므로 대상이 아니고, 2의 거듭제곱으로
-        // 안 나뉘는 5·7분박은 tiedSplit이 null을 주어 예전처럼 음표꼴 없이 나간다.
-        // 가른 조각까지 여기서 다 펴 두어야 **그 위에 빔을 얹을 수 있다** — 조각도 꼬리가
-        // 있으면 이웃과 묶여야 하므로, 가르기와 빔을 한 벌의 목록 위에서 잇달아 셈한다.
+        // **길이 하나를 어떻게 적을 것인가는 staff-core의 writeAs가 정한다** — 음표 하나로
+        // 떨어지면 그대로, 한 박 안에 들면서 3/2배가 떨어지면 셋잇단, 아니면 박을 기준으로
+        // 갈라 붙임줄로 잇는다. 여기서 그 답을 **펴 두어야** 잇단 묶음과 빔을 그 위에 얹을
+        // 수 있다 — 가르기를 내는 도중에 하면 조각이 잇단 묶음에도 빔에도 안 잡힌다.
+        // 못 적는 길이(5·7분박)는 null이 오므로 예전처럼 음표꼴 없이 하나로 낸다.
         const beat = s.jg || C.JG[s.unit] || C.JG.dotted;
         const items = [];
         let off = 0;
-        m.forEach(function (n, i) {
-          const t = tups[i], mk = marks[i] || {};
-          const cut = (!t && !n.rest && !C.exactValue(n.units))
-            ? C.tiedSplit(n.units, off, beat) : null;
-          if (cut) {
-            let at = off;
-            cut.forEach(function (u, k) {
-              items.push({ src: n, off: at, units: u, rest: false,
-                // 조각 사이는 늘 이어지고, 양 끝은 원래 음이 지고 있던 붙임줄을 물려받는다
-                tieStop: k > 0 || n.tieStop,
-                tieStart: k < cut.length - 1 || n.tieStart,
-                noAcc: k > 0,
-                graces: k === 0 ? n.graces : null,
-                afters: k === cut.length - 1 ? n.afters : null });
-              at += u;
+        m.forEach(function (n) {
+          const pieces = C.writeAs(n.units, off, beat) || [{ units: n.units, tup: false }];
+          let at = off;
+          pieces.forEach(function (p, k) {
+            items.push({
+              src: n, off: at, units: p.units, rest: !!n.rest,
+              tup: p.tup ? C.tupletValue(p.units) : null,
+              // 조각 사이는 늘 이어지고, 양 끝은 원래 음이 지고 있던 붙임줄을 물려받는다.
+              // 쉼표는 이을 것이 없으므로 갈라도 붙임줄을 안 단다.
+              tieStop: n.rest ? false : (k > 0 || n.tieStop),
+              tieStart: n.rest ? false : (k < pieces.length - 1 || n.tieStart),
+              noAcc: k > 0,
+              graces: k === 0 ? n.graces : null,
+              afters: k === pieces.length - 1 ? n.afters : null
             });
-          } else {
-            items.push({ src: n, off: off, units: n.units, rest: !!n.rest,
-                         tup: t, tupStart: t && mk.tupStart, tupStop: t && mk.tupStop,
-                         tupBeam: mk.beam, tupN: t ? FLAG_N[t.ty.type] : 0,
-                         tieStart: n.tieStart, tieStop: n.tieStop,
-                         graces: n.graces, afters: n.afters });
-          }
+            at += p.units;
+          });
           off += n.units;
         });
+
+        // ── 잇단 묶음 ──
+        // 괄호(숫자 3)의 경계는 **같은 박 안에서 길이 합이 표준 음표값이 되는 자리마다**
+        // 닫는다. 박 통째로 한 묶음이면 3분박×3(16분 셋잇단 아홉)이 9개짜리 3:2 묶음이 되어
+        // 비율과 안 맞고 조판기가 못 그린다(2026-08-14 사용자 제보) — 280×3=840(8분음표)에서
+        // 닫아야 분박마다 제 괄호가 붙는다.
+        // 꼬리 있는 같은 꼴로만 채워진 묶음이면 빔도 잇는다(8분 셋잇단이 낱개 깃발로
+        // 흩어지지 않게). 꼴이 섞인 묶음은 안 잇는다 — 겹 수가 다른 빔의 부분 연결까지
+        // 적으려면 셈이 한 층 더 필요한데 그런 악보가 아직 없다.
+        const beatNo = function (o) { return Math.floor(o / beat + 1e-6); };
+        let run = [], runSum = 0;
+        function closeRun() {
+          if (run.length) {
+            const beamOk = run.length >= 2 && run.every(function (it) {
+              return !it.rest && FLAG_N[it.tup.ty.type] && !it.tup.ty.dots &&
+                     it.tup.ty.type === run[0].tup.ty.type;
+            });
+            run.forEach(function (it, k) {
+              it.tupStart = k === 0; it.tupStop = k === run.length - 1;
+              if (beamOk) {
+                const v = k === 0 ? "begin" : k === run.length - 1 ? "end" : "continue";
+                it.beams = new Array(FLAG_N[it.tup.ty.type]).fill(v);
+              }
+            });
+          }
+          run = []; runSum = 0;
+        }
+        items.forEach(function (it) {
+          if (!it.tup) { closeRun(); return; }
+          if (run.length && beatNo(run[0].off) !== beatNo(it.off)) closeRun();
+          run.push(it); runSum += it.units;
+          if (C.exactValue(runSum)) closeRun();
+        });
+        closeRun();
 
         // ── 빔 ──
         // 꼬리 있는 음표(8분음표 이하)를 **한 박 안에서** 잇는다 — 낱개 깃발로 두면 꼬리
@@ -278,14 +265,11 @@
 
         items.forEach(function (it) {
           graceRun(it.graces);
+          // 빔은 잇단 묶음이 얹었거나(위 closeRun) 이 절이 얹은 것 — 둘 다 it.beams에 있다
           noteEl(Object.assign({}, it.src, {
             units: it.units, rest: it.rest, noAcc: it.noAcc,
             tup: it.tup, tupStart: it.tupStart, tupStop: it.tupStop,
-            tieStart: it.tieStart, tieStop: it.tieStop,
-            // 잇단은 제 묶음이 정한 빔을 겹 수만큼 그대로 쓴다(겹마다 값이 같다)
-            beams: it.tup
-              ? (it.tupBeam ? new Array(it.tupN || 1).fill(it.tupBeam) : null)
-              : it.beams
+            tieStart: it.tieStart, tieStop: it.tieStop, beams: it.beams
           }), s.fifths);
           graceRun(it.afters);
         });

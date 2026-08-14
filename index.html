@@ -776,8 +776,12 @@
 · 분박이 셋이면 점4분음표, 둘이면 4분음표·8분음표라야 딱 떨어집니다
 · 각이 길면 8분음표 쪽이 마디가 짧아 읽기 좋습니다
 · 각 하나가 한 마디이므로 박자표가 여기서 정해집니다">정간
+            <!-- 기본은 '자동' — 12정간 각은 8분음표(12/8), 그 밖은 점4분음표.
+                 12정간을 점4분음표로 보면 36/8이라 한 마디가 터무니없이 길어진다
+                 (2026-08-14 사용자 확정). 고른 값은 문서에 딸려 가므로 옛 문서는 제 값 그대로다. -->
             <select id="staffUnit">
-              <option value="dotted" selected>점4분음표</option>
+              <option value="auto" selected>자동</option>
+              <option value="dotted">점4분음표</option>
               <option value="plain">4분음표</option>
               <option value="eighth">8분음표</option>
             </select>

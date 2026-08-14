@@ -208,6 +208,16 @@
     return out;
   }
 
+  // ── 셋잇단 ────────────────────────────────────────────────────────────
+  // 표준 음표값으로 안 떨어지되 **3/2배가 딱 떨어지면** 그 꼴에 3:2를 달아 적는다
+  // (4분음표 정간의 3분박이 이 경우다 — 560은 값이 없지만 840은 8분음표다).
+  // 길이(<duration>)는 그대로이므로 마디 합은 안 바뀐다.
+  function tupletValue(units) {
+    if (!(units > 0) || (units * 3) % 2) return null;
+    const ty = exactValue(units * 3 / 2);
+    return ty ? { actual: 3, normal: 2, ty: ty } : null;
+  }
+
   // ── 붙임줄로 가르기 ───────────────────────────────────────────────────
   // 음표 하나로 안 떨어지는 길이를 **붙임줄로 이을 음표값 목록**으로 가른다.
   // 이런 길이는 잇고 있는 음에서 흔하다 — 한 음을 세 정간 끌면 점4분음표 셋(7560)인데
@@ -248,31 +258,70 @@
     return out;
   }
 
+  // 박 안에 드는 조각 하나를 적을 수 있는 꼴로. 표준 음표값 → 셋잇단 → 표준값 여럿 →
+  // **셋잇단 여럿** 순으로 시도한다. 마지막 갈래가 필요한 것은 3분박 박에서다: 4분음표
+  // 정간의 3분박은 값이 560의 배수라 2의 거듭제곱 값만으로는 1400(2.5분박) 같은 길이를
+  // 못 적는다(실제로 취타 길타령에서 음표꼴이 통째로 비었다 — 2026-08-14 사용자 제보).
+  // 3/2배 자리에서 갈라 되돌리면 1400 = 1120(3잇단 4분) + 280(3잇단 16분)이 된다.
+  function fragment(len) {
+    if (exactValue(len)) return [{ units: len, tup: false }];
+    if (tupletValue(len)) return [{ units: len, tup: true }];
+    const bin = greedyValues(len);
+    if (bin) return bin.map(function (v) { return { units: v, tup: false }; });
+    if ((len * 3) % 2 === 0) {
+      const tri = greedyValues(len * 3 / 2);
+      // 값은 전부 DIV/16의 배수이고 DIV가 3으로 나뉘므로 되돌린 길이도 정수다
+      if (tri && tri.every(function (v) { return (v * 2) % 3 === 0; })) {
+        return tri.map(function (v) { return { units: v * 2 / 3, tup: true }; });
+      }
+    }
+    return null;
+  }
+
   function tiedSplit(units, off, beat) {
-    if (!(units > 0) || !(beat > 0) || exactValue(units)) return null;
     const out = [];
     let r = units;
     const o = ((off % beat) + beat) % beat;
     const into = o ? beat - o : 0;      // 다음 모음박 경계까지 남은 길이
     if (into && r > into) {             // ① 경계까지 끊는다(경계를 못 넘으면 ③이 맡는다)
-      const head = greedyValues(into);
+      const head = fragment(into);
       if (!head) return null;
       head.reverse();                   // 박으로 들어가는 쪽은 짧은 것부터
-      head.forEach(function (v) { out.push(v); });
+      head.forEach(function (p) { out.push(p); });
       r -= into;
     }
     while (r >= beat) {                 // ② 온전한 박 — 한 음표로 적히는 가장 긴 묶음부터
       let k = Math.floor(r / beat), v = 0;
       for (; k >= 1; k--) if (exactValue(k * beat)) { v = k * beat; break; }
       if (!v) break;                    // beat 자체가 음표값이라 실제로는 안 걸린다
-      out.push(v); r -= v;
+      out.push({ units: v, tup: false }); r -= v;
     }
     if (r > 0) {                        // ③ 꼬리 — 긴 것부터
-      const tail = greedyValues(r);
+      const tail = fragment(r);
       if (!tail) return null;
-      tail.forEach(function (v) { out.push(v); });
+      tail.forEach(function (p) { out.push(p); });
     }
-    return out.length > 1 ? out : null;
+    return out.length ? out : null;
+  }
+
+  // **길이 하나를 실제로 어떻게 적을 것인가** — 내보내기가 쓰는 창구.
+  //   [{ units, tup }] · 적을 길이가 아니면 null(부르는 쪽이 음표꼴 없이 하나로 낸다).
+  // 차례가 곧 규칙이다: ① 음표 하나로 떨어지면 그대로 ② **한 박 안에 들면서** 셋잇단으로
+  // 떨어지면 셋잇단 ③ 아니면 박을 기준으로 갈라 붙임줄로 잇는다.
+  // ②의 '한 박 안에' 조건이 없으면 정간을 걸친 음이 통째로 셋잇단이 되어(길타령에서
+  // '점점2분음표 3:2'가 나왔다) 잇단이 박을 가로지른다 — 셋잇단은 한 박 안의 일이다.
+  function writeAs(units, off, beat) {
+    if (!(units > 0) || !(beat > 0)) return null;
+    const o = ((off % beat) + beat) % beat;
+    // **박 한가운데서 시작해 박을 넘는 음은 한 음표로 떨어지더라도 박에서 가른다.**
+    // 안 그러면 그 음이 걸치고 있던 잇단 묶음이 반 토막으로 남아 박이 안 보인다 —
+    // 3분박 박의 셋째 자리에서 시작해 다음 박까지 끄는 음이 4분음표 하나로 적히면,
+    // 남은 두 음만으로 '3' 괄호가 쳐지고 다음 박에도 외톨이 잇단이 생겼다.
+    // 박 머리에서 시작하는 음은 그대로 둔다 — 12/8의 점2분음표(두 정간)는 제 꼴이다.
+    const crossesFromMid = o > 0 && o + units > beat + 1e-6;
+    if (!crossesFromMid && exactValue(units)) return [{ units: units, tup: false }];
+    if (o + units <= beat + 1e-6 && tupletValue(units)) return [{ units: units, tup: true }];
+    return tiedSplit(units, off, beat);
   }
 
   root.JGB_STAFF_CORE = {
@@ -281,6 +330,6 @@
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
     exactValue: exactValue, nearestValue: nearestValue,
-    beatGroups: beatGroups, tiedSplit: tiedSplit
+    beatGroups: beatGroups, tupletValue: tupletValue, writeAs: writeAs
   };
 })(typeof window !== "undefined" ? window : globalThis);
