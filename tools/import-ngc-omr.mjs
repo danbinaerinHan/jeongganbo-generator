@@ -211,14 +211,22 @@ const scoreLayoutFor = (nParts) =>
   ({ ...LAYOUT_COMMON, gakPerRow: String(Math.max(1, Math.floor(16 / Math.max(1, nParts)))) });
 const PART_LAYOUT = { ...LAYOUT_COMMON, gakPerRow: "10" };
 
+// 대강 — 앱의 대표 패턴(app.js DAEGANG_PRESET)과 같은 값을 문서에 **명시적으로** 싣는다
+// (10정간 3·2·2·3, 12정간 3·3·3·3, 16정간 11·5, 20정간 6·4·4·6 — 2026-08-14 사용자 확정).
+// 칸을 비워 두면 열 때 이전 문서의 대강이 남아 '합이 안 맞아 적용 안 함'이 되거나, 기본
+// 각이 대강 없이 그려진다. 표에 없는 길이(4·6·8·18)는 빈 값 = 대강 없음. 각 길이가 섞인
+// 곡의 다른 길이 각은 앱이 DAEGANG_PRESET에서 알아서 찾는다(daegangTextFor).
+const DAEGANG = { 10: "3 2 2 3", 12: "3 3 3 3", 16: "11 5", 20: "6 4 4 6" };
+
 function docOf(p) {
   const scoreView = p.parts.length > 1;
+  const daegang = DAEGANG[p.beats] || "";
   return {
     v: 2,
     controls: {
       beats: String(p.beats), gakBeats: p.gakBeats, gakCount: String(p.gakCount),
       title: p.title, hwangPitch: "63",     // 데이터셋 오선보가 황=E♭(fifths -4)로 적혀 있다
-      scoreView,
+      scoreView, daegang,
       wantJangdan: false, wantTempo: false,
       ...(scoreView ? scoreLayoutFor(p.parts.length) : PART_LAYOUT)
     },
@@ -226,7 +234,9 @@ function docOf(p) {
     jangdan: "", parts: p.parts, activePart: 0,
     // 총 각 수를 우리가 못 박았으니 '사용자가 적은 것'으로 둔다 — 안 그러면 페이지 채움이
     // 이 값을 덮어 각 수가 종이에 맞춰 늘어난다(app.js gakUserSet).
-    gakUserSet: true, daegangAuto: "",
+    // daegangAuto를 대강과 같은 값으로 — '자동으로 채워진 값'이라는 표시라, 나중에 정간
+    // 수를 바꾸면 프리셋이 따라 갈아끼워진다(다르면 '사용자가 적은 값'으로 굳는다).
+    gakUserSet: true, daegangAuto: daegang,
     customTexts: [], gakNames: {}, gakNameOffs: {}
   };
 }
