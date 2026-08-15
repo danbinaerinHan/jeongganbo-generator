@@ -237,7 +237,7 @@
         // 것이 조판 관행이라 저들도 그렇게 한다 — 길타령에서 잇단 32개 중 26개가 괄호였다,
         // 2026-08-14 사용자 제보). 겹이 다른 자리를 잇는 몽당빔 셈이 아래에 이미 있으므로
         // 갈래를 나눌 까닭이 없어졌다. 잇단과 보통 음표를 한 빔에 섞지는 않는다(it.grp).
-        const jgGroup = C.beatGroups(s.unit, mb, s.daegang);
+        const jgGroup = C.beatGroups(s.unit, mb, s.daegang, (s.measOff || [])[mi] || 0);
         const beatOf = function (o) {
           const j = Math.floor(o / beat + 1e-6);
           return jgGroup[Math.max(0, Math.min(jgGroup.length - 1, j))];

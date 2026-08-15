@@ -22,10 +22,10 @@ const app = await loadApp(
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
    "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SCALE",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffScoreOf", "scoreViewOn", "buildStaffScores",
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarBeats", "staffScoreOf", "scoreViewOn", "buildStaffScores",
    "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", staffPerLine: "auto",
+    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", staffPerLine: "auto", staffBar: "auto",
     daegang: "", paperSize: "A4", orientation: "portrait", pageFill: "0",
     paperW: "210", paperH: "297" },
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
@@ -472,6 +472,41 @@ console.log("\n인쇄 — 종이에 맞춰 쪽을 나누는가");
   ok("종이 상자는 mm 좌표에 흰 바탕", wrapped.includes('viewBox="0 0 210 297"') &&
      wrapped.includes('fill="#fff"'));
   app.fields.beats = "4";
+}
+
+console.log("\n각을 여러 마디로 나누면 — 마디줄과 빔 묶음이 함께 따라오는가");
+{
+  const MEL12 = Array(12).fill("황").join("|");
+  const bars = (svg) => (svg.match(/class="sv-bar[ "]/g) || []).length;
+
+  app.fields.staffUnit = "eighth";
+  app.fields.staffBar = "auto";
+  const whole = STAFF.render(scoresOf(MEL12, 12), { width: 2400, scale: 1.6 });
+  ok("각 전체가 한 마디 — 마디줄 하나", bars(whole) === 1, `마디줄 ${bars(whole)}개`);
+
+  app.fields.staffBar = "3";
+  const sc = scoresOf(MEL12, 12);
+  ok("3정간씩 — 마디가 넷", sc[0].measures.length === 4);
+  ok("마디마다 3정간", JSON.stringify(sc[0].measBeats) === "[3,3,3,3]");
+  ok("마디의 각 안 자리(measOff)가 0·3·6·9", JSON.stringify(sc[0].measOff) === "[0,3,6,9]");
+  const split = STAFF.render(sc, { width: 2400, scale: 1.6 });
+  ok("3정간씩 — 마디줄이 넷", bars(split) === 4, `마디줄 ${bars(split)}개`);
+  ok("나눠도 음표는 다 그려진다", drawn(split) === heads(sc));
+
+  // 빔 묶음 — 8분음표 단위에서는 대강이 박을 정한다. 마디가 대강 안 어디서 시작하는지를
+  // 넘겨야(measOff) 빔이 대강 경계에서 끊긴다. 대강 3,3,3,3에 3정간 마디면 마디가 곧 한 박.
+  const G = CORE.beatGroups;
+  ok("대강 3,3,3,3 · 3정간 마디 — 어느 마디든 한 묶음",
+     JSON.stringify(G("eighth", 3, [3, 3, 3, 3], 0)) === "[0,0,0]" &&
+     JSON.stringify(G("eighth", 3, [3, 3, 3, 3], 6)) === "[0,0,0]");
+  ok("대강 안 한가운데서 시작하면 그 자리에서 끊긴다",
+     JSON.stringify(G("eighth", 4, [3, 3, 3, 3], 2)) === "[0,1,1,1]");
+  ok("안 나누면(off 0) 예전 답 그대로",
+     JSON.stringify(G("eighth", 12, [3, 3, 3, 3], 0)) ===
+     JSON.stringify(G("eighth", 12, [3, 3, 3, 3])));
+
+  app.fields.staffBar = "auto";
+  app.fields.staffUnit = "dotted";
 }
 
 console.log("\n한 줄에 몇 마디 — 정해 두면 폭이 남아도 거기서 끊는다");

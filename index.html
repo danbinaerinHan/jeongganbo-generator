@@ -842,6 +842,28 @@
               <option value="16">─/16</option>
             </select>
           </label>
+          <!-- 마디 — **각 하나가 늘 한 마디인 것은 아니다.** 기본은 각 전체가 한 마디지만
+               (각 = 장단 한 주기라는 이 기보의 뼈대), 12정간 각을 3정간씩 끊어 3/8 마디 넷으로
+               보고 싶을 수 있다(2026-08-15 사용자 요청). 각의 경계는 그대로 지키고 그 안만
+               나누므로 각을 걸치는 마디는 생기지 않는다. 딱 안 나뉘면 그 각의 마지막 마디만
+               짧아지고 제 박자표를 갖는다. 항목 글씨는 app.js의 updateStaffTimeOptions가
+               지금 악보에 맞춰 써 넣는다(여기 값은 자리 표시).
+               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다. -->
+          <label class="staff-unit tip"
+            data-tip="한 마디를 몇 정간으로 볼지
+· 기본은 각 하나가 그대로 한 마디입니다
+· 각의 경계는 지키고 그 안만 나눕니다 — 각을 걸치는 마디는 없습니다
+· 딱 안 나뉘면 그 각의 마지막 마디만 짧아집니다">마디
+            <select id="staffBar">
+              <option value="auto" selected>각 전체</option>
+              <option value="2">2정간</option>
+              <option value="3">3정간</option>
+              <option value="4">4정간</option>
+              <option value="5">5정간</option>
+              <option value="6">6정간</option>
+              <option value="8">8정간</option>
+            </select>
+          </label>
           <!-- 한 줄에 몇 마디 — 기본 '자동'은 폭이 닿는 데까지 채운다. 각 길이가 들쭉날쭉한
                곡(가곡·수제천)에서는 줄마다 마디 수가 달라지는데, 각이 곧 장단이라 줄을 고르게
                끊어 읽고 싶을 때가 있어 연 칸이다(정간보의 '한 줄 각 수'와 같은 마음).

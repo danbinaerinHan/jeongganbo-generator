@@ -17,9 +17,9 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarBeats", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", daegang: "" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
@@ -453,6 +453,60 @@ console.log("\n박자표를 사람이 고르면 — 길이는 그대로, 세는 
      mixed.includes("<beats>10</beats><beat-type>4</beat-type>"));
   app.fields.gakBeats = "";
   app.fields.staffTime = "auto";
+  app.fields.staffUnit = "dotted";
+}
+
+console.log("\n각을 여러 마디로 나누기 — 각의 경계는 지키고 그 안만 나뉘는가");
+{
+  // 각 = 장단 한 주기라는 뼈대는 그대로 두고, 그 안을 정한 정간 수로 끊는다.
+  // 12정간 각을 8분음표로 보면 자동이 12/8인데, 3정간씩 나누면 3/8 마디 넷이 된다.
+  const MEL12 = Array(12).fill("황").join("|");
+  const sums = (xml) => parseMeasures(xml).map((m) =>
+    m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+  const times = (xml) => (xml.match(/<beats>\d+<\/beats><beat-type>\d+<\/beat-type>/g) || [])
+    .map((t) => t.replace(/<[^>]+>/g, " ").trim().replace(/\s+/g, "/"));
+
+  app.fields.staffUnit = "eighth";
+  app.fields.staffBar = "auto";
+  const whole = xmlOf(MEL12, 12);
+  eq("각 전체가 한 마디 — 12/8 한 마디", [times(whole)[0], sums(whole).length], ["12/8", 1]);
+
+  app.fields.staffBar = "3";
+  const split = xmlOf(MEL12, 12);
+  eq("3정간씩 — 3/8 마디 넷", [times(split)[0], sums(split).length], ["3/8", 4]);
+  eq("마디마다 3정간(840×3)씩 찬다", sums(split), [2520, 2520, 2520, 2520]);
+  eq("나눠도 곡 전체 길이는 그대로",
+     sums(split).reduce((a, b) => a + b, 0), sums(whole).reduce((a, b) => a + b, 0));
+  ok("박자표는 한 번만 적힌다 (마디 길이가 다 같으므로)", times(split).length === 1);
+
+  app.fields.staffBar = "6";
+  const half = xmlOf(MEL12, 12);
+  eq("6정간씩 — 6/8 마디 둘", [times(half)[0], sums(half).length], ["6/8", 2]);
+
+  // 딱 안 나뉘면 그 각의 **마지막 마디만** 짧고 제 박자표를 갖는다
+  app.fields.staffBar = "5";
+  const odd = xmlOf(MEL12, 12);
+  eq("5정간씩 — 5+5+2로 세 마디", sums(odd), [4200, 4200, 1680]);
+  eq("짧아진 끝마디가 제 박자표를 갖는다", times(odd), ["5/8", "2/8"]);
+
+  // 각이 둘이면 **각마다** 새로 끊는다 — 각을 걸치는 마디는 없다
+  app.fields.staffBar = "5";
+  const two = xmlOf(MEL12 + "||" + MEL12, 12);
+  eq("각 둘 — 5+5+2가 각마다 되풀이된다",
+     sums(two), [4200, 4200, 1680, 4200, 4200, 1680]);
+
+  // 나눈 마디에도 박자표 아랫수 고르기가 그대로 걸린다
+  app.fields.staffBar = "3";
+  app.fields.staffTime = "4";
+  const t4 = xmlOf(MEL12, 12);
+  eq("3정간 마디 + 아랫수 4 → 1.5/4는 정수가 아니라 자동(3/8)으로 물러난다",
+     times(t4)[0], "3/8");
+  app.fields.staffBar = "6";
+  const t6 = xmlOf(MEL12, 12);
+  eq("6정간 마디 + 아랫수 4 → 3/4", times(t6)[0], "3/4");
+
+  app.fields.staffTime = "auto";
+  app.fields.staffBar = "auto";
   app.fields.staffUnit = "dotted";
 }
 

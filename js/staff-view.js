@@ -185,10 +185,20 @@
 
     // 빔 묶음의 단위는 '한 박'이고, 무엇이 한 박인지는 정간 단위가 정한다 —
     // 셈은 staff-core의 beatGroups 한 곳에 있다(파일 쪽 musicxml.js와 같은 답을 봐야 한다).
-    const jgGroup = C.beatGroups(list[0].unit, maxBeats, list[0].daegang);
-    const beamKey = function (cum) {
+    // **마디마다 따로** 센다 — 각 하나가 여러 마디로 나뉘면(#staffBar) 마디마다 길이도,
+    // 대강 안에서의 출발 자리(measOff)도 다르다. 음마다 부르므로 마디별로 기억해 둔다.
+    const groupCache = {};
+    const jgGroupOf = function (mi) {
+      if (!groupCache[mi]) {
+        groupCache[mi] = C.beatGroups(list[0].unit, mBeats(mi), list[0].daegang,
+                                      (list[0].measOff || [])[mi] || 0);
+      }
+      return groupCache[mi];
+    };
+    const beamKey = function (mi, cum) {
+      const g = jgGroupOf(mi);
       const jg = Math.floor(cum / jgUnits + 1e-6);
-      return jgGroup[Math.max(0, Math.min(maxBeats - 1, jg))];
+      return g[Math.max(0, Math.min(g.length - 1, jg))];
     };
 
     // 악기마다 제 자리표·음역이 있으므로 잴 것도 악기마다다. 위아래 여백을 **음역을 재서**
@@ -368,7 +378,7 @@
             meas.forEach(function (n) {
               // 마디 첫 음은 마디줄에서 조금 띄운다 — 그냥 두면 머리 왼쪽 반이 줄에 물린다.
               // 띄운 만큼 남은 폭을 다시 비례로 나누므로 '길이 = 자리'는 그대로다.
-              laid.push({ n: n, x: mx + tsW + noteInset + cum * pxIn, jg: beamKey(cum),
+              laid.push({ n: n, x: mx + tsW + noteInset + cum * pxIn, jg: beamKey(m0 + mi, cum),
                           v: C.nearestValue(n.units) });
               cum += n.units;
             });

@@ -5963,25 +5963,58 @@
     return pick && pick !== "auto" ? parseInt(pick, 10) : null;
   }
 
-  // '박자표' 칸의 항목에 **실제로 나올 박자표**를 적어 준다 — 아랫수만 늘어놓으면(2·4·8·16)
-  // 무엇을 고르는지 알 수가 없다. 기준은 표준 각(defBeats)이고, 길이가 다른 각은 같은
-  // 아랫수로 제 윗수를 갖는다(안 나눠떨어지는 각만 자동으로 물러난다 — timeSig 참고).
-  // 그 각으로 못 적는 아랫수는 아예 고르지 못하게 막는다.
+  // 한 마디를 몇 정간으로 볼까(#staffBar). 0 = 각 전체가 한 마디(기본, 예전 동작).
+  // **각을 걸치는 마디는 만들지 않는다** — 각의 경계는 그대로 지키고 그 안만 나눈다.
+  function staffBarBeats() {
+    const pick = $("staffBar") && $("staffBar").value;
+    const n = pick && pick !== "auto" ? parseInt(pick, 10) : 0;
+    return n > 0 ? n : 0;
+  }
+
+  // 지금 설정에서 **한 마디가 몇 정간인가** — 표준 각을 기준으로 잰다(박자표 칸의 미리보기용).
+  function previewBarBeats() {
+    const beats = defBeats(), bar = staffBarBeats();
+    return bar > 0 ? Math.min(bar, beats) : beats;
+  }
+  function previewUnit() {
+    const pick = $("staffUnit") && $("staffUnit").value;
+    return SC.JG[pick] ? pick : (defBeats() === 12 ? "eighth" : "dotted");
+  }
+
+  // '박자표'·'마디' 칸의 항목에 **실제로 나올 값**을 적어 준다 — 아랫수만 늘어놓으면(2·4·8·16)
+  // 무엇을 고르는지 알 수가 없다. 기준은 표준 각을 나눈 **한 마디**이고, 길이가 다른 마디는
+  // 같은 아랫수로 제 윗수를 갖는다(안 나눠떨어지는 마디만 자동으로 물러난다 — timeSig 참고).
+  // 그 마디로 못 적는 아랫수는 아예 고르지 못하게 막는다.
   function updateStaffTimeOptions() {
+    const unit = previewUnit();
     const sel = $("staffTime");
-    if (!sel) return;
-    const beats = defBeats();
-    const pickUnit = $("staffUnit") && $("staffUnit").value;
-    const unit = SC.JG[pickUnit] ? pickUnit : (beats === 12 ? "eighth" : "dotted");
-    Array.prototype.forEach.call(sel.options, function (op) {
+    if (sel) {
+      const mb = previewBarBeats();
+      Array.prototype.forEach.call(sel.options, function (op) {
+        if (op.value === "auto") {
+          const a = SC.timeSig(unit, mb, null);
+          op.textContent = "자동 (" + a.beats + "/" + a.type + ")";
+          return;
+        }
+        const top = SC.timeTop(unit, mb, parseInt(op.value, 10));
+        op.textContent = top != null ? top + "/" + op.value : "─/" + op.value + " (안 맞음)";
+        op.disabled = top == null;
+      });
+    }
+    // '마디' 칸 — 나눈 결과 박자표가 무엇이 되는지, 딱 안 나뉘면 끝마디가 몇 정간인지 적는다.
+    const bar = $("staffBar");
+    if (!bar) return;
+    const beats = defBeats(), type = staffTimeType();
+    const sigOf = function (n) { const t = SC.timeSig(unit, n, type); return t.beats + "/" + t.type; };
+    Array.prototype.forEach.call(bar.options, function (op) {
       if (op.value === "auto") {
-        const a = SC.timeSig(unit, beats, null);
-        op.textContent = "자동 (" + a.beats + "/" + a.type + ")";
+        op.textContent = "각 전체 (" + sigOf(beats) + ")";
         return;
       }
-      const top = SC.timeTop(unit, beats, parseInt(op.value, 10));
-      op.textContent = top != null ? top + "/" + op.value : "─/" + op.value + " (안 맞음)";
-      op.disabled = top == null;
+      const n = parseInt(op.value, 10);
+      const rest = beats % n;
+      op.textContent = n + "정간 (" + sigOf(n) + ")" + (rest ? " ·끝 " + rest : "");
+      op.disabled = n >= beats;   // 각보다 길면 '각 전체'와 같은 말이라 고를 것이 없다
     });
   }
 
@@ -6022,9 +6055,23 @@
     const timeType = staffTimeType();
     // 각 하나가 한 마디인데 **각마다 정간 수가 다를 수 있으므로** 마디 길이도 마디마다다.
     // 정간 하나는 위 ①에서 늘 딱 jg가 되게 다듬으므로, 각의 총 길이 = 그 각의 정간 수 × jg다.
+    // **각 하나가 늘 한 마디인 것은 아니다**(#staffBar). 기본은 각 전체가 한 마디지만,
+    // 정간 수를 정해 두면 각을 그만큼씩 끊어 여러 마디로 나눈다 — 12정간 각을 3정간씩
+    // 나누면 3/8 마디 넷이 된다. 각의 경계는 그대로 지켜지고(각을 걸치는 마디는 없다)
+    // 그 안이 나뉠 뿐이라, 각 = 장단 한 주기라는 뼈대는 안 흔들린다.
+    // 딱 안 나뉘면 **그 각의 마지막 마디만 짧다** — 못 적을 것이 아니라 제 박자표를 갖는다.
+    // measOff = 그 마디가 제 각에서 몇 번째 정간부터인가(빔을 대강에 맞추는 데 쓴다).
+    // gakMeasStart = 각 번호 → 첫 마디 번호(인쇄가 각 범위를 마디 범위로 옮길 때 쓴다).
     const gakN = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull).length;
-    const measBeats = [];
-    for (let g = 0; g < gakN; g++) measBeats.push(beatsAt(g));
+    const barBeats = staffBarBeats();
+    const measBeats = [], measOff = [], gakMeasStart = [];
+    for (let g = 0; g < gakN; g++) {
+      gakMeasStart.push(measBeats.length);
+      const n = beatsAt(g);
+      const step = barBeats > 0 ? Math.min(barBeats, n) : n;
+      for (let o = 0; o < n; o += step) { measBeats.push(Math.min(step, n - o)); measOff.push(o); }
+    }
+    gakMeasStart.push(measBeats.length);   // 끝 보초 — 마지막 각의 끝을 집을 수 있게
     const capAt = function (i) { return (measBeats[i] || beats) * jg; };
 
     // ① 자리 길이를 정수 단위로. 나눠떨어지지 않는 분박(11등분 등)에서 생기는 반올림
@@ -6108,10 +6155,11 @@
     // 오선보의 빔이 대강으로 묶여야 한다(js/staff-view.js '빔 묶음' 참고). 비어 있으면 null.
     const daegang = parseDaegang(daegangTextFor(beats), beats).groups;
 
-    // beats = 기본 각의 정간 수(박자표의 기준) · measBeats = 마디(=각)마다의 정간 수.
+    // beats = 기본 각의 정간 수 · measBeats = 마디마다의 정간 수(각을 안 나누면 곧 각 길이).
     // 길이가 다 같으면 measBeats가 전부 같은 값이라 예전과 똑같이 그려진다.
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
              fifths: fifths, clef: clef, beats: beats, measBeats: measBeats, bpm: bpm,
+             measOff: measOff, gakMeasStart: gakMeasStart,
              unit: unit, jg: jg, timeType: timeType, perLine: staffPerLine(),
              daegang: daegang, measures: measures };
   }
@@ -6650,12 +6698,25 @@
     //    못 불러왔으면 staff-view(같은 상자·같은 계약이라 갈아끼우기만 하면 된다).
     return vrvReady().then(function (tk) {
       return jgPages.map(function (jp) {
+        // 쪽의 **각** 범위를 **마디** 범위로 옮긴다 — 각 하나가 여러 마디로 나뉠 수 있으므로
+        // (#staffBar) 각 번호를 그대로 마디 번호로 쓰면 짝이 어긋난다. 안 나누면 1:1이라
+        // gakMeasStart가 항등이 되어 예전과 같은 값이 나온다.
+        // 마디에 딸린 표들(measBeats·measOff)도 **함께** 잘라야 한다 — 안 자르면 쪽 안의
+        // 마디 번호로 곡 전체의 표를 읽어 박자표·빔이 밀린다.
         const cut = scores.map(function (s) {
-          return Object.assign({}, s, { measures: s.measures.slice(jp.start, jp.end) });
+          const gm = s.gakMeasStart;
+          const a = gm && gm[jp.start] != null ? gm[jp.start] : jp.start;
+          const b = gm && gm[jp.end] != null ? gm[jp.end] : jp.end;
+          return Object.assign({}, s, {
+            measures: s.measures.slice(a, b),
+            measBeats: (s.measBeats || []).slice(a, b),
+            measOff: (s.measOff || []).slice(a, b),
+            measFrom: a
+          });
         });
         const box = { x: M, y: M, w: halfW - M * 1.5, h: P.h - 2 * M };
-        // 마디 번호는 jp.start+1부터 — 쪽마다 잘라 만들어도 번호가 곡 전체로 이어진다
-        const left = tk ? vrvSheetPages(cut, box, jp.start + 1)
+        // 마디 번호는 그 쪽 첫 마디부터 — 쪽마다 잘라 만들어도 번호가 곡 전체로 이어진다
+        const left = tk ? vrvSheetPages(cut, box, (cut[0] && cut[0].measFrom || 0) + 1)
                         : staffSheetPages(cut, { box: box });
         // 각이 많아 왼쪽 반에 다 안 들어가면 첫 쪽만 넣는다 — 넘치는 줄은 잘린다.
         // 한 쪽에 정간보 각이 몇이나 들어가나는 정간보 배치가 정하므로, 여기서 더 나누면
@@ -6706,11 +6767,13 @@
     $("staffPng").addEventListener("click", pngStaffOnly);
     $("staffPrintSide").addEventListener("click", printSideBySide);
     $("staffPngSide").addEventListener("click", pngSideBySide);
-    // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 · 한 줄에 몇 마디 — 넷 다 문서
-    // 값이라 saveState까지 부른다(배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
+    // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 · 마디를 어떻게 끊나 · 한 줄에 몇
+    // 마디 — 다섯 다 문서 값이라 saveState까지 부른다(배율·높이는 브라우저별 보기 설정이라
+    // 다른 자리에 산다).
     $("staffUnit").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffKey").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffTime").addEventListener("change", function () { staffDraw(); saveState(); });
+    $("staffBar").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffPerLine").addEventListener("change", function () { staffDraw(); saveState(); });
     // 창 폭이 바뀌면 줄 나눔이 달라지므로 다시 그린다(열려 있을 때만).
     window.addEventListener("resize", scheduleStaff);
@@ -6740,7 +6803,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView", "staffUnit", "staffKey", "staffTime", "staffPerLine"];
+    "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -6787,6 +6850,7 @@
     // (국악원 자료처럼 이 칸이 없는 문서가 있다). 적혀 있으면 그 값이 그대로 이긴다.
     if (!("staffUnit" in s.controls) && $("staffUnit")) $("staffUnit").value = "auto";
     if (!("staffTime" in s.controls) && $("staffTime")) $("staffTime").value = "auto";
+    if (!("staffBar" in s.controls) && $("staffBar")) $("staffBar").value = "auto";
     if (!("staffPerLine" in s.controls) && $("staffPerLine")) $("staffPerLine").value = "auto";
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
     // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
