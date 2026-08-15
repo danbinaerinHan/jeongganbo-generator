@@ -246,6 +246,16 @@
                     color: var(--ink); cursor: pointer; white-space: nowrap; }
   .tb-menu button:hover { background: var(--hover); }
   .tb-menu hr { border: none; border-top: 1px solid var(--line); margin: 4px 6px; }
+  /* 메뉴 안의 고르는 칸(오선보 출력의 '오선 크기') — 명령 버튼들과 같은 줄맞춤·글자 크기로
+     두되 누르는 것이 아니라 고르는 것임이 보이게 라벨을 앞에 세운다.
+     메뉴 폭은 원래 가장 긴 명령 이름이 정하는데 라벨+칸이 그보다 넓어 두 줄로 갈렸다 —
+     이 칸이 든 메뉴에만 최소 폭을 준다(다른 .tb-menu는 그대로). */
+  .tb-menu .tb-menu-field { display: flex; align-items: center; justify-content: space-between;
+                            gap: 8px; padding: 5px 12px; font-size: 12px; color: var(--muted);
+                            white-space: nowrap; }
+  .tb-menu .tb-menu-field select { font-size: 12px; padding: 2px 18px 2px 5px;
+                                   background-position: right 5px center; background-size: 10px; }
+  #staffOutPop { min-width: 216px; }
   /* 위험 명령(전체 초기화) — 글자만 위험색, 호버에서 옅은 위험 배경 */
   .tb-menu .danger { color: var(--danger-2); }
   .tb-menu .danger:hover { background: var(--danger-soft); }

@@ -6295,21 +6295,55 @@
 
   // scores → Verovio SVG(쪽들을 이어 붙인 HTML). 배율은 staff-view와 딴 단위라
   // (Verovio scale 40 ≈ 지금 100%) staffZoom을 40에 곱해 옮긴다.
+  // 꾸밈음 크기(Verovio graceFactor, 0.5~1). 시김새가 꾸밈음으로 풀리는 이 악보에서는
+  // **꾸밈음이 본음보다 많다**(관악영산회상 상령산 실측: 본음 226 · 꾸밈 318). 꾸밈음은 길이가
+  // 0이라 간격 옵션(spacingLinear·NonLinear)이 안 걸리고 제 글자 폭만큼만 자리를 받으므로,
+  // 무리 지어 붙는 것을 푸는 길은 크기를 줄이는 것뿐이다(기본 0.75에서 내렸다).
+  const VRV_GRACE = 0.6;
+
+  // 화면 조판. **창 폭에 억지로 우겨넣지 않는다**(2026-08-16 사용자 요청) — 악보가 요구하는
+  // 자연 폭을 먼저 재고, 그보다 창이 좁으면 페이지를 그 폭으로 키워 가로로 스크롤한다.
+  // 정간보도 '각이 창보다 넓으면 가로 스크롤'이 원칙이고, staff-view(대비책)는 예전부터
+  // 그렇게 그려 왔다 — Verovio 경로만 창 폭에 묶여 있어 둘이 다르게 보였다.
+  //
+  // 조판을 **두 번** 한다. 첫 번째는 자연 폭을 재기 위한 것(noJustification + adjustPageWidth로
+  // 늘이지도 줄이지도 않은 폭), 두 번째가 실제 그림이다. 한 번에 못 하는 것은 Verovio가
+  // 자연 폭을 미리 알려 주는 창구가 없어서다. 창이 넉넉하면 예전처럼 창 폭에 맞춰 고르게
+  // 늘린다(짧은 곡이 왼쪽에 쪼그라들지 않게).
   function vrvRender(scores, width) {
     const scale = Math.max(15, Math.round(40 * staffZoom));
-    vrvTk.setOptions({
-      pageWidth: Math.max(600, Math.round(width * 100 / scale)),
+    const units = function (px) { return Math.max(600, Math.round(px * 100 / scale)); };
+    const common = {
       scale: scale,
       adjustPageHeight: true,
       pageHeight: 60000,     // 한 쪽에 담을 수 있는 최대 — 넘치면 쪽이 늘고 아래로 이어 붙인다
       // "line" = 악보에 적힌 줄바꿈(<print new-system>)을 따르되 쪽은 알아서 접는다.
       // 한 줄 마디 수를 안 정했으면 예전처럼 폭이 닿는 데까지 채운다.
       breaks: staffPerLine() ? "line" : "auto",
+      graceFactor: VRV_GRACE,
       header: "none", footer: "none"   // 제목·쪽번호는 칸에 안 그린다(staff-view와 같음)
-    });
+    };
+    // ① 자연 폭 재기 — **pageWidth는 창 폭 그대로 두고** adjustPageWidth·noJustification만
+    //    켠다. 크게 주면 줄이 아예 안 나뉘어(각 14개가 한 줄) 자연 폭이 아니라 곡 전체
+    //    길이가 나온다. 이렇게 두면 줄 나눔은 지금과 같고, 줄마다 제 자연 폭을 가지며,
+    //    페이지 폭은 가장 넓은 줄이 된다 — 알고 싶은 것이 바로 그 값이다.
+    //    **조판을 두 번 하지 않으려고 이것을 loadData에 얹는다** — 어차피 한 번은 앉혀야
+    //    하므로, 그 한 번을 재기에 쓰고 두 번째가 실제 그림이다(예전과 같은 두 번).
+    vrvTk.setOptions(Object.assign({}, common,
+      { pageWidth: units(width), adjustPageWidth: true, noJustification: true }));
     const xml = window.JGB_MUSICXML.build(scores,
       { title: $("title").value, subtitle: $("subtitle").value });
     if (!vrvTk.loadData(xml)) throw new Error("Verovio가 MusicXML을 읽지 못했습니다");
+    const m = vrvTk.renderToSVG(1, {}).match(/^<svg width="([\d.]+)px"/);
+    const need = m ? parseFloat(m[1]) : 0;
+    // ② 실제 그림. 자연 폭이 창보다 넓으면 그 폭으로 앉혀 **가로로 스크롤**한다(창에 우겨넣지
+    //    않는다 — 2026-08-16 사용자 요청). 좁으면 예전처럼 창 폭에 맞춰 고르게 늘린다
+    //    (짧은 곡이 왼쪽에 쪼그라들지 않게).
+    vrvTk.setOptions(Object.assign({}, common, {
+      pageWidth: units(Math.max(width, need)),
+      adjustPageWidth: false, noJustification: false
+    }));
+    vrvTk.redoLayout();
     let html = "";
     const n = vrvTk.getPageCount();
     for (let i = 1; i <= n; i++) html += vrvTk.renderToSVG(i, {});
@@ -6471,7 +6505,21 @@
   //
   // 종이 크기·방향·여백은 **정간보와 같은 값**을 쓴다(#paperSize·#orientation·페이지 채움).
   // 두 표기를 나란히 놓고 볼 때 여백이 다르면 딴 종이에 찍은 것처럼 보인다.
-  const STAFF_PRINT_SCALE = 1.15;   // 인쇄용 오선 크기 — 화면 배율(보는 사람 사정)과 무관하다
+  // ----- 인쇄 오선 크기 -----
+  // **오선 한 칸의 mm로 정한다** — 조판에서 악보 크기를 말하는 단위가 그것이기 때문이다
+  // (Behind Bars의 표준 보표는 한 칸 1.75mm). 예전엔 배율 1.15라는 뜻 없는 수였고, 그 값이
+  // 한 칸 2.19mm — 표준보다 25% 큰 악보였다. 각이 긴 곡에서 종이가 모자라던 까닭의 하나다
+  // (2026-08-16 실측: 20정간 각을 A4 세로로 뽑으면 음표머리가 완전히 겹쳤다).
+  // 화면 배율(보는 사람 사정)과는 무관하다.
+  const STAFF_PRINT_SP_MM = { small: 1.4, normal: 1.75, large: 2.2 };
+  function staffPrintSpMm() {
+    const v = $("staffPrintSize") && $("staffPrintSize").value;
+    return STAFF_PRINT_SP_MM[v] || STAFF_PRINT_SP_MM.normal;
+  }
+  // Verovio: 오선 한 칸(px) = 2 × unit(9) × scale/100 · 1mm = 3.78px(96dpi 어림, 아래와 같은 값)
+  function staffPrintVrvScale() { return Math.round(staffPrintSpMm() * 3.78 * 100 / 18); }
+  // staff-view(대비책) 쪽 배율 — 예전 상수 1.15가 한 칸 2.19mm였으므로 그 비로 옮긴다.
+  function staffPrintScale() { return staffPrintSpMm() / 1.9048; }
 
   function paperWH() {
     const paper = paperSize();
@@ -6492,10 +6540,10 @@
     const box = opts.box || { x: M, y: M, w: P.w - 2 * M, h: P.h - 2 * M };
     // 그림 폭(사용자 단위)은 종이 폭에 비례해 잡는다 — 종이가 좁으면 줄이 짧게 접힌다.
     // 3.78 = 1mm를 그리기 단위 몇으로 볼 것인가(96dpi 어림). 이 값이 곧 '종이에서의 오선 크기'를
-    // 정하므로 STAFF_PRINT_SCALE과 짝이다.
+    // 정하므로 staffPrintScale()과 짝이다.
     const unitPerMm = 3.78;
     const inner = window.JGB_STAFF.render(scores, {
-      width: Math.max(320, box.w * unitPerMm), scale: STAFF_PRINT_SCALE
+      width: Math.max(320, box.w * unitPerMm), scale: staffPrintScale()
     });
     if (!inner) return [];
     const m = inner.match(/data-sys-h="([\d.]+)" data-sys-count="(\d+)" data-top="([\d.]+)"/);
@@ -6536,14 +6584,18 @@
   //   measStart = 첫 마디 번호(나란히가 각 범위를 잘라 쪽마다 만들 때 번호가 이어지게).
   function vrvSheetPages(scores, box, measStart) {
     // 3.78 = 1mm를 그리기 단위 몇으로 볼 것인가(96dpi 어림) — staffSheetPages와 같은 값.
-    // scale은 화면 100%(40)에 인쇄 배율(STAFF_PRINT_SCALE)을 곱한 것 — 화면 배율과 무관.
+    // scale은 '오선 한 칸 몇 mm'에서 나온다(staffPrintVrvScale) — 화면 배율과 무관.
+    // **여기서는 자연 폭으로 넓히지 않는다** — 종이엔 가로 스크롤이 없어서, 넘치면 넘치는 대로
+    // 압축된다. 그걸 푸는 길은 오선을 줄이거나(이 칸) 마디를 나눠 줄을 늘리는 것(#staffBar)이다.
     const pxW = box.w * 3.78, pxH = box.h * 3.78;
-    const scale = Math.round(40 * STAFF_PRINT_SCALE);
+    const scale = staffPrintVrvScale();
     vrvTk.setOptions({
       pageWidth: Math.max(100, Math.round(pxW * 100 / scale)),
       pageHeight: Math.max(100, Math.round(pxH * 100 / scale)),
       scale: scale,
       adjustPageHeight: false,   // 인쇄는 쪽 높이가 한결같아야 한다(화면 칸과 다른 점)
+      adjustPageWidth: false, noJustification: false,   // 화면 재기 조판이 남긴 값을 되돌린다
+      graceFactor: VRV_GRACE,
       breaks: staffPerLine() ? "line" : "auto",   // 화면과 같은 줄 나눔(vrvRender 주석 참고)
       header: "none", footer: "none"
     });
@@ -6845,6 +6897,8 @@
     $("staffKey").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffTime").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffBar").addEventListener("change", function () { staffDraw(); saveState(); });
+    // 인쇄 오선 크기는 화면을 안 바꾼다 — 종이에만 걸리므로 다시 그리지 않는다
+    $("staffPrintSize").addEventListener("change", saveState);
     $("staffPerLine").addEventListener("change", function () { staffDraw(); saveState(); });
     // 창 폭이 바뀌면 줄 나눔이 달라지므로 다시 그린다(열려 있을 때만).
     window.addEventListener("resize", scheduleStaff);
@@ -6874,7 +6928,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine"];
+    "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffPrintSize"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -6922,6 +6976,7 @@
     if (!("staffUnit" in s.controls) && $("staffUnit")) $("staffUnit").value = "auto";
     if (!("staffTime" in s.controls) && $("staffTime")) $("staffTime").value = "auto";
     if (!("staffBar" in s.controls) && $("staffBar")) $("staffBar").value = "auto";
+    if (!("staffPrintSize" in s.controls) && $("staffPrintSize")) $("staffPrintSize").value = "normal";
     if (!("staffPerLine" in s.controls) && $("staffPerLine")) $("staffPerLine").value = "auto";
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
     // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
@@ -8232,7 +8287,10 @@
         }
       }
     });
-    $(popId).addEventListener("click", function () {
+    $(popId).addEventListener("click", function (e) {
+      // 메뉴 안의 고르는 칸(오선보 출력의 '오선 크기')은 누른다고 닫히면 안 된다 — 열자마자
+      // 닫혀 값을 고를 수가 없다. 명령 버튼만 누르면 닫히는 것이 이 메뉴의 규칙이다.
+      if (e.target.closest && e.target.closest("select, label, input")) return;
       $(popId).classList.remove("on");
       $(btnId).classList.remove("on");
     });

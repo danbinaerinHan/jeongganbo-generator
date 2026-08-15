@@ -21,11 +21,11 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SCALE",
+   "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SP_MM", "staffPrintSpMm", "staffPrintScale",
    "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "staffScoreOf", "scoreViewOn", "buildStaffScores",
    "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", staffPerLine: "auto", staffBar: "auto",
+    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", staffPerLine: "auto", staffBar: "auto", staffPrintSize: "normal",
     daegang: "", paperSize: "A4", orientation: "portrait", pageFill: "0",
     paperW: "210", paperH: "297" },
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];

@@ -904,6 +904,19 @@
 · MusicXML은 뮤즈스코어·피날레·시벨리우스에서 열립니다
 · 인쇄·PNG는 정간보와 같은 종이 크기·여백을 씁니다">출력 ▾</button>
             <div id="staffOutPop" class="tb-menu">
+              <!-- 인쇄 오선 크기 — **뽑을 때만 쓰는 값**이라 머리줄이 아니라 이 메뉴 안에 둔다
+                   (머리줄은 화면에서 보며 고치는 칸들 자리다). 조판에서 악보 크기를 말하는
+                   단위가 '오선 한 칸 몇 mm'이므로 그 말로 적는다 — 표준은 1.75mm(Behind Bars).
+                   예전엔 2.19mm 고정이라 표준보다 25% 컸고, 각이 긴 곡에서 종이가 모자라
+                   음표머리가 겹쳤다(2026-08-16 실측). **문서에 딸린 값**이라 CTRL_IDS에 있다. -->
+              <label class="tb-menu-field">오선 크기
+                <select id="staffPrintSize">
+                  <option value="small">작게 (1.4mm)</option>
+                  <option value="normal" selected>보통 (1.75mm)</option>
+                  <option value="large">크게 (2.2mm)</option>
+                </select>
+              </label>
+              <hr>
               <button type="button" id="staffExport">MusicXML 파일로</button>
               <hr>
               <button type="button" id="staffPrint">오선보만 인쇄</button>
