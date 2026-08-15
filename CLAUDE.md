@@ -1108,7 +1108,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     때 내 보기 방식이 따라간다. `?first=1`도 이 키는 안 지운다(온보딩과 무관).
   - `.no-print` — 화면 칸 자체는 인쇄에 안 나간다(종이로 뽑는 길은 아래 '오선보 인쇄' 절).
     검사는 `node tools/check-staff-view.mjs`.
-- **오선보 인쇄·PNG**(오선보 창 머리줄 [뽑기 ▾] = #staffOutToggle → #staffOutPop,
+- **오선보 인쇄·PNG**(오선보 창 머리줄 [출력 ▾] = #staffOutToggle → #staffOutPop,
   app.js '오선보 인쇄·PNG' 절): MusicXML 파일로 · 오선보만 인쇄/PNG · 정간보와 나란히 인쇄/PNG.
   - **`.tb-menu`를 감싼 상자엔 `position: relative`가 있어야 한다** — 없으면 `top:100%`가
     엉뚱한 조상을 기준으로 재어 메뉴가 화면 밖으로 떨어지고, 열려도 아무 일도 안 일어난 것처럼
@@ -1117,7 +1117,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - **쪽은 Verovio가 접는다**(`vrvSheetPages`) — 종이 상자(mm)를 픽셀로 셈해 pageWidth/
     pageHeight로 주면 저들이 줄 경계에서 쪽을 가른다(오선 한 줄을 반으로 자르지 않는 규칙도
     저들 것). 나온 쪽 SVG의 루트를 mm 상자로 갈아입혀 종이에 앉힌다. 조판기 로드를 기다려야
-    해서 staffOnlyPages·sideBySidePages는 **프로미스**를 주고, [뽑기] 핸들러가 .then으로 받는다.
+    해서 staffOnlyPages·sideBySidePages는 **프로미스**를 주고, [출력] 핸들러가 .then으로 받는다.
     화면 배율과 무관한 크기(STAFF_PRINT_SCALE×40)는 화면 칸과 같은 원칙.
   - **staffSheetPages(staff-view 쪽 나눔)는 대비책으로 남는다** — 조판기를 못 불러왔을 때
     같은 계약({svg})으로 갈아끼워진다. 줄 높이·줄 수와 **줄 경계 표시(`<!--sys-->` 주석)** 를
@@ -1125,6 +1125,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     쪽마다 **제 줄만** 싣는 방식이다(통째로 싣고 viewBox로 오려 내면 쪽마다 곡 전체를 품어
     긴 곡에서 파일이 터진다). **그리기 셈을 인쇄 쪽에 옮겨 적지 말 것**은 두 길 다 같다 —
     자를 자리는 조판기가 말해 주는 것이지 여기서 다시 세는 것이 아니다.
+  - **UI 표기는 '출력'** — 예전 이름 '뽑기'를 고쳤다(2026-08-15 사용자 요청). 인쇄·PNG·파일을
+    함께 덮는 말이라야 하고, 앱의 다른 자리(상단바 [인쇄])와도 결이 맞는다. 파일 이름·식별자
+    (staffOut*)는 그대로 — 코드 이름과 표시 이름을 분리하는 이 리포의 관례다(browse↔'모아보기',
+    cellStyle*↔'정간 서식'과 같다).
   - 종이 크기·방향·여백은 **정간보와 같은 값**(#paperSize·#orientation·페이지 채움). 오선 크기만
     `STAFF_PRINT_SCALE`로 따로 잡는다 — 화면 배율은 '내가 어떻게 보나'라 종이에 따라오면 안 된다.
   - **나란히 = 왼쪽 오선보 · 오른쪽 정간보.** 정간보가 종이 오른쪽 끝에서 시작해 왼쪽으로

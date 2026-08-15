@@ -867,16 +867,18 @@
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>
-          <!-- 뽑기 — 오선보를 밖으로 내보내는 길을 한자리에 모은 메뉴(.tb-menu, wireTopMenu).
+          <!-- 출력 — 오선보를 밖으로 내보내는 길을 한자리에 모은 메뉴(.tb-menu, wireTopMenu).
                예전엔 [파일로](MusicXML) 하나뿐이었는데 인쇄·PNG가 붙으면서 머리줄이 버튼
-               넷으로 불었다. 자주 안 쓰는 명령은 늘어놓지 말고 접는다는 상단바 규칙과 같다.
+               넷으로 불었다. 이름이 '뽑기'였던 것을 '출력'으로 고쳤다(2026-08-15 사용자 요청) —
+               인쇄·PNG·파일을 함께 덮는 말이라야 하고, 앱의 다른 자리('인쇄')와도 결이 맞는다.
+               코드 식별자(staffOut*)는 그대로 둔다 — 표시 이름과 식별자를 가르는 이 리포의 관례. 자주 안 쓰는 명령은 늘어놓지 말고 접는다는 상단바 규칙과 같다.
                '나란히'는 정간보와 오선보를 한 장에 좌우로 앉힌다(왼쪽 오선보·오른쪽 정간보) —
                정간보가 오른쪽에서 시작해 왼쪽으로 읽으므로 종이 오른쪽 반을 정간보에 준다. -->
           <span id="staffOutBox">
             <button type="button" id="staffOutToggle" class="tip"
-              data-tip="오선보를 파일·종이로 뽑기
+              data-tip="오선보를 파일·종이로 출력
 · MusicXML은 뮤즈스코어·피날레·시벨리우스에서 열립니다
-· 인쇄·PNG는 정간보와 같은 종이 크기·여백을 씁니다">뽑기 ▾</button>
+· 인쇄·PNG는 정간보와 같은 종이 크기·여백을 씁니다">출력 ▾</button>
             <div id="staffOutPop" class="tb-menu">
               <button type="button" id="staffExport">MusicXML 파일로</button>
               <hr>
