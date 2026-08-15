@@ -260,11 +260,15 @@
     for (let i = 0; i < nMeas; i++) widest = Math.max(widest, measWOf(i));
     const width = Math.max(320, Math.max(opts.width || 900, leftX + headW(0) + widest + pad));
     // 길이가 다른 마디가 섞이면 '한 줄에 몇 마디'가 고정이 아니다 — 폭을 쌓아 가며 채운다.
+    // 사람이 마디 수를 정해 뒀으면(perLine) 거기서 끊는다 — 폭이 남아도 더 안 넣는다.
+    // 조판기(Verovio)는 악보에 적힌 <print new-system>을 보고 같은 자리에서 접는다.
     const avail = width - leftX - headW(0) - pad;
+    const perLine = list[0].perLine > 0 ? list[0].perLine : 0;
     const systems = [], sysCount = [];
     for (let i = 0; i < nMeas; ) {
       let w = 0, c = 0;
-      while (i + c < nMeas && (c === 0 || w + measWOf(i + c) <= avail)) { w += measWOf(i + c); c++; }
+      while (i + c < nMeas && (c === 0 || w + measWOf(i + c) <= avail)
+             && (!perLine || c < perLine)) { w += measWOf(i + c); c++; }
       systems.push(i); sysCount.push(c); i += c;
     }
     if (!systems.length) { systems.push(0); sysCount.push(0); }

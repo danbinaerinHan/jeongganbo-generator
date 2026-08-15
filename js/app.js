@@ -5985,6 +5985,17 @@
     });
   }
 
+  // 한 줄에 몇 마디를 놓을까(#staffPerLine). 기본 '자동'은 폭이 닿는 데까지 채우는 것이라
+  // 마디 길이가 들쭉날쭉한 곡에서는 줄마다 마디 수가 달라진다 — 각이 곧 장단이므로 줄을
+  // 고르게 끊어 읽고 싶을 때가 있어 연 칸이다(정간보의 '한 줄 각 수'와 같은 마음).
+  // **줄을 우리가 세지 않는다** — 악보에 `<print new-system="yes"/>`로 적어 두고 조판기가
+  // 접는다(js/musicxml.js). 그래서 화면·인쇄·MusicXML 파일이 저절로 같은 줄 나눔을 갖는다.
+  function staffPerLine() {
+    const pick = $("staffPerLine") && $("staffPerLine").value;
+    const n = pick && pick !== "auto" ? parseInt(pick, 10) : 0;
+    return n > 0 ? n : 0;
+  }
+
   // 선율 하나 → 오선보 재료 하나.
   //   { name, abbr, fifths, clef, beats, bpm, measLen, measures: [[음표…]] }
   //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop }  (units는 SC.DIV 기준)
@@ -6101,7 +6112,8 @@
     // 길이가 다 같으면 measBeats가 전부 같은 값이라 예전과 똑같이 그려진다.
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
              fifths: fifths, clef: clef, beats: beats, measBeats: measBeats, bpm: bpm,
-             unit: unit, jg: jg, timeType: timeType, daegang: daegang, measures: measures };
+             unit: unit, jg: jg, timeType: timeType, perLine: staffPerLine(),
+             daegang: daegang, measures: measures };
   }
 
   // 오선보가 무엇을 보여줄까는 **정간보의 '총보' 체크(#scoreView)를 그대로 따른다** —
@@ -6218,7 +6230,9 @@
       scale: scale,
       adjustPageHeight: true,
       pageHeight: 60000,     // 한 쪽에 담을 수 있는 최대 — 넘치면 쪽이 늘고 아래로 이어 붙인다
-      breaks: "auto",
+      // "line" = 악보에 적힌 줄바꿈(<print new-system>)을 따르되 쪽은 알아서 접는다.
+      // 한 줄 마디 수를 안 정했으면 예전처럼 폭이 닿는 데까지 채운다.
+      breaks: staffPerLine() ? "line" : "auto",
       header: "none", footer: "none"   // 제목·쪽번호는 칸에 안 그린다(staff-view와 같음)
     });
     const xml = window.JGB_MUSICXML.build(scores,
@@ -6458,7 +6472,7 @@
       pageHeight: Math.max(100, Math.round(pxH * 100 / scale)),
       scale: scale,
       adjustPageHeight: false,   // 인쇄는 쪽 높이가 한결같아야 한다(화면 칸과 다른 점)
-      breaks: "auto",
+      breaks: staffPerLine() ? "line" : "auto",   // 화면과 같은 줄 나눔(vrvRender 주석 참고)
       header: "none", footer: "none"
     });
     const xml = window.JGB_MUSICXML.build(scores,
@@ -6692,11 +6706,12 @@
     $("staffPng").addEventListener("click", pngStaffOnly);
     $("staffPrintSide").addEventListener("click", printSideBySide);
     $("staffPngSide").addEventListener("click", pngSideBySide);
-    // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 — 셋 다 문서 값이라 saveState까지
-    // 부른다(배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
+    // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 · 한 줄에 몇 마디 — 넷 다 문서
+    // 값이라 saveState까지 부른다(배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
     $("staffUnit").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffKey").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffTime").addEventListener("change", function () { staffDraw(); saveState(); });
+    $("staffPerLine").addEventListener("change", function () { staffDraw(); saveState(); });
     // 창 폭이 바뀌면 줄 나눔이 달라지므로 다시 그린다(열려 있을 때만).
     window.addEventListener("resize", scheduleStaff);
     // 높이 끌기 — #melodyResizer와 같은 손놀림. 위로 끌면 커진다.
@@ -6725,7 +6740,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView", "staffUnit", "staffKey", "staffTime"];
+    "scoreView", "staffUnit", "staffKey", "staffTime", "staffPerLine"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -6772,6 +6787,7 @@
     // (국악원 자료처럼 이 칸이 없는 문서가 있다). 적혀 있으면 그 값이 그대로 이긴다.
     if (!("staffUnit" in s.controls) && $("staffUnit")) $("staffUnit").value = "auto";
     if (!("staffTime" in s.controls) && $("staffTime")) $("staffTime").value = "auto";
+    if (!("staffPerLine" in s.controls) && $("staffPerLine")) $("staffPerLine").value = "auto";
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
     // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
     // 파트 1개로 승계한다(tempoBpm 승계와 같은 관례 — 옛 문서는 그대로 열려야 한다).

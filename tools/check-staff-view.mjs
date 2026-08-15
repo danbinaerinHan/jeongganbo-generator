@@ -22,10 +22,10 @@ const app = await loadApp(
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
    "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SCALE",
-   "staffHwang", "staffFifths", "staffTimeType", "staffScoreOf", "scoreViewOn", "buildStaffScores",
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffScoreOf", "scoreViewOn", "buildStaffScores",
    "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto",
+    title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", staffPerLine: "auto",
     daegang: "", paperSize: "A4", orientation: "portrait", pageFill: "0",
     paperW: "210", paperH: "297" },
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
@@ -472,6 +472,38 @@ console.log("\n인쇄 — 종이에 맞춰 쪽을 나누는가");
   ok("종이 상자는 mm 좌표에 흰 바탕", wrapped.includes('viewBox="0 0 210 297"') &&
      wrapped.includes('fill="#fff"'));
   app.fields.beats = "4";
+}
+
+console.log("\n한 줄에 몇 마디 — 정해 두면 폭이 남아도 거기서 끊는다");
+{
+  // staff-view는 조판기를 못 불러왔을 때의 대비책이다 — Verovio가 <print new-system>을 보고
+  // 접는 그 자리에서 이쪽도 끊어야 화면이 달라 보이지 않는다.
+  const MEL = Array(8).fill("황|태|중|임").join("\n");   // 각 8개
+  const sysOf = (svg) => +(svg.match(/data-sys-count="(\d+)"/) || [])[1];
+
+  app.fields.staffPerLine = "auto";
+  const wide = STAFF.render(scoresOf(MEL, 4), { width: 3000, scale: 1.6 });
+  ok("자동 + 넓은 창이면 한 줄에 다 들어간다", sysOf(wide) === 1, `줄 수 ${sysOf(wide)}`);
+
+  app.fields.staffPerLine = "2";
+  const two = STAFF.render(scoresOf(MEL, 4), { width: 3000, scale: 1.6 });
+  ok("2마디씩이면 폭이 남아도 4줄", sysOf(two) === 4, `줄 수 ${sysOf(two)}`);
+
+  app.fields.staffPerLine = "3";
+  const three = STAFF.render(scoresOf(MEL, 4), { width: 3000, scale: 1.6 });
+  ok("3마디씩이면 3+3+2로 3줄", sysOf(three) === 3, `줄 수 ${sysOf(three)}`);
+
+  // 폭이 모자라면 정한 수보다 **적게** 놓는다 — 넘겨 그리면 창 밖으로 나간다
+  app.fields.staffPerLine = "8";
+  const narrow = STAFF.render(scoresOf(MEL, 4), { width: 420, scale: 1.6 });
+  ok("창이 좁으면 정한 수보다 적게 놓는다", sysOf(narrow) > 1, `줄 수 ${sysOf(narrow)}`);
+
+  // 줄을 끊어도 그려지는 음표는 그대로다
+  app.fields.staffPerLine = "2";
+  const sc = scoresOf(MEL, 4);
+  ok("줄을 끊어도 음표는 다 그려진다",
+     drawn(STAFF.render(sc, { width: 3000, scale: 1.6 })) === heads(sc));
+  app.fields.staffPerLine = "auto";
 }
 
 console.log(`\n${fail ? "✗" : "✓"} ${pass}개 통과${fail ? `, ${fail}개 실패` : ""}`);

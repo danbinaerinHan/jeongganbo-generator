@@ -120,6 +120,14 @@
       s.measures.forEach(function (m, mi) {
         const mb = (s.measBeats && s.measBeats[mi]) || s.beats;
         out.push("    <measure number=\"" + ((meta.measStart || 1) + mi) + "\">");
+        // 한 줄에 몇 마디를 놓을지 사람이 정했으면(#staffPerLine) 그 자리마다 줄바꿈을
+        // **악보에 적어 둔다**. 조판은 화면(Verovio)이든 뮤즈스코어든 이 표시를 보고 접는다 —
+        // 우리가 줄을 세지 않는다(Verovio 쪽은 breaks:"line"이라야 이 표시를 따른다).
+        // 자리는 이 score가 품은 마디 안에서 센다 — 인쇄가 쪽마다 마디를 잘라 넘기므로,
+        // 곡 전체 번호로 세면 쪽 첫 줄만 토막 나는 일이 생긴다.
+        if (s.perLine > 0 && mi > 0 && mi % s.perLine === 0) {
+          out.push("      <print new-system=\"yes\"/>");
+        }
         if (mi === 0) {
           out.push("      <attributes>");
           out.push("        <divisions>" + C.DIV + "</divisions>");

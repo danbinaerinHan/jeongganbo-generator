@@ -842,6 +842,28 @@
               <option value="16">─/16</option>
             </select>
           </label>
+          <!-- 한 줄에 몇 마디 — 기본 '자동'은 폭이 닿는 데까지 채운다. 각 길이가 들쭉날쭉한
+               곡(가곡·수제천)에서는 줄마다 마디 수가 달라지는데, 각이 곧 장단이라 줄을 고르게
+               끊어 읽고 싶을 때가 있어 연 칸이다(정간보의 '한 줄 각 수'와 같은 마음).
+               **줄을 앱이 세지 않는다** — 악보에 <print new-system="yes"/>로 적어 두고 조판기가
+               접으므로 화면·인쇄·MusicXML 파일이 저절로 같은 줄 나눔을 갖는다.
+               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다. -->
+          <label class="staff-unit tip"
+            data-tip="한 줄에 몇 마디를 놓을지
+· 각 하나가 한 마디입니다
+· 자동은 폭이 닿는 데까지 채웁니다
+· 정한 값은 MusicXML 파일에도 실려 뮤즈스코어에서 같은 줄로 열립니다">한 줄에
+            <select id="staffPerLine">
+              <option value="auto" selected>자동</option>
+              <option value="1">1마디</option>
+              <option value="2">2마디</option>
+              <option value="3">3마디</option>
+              <option value="4">4마디</option>
+              <option value="5">5마디</option>
+              <option value="6">6마디</option>
+              <option value="8">8마디</option>
+            </select>
+          </label>
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>

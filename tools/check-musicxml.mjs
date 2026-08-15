@@ -17,9 +17,9 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffTimeType", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", daegang: "" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
@@ -454,6 +454,51 @@ console.log("\n박자표를 사람이 고르면 — 길이는 그대로, 세는 
   app.fields.gakBeats = "";
   app.fields.staffTime = "auto";
   app.fields.staffUnit = "dotted";
+}
+
+console.log("\n한 줄에 몇 마디 — 줄바꿈이 악보에 적히는가");
+{
+  // 줄을 앱이 세지 않는다. <print new-system="yes"/>로 악보에 적어 두면 화면(Verovio)이든
+  // 뮤즈스코어든 같은 자리에서 접는다 — 그래서 화면·인쇄·파일의 줄 나눔이 저절로 같다.
+  const G = "황|태|중|임";
+  const eight = Array(8).fill(G).join("||");
+  const breaksAt = (xml) => xml.split("<measure ").slice(1)
+    .map((m, i) => (m.includes('<print new-system="yes"/>') ? i : -1)).filter((i) => i >= 0);
+
+  app.fields.staffPerLine = "auto";
+  ok("자동이면 줄바꿈을 안 적는다 (조판기가 폭대로 채운다)",
+     breaksAt(xmlOf(eight, 4)).length === 0);
+
+  app.fields.staffPerLine = "2";
+  eq("2마디마다 — 마디 2·4·6에서 줄이 바뀐다", breaksAt(xmlOf(eight, 4)), [2, 4, 6]);
+
+  app.fields.staffPerLine = "4";
+  eq("4마디마다 — 마디 4에서만", breaksAt(xmlOf(eight, 4)), [4]);
+
+  app.fields.staffPerLine = "1";
+  eq("1마디마다 — 첫 마디만 빼고 다", breaksAt(xmlOf(eight, 4)), [1, 2, 3, 4, 5, 6, 7]);
+
+  // 마디 수보다 큰 값은 줄바꿈이 없다(한 줄에 다 들어간다)
+  app.fields.staffPerLine = "8";
+  ok("마디 수와 같으면 줄바꿈이 없다", breaksAt(xmlOf(eight, 4)).length === 0);
+
+  // 줄바꿈은 <measure> 바로 다음이라야 한다 — <attributes>보다 뒤면 조판기가 무시한다
+  app.fields.staffPerLine = "2";
+  const x = xmlOf(eight, 4);
+  const m3 = x.split("<measure ")[3];
+  ok("<print>가 마디 맨 앞에 온다", m3.trimStart().split("\n")[1].includes("<print"));
+
+  // 줄바꿈을 넣어도 음표·마디 길이는 안 바뀐다 — 적는 자리만 정하는 표시다
+  app.fields.staffPerLine = "auto";
+  const plain = parseMeasures(xmlOf(eight, 4));
+  app.fields.staffPerLine = "3";
+  const split = parseMeasures(xmlOf(eight, 4));
+  eq("줄을 끊어도 마디 길이는 그대로",
+     split.map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0)),
+     plain.map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0)));
+  ok("줄을 끊어도 음표 수는 그대로",
+     JSON.stringify(split.map((m) => m.length)) === JSON.stringify(plain.map((m) => m.length)));
+  app.fields.staffPerLine = "auto";
 }
 
 console.log("\n악보 꼴 — 열고 닫는 짝이 맞는가");
