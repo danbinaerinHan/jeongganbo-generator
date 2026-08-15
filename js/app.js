@@ -6463,7 +6463,15 @@
     if (vrvTk) {
       try { body.innerHTML = vrvRender(scores, width); return; }
       catch (err) { console.error("Verovio 조판 실패 — staff-view로 물러납니다:", err); }
-    } else if (!vrvState) loadVerovio();   // 처음 그릴 때 뒤에서 불러 두고 우선 staff-view로
+    } else if (vrvState !== "failed") {
+      // **불러오는 동안엔 대비책 그림을 그리지 않는다**(2026-08-16 사용자 제보). 예전엔
+      // staff-view로 먼저 그렸는데, 6.7MB wasm이 받아지는 3초쯤 뒤 Verovio로 다시 그려지면서
+      // '다른 악보가 보였다가 바뀌는' 것처럼 보였다 — 두 그림은 생김새가 사뭇 달라서다.
+      // staff-view는 조판기를 **정말 못 쓸 때**의 대비책이지 로딩 자리표시가 아니다.
+      loadVerovio();
+      body.innerHTML = "<div class='staff-empty'>오선보 조판기를 불러오는 중입니다…</div>";
+      return;
+    }
     body.innerHTML = window.JGB_STAFF.render(scores, { width: width, scale: staffZoom });
   }
 
@@ -6512,6 +6520,11 @@
   // (2026-08-16 실측: 20정간 각을 A4 세로로 뽑으면 음표머리가 완전히 겹쳤다).
   // 화면 배율(보는 사람 사정)과는 무관하다.
   const STAFF_PRINT_SP_MM = { small: 1.4, normal: 1.75, large: 2.2 };
+  // 가로 쪽맞춤이 줄일 수 있는 아래 끝(오선 한 칸 mm). 각이 길면 종이에 넣느라 꽤 작아지는데,
+  // 그건 '작게라도 다 보이는 것'이 '겹쳐서 못 읽는 것'보다 낫기 때문이다(2026-08-16 사용자
+  // 확정). 그래도 잉크가 뭉개지는 데까지 갈 수는 없어 끝을 둔다.
+  const STAFF_PRINT_MIN_SP_MM = 0.8;
+  const STAFF_PRINT_MIN_SCALE = Math.round(STAFF_PRINT_MIN_SP_MM * 3.78 * 100 / 18);
   function staffPrintSpMm() {
     const v = $("staffPrintSize") && $("staffPrintSize").value;
     return STAFF_PRINT_SP_MM[v] || STAFF_PRINT_SP_MM.normal;
@@ -6584,33 +6597,46 @@
   //   measStart = 첫 마디 번호(나란히가 각 범위를 잘라 쪽마다 만들 때 번호가 이어지게).
   function vrvSheetPages(scores, box, measStart) {
     // 3.78 = 1mm를 그리기 단위 몇으로 볼 것인가(96dpi 어림) — staffSheetPages와 같은 값.
-    // scale은 '오선 한 칸 몇 mm'에서 나온다(staffPrintVrvScale) — 화면 배율과 무관.
-    // **여기서는 자연 폭으로 넓히지 않는다** — 종이엔 가로 스크롤이 없어서, 넘치면 넘치는 대로
-    // 압축된다. 그걸 푸는 길은 오선을 줄이거나(이 칸) 마디를 나눠 줄을 늘리는 것(#staffBar)이다.
     const pxW = box.w * 3.78, pxH = box.h * 3.78;
-    const scale = staffPrintVrvScale();
-    vrvTk.setOptions({
-      pageWidth: Math.max(100, Math.round(pxW * 100 / scale)),
-      pageHeight: Math.max(100, Math.round(pxH * 100 / scale)),
-      scale: scale,
-      adjustPageHeight: false,   // 인쇄는 쪽 높이가 한결같아야 한다(화면 칸과 다른 점)
-      adjustPageWidth: false, noJustification: false,   // 화면 재기 조판이 남긴 값을 되돌린다
-      graceFactor: VRV_GRACE,
-      breaks: staffPerLine() ? "line" : "auto",   // 화면과 같은 줄 나눔(vrvRender 주석 참고)
-      header: "none", footer: "none"
-    });
+    const want = staffPrintVrvScale();   // 사용자가 고른 오선 크기 = **위 끝**(이보다 키우지 않는다)
+    const opts = function (scale, extra) {
+      return Object.assign({
+        pageWidth: Math.max(100, Math.round(pxW * 100 / scale)),
+        pageHeight: Math.max(100, Math.round(pxH * 100 / scale)),
+        scale: scale,
+        adjustPageHeight: false,   // 인쇄는 쪽 높이가 한결같아야 한다(화면 칸과 다른 점)
+        adjustPageWidth: false, noJustification: false,
+        graceFactor: VRV_GRACE,
+        breaks: staffPerLine() ? "line" : "auto",   // 화면과 같은 줄 나눔(vrvRender 주석 참고)
+        header: "none", footer: "none"
+      }, extra || {});
+    };
+    // ① 자연 폭 재기 — 화면과 같은 수법(vrvRender 주석)을 loadData에 얹는다.
+    vrvTk.setOptions(opts(want, { adjustPageWidth: true, noJustification: true }));
     const xml = window.JGB_MUSICXML.build(scores,
       { title: $("title").value, subtitle: $("subtitle").value, measStart: measStart });
     if (!vrvTk.loadData(xml)) return [];
+    const m = vrvTk.renderToSVG(1, {}).match(/^<svg width="([\d.]+)px"/);
+    const need = m ? parseFloat(m[1]) : 0;
+    // ② **가로 쪽맞춤** — 종이엔 가로 스크롤이 없으니, 안 들어가면 오선을 줄여 넣는다
+    //    (2026-08-16 사용자 요청: "설정대로 다 들어가게, 음표 크기는 많이 줄여도 좋다").
+    //    **마디를 대신 나누지는 않는다** — 마디를 어디서 끊을지는 사용자가 정한 것이고
+    //    인쇄는 그 설정대로 나와야 한다. 줄이는 데도 끝은 있어 그 아래로는 안 간다.
+    let scale = want;
+    if (need > pxW && need > 0) {
+      scale = Math.max(STAFF_PRINT_MIN_SCALE, Math.floor(want * pxW / need));
+    }
+    vrvTk.setOptions(opts(scale));
+    vrvTk.redoLayout();
     const pages = [];
     const n = vrvTk.getPageCount();
     for (let i = 1; i <= n; i++) {
       // 루트 <svg width="Wpx" height="Hpx">를 종이(mm) 좌표의 상자로 갈아입힌다 —
       // 비율은 pageWidth/Height를 box에서 셈했으니 그대로 맞는다(반올림 오차뿐).
       const svg = vrvTk.renderToSVG(i, {});
-      const m = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
-      if (!m) continue;
-      const W = parseFloat(m[1]), H = parseFloat(m[2]);
+      const mm = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
+      if (!mm) continue;
+      const W = parseFloat(mm[1]), H = parseFloat(mm[2]);
       pages.push({
         svg: svg.replace(/^<svg width="[\d.]+px" height="[\d.]+px"/,
           "<svg x=\"" + box.x + "\" y=\"" + box.y + "\" width=\"" + box.w +
@@ -6864,6 +6890,12 @@
     $("btnStaff").addEventListener("click", function () {
       applyStaffOpen(!staffOpen);
       if (staffOpen) track("staff_open");
+    });
+    // **마우스가 얹히면 미리 불러 둔다** — 6.7MB wasm이라 누르고 나서 받기 시작하면 3초쯤
+    // 기다린다. 얹었다 말면 그만이므로 손해가 없고, 누를 때쯤엔 대개 준비가 끝나 있다.
+    // 오선보를 안 쓰는 사람은 이 버튼에 손이 안 가므로 지연 로드의 뜻도 그대로다.
+    ["mouseenter", "touchstart"].forEach(function (ev) {
+      $("btnStaff").addEventListener(ev, function () { loadVerovio(); }, { passive: true });
     });
     $("staffClose").addEventListener("click", function () { applyStaffOpen(false); });
     $("staffZoomIn").addEventListener("click", function () { setStaffZoom(staffZoom + 0.15); });
