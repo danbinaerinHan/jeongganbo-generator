@@ -820,6 +820,28 @@
               </optgroup>
             </select>
           </label>
+          <!-- 박자표 — 기본은 '자동'이고 정간 단위가 아랫수를 정한다(4분음표면 /4, 그 밖은 /8).
+               조표와 같은 성격의 칸이다: 자동으로 정해 주되 잠그지 않는다. 20정간 각이 자동으로
+               20/8이 되는데 그런 표기를 쓰는 악보는 없어서(관행은 10/4) 연 자리다.
+               **고르는 것은 아랫수뿐이고 윗수는 따라온다** — 마디 총 길이가 각의 정간 수로
+               이미 정해져 있어 윗수까지 자유로 두면 마디 길이가 어긋난다(악보 프로그램이 마디를
+               다시 짠다). 그래서 같은 길이를 다른 아랫수로 다시 세는 것만 연다(20/8 ↔ 10/4 ↔ 5/2).
+               항목 글씨(3/2·6/4…)는 app.js의 updateStaffTimeOptions가 지금 악보에 맞춰 써 넣고,
+               그 각으로 못 적는 아랫수는 막는다 — 여기 적어 둔 값은 자리 표시일 뿐이다.
+               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다. -->
+          <label class="staff-unit tip"
+            data-tip="박자표를 무엇으로 적을지
+· 자동은 정간 단위가 아랫수를 정합니다(4분음표면 /4, 그 밖은 /8)
+· 마디 길이는 그대로고 세는 단위만 바뀝니다(20/8 ↔ 10/4 ↔ 5/2)
+· 길이가 다른 각도 같은 아랫수로 제 윗수를 갖습니다">박자표
+            <select id="staffTime">
+              <option value="auto" selected>자동</option>
+              <option value="2">─/2</option>
+              <option value="4">─/4</option>
+              <option value="8">─/8</option>
+              <option value="16">─/16</option>
+            </select>
+          </label>
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>

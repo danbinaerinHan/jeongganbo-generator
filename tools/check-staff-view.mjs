@@ -22,7 +22,7 @@ const app = await loadApp(
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
    "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SCALE",
-   "staffHwang", "staffFifths", "staffScoreOf", "scoreViewOn", "buildStaffScores",
+   "staffHwang", "staffFifths", "staffTimeType", "staffScoreOf", "scoreViewOn", "buildStaffScores",
    "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto",

@@ -5951,6 +5951,40 @@
     return SC.fifthsFor(pcs);
   }
 
+  // 박자표 — 기본은 '자동'(정간 단위가 아랫수를 정한다: 4분음표면 /4, 그 밖은 /8)이고
+  // 오선보 창의 '박자표' 칸에서 사람이 고르면 그 값이 이긴다. 조표와 같은 성격의 칸이다 —
+  // 자동으로 정해 주되 잠그지는 않는다.
+  // **고르는 것은 아랫수뿐이고 윗수는 따라온다.** 마디 총 길이가 각의 정간 수로 이미 정해져
+  // 있어서, 윗수까지 자유로 두면 마디 길이가 어긋나 악보 프로그램이 마디를 다시 짠다.
+  // 그래서 같은 길이를 다른 아랫수로 다시 세는 것만 연다(20/8 ↔ 10/4 ↔ 5/2) — 20/8처럼
+  // 아무도 안 쓰는 표기를 관행대로 10/4로 적을 수 있게 하려는 것이다.
+  function staffTimeType() {
+    const pick = $("staffTime") && $("staffTime").value;
+    return pick && pick !== "auto" ? parseInt(pick, 10) : null;
+  }
+
+  // '박자표' 칸의 항목에 **실제로 나올 박자표**를 적어 준다 — 아랫수만 늘어놓으면(2·4·8·16)
+  // 무엇을 고르는지 알 수가 없다. 기준은 표준 각(defBeats)이고, 길이가 다른 각은 같은
+  // 아랫수로 제 윗수를 갖는다(안 나눠떨어지는 각만 자동으로 물러난다 — timeSig 참고).
+  // 그 각으로 못 적는 아랫수는 아예 고르지 못하게 막는다.
+  function updateStaffTimeOptions() {
+    const sel = $("staffTime");
+    if (!sel) return;
+    const beats = defBeats();
+    const pickUnit = $("staffUnit") && $("staffUnit").value;
+    const unit = SC.JG[pickUnit] ? pickUnit : (beats === 12 ? "eighth" : "dotted");
+    Array.prototype.forEach.call(sel.options, function (op) {
+      if (op.value === "auto") {
+        const a = SC.timeSig(unit, beats, null);
+        op.textContent = "자동 (" + a.beats + "/" + a.type + ")";
+        return;
+      }
+      const top = SC.timeTop(unit, beats, parseInt(op.value, 10));
+      op.textContent = top != null ? top + "/" + op.value : "─/" + op.value + " (안 맞음)";
+      op.disabled = top == null;
+    });
+  }
+
   // 선율 하나 → 오선보 재료 하나.
   //   { name, abbr, fifths, clef, beats, bpm, measLen, measures: [[음표…]] }
   //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop }  (units는 SC.DIV 기준)
@@ -5970,6 +6004,11 @@
     const pick = $("staffUnit") && $("staffUnit").value;
     const unit = SC.JG[pick] ? pick : (beats === 12 ? "eighth" : "dotted");
     const jg = SC.JG[unit];
+    // 박자표 아랫수 — 기본은 자동(정간 단위가 정한다)이고 오선보 창의 '박자표' 칸에서 고르면
+    // 그 값이 이긴다(#staffKey와 같은 성격이라 CTRL_IDS의 문서 값이다). **마디 총 길이는 안
+    // 바뀐다** — 같은 길이를 다른 아랫수로 다시 셀 뿐이라(20/8 ↔ 10/4 ↔ 5/2) 음도 마디도
+    // 그대로고 적는 방식만 달라진다. 셈은 staff-core의 timeSig 한 곳(위 주석 참고).
+    const timeType = staffTimeType();
     // 각 하나가 한 마디인데 **각마다 정간 수가 다를 수 있으므로** 마디 길이도 마디마다다.
     // 정간 하나는 위 ①에서 늘 딱 jg가 되게 다듬으므로, 각의 총 길이 = 그 각의 정간 수 × jg다.
     const gakN = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull).length;
@@ -6062,7 +6101,7 @@
     // 길이가 다 같으면 measBeats가 전부 같은 값이라 예전과 똑같이 그려진다.
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
              fifths: fifths, clef: clef, beats: beats, measBeats: measBeats, bpm: bpm,
-             unit: unit, jg: jg, daegang: daegang, measures: measures };
+             unit: unit, jg: jg, timeType: timeType, daegang: daegang, measures: measures };
   }
 
   // 오선보가 무엇을 보여줄까는 **정간보의 '총보' 체크(#scoreView)를 그대로 따른다** —
@@ -6281,6 +6320,7 @@
   function staffDraw() {
     const body = $("staffBody");
     if (!body || !staffOpen) return;
+    updateStaffTimeOptions();   // 정간 수·정간 단위가 바뀌면 고를 수 있는 박자표도 달라진다
     if (!window.JGB_STAFF) { body.innerHTML = "<div class='staff-empty'>오선보 그리기를 불러오지 못했습니다.</div>"; return; }
     let scores;
     try {
@@ -6652,10 +6692,11 @@
     $("staffPng").addEventListener("click", pngStaffOnly);
     $("staffPrintSide").addEventListener("click", printSideBySide);
     $("staffPngSide").addEventListener("click", pngSideBySide);
-    // 정간을 무엇으로 보나 · 조표를 무엇으로 적나 — 둘 다 문서 값이라 saveState까지 부른다
-    // (배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
+    // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 — 셋 다 문서 값이라 saveState까지
+    // 부른다(배율·높이는 브라우저별 보기 설정이라 다른 자리에 산다).
     $("staffUnit").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffKey").addEventListener("change", function () { staffDraw(); saveState(); });
+    $("staffTime").addEventListener("change", function () { staffDraw(); saveState(); });
     // 창 폭이 바뀌면 줄 나눔이 달라지므로 다시 그린다(열려 있을 때만).
     window.addEventListener("resize", scheduleStaff);
     // 높이 끌기 — #melodyResizer와 같은 손놀림. 위로 끌면 커진다.
@@ -6684,7 +6725,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView", "staffUnit", "staffKey"];
+    "scoreView", "staffUnit", "staffKey", "staffTime"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -6730,6 +6771,7 @@
     // 앞서 보던 악보의 값이 남는데, 그러면 남의 12정간 곡을 열었을 때 36/8로 펼쳐진다
     // (국악원 자료처럼 이 칸이 없는 문서가 있다). 적혀 있으면 그 값이 그대로 이긴다.
     if (!("staffUnit" in s.controls) && $("staffUnit")) $("staffUnit").value = "auto";
+    if (!("staffTime" in s.controls) && $("staffTime")) $("staffTime").value = "auto";
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
     // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
     // 파트 1개로 승계한다(tempoBpm 승계와 같은 관례 — 옛 문서는 그대로 열려야 한다).

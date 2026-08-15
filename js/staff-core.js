@@ -26,10 +26,28 @@
   // 화면(staff-view)과 파일(musicxml)이 같은 답을 써야 하므로 셈은 여기 한 곳에만 둔다.
   //   beats = 아랫수 단위로 센 한 각의 박수 · type = 아랫수
   //   beatUnit·dot = MusicXML <metronome>이 쓰는 '정간 하나'의 이름
-  function timeSig(unit, beats) {
-    if (unit === "plain") return { beats: beats, type: 4, beatUnit: "quarter", dot: false };
-    if (unit === "eighth") return { beats: beats, type: 8, beatUnit: "eighth", dot: false };
-    return { beats: beats * 3, type: 8, beatUnit: "quarter", dot: true };
+  //
+  // 세 번째 인자 type은 **사람이 고른 아랫수**(#staffTime, 없으면 자동). 이때도 마디의
+  // **총 길이는 손대지 않는다** — 윗수를 그 아랫수에 맞춰 다시 셀 뿐이다(20/8 ↔ 10/4 ↔ 5/2).
+  // 그래서 고를 수 있는 박자표는 사실상 아랫수 하나로 정해진다: 마디 총 길이가 정간 수로
+  // 이미 정해져 있으므로 윗수를 따로 고르면 마디 길이가 어긋나 악보 프로그램이 마디를
+  // 다시 짠다. 나눠떨어지지 않으면(5정간 각을 2분음표로 세는 등) 조용히 자동으로 물러난다.
+  const TIME_TYPES = [2, 4, 8, 16];   // 고를 수 있는 아랫수 — index.html #staffTime과 같은 목록
+  function autoType(unit) { return unit === "plain" ? 4 : 8; }
+  // 윗수 = 마디 총 길이 ÷ 아랫수 음표 하나의 길이. 정수가 아니면 그 아랫수로는 못 적는다.
+  function timeTop(unit, beats, type) {
+    const total = beats * (JG[unit] || JG.dotted);
+    const one = DIV * 4 / type;
+    return total % one ? null : total / one;
+  }
+  function timeSig(unit, beats, type) {
+    const u = JG[unit] ? unit : "dotted";
+    const beatUnit = u === "eighth" ? "eighth" : "quarter";
+    const dot = u === "dotted";
+    const pick = TIME_TYPES.indexOf(+type) >= 0 ? timeTop(u, beats, +type) : null;
+    if (pick != null) return { beats: pick, type: +type, beatUnit: beatUnit, dot: dot };
+    const t = autoType(u);
+    return { beats: timeTop(u, beats, t), type: t, beatUnit: beatUnit, dot: dot };
   }
   // 정간 하나가 4분음표의 몇 배인가 — <sound tempo>가 4분음표 기준이라 필요하다.
   function quarterRatio(unit) { return (JG[unit] || JG.dotted) / DIV; }
@@ -326,7 +344,7 @@
 
   root.JGB_STAFF_CORE = {
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF,
-    timeSig: timeSig, quarterRatio: quarterRatio,
+    timeSig: timeSig, timeTop: timeTop, TIME_TYPES: TIME_TYPES, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
     exactValue: exactValue, nearestValue: nearestValue,

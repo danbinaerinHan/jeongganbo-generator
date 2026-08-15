@@ -125,7 +125,7 @@
           out.push("        <divisions>" + C.DIV + "</divisions>");
           out.push("        <key><fifths>" + s.fifths + "</fifths></key>");
           // 각 하나가 한 마디다 — 박자표는 staff-core가 정한다(화면과 같은 답이라야 한다).
-          const ts = C.timeSig(s.unit, mb);
+          const ts = C.timeSig(s.unit, mb, s.timeType);
           out.push("        <time><beats>" + ts.beats +
                    "</beats><beat-type>" + ts.type + "</beat-type></time>");
           out.push("        <clef><sign>" + clef.sign + "</sign><line>" + clef.line + "</line></clef>");
@@ -142,7 +142,7 @@
           }
         } else if (mb !== prevMb) {
           // 각 길이가 바뀌는 자리 — 박자표만 다시 적는다(조표·자리표는 그대로다)
-          const ts2 = C.timeSig(s.unit, mb);
+          const ts2 = C.timeSig(s.unit, mb, s.timeType);
           out.push("      <attributes><time><beats>" + ts2.beats +
                    "</beats><beat-type>" + ts2.type + "</beat-type></time></attributes>");
         }

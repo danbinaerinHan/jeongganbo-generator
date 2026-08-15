@@ -17,9 +17,9 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
@@ -408,6 +408,51 @@ console.log("\n정간을 무엇으로 보나 — 박자표·빠르기가 따라 
   const eFirst = parseMeasures(e2)[0].filter((n) => !n.grace)[0];
   ok("8분음표의 2분박은 16분음표로 딱 떨어진다",
      eFirst.dur === 420 && e2.split("<note>")[1].includes("<type>16th</type>"));
+  app.fields.staffUnit = "dotted";
+}
+
+console.log("\n박자표를 사람이 고르면 — 길이는 그대로, 세는 단위만 바뀌는가");
+{
+  // 20정간 각을 8분음표로 보면 자동이 20/8인데, 그런 표기를 쓰는 악보는 없다(관행은 10/4).
+  // 아랫수만 고르게 열어 둔 자리다 — 윗수는 마디 길이에 맞춰 따라온다.
+  const MEL20 = Array(20).fill("황").join("|");
+  app.fields.staffUnit = "eighth";
+  app.fields.staffTime = "auto";
+  const auto = xmlOf(MEL20, 20);
+  ok("자동은 예전 그대로 20/8", auto.includes("<beats>20</beats><beat-type>8</beat-type>"));
+  const durOf = (xml) => parseMeasures(xml).map((m) =>
+    m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+  const want = durOf(auto);
+
+  [["4", 10], ["2", 5], ["16", 40]].forEach(([type, top]) => {
+    app.fields.staffTime = type;
+    const xml = xmlOf(MEL20, 20);
+    ok(`아랫수 ${type} → ${top}/${type}`,
+       xml.includes(`<beats>${top}</beats><beat-type>${type}</beat-type>`));
+    eq(`아랫수 ${type} — 마디 길이는 그대로`, durOf(xml), want);
+  });
+
+  // 메트로놈은 **정간 하나**의 이름이라 박자표를 바꿔도 안 따라간다(빠르기가 달라지면 안 된다)
+  app.fields.staffTime = "2";
+  const m2 = xmlOf(MEL20, 20);
+  ok("메트로놈 단위는 정간 그대로(8분음표)",
+     m2.includes("<beat-unit>eighth</beat-unit><per-minute>") && m2.includes('<sound tempo="30"/>'));
+
+  // 안 나눠떨어지는 아랫수는 조용히 자동으로 물러난다 — 5정간 각을 2분음표로는 못 센다
+  app.fields.staffTime = "2";
+  const odd = xmlOf(Array(5).fill("황").join("|"), 5);
+  ok("5정간 각 + 아랫수 2 → 자동(5/8)으로 물러난다",
+     odd.includes("<beats>5</beats><beat-type>8</beat-type>"));
+
+  // 각마다 정간 수가 달라도 **같은 아랫수**로 제 윗수를 갖는다
+  app.fields.staffTime = "4";
+  app.fields.gakBeats = "1:8";
+  const mixed = xmlOf(MEL20 + "||" + MEL20, 20);
+  ok("첫 각 8정간 → 4/4, 둘째 각 20정간 → 10/4",
+     mixed.includes("<beats>4</beats><beat-type>4</beat-type>") &&
+     mixed.includes("<beats>10</beats><beat-type>4</beat-type>"));
+  app.fields.gakBeats = "";
+  app.fields.staffTime = "auto";
   app.fields.staffUnit = "dotted";
 }
 

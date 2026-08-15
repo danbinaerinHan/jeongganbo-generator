@@ -167,7 +167,8 @@
       for (let i = 0; i < str.length; i++) w += gw("time" + str[i]);
       return w * SP;
     };
-    const tsOf = function (mi) { return C.timeSig(list[0].unit, mBeats(mi)); };
+    // 아랫수는 사람이 고를 수 있다(#staffTime) — 없으면 정간 단위가 정한다(staff-core 참고)
+    const tsOf = function (mi) { return C.timeSig(list[0].unit, mBeats(mi), list[0].timeType); };
     const tsInkW = function (mi) {
       const t = tsOf(mi);
       return Math.max(digitsW(String(t.beats)), digitsW(String(t.type)));
