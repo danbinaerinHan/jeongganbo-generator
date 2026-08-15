@@ -5356,14 +5356,16 @@
     // 있는지 알 수가 없다. 인쇄·PNG가 '보이는 그대로'인 것과 같은 규칙이다.
     // 장단은 곡에 하나뿐이라 보기와 무관하게 그대로 울린다(악보에도 늘 그려진다).
     const scoreOn = scoreViewOn();
+    let voices = 0;   // 실제로 소리를 내는 파트 수 — 재생 쪽이 이 값으로 음량을 나눈다
     parts.forEach(function (p, i) {
       const inView = scoreOn || i === activePart;
       const opts = { sound: inView && p.muted !== true, marks: i === activePart, janggu: i === host };
       if (!opts.sound && !opts.marks && !opts.janggu) return;   // 소리도 표식도 장단도 없으면 헛돎
+      if (opts.sound) voices++;
       addPart(texts[i], opts);
     });
     return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks,
-             janggu: janggu, total: totalT };
+             janggu: janggu, total: totalT, voices: voices };
   }
   // 시김새가 제대로 풀렸는지는 귀 말고는 볼 길이 없어 창구를 하나 낸다
   // (window.jgbShareLink·window.jgbTrack과 같은 성격의 검증용 노출).
@@ -5371,8 +5373,47 @@
 
   let audioCtx = null, playTimer = null, playing = false, paused = false, playState = null;
 
+  // ----- 출력 버스 (음량 정규화 + 소프트 클립) -----
+  // 총보 합주가 지지직거리던 까닭: 마스터가 0.25 고정인데 음 하나가 진폭 1까지 오른다.
+  // 정악은 헤테로포니라 악기들이 **같은 가락을 같은 시각에** 내고, 소리가 전부 순수
+  // 사인파에 osc.start(on)이라 **시작 위상까지 같아서** √N이 아니라 그대로 N배로 더해진다
+  // (실측: 봉우리 = 0.25 × 소리 나는 파트 수. 5파트 영산회상 군악에서 1.249 → destination이
+  //  [-1,1]로 하드 클립하며 사인 꼭대기가 평평해져 홀수 배음이 생긴다 = 지지직).
+  // 그래서 ① 파트 수로 나누고 ② 그래도 넘는 자리는 소프트 클립으로 눌러 모서리가 안 생기게 한다.
+  const MELODY_PEAK = 0.25;   // 파트가 몇이든 선율 합의 봉우리 — 예전 독주와 같은 크기다
+  const SOFT_KNEE = 0.7;      // 여기까지는 손대지 않고 그대로 통과, 위로만 눌린다
+
+  // 소프트 클립 곡선. WaveShaper의 curve는 **입력 -1~1로 색인**되고 그 밖은 끝값에 물리므로,
+  // 버스 앞에서 절반으로 줄여 넣고 곡선이 그 절반을 되돌린다 — 덕분에 원래 진폭 2.0까지
+  // 다룰 수 있다. 무릎(SOFT_KNEE) 아래는 정확히 통과라 평소 소리엔 왜곡이 0이다.
+  function softClipCurve(n) {
+    const c = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = ((i / (n - 1)) * 2 - 1) * 2;   // 버스에서 0.5배로 줄이기 전의 진폭 (-2~2)
+      const a = Math.abs(x);
+      const y = a <= SOFT_KNEE ? a
+        : SOFT_KNEE + (1 - SOFT_KNEE) * Math.tanh((a - SOFT_KNEE) / (1 - SOFT_KNEE));
+      c[i] = Math.sign(x) * y;
+    }
+    return c;
+  }
+
+  // 모든 소리가 여기 모여 나간다 — 선율(master)도 장구도 이 버스를 지난다.
+  // **destination에 직접 연결하지 말 것**: 우회하는 소리가 있으면 아무리 나눠도 그만큼 샌다.
+  function makeOutBus(ctx) {
+    const pre = ctx.createGain();
+    pre.gain.value = 0.5;              // 곡선의 색인 범위(-1~1)에 맞춰 줄여 넣는다
+    const shaper = ctx.createWaveShaper();
+    shaper.curve = softClipCurve(2049);
+    shaper.oversample = "4x";          // 눌리는 자리에서 생기는 에일리어싱을 줄인다
+    pre.connect(shaper); shaper.connect(ctx.destination);
+    return pre;
+  }
+
   // ----- 장구 음원 -----
-  const JANGGU_GAIN = 0.5;   // 선율(사인파 0.25)과의 균형 — 소리 크기를 바꿀 땐 여기 한 곳만
+  // 선율 합(MELODY_PEAK)과의 균형 — 소리 크기를 바꿀 땐 여기 한 곳만. 파트가 몇이든 선율
+  // 쪽 봉우리가 0.25로 고정이라 이 비율은 독주·합주에서 똑같이 유지된다.
+  const JANGGU_GAIN = 0.5;
 
   // 박보다 이만큼(초) 먼저 음원을 시작한다. 겹타는 음원 맨 앞이 본 타가 아니라 앞꾸밈이라,
   // 파일 시작을 박에 맞추면 정작 귀에 박으로 들리는 본 타가 그만큼 늦게 떨어진다.
@@ -5527,9 +5568,12 @@
       return Math.max(m, jangguLead(h.name));
     }, 0) : 0;
     const startAt = ctx.currentTime + 0.15 + maxLead;
+    const bus = makeOutBus(ctx);
     const master = ctx.createGain();
-    master.gain.value = 0.25;
-    master.connect(ctx.destination);
+    // **소리 나는 파트 수로 나눈다.** 1/√N이 아니라 1/N인 것은 헤테로포니라 봉우리가 파트
+    // 수에 정비례하기 때문이다(위 '출력 버스' 머리말 참고 — 실측으로 정확히 0.25×N이었다).
+    master.gain.value = MELODY_PEAK / Math.max(1, built.voices || 1);
+    master.connect(bus);
 
     events.forEach(function (e) {
       if (e.freq == null) return;
@@ -5548,8 +5592,9 @@
       osc.start(on); osc.stop(off + 0.02);
     });
 
-    // 장구 타점 — 녹음된 소리라 사인파 master(0.25)를 함께 타면 묻힌다. 제 경로로 내보내되
-    // 최대치를 넘지 않게 조금 줄인다(음원 봉우리가 이미 0dBFS 가까이 차 있다).
+    // 장구 타점 — 녹음된 소리라 선율 master를 함께 타면 묻힌다(파트 수로 나뉘므로 더욱).
+    // 그래서 master와 나란히, 그러나 **같은 버스로** 내보낸다 — destination에 직결하면
+    // 소프트 클립을 우회해 장구만 잘린 채 울린다(음원 봉우리가 이미 0dBFS 가까이 차 있다).
     let jangguEnd = 0;
     if (bufs) {
       built.janggu.forEach(function (h) {
@@ -5559,7 +5604,7 @@
         src.buffer = b;
         const g = ctx.createGain();
         g.gain.value = JANGGU_GAIN;
-        src.connect(g); g.connect(ctx.destination);
+        src.connect(g); g.connect(bus);
         // 겹타는 음원을 박보다 먼저 시작해 본 타가 박에 떨어지게 한다(JANGGU_LEAD)
         const at = h.t - jangguLead(h.name);
         src.start(startAt + at);
