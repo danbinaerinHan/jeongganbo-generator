@@ -210,10 +210,10 @@
   // 돌려주는 것은 **정간 번호 → 묶음 번호** 표. 화면(staff-view)과 파일(musicxml)이 같은
   // 답을 봐야 빔이 어긋나지 않으므로, 이 셈을 어느 한쪽에 다시 적지 말 것.
   //   unit = "dotted"|"plain"|"eighth" · beats = 셀 정간 수 · daegang = 대강 분절(없으면 null)
-  // off = 이 마디가 제 각에서 몇 번째 정간부터인가. 각 하나를 여러 마디로 나눈 경우
-  // (#staffBar) 대강 분절은 여전히 **각**의 것이므로, 그만큼 건너뛴 자리에서 세어야
-  // 빔이 대강 경계에서 끊긴다. 안 나누면 늘 0이라 예전과 같은 답이 나온다.
-  function beatGroups(unit, beats, daegang, off) {
+  // daegang = **이 마디의** 대강 분절(정간 수 목록). 각을 대강마다 끊어 마디로 삼은 경우
+  // (#staffBar) 그 마디는 대강 하나이므로 [마디 길이] 한 덩이가 들어온다 — 받는 쪽에서
+  // 마디마다 제 것을 넘긴다.
+  function beatGroups(unit, beats, daegang) {
     const n = Math.max(1, Math.floor(beats) || 1);
     const out = [];
     if (unit !== "eighth") {
@@ -221,15 +221,10 @@
       return out;
     }
     const gs = (daegang && daegang.length) ? daegang : [n % 3 === 0 ? 3 : 2];
-    const at = function (i) { return gs[i] || gs[gs.length - 1]; };
     let gi = 0, k = 0;
-    for (let skip = Math.max(0, Math.floor(off) || 0); skip > 0; skip--) {
-      if (++k >= at(gi)) { k = 0; gi++; }
-    }
-    const base = gi;
     for (let i = 0; i < n; i++) {
-      out[i] = gi - base;   // 묶음 번호는 이 마디 안에서 0부터 — 받는 쪽이 마디 단위로 쓴다
-      if (++k >= at(gi)) { k = 0; gi++; }
+      out[i] = gi;
+      if (++k >= (gs[gi] || gs[gs.length - 1])) { k = 0; gi++; }
     }
     return out;
   }

@@ -5963,19 +5963,31 @@
     return pick && pick !== "auto" ? parseInt(pick, 10) : null;
   }
 
-  // 한 마디를 몇 정간으로 볼까(#staffBar). 0 = 각 전체가 한 마디(기본, 예전 동작).
-  // **각을 걸치는 마디는 만들지 않는다** — 각의 경계는 그대로 지키고 그 안만 나눈다.
-  function staffBarBeats() {
+  // 마디를 어디서 끊을까(#staffBar). "gak" = 각 전체가 한 마디(기본, 예전 동작) ·
+  // "daegang" = **대강마다 한 마디**.
+  // 정간 수를 임의로 정해 끊는 길(2정간씩·5정간씩…)은 두었다가 걷었다(2026-08-16 사용자
+  // 지적) — 각을 어디서 끊을 수 있나는 취향이 아니라 **악보가 이미 답을 갖고 있다**.
+  // 대강이 곧 그 각의 마디 나눔이고, 임의 등분은 3,3,3,3처럼 고르게 나뉜 각에서만 우연히
+  // 맞았지 11·5나 6,4,4,6 같은 각에서는 뜻 없는 자리에서 잘렸다. **되살리지 말 것.**
+  function staffBarMode() {
     const pick = $("staffBar") && $("staffBar").value;
-    const n = pick && pick !== "auto" ? parseInt(pick, 10) : 0;
-    return n > 0 ? n : 0;
+    return pick === "daegang" ? "daegang" : "gak";
   }
 
-  // 지금 설정에서 **한 마디가 몇 정간인가** — 표준 각을 기준으로 잰다(박자표 칸의 미리보기용).
-  function previewBarBeats() {
-    const beats = defBeats(), bar = staffBarBeats();
-    return bar > 0 ? Math.min(bar, beats) : beats;
+  // 정간 수 n짜리 각의 대강 분절(정간 수 목록). 안 적혀 있거나 합이 안 맞으면 null.
+  // 대강은 '각 번호'가 아니라 '각 길이'가 정하므로 길이만 있으면 답이 나온다.
+  function dgOf(n) { return parseDaegang(daegangTextFor(n), n).groups; }
+
+  // 각 하나를 마디들로 끊는다 — [{ beats, dg }]. dg = 그 마디의 대강 분절(빔 묶음용).
+  //   각 전체: 한 마디, 대강 분절은 그 각의 것 그대로(빔은 여전히 대강으로 묶인다)
+  //   대강마다: 대강 수만큼의 마디, 각 마디는 제가 곧 한 대강이라 한 덩이
+  // **각의 경계는 어느 쪽이든 지킨다** — 각을 걸치는 마디는 만들지 않는다.
+  function barsOfGak(n) {
+    const dg = dgOf(n);
+    if (staffBarMode() !== "daegang" || !dg || dg.length < 2) return [{ beats: n, dg: dg }];
+    return dg.map(function (len) { return { beats: len, dg: [len] }; });
   }
+
   function previewUnit() {
     const pick = $("staffUnit") && $("staffUnit").value;
     return SC.JG[pick] ? pick : (defBeats() === 12 ? "eighth" : "dotted");
@@ -5987,34 +5999,49 @@
   // 그 마디로 못 적는 아랫수는 아예 고르지 못하게 막는다.
   function updateStaffTimeOptions() {
     const unit = previewUnit();
+    const beats = defBeats();
+    // 표준 각을 지금 설정대로 끊었을 때의 마디들 — 두 칸이 같은 이 값을 미리보기로 쓴다.
+    const bars = barsOfGak(beats);
     const sel = $("staffTime");
     if (sel) {
-      const mb = previewBarBeats();
+      // 아랫수는 마디마다가 아니라 곡에 하나이므로, 길이가 다른 마디가 섞이면 **모든 마디에서
+      // 적을 수 있는** 아랫수만 고르게 한다(하나라도 안 나눠떨어지면 거기서 자동으로 물러난다).
       Array.prototype.forEach.call(sel.options, function (op) {
         if (op.value === "auto") {
-          const a = SC.timeSig(unit, mb, null);
-          op.textContent = "자동 (" + a.beats + "/" + a.type + ")";
+          const a = SC.timeSig(unit, bars[0].beats, null);
+          op.textContent = "자동 (" + a.beats + "/" + a.type + (bars.length > 1 ? " …" : "") + ")";
           return;
         }
-        const top = SC.timeTop(unit, mb, parseInt(op.value, 10));
-        op.textContent = top != null ? top + "/" + op.value : "─/" + op.value + " (안 맞음)";
-        op.disabled = top == null;
+        const d = parseInt(op.value, 10);
+        const tops = bars.map(function (b) { return SC.timeTop(unit, b.beats, d); });
+        const okAll = tops.every(function (t) { return t != null; });
+        op.textContent = okAll ? tops[0] + "/" + op.value + (bars.length > 1 ? " …" : "")
+                               : "─/" + op.value + " (안 맞음)";
+        op.disabled = !okAll;
       });
     }
-    // '마디' 칸 — 나눈 결과 박자표가 무엇이 되는지, 딱 안 나뉘면 끝마디가 몇 정간인지 적는다.
+    // '마디' 칸 — 끊은 결과 박자표가 무엇이 되는지 적는다(길이가 여럿이면 · 로 잇는다).
     const bar = $("staffBar");
     if (!bar) return;
-    const beats = defBeats(), type = staffTimeType();
+    const type = staffTimeType();
     const sigOf = function (n) { const t = SC.timeSig(unit, n, type); return t.beats + "/" + t.type; };
+    const dg = dgOf(beats);
+    const sigs = (dg || [beats]).map(sigOf);
+    // 같은 박자표가 이어지면 한 번만 적고 개수를 붙인다 — 3,3,3,3이 '3/8·3/8·3/8·3/8'이면 길다
+    const brief = [];
+    sigs.forEach(function (s) {
+      const last = brief[brief.length - 1];
+      if (last && last.s === s) last.n++;
+      else brief.push({ s: s, n: 1 });
+    });
     Array.prototype.forEach.call(bar.options, function (op) {
-      if (op.value === "auto") {
+      if (op.value === "daegang") {
+        op.textContent = "대강마다 (" +
+          brief.map(function (b) { return b.s + (b.n > 1 ? "×" + b.n : ""); }).join(" · ") + ")";
+        op.disabled = !dg || dg.length < 2;   // 대강이 없거나 하나뿐이면 각 전체와 같은 말이다
+      } else {
         op.textContent = "각 전체 (" + sigOf(beats) + ")";
-        return;
       }
-      const n = parseInt(op.value, 10);
-      const rest = beats % n;
-      op.textContent = n + "정간 (" + sigOf(n) + ")" + (rest ? " ·끝 " + rest : "");
-      op.disabled = n >= beats;   // 각보다 길면 '각 전체'와 같은 말이라 고를 것이 없다
     });
   }
 
@@ -6056,20 +6083,17 @@
     // 각 하나가 한 마디인데 **각마다 정간 수가 다를 수 있으므로** 마디 길이도 마디마다다.
     // 정간 하나는 위 ①에서 늘 딱 jg가 되게 다듬으므로, 각의 총 길이 = 그 각의 정간 수 × jg다.
     // **각 하나가 늘 한 마디인 것은 아니다**(#staffBar). 기본은 각 전체가 한 마디지만,
-    // 정간 수를 정해 두면 각을 그만큼씩 끊어 여러 마디로 나눈다 — 12정간 각을 3정간씩
-    // 나누면 3/8 마디 넷이 된다. 각의 경계는 그대로 지켜지고(각을 걸치는 마디는 없다)
-    // 그 안이 나뉠 뿐이라, 각 = 장단 한 주기라는 뼈대는 안 흔들린다.
-    // 딱 안 나뉘면 **그 각의 마지막 마디만 짧다** — 못 적을 것이 아니라 제 박자표를 갖는다.
-    // measOff = 그 마디가 제 각에서 몇 번째 정간부터인가(빔을 대강에 맞추는 데 쓴다).
-    // gakMeasStart = 각 번호 → 첫 마디 번호(인쇄가 각 범위를 마디 범위로 옮길 때 쓴다).
+    // '대강마다'로 두면 각을 대강 분절대로 끊어 여러 마디로 나눈다 — 대강 3,3,3,3이면
+    // 3/8 마디 넷, 11·5면 33/8 + 15/8, 6,4,4,6이면 18/8 + 12/8 + 12/8 + 18/8이 된다.
+    // 각의 경계는 그대로 지켜지고(각을 걸치는 마디는 없다) 그 안이 나뉠 뿐이라, 각 = 장단
+    // 한 주기라는 뼈대는 안 흔들린다. 어디서 끊을지는 **악보가 이미 답을 갖고 있다**(barsOfGak).
+    // measDg = 그 마디의 대강 분절(빔 묶음용) · gakMeasStart = 각 번호 → 첫 마디 번호
+    // (인쇄가 각 범위를 마디 범위로 옮길 때 쓴다. 끝 보초 포함).
     const gakN = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull).length;
-    const barBeats = staffBarBeats();
-    const measBeats = [], measOff = [], gakMeasStart = [];
+    const measBeats = [], measDg = [], gakMeasStart = [];
     for (let g = 0; g < gakN; g++) {
       gakMeasStart.push(measBeats.length);
-      const n = beatsAt(g);
-      const step = barBeats > 0 ? Math.min(barBeats, n) : n;
-      for (let o = 0; o < n; o += step) { measBeats.push(Math.min(step, n - o)); measOff.push(o); }
+      barsOfGak(beatsAt(g)).forEach(function (b) { measBeats.push(b.beats); measDg.push(b.dg); });
     }
     gakMeasStart.push(measBeats.length);   // 끝 보초 — 마지막 각의 끝을 집을 수 있게
     const capAt = function (i) { return (measBeats[i] || beats) * jg; };
@@ -6159,7 +6183,7 @@
     // 길이가 다 같으면 measBeats가 전부 같은 값이라 예전과 똑같이 그려진다.
     return { name: (meta && meta.name) || "", abbr: (meta && meta.abbr) || "",
              fifths: fifths, clef: clef, beats: beats, measBeats: measBeats, bpm: bpm,
-             measOff: measOff, gakMeasStart: gakMeasStart,
+             measDg: measDg, gakMeasStart: gakMeasStart,
              unit: unit, jg: jg, timeType: timeType, perLine: staffPerLine(),
              daegang: daegang, measures: measures };
   }
@@ -6701,7 +6725,7 @@
         // 쪽의 **각** 범위를 **마디** 범위로 옮긴다 — 각 하나가 여러 마디로 나뉠 수 있으므로
         // (#staffBar) 각 번호를 그대로 마디 번호로 쓰면 짝이 어긋난다. 안 나누면 1:1이라
         // gakMeasStart가 항등이 되어 예전과 같은 값이 나온다.
-        // 마디에 딸린 표들(measBeats·measOff)도 **함께** 잘라야 한다 — 안 자르면 쪽 안의
+        // 마디에 딸린 표들(measBeats·measDg)도 **함께** 잘라야 한다 — 안 자르면 쪽 안의
         // 마디 번호로 곡 전체의 표를 읽어 박자표·빔이 밀린다.
         const cut = scores.map(function (s) {
           const gm = s.gakMeasStart;
@@ -6710,7 +6734,7 @@
           return Object.assign({}, s, {
             measures: s.measures.slice(a, b),
             measBeats: (s.measBeats || []).slice(a, b),
-            measOff: (s.measOff || []).slice(a, b),
+            measDg: (s.measDg || []).slice(a, b),
             measFrom: a
           });
         });

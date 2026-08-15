@@ -17,7 +17,7 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarBeats", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
@@ -456,57 +456,62 @@ console.log("\n박자표를 사람이 고르면 — 길이는 그대로, 세는 
   app.fields.staffUnit = "dotted";
 }
 
-console.log("\n각을 여러 마디로 나누기 — 각의 경계는 지키고 그 안만 나뉘는가");
+console.log("\n각을 대강마다 마디로 — 끊는 자리를 악보가 정하는가");
 {
-  // 각 = 장단 한 주기라는 뼈대는 그대로 두고, 그 안을 정한 정간 수로 끊는다.
-  // 12정간 각을 8분음표로 보면 자동이 12/8인데, 3정간씩 나누면 3/8 마디 넷이 된다.
-  const MEL12 = Array(12).fill("황").join("|");
+  // 각을 어디서 끊을 수 있나는 취향이 아니라 **대강**이 이미 답을 갖고 있다
+  // (2026-08-16 사용자 확정 — 임의 등분은 고르게 나뉜 각에서만 우연히 맞았다).
   const sums = (xml) => parseMeasures(xml).map((m) =>
     m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
   const times = (xml) => (xml.match(/<beats>\d+<\/beats><beat-type>\d+<\/beat-type>/g) || [])
     .map((t) => t.replace(/<[^>]+>/g, " ").trim().replace(/\s+/g, "/"));
+  const melOf = (n) => Array(n).fill("황").join("|");
 
+  // ① 3,3,3,3 (12정간·8분음표) → 3/8 넷
   app.fields.staffUnit = "eighth";
+  app.fields.daegang = "3 3 3 3";
   app.fields.staffBar = "auto";
-  const whole = xmlOf(MEL12, 12);
-  eq("각 전체가 한 마디 — 12/8 한 마디", [times(whole)[0], sums(whole).length], ["12/8", 1]);
+  const whole = xmlOf(melOf(12), 12);
+  eq("각 전체면 예전 그대로 — 12/8 한 마디", [times(whole)[0], sums(whole).length], ["12/8", 1]);
 
-  app.fields.staffBar = "3";
-  const split = xmlOf(MEL12, 12);
-  eq("3정간씩 — 3/8 마디 넷", [times(split)[0], sums(split).length], ["3/8", 4]);
-  eq("마디마다 3정간(840×3)씩 찬다", sums(split), [2520, 2520, 2520, 2520]);
+  app.fields.staffBar = "daegang";
+  const d3 = xmlOf(melOf(12), 12);
+  eq("대강 3,3,3,3 → 3/8 마디 넷", [times(d3)[0], sums(d3).length], ["3/8", 4]);
+  eq("마디마다 3정간(840×3)", sums(d3), [2520, 2520, 2520, 2520]);
   eq("나눠도 곡 전체 길이는 그대로",
-     sums(split).reduce((a, b) => a + b, 0), sums(whole).reduce((a, b) => a + b, 0));
-  ok("박자표는 한 번만 적힌다 (마디 길이가 다 같으므로)", times(split).length === 1);
+     sums(d3).reduce((a, b) => a + b, 0), sums(whole).reduce((a, b) => a + b, 0));
 
-  app.fields.staffBar = "6";
-  const half = xmlOf(MEL12, 12);
-  eq("6정간씩 — 6/8 마디 둘", [times(half)[0], sums(half).length], ["6/8", 2]);
+  // ② 11,5 (16정간·점4분음표) → 33/8 + 15/8
+  app.fields.staffUnit = "dotted";
+  app.fields.daegang = "11 5";
+  const d11 = xmlOf(melOf(16), 16);
+  eq("대강 11,5 → 33/8 + 15/8", times(d11), ["33/8", "15/8"]);
+  eq("길이도 11:5로 갈린다", sums(d11), [11 * JG, 5 * JG]);
 
-  // 딱 안 나뉘면 그 각의 **마지막 마디만** 짧고 제 박자표를 갖는다
-  app.fields.staffBar = "5";
-  const odd = xmlOf(MEL12, 12);
-  eq("5정간씩 — 5+5+2로 세 마디", sums(odd), [4200, 4200, 1680]);
-  eq("짧아진 끝마디가 제 박자표를 갖는다", times(odd), ["5/8", "2/8"]);
+  // ③ 6,4,4,6 (20정간·점4분음표) → 18/8 · 12/8 · 12/8 · 18/8
+  app.fields.daegang = "6 4 4 6";
+  const d6 = xmlOf(melOf(20), 20);
+  eq("대강 6,4,4,6 → 18/8·12/8·12/8·18/8", times(d6), ["18/8", "12/8", "18/8"]);
+  eq("길이는 6:4:4:6", sums(d6), [6 * JG, 4 * JG, 4 * JG, 6 * JG]);
 
-  // 각이 둘이면 **각마다** 새로 끊는다 — 각을 걸치는 마디는 없다
-  app.fields.staffBar = "5";
-  const two = xmlOf(MEL12 + "||" + MEL12, 12);
-  eq("각 둘 — 5+5+2가 각마다 되풀이된다",
-     sums(two), [4200, 4200, 1680, 4200, 4200, 1680]);
+  // 각이 둘이면 각마다 새로 끊는다 — 각을 걸치는 마디는 없다
+  const two = xmlOf(melOf(20) + "||" + melOf(20), 20);
+  eq("각 둘 — 6:4:4:6이 각마다 되풀이된다",
+     sums(two), [6 * JG, 4 * JG, 4 * JG, 6 * JG, 6 * JG, 4 * JG, 4 * JG, 6 * JG]);
+
+  // 대강이 없으면 나눌 것이 없다 — 각 전체 그대로
+  app.fields.daegang = "";
+  const none = xmlOf(melOf(12), 12);
+  eq("대강이 없으면 각 전체 한 마디", sums(none).length, 1);
 
   // 나눈 마디에도 박자표 아랫수 고르기가 그대로 걸린다
-  app.fields.staffBar = "3";
+  app.fields.daegang = "6 4 4 6";
   app.fields.staffTime = "4";
-  const t4 = xmlOf(MEL12, 12);
-  eq("3정간 마디 + 아랫수 4 → 1.5/4는 정수가 아니라 자동(3/8)으로 물러난다",
-     times(t4)[0], "3/8");
-  app.fields.staffBar = "6";
-  const t6 = xmlOf(MEL12, 12);
-  eq("6정간 마디 + 아랫수 4 → 3/4", times(t6)[0], "3/4");
+  const t4 = xmlOf(melOf(20), 20);
+  eq("6,4,4,6 + 아랫수 4 → 9/4·6/4", times(t4), ["9/4", "6/4", "9/4"]);
 
   app.fields.staffTime = "auto";
   app.fields.staffBar = "auto";
+  app.fields.daegang = "";
   app.fields.staffUnit = "dotted";
 }
 

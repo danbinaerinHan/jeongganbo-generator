@@ -185,13 +185,13 @@
 
     // 빔 묶음의 단위는 '한 박'이고, 무엇이 한 박인지는 정간 단위가 정한다 —
     // 셈은 staff-core의 beatGroups 한 곳에 있다(파일 쪽 musicxml.js와 같은 답을 봐야 한다).
-    // **마디마다 따로** 센다 — 각 하나가 여러 마디로 나뉘면(#staffBar) 마디마다 길이도,
-    // 대강 안에서의 출발 자리(measOff)도 다르다. 음마다 부르므로 마디별로 기억해 둔다.
+    // **마디마다 따로** 센다 — 각 하나가 대강마다 여러 마디로 나뉘면(#staffBar) 마디마다
+    // 길이도 대강 분절(measDg)도 다르다. 음마다 부르므로 마디별로 기억해 둔다.
     const groupCache = {};
     const jgGroupOf = function (mi) {
       if (!groupCache[mi]) {
-        groupCache[mi] = C.beatGroups(list[0].unit, mBeats(mi), list[0].daegang,
-                                      (list[0].measOff || [])[mi] || 0);
+        const dg = (list[0].measDg && list[0].measDg[mi]) || list[0].daegang;
+        groupCache[mi] = C.beatGroups(list[0].unit, mBeats(mi), dg);
       }
       return groupCache[mi];
     };

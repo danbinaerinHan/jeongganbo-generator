@@ -22,7 +22,7 @@ const app = await loadApp(
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
    "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SCALE",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarBeats", "staffScoreOf", "scoreViewOn", "buildStaffScores",
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "staffScoreOf", "scoreViewOn", "buildStaffScores",
    "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", scoreView: false, staffUnit: "dotted", staffKey: "auto", staffPerLine: "auto", staffBar: "auto",
@@ -474,38 +474,41 @@ console.log("\n인쇄 — 종이에 맞춰 쪽을 나누는가");
   app.fields.beats = "4";
 }
 
-console.log("\n각을 여러 마디로 나누면 — 마디줄과 빔 묶음이 함께 따라오는가");
+console.log("\n각을 대강마다 마디로 — 마디줄과 빔 묶음이 함께 따라오는가");
 {
-  const MEL12 = Array(12).fill("황").join("|");
+  const melOf = (n) => Array(n).fill("황").join("|");
   const bars = (svg) => (svg.match(/class="sv-bar[ "]/g) || []).length;
 
   app.fields.staffUnit = "eighth";
+  app.fields.daegang = "3 3 3 3";
   app.fields.staffBar = "auto";
-  const whole = STAFF.render(scoresOf(MEL12, 12), { width: 2400, scale: 1.6 });
+  const whole = STAFF.render(scoresOf(melOf(12), 12), { width: 2400, scale: 1.6 });
   ok("각 전체가 한 마디 — 마디줄 하나", bars(whole) === 1, `마디줄 ${bars(whole)}개`);
 
-  app.fields.staffBar = "3";
-  const sc = scoresOf(MEL12, 12);
-  ok("3정간씩 — 마디가 넷", sc[0].measures.length === 4);
+  app.fields.staffBar = "daegang";
+  const sc = scoresOf(melOf(12), 12);
+  ok("대강 3,3,3,3 → 마디가 넷", sc[0].measures.length === 4);
   ok("마디마다 3정간", JSON.stringify(sc[0].measBeats) === "[3,3,3,3]");
-  ok("마디의 각 안 자리(measOff)가 0·3·6·9", JSON.stringify(sc[0].measOff) === "[0,3,6,9]");
+  ok("마디의 대강 분절은 제 길이 한 덩이", JSON.stringify(sc[0].measDg) === "[[3],[3],[3],[3]]");
+  ok("각 번호 → 첫 마디 번호", JSON.stringify(sc[0].gakMeasStart) === "[0,4]");
   const split = STAFF.render(sc, { width: 2400, scale: 1.6 });
-  ok("3정간씩 — 마디줄이 넷", bars(split) === 4, `마디줄 ${bars(split)}개`);
+  ok("마디줄이 넷", bars(split) === 4, `마디줄 ${bars(split)}개`);
   ok("나눠도 음표는 다 그려진다", drawn(split) === heads(sc));
 
-  // 빔 묶음 — 8분음표 단위에서는 대강이 박을 정한다. 마디가 대강 안 어디서 시작하는지를
-  // 넘겨야(measOff) 빔이 대강 경계에서 끊긴다. 대강 3,3,3,3에 3정간 마디면 마디가 곧 한 박.
+  // 6,4,4,6 — 길이가 다른 마디가 섞인다
+  app.fields.daegang = "6 4 4 6";
+  const sc2 = scoresOf(melOf(20), 20);
+  ok("대강 6,4,4,6 → 마디 넷이 6·4·4·6", JSON.stringify(sc2[0].measBeats) === "[6,4,4,6]");
+
+  // 빔 묶음 — 마디가 곧 한 대강이므로 그 안은 한 묶음이다(8분음표 단위)
   const G = CORE.beatGroups;
-  ok("대강 3,3,3,3 · 3정간 마디 — 어느 마디든 한 묶음",
-     JSON.stringify(G("eighth", 3, [3, 3, 3, 3], 0)) === "[0,0,0]" &&
-     JSON.stringify(G("eighth", 3, [3, 3, 3, 3], 6)) === "[0,0,0]");
-  ok("대강 안 한가운데서 시작하면 그 자리에서 끊긴다",
-     JSON.stringify(G("eighth", 4, [3, 3, 3, 3], 2)) === "[0,1,1,1]");
-  ok("안 나누면(off 0) 예전 답 그대로",
-     JSON.stringify(G("eighth", 12, [3, 3, 3, 3], 0)) ===
-     JSON.stringify(G("eighth", 12, [3, 3, 3, 3])));
+  ok("3정간 마디는 한 묶음", JSON.stringify(G("eighth", 3, [3])) === "[0,0,0]");
+  ok("6정간 마디도 한 묶음", JSON.stringify(G("eighth", 6, [6])) === "[0,0,0,0,0,0]");
+  ok("각 전체 마디는 대강대로 나뉜다",
+     JSON.stringify(G("eighth", 12, [3, 3, 3, 3])) === "[0,0,0,1,1,1,2,2,2,3,3,3]");
 
   app.fields.staffBar = "auto";
+  app.fields.daegang = "";
   app.fields.staffUnit = "dotted";
 }
 
