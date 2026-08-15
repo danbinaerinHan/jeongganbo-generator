@@ -6569,8 +6569,9 @@
   }
 
   // 쪽 SVG 하나를 종이 크기 상자에 담는다(정간보 페이지와 같은 꼴 — 흰 바탕 + mm viewBox).
-  function paperWrap(innerSvg) {
-    const P = paperWH();
+  // box를 주면 그 크기의 종이로 감싼다(나란히 인쇄가 방향을 돌려 쓴다). 없으면 지금 종이.
+  function paperWrap(innerSvg, box) {
+    const P = box || paperWH();
     return "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 " + P.w + " " + P.h +
            "\" class=\"staff-page-svg\"><rect x=\"0\" y=\"0\" width=\"" + P.w + "\" height=\"" +
            P.h + "\" fill=\"#fff\"/>" + innerSvg + "</svg>";
@@ -6596,17 +6597,34 @@
 
   // 인쇄용 종이들을 #staffSheet에 깔고 인쇄한다. body.print-staff가 정간보(#sheet)를 감추고
   // 이쪽을 내놓는다 — 인쇄가 끝나면(afterprint) 도로 걷는다.
-  function printPages(htmlPages, what) {
+  // box(mm)를 주면 그 크기의 용지로 인쇄한다 — @page는 render()가 #pageStyle에 써 둔
+  // 사용자 종이 방향이라, 나란히 인쇄처럼 방향을 돌려 뽑을 때는 그대로 두면 브라우저가
+  // 세로 용지에 가로 그림을 축소해 앉힌다. #pageStyle **뒤에** 오는 style로 덮고
+  // 인쇄가 끝나면 비운다(사용자 문서 설정은 한 번도 안 건드린다).
+  function printPages(htmlPages, what, box) {
     const holder = $("staffSheet");
     if (!holder || !htmlPages.length) return;
     holder.innerHTML = htmlPages.map(function (s) {
       return "<div class=\"page\">" + s + "</div>";
     }).join("");
+    let over = $("printPageStyle");
+    if (box) {
+      if (!over) {
+        over = document.createElement("style");
+        over.id = "printPageStyle";
+        document.head.appendChild(over);   // #pageStyle보다 뒤라 같은 규칙이면 이쪽이 이긴다
+      }
+      over.textContent =
+        "@page { size: " + box.w + "mm " + box.h + "mm; margin: 0; }\n" +
+        "@media print { .page > svg { width: " + box.w + "mm !important; height: " +
+        box.h + "mm !important; } }";
+    }
     document.body.classList.add("print-staff");
     track("export_print", { v: what });
     const done = function () {
       document.body.classList.remove("print-staff");
       holder.innerHTML = "";
+      if (over) over.textContent = "";
       window.removeEventListener("afterprint", done);
     };
     window.addEventListener("afterprint", done);
@@ -6676,26 +6694,47 @@
   // 저장·되돌리기를 건드리지 않는다).
   // 대응은 **쪽 단위**다: 그 쪽의 정간보에 담긴 각 = 그 쪽 오선보의 마디. 줄 단위까지 맞추려면
   // 각마다 오선 한 줄을 강제해야 하는데, 그러면 짧은 각에서 오선보가 뭉텅뭉텅 빈다.
-  function sideBySidePages() {
+  // 정간보와 오선보를 한 장에 — 좌우로 나란히(dir "lr", 기본) 또는 위아래로(dir "tb").
+  //
+  // **놓는 방향이 종이 방향을 정한다**(2026-08-16 사용자 요청): 좌우면 가로로 긴 종이,
+  // 위아래면 세로로 긴 종이라야 반쪽이 찌그러지지 않는다. 그래서 사용자의 종이 **크기**는
+  // 그대로 쓰되 **방향만** 이 자리에서 돌린다 — 사용자가 세로로 두고 작업하다 좌우 나란히를
+  // 눌러도 알아서 가로로 나간다. 인쇄 대화상자의 용지도 함께 돌아야 하므로 printPages에
+  // 그 크기를 넘긴다(안 넘기면 @page가 사용자 방향이라 브라우저가 축소해 앉힌다).
+  //
+  // 짝은 **쪽 단위**다: 그 쪽의 정간보에 담긴 각 = 그 쪽 오선보의 마디(pageGakRanges).
+  //   좌우 — 왼쪽 오선보 · 오른쪽 정간보(정간보가 종이 오른쪽 끝에서 시작해 왼쪽으로 읽는다)
+  //   위아래 — 위 정간보 · 아래 오선보(먼저 읽는 것을 위에 둔다. 좌우에서 정간보가 '아직
+  //            안 읽은 쪽'인 오른쪽에 오는 것과 같은 차례다)
+  function sideBySideBox(dir) {
+    const paper = paperSize();
+    const lo = Math.min(paper.w, paper.h), hi = Math.max(paper.w, paper.h);
+    return dir === "tb" ? { w: lo, h: hi } : { w: hi, h: lo };
+  }
+
+  function sideBySidePages(dir) {
     const scores = staffScoresOrWarn();
     if (!scores) return Promise.resolve([]);
-    const P = paperWH(), M = paperMargin();
-    const halfW = P.w / 2;
+    const P = sideBySideBox(dir), M = paperMargin();
+    const tb = dir === "tb";
+    // 정간보가 받는 반쪽 — 좌우면 반 폭 · 위아래면 반 높이.
+    const half = tb ? { w: P.w, h: P.h / 2 } : { w: P.w / 2, h: P.h };
     // 사용자 지정 종이는 60mm가 아래끝이다(그보다 좁으면 배치가 터져 기본값으로 되돌려진다).
     // 반으로 갈라 그 아래로 내려가면 나란히는 애초에 될 일이 아니다.
-    if (halfW < 60) {
-      alert("종이가 좁아 나란히 뽑을 수 없습니다.\n종이를 키우거나 가로로 두고 다시 해보세요.");
+    if (Math.min(half.w, half.h) < 60) {
+      alert("종이가 좁아 나란히 뽑을 수 없습니다.\n종이를 키우고 다시 해보세요.");
       return Promise.resolve([]);
     }
 
-    // ① 정간보를 반 폭으로 다시 앉히고 쪽마다 그림과 각 범위를 걷는다.
-    //    방향(가로/세로)도 잠깐 세로로 둔다 — render가 가로일 때 폭·높이를 뒤집으므로
-    //    가로인 채로 반 폭을 적어 넣으면 뒤집혀 엉뚱한 종이가 된다.
+    // ① 정간보를 반쪽 크기로 다시 앉히고 쪽마다 그림과 각 범위를 걷는다.
+    //    방향은 잠깐 세로로 둔다 — render가 가로일 때 폭·높이를 뒤집으므로, 가로인 채로
+    //    반쪽 크기를 적어 넣으면 뒤집혀 엉뚱한 종이가 된다(사용자 지정은 적은 값 그대로다).
     const keep = { size: $("paperSize").value, w: $("paperW").value, h: $("paperH").value,
                    orient: $("orientation").value };
+    const mm = function (v) { return String(Math.round(v * 10) / 10); };
     $("paperSize").value = "custom";
-    $("paperW").value = String(Math.round(halfW * 10) / 10);
-    $("paperH").value = String(P.h);
+    $("paperW").value = mm(half.w);
+    $("paperH").value = mm(half.h);
     $("orientation").value = "portrait";
     let jgPages = [];
     try {
@@ -6718,7 +6757,7 @@
     }
     if (!jgPages.length) return Promise.resolve([]);
 
-    // ② 쪽마다 그 각 범위의 오선보를 왼쪽 반에 앉힌다 — 조판은 화면과 같은 Verovio,
+    // ② 쪽마다 그 각 범위의 오선보를 남은 반쪽에 앉힌다 — 조판은 화면과 같은 Verovio,
     //    못 불러왔으면 staff-view(같은 상자·같은 계약이라 갈아끼우기만 하면 된다).
     return vrvReady().then(function (tk) {
       return jgPages.map(function (jp) {
@@ -6738,29 +6777,33 @@
             measFrom: a
           });
         });
-        const box = { x: M, y: M, w: halfW - M * 1.5, h: P.h - 2 * M };
+        // 오선보 상자 — 바깥은 여백 M, 가운데(정간보와 맞닿는 쪽)는 그 절반만 둔다
+        const box = tb ? { x: M, y: half.h + M * 0.5, w: P.w - 2 * M, h: half.h - M * 1.5 }
+                       : { x: M, y: M, w: half.w - M * 1.5, h: P.h - 2 * M };
         // 마디 번호는 그 쪽 첫 마디부터 — 쪽마다 잘라 만들어도 번호가 곡 전체로 이어진다
-        const left = tk ? vrvSheetPages(cut, box, (cut[0] && cut[0].measFrom || 0) + 1)
-                        : staffSheetPages(cut, { box: box });
-        // 각이 많아 왼쪽 반에 다 안 들어가면 첫 쪽만 넣는다 — 넘치는 줄은 잘린다.
+        const staffPages = tk ? vrvSheetPages(cut, box, (cut[0] && cut[0].measFrom || 0) + 1)
+                              : staffSheetPages(cut, { box: box });
+        // 각이 많아 반쪽에 다 안 들어가면 첫 쪽만 넣는다 — 넘치는 줄은 잘린다.
         // 한 쪽에 정간보 각이 몇이나 들어가나는 정간보 배치가 정하므로, 여기서 더 나누면
-        // 오른쪽 정간보와 짝이 어긋난다(짝이 맞는 것이 이 인쇄의 전부다).
-        const staffSvg = left.length ? left[0].svg : "";
-        // 오른쪽 반에 정간보 쪽 그림을 통째로 앉힌다(제 viewBox가 반 폭 종이라 그대로 들어간다)
-        const jgSvg = jp.xml
-          .replace(/^<svg /, "<svg x=\"" + halfW + "\" y=\"0\" width=\"" + halfW +
-                             "\" height=\"" + P.h + "\" ");
-        return paperWrap(staffSvg + jgSvg);
+        // 짝지은 정간보와 어긋난다(짝이 맞는 것이 이 인쇄의 전부다).
+        const staffSvg = staffPages.length ? staffPages[0].svg : "";
+        // 정간보 쪽 그림을 제 반쪽에 통째로 앉힌다(제 viewBox가 반쪽 종이라 그대로 들어간다)
+        const jgSvg = jp.xml.replace(/^<svg /,
+          "<svg x=\"" + (tb ? 0 : half.w) + "\" y=\"0\" width=\"" + half.w +
+          "\" height=\"" + half.h + "\" ");
+        return paperWrap(staffSvg + jgSvg, P);
       });
     });
   }
-  function printSideBySide() {
-    sideBySidePages().then(function (pages) { printPages(pages, "side"); });
+  function printSideBySide(dir) {
+    sideBySidePages(dir).then(function (pages) {
+      printPages(pages, "side-" + (dir || "lr"), sideBySideBox(dir));
+    });
   }
-  function pngSideBySide() {
-    sideBySidePages().then(function (pages) {
+  function pngSideBySide(dir) {
+    sideBySidePages(dir).then(function (pages) {
       if (!pages.length) return;
-      track("export_png", { v: "side" + pages.length + "p" });
+      track("export_png", { v: "side" + (dir || "lr") + pages.length + "p" });
       downloadSvgPngs(pages, (($("title").value || "").trim() || "정간보") + "-나란히");
     });
   }
@@ -6789,8 +6832,12 @@
     $("staffExport").addEventListener("click", exportMusicXml);
     $("staffPrint").addEventListener("click", printStaffOnly);
     $("staffPng").addEventListener("click", pngStaffOnly);
-    $("staffPrintSide").addEventListener("click", printSideBySide);
-    $("staffPngSide").addEventListener("click", pngSideBySide);
+    // 나란히 — 놓는 방향이 종이 방향까지 정한다(좌우=가로 · 위아래=세로). 핸들러에 이벤트가
+    // 그대로 들어가면 dir 자리에 Event가 앉으므로 감싸서 넘긴다.
+    $("staffPrintSide").addEventListener("click", function () { printSideBySide("lr"); });
+    $("staffPngSide").addEventListener("click", function () { pngSideBySide("lr"); });
+    $("staffPrintSideTB").addEventListener("click", function () { printSideBySide("tb"); });
+    $("staffPngSideTB").addEventListener("click", function () { pngSideBySide("tb"); });
     // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 · 마디를 어떻게 끊나 · 한 줄에 몇
     // 마디 — 다섯 다 문서 값이라 saveState까지 부른다(배율·높이는 브라우저별 보기 설정이라
     // 다른 자리에 산다).

@@ -587,7 +587,13 @@
   /* 정간 = 점4분음표/4분음표 고르기. 폼 컨트롤 바탕·글자·포커스는 파일 앞쪽 공통 규칙에
      맡긴다(여기서 다시 칠하면 다크모드 값만 어긋난다 — 기호 검색칸에서 그랬다). */
   .staff-unit { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
-  .staff-unit select { font-size: 11px; padding: 2px 4px; }
+  /* **오른쪽 여백은 ▾ 자리다.** 파일 앞쪽 공통 select 규칙이 화살표를 `right 9px`에 12px로
+     그리므로, 오른쪽 패딩이 그보다 작으면 글씨가 화살표 밑으로 들어가 겹쳐 보인다
+     (2026-08-16 사용자 제보 — 여기가 4px이었다). 작은 컨트롤이라 화살표도 한 치수 줄여
+     오른쪽 5px에 10px로 그리고, 그만큼(5+10=15) 여유를 둔 18px을 패딩으로 준다.
+     `.play-pop select`·`.orn-add-map-bar select`가 같은 수법이니 값을 함께 볼 것. */
+  .staff-unit select { font-size: 11px; padding: 2px 18px 2px 5px;
+                       background-position: right 5px center; background-size: 10px; }
   /* 악보가 창보다 넓으면(각 하나가 창보다 넓은 곡) 가로로 스크롤한다 — 각을 두 줄에
      걸쳐 쪼개지 않으려는 선택이라 이 스크롤이 그 대가다. */
   #staffBody { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 6px 0 10px; }

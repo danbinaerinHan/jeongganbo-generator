@@ -893,8 +893,11 @@
                넷으로 불었다. 이름이 '뽑기'였던 것을 '출력'으로 고쳤다(2026-08-15 사용자 요청) —
                인쇄·PNG·파일을 함께 덮는 말이라야 하고, 앱의 다른 자리('인쇄')와도 결이 맞는다.
                코드 식별자(staffOut*)는 그대로 둔다 — 표시 이름과 식별자를 가르는 이 리포의 관례. 자주 안 쓰는 명령은 늘어놓지 말고 접는다는 상단바 규칙과 같다.
-               '나란히'는 정간보와 오선보를 한 장에 좌우로 앉힌다(왼쪽 오선보·오른쪽 정간보) —
-               정간보가 오른쪽에서 시작해 왼쪽으로 읽으므로 종이 오른쪽 반을 정간보에 준다. -->
+               '나란히'는 정간보와 오선보를 한 장에 앉힌다. **놓는 방향이 종이 방향을 정한다**
+               (2026-08-16 사용자 요청): 좌우면 가로로 긴 종이·위아래면 세로로 긴 종이라야
+               반쪽이 안 찌그러진다. 사용자의 종이 크기는 그대로 쓰고 방향만 돌린다.
+               좌우 = 왼쪽 오선보·오른쪽 정간보(정간보가 오른쪽에서 시작해 왼쪽으로 읽으므로),
+               위아래 = 위 정간보·아래 오선보(먼저 읽는 것을 위에). -->
           <span id="staffOutBox">
             <button type="button" id="staffOutToggle" class="tip"
               data-tip="오선보를 파일·종이로 출력
@@ -906,8 +909,11 @@
               <button type="button" id="staffPrint">오선보만 인쇄</button>
               <button type="button" id="staffPng">오선보만 PNG</button>
               <hr>
-              <button type="button" id="staffPrintSide">정간보와 나란히 인쇄</button>
-              <button type="button" id="staffPngSide">정간보와 나란히 PNG</button>
+              <button type="button" id="staffPrintSide">좌우로 나란히 인쇄</button>
+              <button type="button" id="staffPngSide">좌우로 나란히 PNG</button>
+              <hr>
+              <button type="button" id="staffPrintSideTB">위아래로 나란히 인쇄</button>
+              <button type="button" id="staffPngSideTB">위아래로 나란히 PNG</button>
             </div>
           </span>
           <button type="button" id="staffClose" class="icon-btn" title="닫기">
