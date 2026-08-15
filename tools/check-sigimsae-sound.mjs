@@ -78,6 +78,15 @@ eq("{느니르}중→ 태, 중, 태 (앞뒤로 감싼다)", pitchesOf("중{느�
 eq("{나니나}중→ 본음 자리를 [중 임 중]으로 가른다",
    pitchesOf("중{나니나}"), [P("중"), P("임"), P("중")]);
 eq("{싸랭}중  → 하배황(개방현), 중", pitchesOf("중{싸랭}"), [P("황") - 24, P("중")]);
+// 떠이어표는 붙임표 중 표(表)류 이웃(농음표·풀어내림표)과 달리 짚는 음이 정해져 있다
+eq("{떠이어표}중→ 중, 임, 중 (본음·한 음 위를 스치고 본음)",
+   pitchesOf("중{떠이어표}"), [P("중"), P("임"), P("중")]);
+eq("계면조에서는 그 '한 음 위'가 달라진다", (() => {
+  app.fields.joPreset = "hwang-gyemyeon";
+  const r = pitchesOf("황{떠이어표}");
+  app.fields.joPreset = "hwang-pyeong";
+  return r;
+})(), [P("황"), P("협"), P("황")]);
 
 console.log("\n음계에 따라 '한 칸'이 달라지는가");
 app.fields.joPreset = "hwang-gyemyeon";   // 황 협 중 임 무

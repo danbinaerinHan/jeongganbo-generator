@@ -6781,9 +6781,12 @@
   // 그 크기를 넘긴다(안 넘기면 @page가 사용자 방향이라 브라우저가 축소해 앉힌다).
   //
   // 짝은 **쪽 단위**다: 그 쪽의 정간보에 담긴 각 = 그 쪽 오선보의 마디(pageGakRanges).
-  //   좌우 — 왼쪽 오선보 · 오른쪽 정간보(정간보가 종이 오른쪽 끝에서 시작해 왼쪽으로 읽는다)
-  //   위아래 — 위 정간보 · 아래 오선보(먼저 읽는 것을 위에 둔다. 좌우에서 정간보가 '아직
-  //            안 읽은 쪽'인 오른쪽에 오는 것과 같은 차례다)
+  //   좌우 — **왼쪽 정간보 · 오른쪽 오선보**(2026-08-16 사용자 확정)
+  //   위아래 — **위 정간보 · 아래 오선보**
+  // 둘 다 **정간보가 먼저**다 — 이 앱이 만드는 것은 정간보이고 오선보는 그것을 옮겨 적은
+  // 것이므로, 왼→오른쪽·위→아래로 읽는 종이에서 원본이 앞에 온다. 예전 좌우는 반대였는데
+  // (정간보가 제 안에서 오른쪽→왼쪽으로 읽으니 종이 오른쪽 반에 두자는 셈이었다) 그건
+  // 정간보 **안**의 방향일 뿐, 두 악보를 나란히 놓는 차례를 정하는 근거가 못 된다.
   function sideBySideBox(dir) {
     const paper = paperSize();
     const lo = Math.min(paper.w, paper.h), hi = Math.max(paper.w, paper.h);
@@ -6855,9 +6858,10 @@
             measFrom: a
           });
         });
-        // 오선보 상자 — 바깥은 여백 M, 가운데(정간보와 맞닿는 쪽)는 그 절반만 둔다
+        // 오선보 상자 — 바깥은 여백 M, 가운데(정간보와 맞닿는 쪽)는 그 절반만 둔다.
+        // 좌우·위아래 어느 쪽이든 **정간보가 앞(왼쪽·위)이고 오선보가 뒤**다.
         const box = tb ? { x: M, y: half.h + M * 0.5, w: P.w - 2 * M, h: half.h - M * 1.5 }
-                       : { x: M, y: M, w: half.w - M * 1.5, h: P.h - 2 * M };
+                       : { x: half.w + M * 0.5, y: M, w: half.w - M * 1.5, h: P.h - 2 * M };
         // 마디 번호는 그 쪽 첫 마디부터 — 쪽마다 잘라 만들어도 번호가 곡 전체로 이어진다
         const staffPages = tk ? vrvSheetPages(cut, box, (cut[0] && cut[0].measFrom || 0) + 1)
                               : staffSheetPages(cut, { box: box });
@@ -6867,7 +6871,7 @@
         const staffSvg = staffPages.length ? staffPages[0].svg : "";
         // 정간보 쪽 그림을 제 반쪽에 통째로 앉힌다(제 viewBox가 반쪽 종이라 그대로 들어간다)
         const jgSvg = jp.xml.replace(/^<svg /,
-          "<svg x=\"" + (tb ? 0 : half.w) + "\" y=\"0\" width=\"" + half.w +
+          "<svg x=\"0\" y=\"0\" width=\"" + half.w +
           "\" height=\"" + half.h + "\" ");
         return paperWrap(staffSvg + jgSvg, P);
       });
