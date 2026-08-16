@@ -57,6 +57,11 @@
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
   let activeArea = "mel";                    // 하이라이트 대상: mel(선율) / jd(장단) / ly(가사)
   let cellGeom = {};                        // 렌더 시 정간 좌표 저장(하이라이트용, page 포함)
+  // 재생 표시용 정간 좌표 — **파트(열)마다** 담는다: playGeom[열][각][정간].
+  // cellGeom과 겹쳐 보이지만 답하는 물음이 다르다. cellGeom은 '지금 편집하는 칸이 어디냐'라
+  // 활성 파트 열만 담고(클릭·에디터·둘러보기가 그 뜻으로 쓴다), 이쪽은 '그려진 칸이 어디냐'라
+  // 총보면 모든 악기 열을 담는다 — 재생 표시는 보이는 악기 전부에 함께 떠야 하므로.
+  let playGeom = {};
   let jdGeom = {};                          // 렌더 시 장단 칸 좌표 저장(하이라이트용)
   let hiLyGap = 0, hiLyW = 0, hiLyricsOn = false;   // 가사 줄 하이라이트용 치수(렌더 시 갱신)
   let pageHi = [];                          // 페이지별 하이라이트 사각형
@@ -4142,7 +4147,7 @@
       ? { from: dg.groups[0], to: dg.groups[0] + dg.groups[1] } : null;
 
     stopPlayback();
-    cellGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = [];
+    cellGeom = {}; playGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = [];
     // 직접 입력 카드는 #sheet 밖(#sheetArea)에 있어 다시 그려도 살아남는다 —
     // 실시간 반영 중(keepCellEditor)이 아니면 구조가 바뀌는 것이므로 닫는다
     if (!keepCellEditor) closeCellEditor();
@@ -4188,9 +4193,14 @@
       // 편집 하이라이트 자리(내용 아래 레이어) — 인쇄·PNG 저장에는 나오지 않아야 하므로 no-print 표시
       const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none", class: "no-print" });
       hi.style.display = "none"; svg.appendChild(hi); pageHi.push(hi); pageSvgs.push(svg);
-      // 재생 하이라이트 자리(내용 아래 레이어)
-      const ph = rect(0, 0, 0, 0, 0, { fill: "#60a5fa", "fill-opacity": "0.5", stroke: "none", class: "no-print" });
-      ph.style.display = "none"; svg.appendChild(ph); playHi.push(ph);
+      // 재생 하이라이트 자리(내용 아래 레이어) — **열마다 하나씩**. 총보면 악기 수만큼
+      // 동시에 떠야 하므로(2026-08-16 사용자 제보) 페이지당 사각형 하나로는 모자란다.
+      const phs = [];
+      for (let k = 0; k < P; k++) {
+        const ph = rect(0, 0, 0, 0, 0, { fill: "#60a5fa", "fill-opacity": "0.5", stroke: "none", class: "no-print" });
+        ph.style.display = "none"; svg.appendChild(ph); phs.push(ph);
+      }
+      playHi.push(phs);
 
       // 정간 커스텀 테두리 — 각 칸에서 바로 그리지 않고 페이지 단위로 모아뒀다가,
       // 밴드 통줄·대강선까지 다 그려진 뒤에 한꺼번에 그린다. 그래야 '없음'(줄 숨김)의
@@ -4343,6 +4353,12 @@
 
           // 클릭·하이라이트 영역은 숨은 정간 포함 그 각의 정간 전부 (여전히 입력 가능)
           // — 활성 파트 열에만 단다(총보에서 남의 열을 누르는 라우팅은 다음 단계).
+          // 재생 표시는 보이는 악기 **전부**에 떠야 하므로 열마다 좌표를 담는다(playGeom).
+          for (let j = 0; j < gBeats; j++) {
+            const pg = (playGeom[pi] = playGeom[pi] || {});
+            (pg[melIdx] = pg[melIdx] || {})[j] =
+              { page: pageIdx, x: x, y: gridTop + j * cell, w: cell, h: cell };
+          }
           if (isActiveCol) for (let j = 0; j < gBeats; j++) {
             const cyTop = gridTop + j * cell;
             (cellGeom[melIdx] = cellGeom[melIdx] || {})[j] = { page: pageIdx, x: x, y: cyTop, w: cell, h: cell };
@@ -5272,8 +5288,11 @@
     const events = [];
     // marks: 오디오 이벤트와 별개로, 지속(빈 정간·이음)이어도 매 정간마다 하나씩 남겨서
     // 재생 하이라이트가 시간이 지나면 그 정간으로 계속 이동하도록 함.
-    // 합주에서도 **활성 파트의 것만** 담는다 — 하이라이트 좌표(cellGeom)가 활성 파트 열이라서.
-    const marks = [];
+    // **보이는 악기마다 한 벌씩** 담는다(2026-08-16 사용자 제보 — 총보에서 한 악기에만 표시가
+    // 떴다). 바깥 배열의 자리는 **화면의 열 번호**다: 총보면 파트 번호 그대로, 파트보면 0 하나.
+    // 그려질 때 playGeom도 같은 번호로 담기므로 둘이 그대로 맞물린다.
+    // 파트마다 각 수·정간 수가 다를 수 있어 한 벌로는 안 되고 벌을 나눠야 한다.
+    const markLanes = [];
     let totalT = 0;   // 가장 긴 파트의 끝 — 파트마다 각 수가 다를 수 있다
 
     // 앞·뒷꾸밈 한 알의 길이. 스치듯 짧은 소리라 고정 시간에 가깝게 두되, 느린 곡에서
@@ -5306,7 +5325,7 @@
     // 앉히고 사인파로 바꾸는 일만 한다.
     function addPart(melodyText, opts) {
       let t = 0, lastEvent = null;
-      function mark(g, c) { if (opts.marks) marks.push({ t: t, gak: g, cell: c }); }
+      function mark(g, c) { if (opts.marks) opts.marks.push({ t: t, gak: g, cell: c }); }
       function extend(dur, g, c) {
         mark(g, c);
         if (opts.sound && lastEvent) lastEvent.dur += dur;
@@ -5359,12 +5378,15 @@
     let voices = 0;   // 실제로 소리를 내는 파트 수 — 재생 쪽이 이 값으로 음량을 나눈다
     parts.forEach(function (p, i) {
       const inView = scoreOn || i === activePart;
-      const opts = { sound: inView && p.muted !== true, marks: i === activePart, janggu: i === host };
+      // 표식은 **보이는 악기 전부**에 — 음소거된 악기도 화면엔 있으므로 어디를 지나는지 보인다.
+      let lane = null;
+      if (inView) { lane = []; markLanes[scoreOn ? i : 0] = lane; }
+      const opts = { sound: inView && p.muted !== true, marks: lane, janggu: i === host };
       if (!opts.sound && !opts.marks && !opts.janggu) return;   // 소리도 표식도 장단도 없으면 헛돎
       if (opts.sound) voices++;
       addPart(texts[i], opts);
     });
-    return { events: events.filter(function (e) { return e.dur > 0; }), marks: marks,
+    return { events: events.filter(function (e) { return e.dur > 0; }), marks: markLanes,
              janggu: janggu, total: totalT, voices: voices };
   }
   // 시김새가 제대로 풀렸는지는 귀 말고는 볼 길이 없어 창구를 하나 낸다
@@ -5467,15 +5489,19 @@
     });
   }
 
-  function highlightPlay(gak, cell) {
-    playHi.forEach(function (h) { h.style.display = "none"; });
-    const g = cellGeom[gak]; const cg = g && g[cell];
-    if (!cg) return;
-    const h = playHi[cg.page];
-    if (!h) return;
-    h.setAttribute("x", cg.x); h.setAttribute("y", cg.y);
-    h.setAttribute("width", cg.w); h.setAttribute("height", cg.h);
-    h.style.display = "";
+  // spots = 열 번호별 { gak, cell }(그 순간 그 악기가 짚는 정간). 총보면 악기 수만큼 뜬다.
+  function highlightPlay(spots) {
+    playHi.forEach(function (arr) { arr.forEach(function (h) { h.style.display = "none"; }); });
+    (spots || []).forEach(function (sp, pi) {
+      if (!sp) return;
+      const g = playGeom[pi]; const row = g && g[sp.gak]; const cg = row && row[sp.cell];
+      if (!cg) return;
+      const arr = playHi[cg.page]; const h = arr && arr[pi];
+      if (!h) return;
+      h.setAttribute("x", cg.x); h.setAttribute("y", cg.y);
+      h.setAttribute("width", cg.w); h.setAttribute("height", cg.h);
+      h.style.display = "";
+    });
   }
 
   // 재생 버튼 하나가 상태에 따라 재생↔일시정지↔이어하기를 겸한다(별도 일시정지 버튼 없음)
@@ -5492,7 +5518,7 @@
     playing = false; paused = false; playState = null;
     if (playTimer) { clearTimeout(playTimer); playTimer = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
-    playHi.forEach(function (h) { h.style.display = "none"; });
+    playHi.forEach(function (arr) { arr.forEach(function (h) { h.style.display = "none"; }); });
     staffPlayMark(null);
     updatePlayButtons();
   }
@@ -5503,10 +5529,12 @@
     if (!playing || paused || !playState) return;
     const now = audioCtx.currentTime - playState.startAt;
     if (now >= playState.total) { stopPlayback(); return; }
-    const marks = playState.marks;
-    for (let i = marks.length - 1; i >= 0; i--) {
-      if (now >= marks[i].t) { highlightPlay(marks[i].gak, marks[i].cell); break; }
-    }
+    // 열마다 '지금 지나고 있는 정간'을 하나씩 찾아 함께 짚는다
+    highlightPlay(playState.marks.map(function (ms) {
+      if (!ms) return null;
+      for (let i = ms.length - 1; i >= 0; i--) if (now >= ms[i].t) return ms[i];
+      return null;
+    }));
     // 오선보도 **같은 시계**를 본다(오선보 보기 절의 '재생 위치 짚기') — 칸이 닫혀 있거나
     // 조판기로 안 그렸으면 그 안에서 조용히 아무 일도 안 한다.
     staffPlayMark(now * 1000);

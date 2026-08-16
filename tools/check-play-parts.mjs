@@ -58,8 +58,9 @@ function heard() {
   const built = buildAudioEvents();
   return [...new Set(built.events.filter((e) => e.freq).map((e) => toMidi(e.freq)))].sort((a, b) => a - b);
 }
-function markedCells() {
-  return buildAudioEvents().marks.length;
+// marks는 **열별 한 벌**이다(총보면 악기마다, 파트보면 하나). 자리는 화면의 열 번호.
+function markLanes() {
+  return buildAudioEvents().marks;
 }
 
 T.setPart(0, GAYA);
@@ -96,14 +97,22 @@ console.log("\n음소거(🔇)는 두 보기 모두에서 살아 있다");
   T.setActive(0);
 }
 
-console.log("\n하이라이트 표식은 늘 활성 파트만 (좌표가 활성 파트 열이라서)");
+console.log("\n하이라이트 표식은 보이는 악기마다 한 벌 (2026-08-16)");
 {
-  // marks는 보기와 무관하게 활성 파트 하나만큼 — 총보에서도 두 배가 되면 안 된다.
+  // 예전엔 활성 파트 하나만 담았는데, 총보에서 한 악기에만 표시가 떠 이상했다.
+  // 이제 보이는 악기마다 한 벌이고, 그 자리(열 번호)가 playGeom의 자리와 맞물린다.
   app.fields.scoreView = false;
-  const partView = markedCells();
+  const partView = markLanes();
   app.fields.scoreView = true;
-  const scoreViewMarks = markedCells();
-  eq("총보라고 표식이 늘지 않는다", [partView, scoreViewMarks], [4, 4]);
+  const scoreView = markLanes();
+  eq("파트보면 한 벌 · 총보면 악기 수만큼", [partView.length, scoreView.length], [1, T.count()]);
+  eq("벌마다 그 악기의 정간을 다 담는다", scoreView.map((m) => m.length), [4, 4]);
+  eq("파트보에서는 펴 놓은 악기 것이 0번 자리에", partView[0].length, 4);
+
+  // 음소거해도 표식은 남는다 — 화면엔 있으니 어디를 지나는지 보여야 한다
+  T.mute(1, true);
+  eq("음소거한 악기도 표식은 그대로", markLanes().map((m) => m.length), [4, 4]);
+  T.mute(1, false);
 }
 
 console.log("\n악기가 하나뿐이면 예전 그대로");
