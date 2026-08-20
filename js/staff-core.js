@@ -72,13 +72,21 @@
     return 0;
   }
 
-  // 자리표 고르기 — **덧줄이 적은 쪽**. 거문고처럼 낮은 음만으로 된 악보를 높은음자리표에
-  // 얹으면 덧줄만 잔뜩 생겨 읽을 수가 없다.
+  // 악기가 정해 놓은 자리표 — 그 악기의 악보가 관행으로 늘 그 자리표에 적히는 경우다.
+  // 거문고는 음역이 낮아 채보 관행이 낮은음자리표로 굳어 있고, 곡에 따라 높은 음이 많이
+  // 나와 덧줄 셈이 뒤집히더라도 **악기가 바뀌지 않는 한 자리표도 바뀌지 않아야** 한다
+  // (2026-08-20 사용자 요청). 아래 pickClef의 덧줄 셈보다 이 표가 먼저다.
+  const CLEF_INST = { "거문고": "F" };
+
+  // 자리표 고르기 — **악기가 정해 놓았으면 그것, 아니면 덧줄이 적은 쪽**. 낮은 음만으로 된
+  // 악보를 높은음자리표에 얹으면 덧줄만 잔뜩 생겨 읽을 수가 없다.
   // 예전엔 '평균 음높이 < 57이면 낮은음자리표'였다. 대개 같은 답이 나오지만 그건 대리 지표일
   // 뿐이라, 여기서는 **정말로 재려는 것**(덧줄이 몇 줄이나 생기나)을 직접 센다. 같으면
   // 높은음자리표 — 둘이 비긴다면 더 흔한 쪽이 낫다.
   // dias = 음이름 자리 목록(pitchAt(...).dia). 음이 없으면 높은음자리표.
-  function pickClef(dias) {
+  // inst = 파트의 악기 이름(없거나 "all"이면 안 고른 것이라 덧줄로 정한다).
+  function pickClef(dias, inst) {
+    if (inst && CLEF_INST[inst]) return CLEF_INST[inst];
     let g = 0, f = 0;
     for (let i = 0; i < dias.length; i++) {
       g += ledgersFor(dias[i], CLEF.G.dia);
@@ -346,7 +354,7 @@
   }
 
   root.JGB_STAFF_CORE = {
-    DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF,
+    DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF, CLEF_INST: CLEF_INST,
     timeSig: timeSig, timeTop: timeTop, TIME_TYPES: TIME_TYPES, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,

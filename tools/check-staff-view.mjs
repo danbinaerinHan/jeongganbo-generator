@@ -363,6 +363,15 @@ console.log("\n자리표 고르기 — 낮은 악보는 낮은음자리표로 (�
   ok("자리표 표가 staff-core 한 곳에 있다",
      CORE.CLEF.G.sign === "G" && CORE.CLEF.F.line === 4 &&
      CORE.CLEF.G.glyph === "gClef" && CORE.CLEF.F.dia === 2 * 7 + 4);
+
+  // 악기가 정해 놓은 자리표는 덧줄 셈보다 먼저다 — 거문고 악보는 곡이 높아도 낮은음자리표.
+  const high = [4 * 7 + 2, 5 * 7 + 0, 5 * 7 + 2, 5 * 7 + 4];   // 덧줄만 보면 G가 이기는 음역
+  ok("거문고는 음역과 무관하게 낮은음자리표", CORE.pickClef(high, "거문고") === "F");
+  ok("악기를 안 고르면 예전처럼 덧줄로 정한다", CORE.pickClef(high, "all") === "G");
+  const geo = staffScoreOf("황|태|중|임", { name: "거문고", abbr: "", instrument: "거문고" });
+  ok("악기가 재료까지 실려 온다(staffScoreOf)", geo.clef === "F");
+  const gaya = staffScoreOf("황|태|중|임", { name: "가야금", abbr: "", instrument: "가야금" });
+  ok("다른 악기는 덧줄 셈 그대로", gaya.clef === "G");
 }
 
 console.log("\n악기 이름 — 파트보에도 보이는가 (위에서 고른 악기와 같은 것을 가리켜야 한다)");
