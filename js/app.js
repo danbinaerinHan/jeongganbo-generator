@@ -1473,6 +1473,60 @@
     caretAtCellEnd(ta, c);
   }
 
+  // ---------- 장단 프리셋 (정악 장단 고르기) ----------
+  // 목록은 js/jangdan-presets.js가 들고 있다(사람이 직접 고치는 파일). 여기는 '고르면
+  // 무엇이 바뀌나'만 맡는다.
+  //
+  // **정간 수·대강·장단 줄 셋이 함께 바뀐다**(2026-08-21 사용자 확정) — 장단은 곧 각의
+  // 틀이라(20정간 여민락, 12정간 취타, 16정간 가곡…) 장단만 갈아 끼우면 칸이 안 맞아
+  // 잘리거나 남는다. 대신 이미 적어 둔 선율의 정간 수가 달라지는 경우에는 **한 번 묻는다**
+  // — 정간 수가 바뀌면 그 선율의 칸 나눔이 통째로 달라지기 때문이다.
+  //
+  // 고르는 자리는 장단 창 머리줄 하나뿐이다. 새 문서 마법사에 또 두지 말 것(중복 금지).
+  function jangdanPresets() {
+    return Array.isArray(window.JGB_JANGDAN) ? window.JGB_JANGDAN : [];
+  }
+
+  function buildJangdanPresetMenu() {
+    const sel = $("jangdanPreset");
+    if (!sel) return;
+    const list = jangdanPresets();
+    if (!list.length) { sel.closest(".ribbon-select-group").hidden = true; return; }
+    // 정간 수를 이름 옆에 적어 둔다 — 고르기 전에 '각이 몇 칸이 되는지'가 보여야
+    // 지금 쓰던 곡과 맞는지 알 수 있다.
+    list.forEach(function (p, i) {
+      const op = document.createElement("option");
+      op.value = String(i);
+      op.textContent = p.name + " (" + p.beats + "정간)";
+      sel.appendChild(op);
+    });
+  }
+
+  function applyJangdanPreset(i) {
+    const p = jangdanPresets()[i];
+    if (!p) return;
+    // 선율이 이미 있고 정간 수가 달라지면 묻는다 — 칸 나눔이 통째로 달라지므로.
+    // 빈 악보(아직 아무것도 안 적음)에서는 묻지 않는다. 물어야 할 것이 없다.
+    stashActivePart();
+    const hasNotes = parts.some(function (q, k) {
+      return ((k === activePart ? melodyFull : q.melody) || "").replace(/[|\s]/g, "") !== "";
+    });
+    if (hasNotes && defBeats() !== p.beats) {
+      if (!confirm("‘" + p.name + "’은 한 각이 " + p.beats + "정간입니다.\n" +
+                   "지금 악보(" + defBeats() + "정간)의 정간 수가 바뀌면 적어 둔 선율의 칸 나눔이 달라집니다.\n" +
+                   "그래도 바꿀까요?")) {
+        return;
+      }
+    }
+    $("beats").value = String(p.beats);
+    $("daegang").value = p.daegang || "";
+    daegangAuto = p.daegang || "";   // '자동으로 채운 값'으로 표시 — 정간 수를 또 바꾸면 따라 바뀐다
+    $("jangdan").value = p.jangdan;
+    $("wantJangdan").checked = true;   // 골랐다는 것은 쓰겠다는 뜻이다
+    onFormChange();                    // 정간 수가 바뀌었으므로 선율·곁줄까지 함께 맞춘다
+    saveState();
+  }
+
   // ---------- 정간 위 인라인 입력(가사) ----------
   function currentLyricText(gi, ci) {
     const p = parseMelodyOffsets(lyricsFull);
@@ -8147,6 +8201,16 @@
   });
   attachGakGridGuard("jangdan", syncJangdanFromCursor);
   $("jangdanReset").addEventListener("click", resetJangdan);
+  // 장단 고르기 — 고른 뒤 칸을 '고르기…'로 되돌린다. 지금 악보의 장단이 목록의 어느 것인지를
+  // 이 칸이 말해 주지는 않기 때문이다(고른 뒤에 손으로 고칠 수 있으므로 이름이 남으면
+  // 거짓말이 된다). 명령을 내리는 칸이지 상태를 보여주는 칸이 아니다.
+  if ($("jangdanPreset")) {
+    $("jangdanPreset").addEventListener("change", function () {
+      const v = this.value;
+      this.value = "";
+      if (v !== "") applyJangdanPreset(parseInt(v, 10));
+    });
+  }
 
   // 가사 편집 → 렌더 + 가사 줄 하이라이트 갱신
   $("lyrics").addEventListener("input", function () { syncLyricsFromEditor(); render(); syncLyricsFromCursor(); });
@@ -9509,6 +9573,7 @@
 
   buildPalette();
   buildJangdanPalette();
+  buildJangdanPresetMenu();
   buildLyricSymPal();
   renderGakNameList();
   fillDaegangPreset();
