@@ -221,7 +221,8 @@
       "<td>" + esc(s.author || "이름 없음") +
         '<div class="ad-sub">' + esc(LICENSE_KO[s.license] || s.license || "") + "</div></td>" +
       "<td>" + stateTag(s) + "</td>" +
-      '<td class="ad-c-ver">v' + (s.ver || 1) + "</td>" +
+      '<td class="ad-c-ver"><button type="button" class="ad-verbtn" data-act="ver" ' +
+        'title="판과 운영 기록 보기">v' + (s.ver || 1) + "</button></td>" +
       '<td class="ad-c-lint">' + lint + "</td>" +
       '<td class="ad-c-num">' + (s.view_count || 0) + "</td>" +
       '<td><div class="ad-date">' + dateText(s.created_at) + "<br>" + dateText(s.updated_at) + "</div></td>" +
@@ -235,6 +236,7 @@
         if (act === "hide") openDlg(s);
         else if (act === "show") unhide(s);
         else if (act === "doc") grabDoc(s, b);
+        else if (act === "ver") openVerDlg(s);
       });
     });
     return tr;
@@ -277,21 +279,215 @@
   // 고치는 첫 걸음이다: 문서를 .jgb.json으로 받아 편집기에서 [불러오기]로 열면 문법이
   // 틀린 글자에 빨간 바탕이 깔린다. 내려간 악보도 받을 수 있다(admin_get_score는
   // hidden을 안 가린다) — 무엇 때문에 내렸는지 보려면 열어 봐야 하므로.
+  function saveDoc(title, ver, doc) {
+    const name = (title || "악보").replace(/[\\/:*?"<>|]/g, "_") + " (v" + ver + ").jgb.json";
+    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
   function grabDoc(s, btn) {
     btn.disabled = true;
     rpc("admin_get_score", { p_id: s.id }).then(function (r) {
-      const name = (r.title || "악보").replace(/[\\/:*?"<>|]/g, "_") + " (v" + r.ver + ").jgb.json";
-      const blob = new Blob([JSON.stringify(r.doc, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+      saveDoc(r.title, r.ver, r.doc);
       btn.disabled = false;
     }).catch(function (e) {
       btn.disabled = false;
       alert((e && e.message) || "문서를 받지 못했습니다.");
+    });
+  }
+
+  // ---------- 판과 기록 ----------
+  // 판 목록과 운영 기록을 한 창에서 함께 본다. 둘은 같은 물음의 두 얼굴이다 —
+  // '이 악보의 내용이 어떻게 달라져 왔나'와 '누가 무엇을 했나'.
+  let verScore = null;
+
+  const LOG_KO = {
+    save: "교정", hide: "내림", unhide: "다시 엶", restore: "되돌림", delete: "지움",
+  };
+
+  function stampText(iso) {
+    const t = Date.parse(iso);
+    if (!t) return "";
+    const d = new Date(t);
+    const p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return dateText(iso) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  // 'v2로' / 'v3으로' — 조사는 숫자를 **읽은 소리**의 받침이 정한다.
+  // 끝자리가 3(삼)·6(육)이면 받침이 있고, 0으로 끝나는 수는 십·이십·백이라 역시 받침이 있다.
+  // 나머지(일·이·사·오·칠·팔·구)는 받침이 없거나 ㄹ이라 '로'다. 서버(admin_restore의
+  // 기본 메모)도 같은 셈을 쓴다 — 화면과 기록에 적히는 말이 어긋나면 안 된다.
+  function roFor(n) { return [0, 3, 6].indexOf(n % 10) >= 0 ? "으로" : "로"; }
+
+  function kbText(bytes) {
+    if (!bytes) return "";
+    return Math.max(1, Math.round(bytes / 1024)) + "KB";
+  }
+
+  function verErr(msg) {
+    const e = $("adVerErr");
+    e.textContent = msg || "";
+    e.style.display = msg ? "" : "none";
+  }
+
+  function openVerDlg(s) {
+    verScore = s;
+    $("adVerTitle").textContent = s.title || "제목 없음";
+    $("adVerId").textContent = "#v=" + s.id;
+    verErr("");
+    $("adVerRows").innerHTML = '<div class="ad-log-none">불러오는 중…</div>';
+    $("adLogRows").innerHTML = '<div class="ad-log-none">불러오는 중…</div>';
+    $("adVerDlg").style.display = "flex";
+    loadVer();
+  }
+  function closeVerDlg() { $("adVerDlg").style.display = "none"; verScore = null; }
+
+  function loadVer() {
+    if (!verScore) return;
+    const id = verScore.id;
+    // 둘을 함께 부른다 — 한쪽이 실패해도 나머지는 보이게 따로 받는다.
+    rpc("admin_versions", { p_id: id }).then(function (r) {
+      if (!verScore || verScore.id !== id) return;      // 그 사이 창이 바뀌었으면 버린다
+      drawVersions(r.versions || []);
+    }).catch(function (e) {
+      $("adVerRows").innerHTML = "";
+      verErr((e && e.message) || "판을 불러오지 못했습니다.");
+    });
+
+    rpc("admin_log_list", { p_limit: 30, p_offset: 0, p_id: id }).then(function (r) {
+      if (!verScore || verScore.id !== id) return;
+      drawLog(r.items || []);
+    }).catch(function () {
+      $("adLogRows").innerHTML = '<div class="ad-log-none">기록을 불러오지 못했습니다.</div>';
+    });
+  }
+
+  // 판 하나 = 표의 한 줄이 아니라 **두 줄짜리 덩이**다. 처음엔 5칸 표로 짰는데, 메모가
+  // 길이를 알 수 없는 유일한 값이라 좁은 창에서 그 칸만 뭉개졌다(500px에서 53px까지 줄어
+  // 글자가 한 자씩 끊겼다 — 실측). 길이를 모르는 것에는 제 줄을 준다.
+  function drawVersions(list) {
+    const box = $("adVerRows");
+    box.innerHTML = "";
+    if (!list.length) {
+      box.innerHTML = '<div class="ad-log-none">남아 있는 판이 없습니다.</div>';
+      return;
+    }
+    // 서버가 최신 판을 맨 앞에 준다(ver desc). 첫 줄이 곧 지금 쓰이는 판이다.
+    const now = list[0].ver;
+    list.forEach(function (v) {
+      const el = document.createElement("div");
+      el.className = "ad-veritem" + (v.ver === now ? " ad-v-now" : "");
+
+      const meta = [v.by === "admin" ? "운영자" : "게시자", stampText(v.created_at)];
+      if (v.bytes) meta.push(kbText(v.bytes));
+
+      const act = (v.ver === now)
+        ? '<span class="ad-v-nowtag">지금</span>' +
+          '<button type="button" class="ad-btn ad-mini ad-ghost" data-vact="doc">문서</button>'
+        : '<button type="button" class="ad-btn ad-mini ad-ghost" data-vact="doc">문서</button>' +
+          '<button type="button" class="ad-btn ad-mini ad-ghost" data-vact="back">되돌리기</button>';
+
+      el.innerHTML =
+        '<div class="ad-v-head">' +
+          '<span class="ad-v-num">v' + v.ver + "</span>" +
+          '<span class="ad-v-meta">' + esc(meta.join(" · ")) + "</span>" +
+          '<span class="ad-v-act">' + act + "</span>" +
+        "</div>" +
+        (v.note ? '<div class="ad-v-note">' + esc(v.note) + "</div>" : "");
+
+      el.querySelectorAll("[data-vact]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          if (b.getAttribute("data-vact") === "doc") grabVersion(v, b);
+          else openBackBar(el, v);
+        });
+      });
+      box.appendChild(el);
+    });
+  }
+
+  function grabVersion(v, btn) {
+    if (!verScore) return;
+    btn.disabled = true;
+    rpc("admin_version", { p_id: verScore.id, p_ver: v.ver }).then(function (r) {
+      saveDoc(r.title, r.ver, r.doc);
+      btn.disabled = false;
+    }).catch(function (e) {
+      btn.disabled = false;
+      verErr((e && e.message) || "그 판을 받지 못했습니다.");
+    });
+  }
+
+  // 되돌리기는 **두 걸음**이다. 지금 판을 덮는 일이라 [내리기]·[지우기]와 같은 무게로
+  // 다룬다 — 누르면 줄이 하나 펼쳐지고, 거기서 한 번 더 눌러야 바뀐다.
+  // 사유는 선택이다(서버가 'vN으로 되돌림'을 기본으로 적는다). 적으면 그것이 판에 실린다.
+  function openBackBar(item, v) {
+    const old = $("adVerRows").querySelector(".ad-backbar");
+    if (old) old.remove();
+    const bar = document.createElement("div");
+    bar.className = "ad-backbar";
+    bar.innerHTML =
+      '<input type="text" placeholder="왜 되돌리는지 (안 적으면 «v' + v.ver + roFor(v.ver) + ' 되돌림»)">' +
+      '<button type="button" class="ad-btn ad-mini ad-ghost" data-b="no">취소</button>' +
+      '<button type="button" class="ad-btn ad-mini ad-primary" data-b="yes">v' + v.ver + roFor(v.ver) + ' 되돌리기</button>';
+    item.appendChild(bar);
+    const input = bar.querySelector("input");
+    input.focus();
+    input.addEventListener("keydown", function (e) {
+      if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중 Enter 무시
+      if (e.key === "Enter") { e.preventDefault(); doRestore(v, input.value.trim(), bar); }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); bar.remove(); }
+    });
+    bar.querySelector('[data-b="no"]').addEventListener("click", function () { bar.remove(); });
+    bar.querySelector('[data-b="yes"]').addEventListener("click", function () {
+      doRestore(v, input.value.trim(), bar);
+    });
+  }
+
+  function doRestore(v, note, bar) {
+    if (!verScore) return;
+    verErr("");
+    bar.querySelectorAll("button, input").forEach(function (el) { el.disabled = true; });
+    rpc("admin_restore", { p_id: verScore.id, p_ver: v.ver, p_note: note || null })
+      .then(function (r) {
+        // 창은 열어 둔 채 다시 그린다 — 방금 얹힌 새 판이 목록 맨 위에 나타나는 것을
+        // 보여 주는 것이 '역사를 지운 게 아니라 덧댄 것'이라는 말보다 낫다.
+        verScore.ver = r.ver;
+        loadVer();
+        load(true);
+      })
+      .catch(function (e) {
+        bar.querySelectorAll("button, input").forEach(function (el) { el.disabled = false; });
+        verErr((e && e.message) || "되돌리지 못했습니다.");
+      });
+  }
+
+  function drawLog(items) {
+    const box = $("adLogRows");
+    box.innerHTML = "";
+    if (!items.length) {
+      box.innerHTML = '<div class="ad-log-none">이 악보에 대한 운영 기록이 없습니다.</div>';
+      return;
+    }
+    items.forEach(function (it) {
+      const d = it.detail || {};
+      // 무엇을 적어 보일지는 한 일마다 다르다 — 내린 것은 사유가, 교정은 메모가 알맹이다.
+      const bits = [];
+      if (d.reason) bits.push(d.reason);
+      if (d.note) bits.push(d.note);
+      if (d.from_ver != null) bits.push("v" + d.from_ver + " → v" + (d.ver != null ? d.ver : "?"));
+      else if (d.ver != null) bits.push("v" + d.ver);
+      const el = document.createElement("div");
+      el.className = "ad-log-item";
+      el.innerHTML =
+        '<span class="ad-log-when">' + stampText(it.at) + "</span> " +
+        '<span class="ad-log-what">' + (LOG_KO[it.action] || esc(it.action)) + "</span>" +
+        (it.who ? ' <span class="ad-log-detail">· ' + esc(it.who) + "</span>" : "") +
+        (bits.length ? '<div class="ad-log-detail">' + esc(bits.join(" · ")) + "</div>" : "");
+      box.appendChild(el);
     });
   }
 
@@ -436,6 +632,11 @@
 
   $("adMore").addEventListener("click", function () { load(false); });
 
+  $("adVerClose").addEventListener("click", closeVerDlg);
+  $("adVerDlg").addEventListener("mousedown", function (e) {
+    if (e.target === $("adVerDlg")) closeVerDlg();
+  });
+
   $("adDlgGo").addEventListener("click", doHide);
   $("adDlgCancel").addEventListener("click", closeDlg);
   $("adDlgClose").addEventListener("click", closeDlg);
@@ -447,8 +648,14 @@
     if (e.target === $("adDlg") && $("adDlgAfter").style.display === "none") closeDlg();
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && $("adDlg").style.display !== "none" &&
-        $("adDlgAfter").style.display === "none") closeDlg();
+    if (e.key !== "Escape") return;
+    // 내린 뒤(중단 내역 줄이 떠 있을 때)는 실수로 닫히지 않게 둔다 — 그 줄을 놓치면
+    // 언제 무엇을 내렸는지 다시 맞춰 봐야 한다.
+    if ($("adDlg").style.display !== "none") {
+      if ($("adDlgAfter").style.display === "none") closeDlg();
+      return;
+    }
+    if ($("adVerDlg").style.display !== "none") closeVerDlg();
   });
 
   // 화면 설정(색상 테마·다크)은 편집기와 같은 열쇠를 쓴다 — 여기서 바꾸지는 않고 따라간다

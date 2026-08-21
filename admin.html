@@ -159,6 +159,31 @@
   </div>
 </div>
 
+<!-- ────────── 판과 기록 창 ────────── -->
+<!-- 목록의 판 번호(v3)를 누르면 열린다. 할 일 열에 버튼을 하나 더 붙이지 않은 것은
+     거기가 이미 셋이라 좁은 창에서 가장 먼저 잘리는 자리이기 때문이고, 판을 보고 싶을 때
+     눈이 가는 곳이 마침 그 숫자라서다. -->
+<div id="adVerDlg" class="ad-overlay" style="display:none">
+  <div class="ad-dlg ad-dlg-wide">
+    <div class="ad-card-label">판과 기록</div>
+    <h2 class="ad-card-h" id="adVerTitle">악보</h2>
+    <p class="ad-dlg-score"><code id="adVerId"></code></p>
+    <div id="adVerErr" class="ad-err" style="display:none"></div>
+
+    <div class="ad-sec-label">판</div>
+    <p class="ad-sec-note">되돌려도 지난 판은 안 지워집니다 — 그 내용이 <b>새 판으로 얹힙니다</b>.
+      최근 20판까지 남고, 맨 처음 판(v1)은 끝까지 남습니다.</p>
+    <div class="ad-verwrap" id="adVerRows"></div>
+
+    <div class="ad-sec-label">운영 기록</div>
+    <div id="adLogRows" class="ad-log"></div>
+
+    <div class="ad-dlg-btns">
+      <button type="button" id="adVerClose" class="ad-btn ad-primary">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/cloud-config.js"></script>
 <script src="js/admin.js"></script>
 </body>

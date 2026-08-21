@@ -1045,7 +1045,12 @@ begin
     raise exception '그런 판이 없습니다.' using errcode = 'P0002';
   end if;
 
-  v_note := coalesce(nullif(btrim(coalesce(p_note, '')), ''), 'v' || p_ver || '으로 되돌림');
+  -- 조사는 숫자를 **읽은 소리**의 받침이 정한다: 3(삼)·6(육)과 0으로 끝나는 수(십·이십·백)만
+  -- 받침이 있어 '으로'다. 관리 화면(js/admin.js의 roFor)도 같은 셈을 쓴다 — 화면에 보이는
+  -- 말과 기록에 적히는 말이 어긋나면 안 된다.
+  v_note := coalesce(nullif(btrim(coalesce(p_note, '')), ''),
+                     'v' || p_ver ||
+                     case when p_ver % 10 in (0, 3, 6) then '으로' else '로' end || ' 되돌림');
 
   update public.scores
      set doc        = v_old.doc,
