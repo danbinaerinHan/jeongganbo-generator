@@ -1,0 +1,245 @@
+/* ============================================================================
+   관리 화면(admin.html) — 편집기와 같은 팔레트, 운영자용 판짜임
+   ============================================================================
+   색·글꼴은 styles.css에서 그대로 받는다(:root · body.dark · body.theme-*).
+   **여기서 새 색을 만들지 말 것** — browse.css와 같은 규칙이다.
+
+   ── 왜 각진 모서리인가 ────────────────────────────────────────────────────
+   온보딩 네 화면(환영·둘러보기·도움말·새 문서 마법사)이 쓰는 어휘를 그대로 쓴다:
+     ① 모서리는 각지게  ② 깊이는 그림자가 아니라 1px 선이 만든다
+     ③ 강조색은 화면당 한 점  ④ 번호·머리 라벨 같은 메타는 --mono + 넓은 자간
+   CLAUDE.md는 그 어휘의 범위를 '네 화면까지'로 못 박아 두었는데, 여기는 **새로 만드는
+   문이라 되돌릴 옛 어휘가 없다.** 게다가 셋 다 이 화면에 특히 잘 맞는다: 표는 각진
+   모서리에서 줄이 맞고, 위험한 버튼([내리기])이 하나뿐이라 ③이 곧 안전장치가 된다.
+   이걸 근거로 상단바·팔레트까지 넓히지 말 것 — 거기는 여전히 별도 작업이다.
+   ============================================================================ */
+
+/* 편집기는 화면을 꽉 채우고 스스로 스크롤을 관리한다(body: 세로 flex · overflow:hidden).
+   여기는 아래로 길어지는 문서라 그 규칙을 되돌린다(browse.css와 같은 수법).
+   글자 선택도 되살린다 — 주소(id)·사유를 긁어 옮기는 것이 이 화면의 일이다. */
+body.admin {
+  display: block; height: auto; min-height: 100%; overflow: visible;
+  -webkit-user-select: text; user-select: text;
+  padding-bottom: 48px;
+}
+
+/* ---------- 맨 윗줄 ---------- */
+.ad-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 24px;
+  border-bottom: 1px solid var(--line); background: var(--panel);
+  position: sticky; top: 0; z-index: 10;
+}
+.ad-brandlink { text-decoration: none; color: inherit; display: block; }
+.ad-brandlink #brandBox { margin-right: 0; }
+/* 문패의 h1을 div로 바꿔 달았으므로(이 페이지의 h1은 '올라온 악보') 크기를 다시 준다 */
+.brand-word { margin: 0; line-height: 0; font-size: 0; }
+.brand-word svg { height: 18px; width: auto; display: block; }
+
+.ad-who { display: flex; align-items: center; gap: 10px; }
+/* '지금 관리 화면에 있다'는 표시. 편집기와 겉이 같아서 어디에 있는지 헷갈리면 안 된다 */
+.ad-badge {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  padding: 3px 7px; border: 1px solid var(--accent); color: var(--accent);
+}
+.ad-whoname { font-size: 12px; color: var(--muted); }
+
+/* ---------- 버튼 세 꼴 ---------- */
+/* 강조색으로 채운 것은 '지금 눌러야 할 것' 하나뿐이고 나머지는 테두리다(어휘 ③). */
+.ad-btn {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 8px 14px; border-radius: 0; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.ad-btn:hover:not(:disabled) { background: var(--hover); }
+.ad-btn:disabled { opacity: .45; cursor: default; }
+.ad-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ad-primary:hover:not(:disabled) { background: var(--accent); opacity: .9; }
+.ad-ghost { background: transparent; }
+.ad-wide { width: 100%; padding: 10px 14px; }
+/* 표 안의 작은 할 일 버튼 */
+/* <a>로 만든 버튼([열기]는 새 탭으로 여는 링크다)이 <button>과 같아 보이게 */
+a.ad-btn { display: inline-flex; align-items: center; text-decoration: none; }
+.ad-mini { font-size: 11.5px; font-weight: 600; padding: 4px 8px; }
+.ad-danger { color: var(--danger); border-color: var(--danger); }
+.ad-danger:hover:not(:disabled) { background: var(--danger-soft, var(--hover)); }
+
+/* ---------- 로그인 ---------- */
+.ad-login { display: flex; justify-content: center; padding: 64px 20px; }
+.ad-card {
+  width: 100%; max-width: 380px;
+  border: 1px solid var(--line); background: var(--panel);
+  box-shadow: var(--ui-shadow); padding: 28px 26px 22px;
+}
+/* 메타 라벨 — 본문과 성격을 가른다(어휘 ④) */
+.ad-card-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--muted); margin-bottom: 10px; text-transform: uppercase;
+}
+.ad-card-h { margin: 0 0 8px; font-size: 19px; letter-spacing: .02em; }
+.ad-card-p { margin: 0 0 20px; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+.ad-note { margin: 14px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+
+.ad-field { display: block; margin-bottom: 14px; }
+.ad-field > span { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; }
+/* ── 입력칸의 테두리는 여기서 준다 ──────────────────────────────────────────
+   styles.css는 폼 컨트롤의 바탕·글자색만 전역으로 주고 **테두리는 `.field input[type=…]`
+   (사이드바 맥락)에서만** 준다. 그래서 여기 칸들은 그냥 두면 브라우저 기본 테두리
+   (2px inset 회색)가 남는다 — 실측으로 걸렸다. browse.css의 .sc-search도 같은 까닭으로
+   제 테두리를 갖고 있다.
+   포커스 규칙도 다시 적는다: styles.css의 것은 type이 number·text인 것만 걸려
+   email·password·search는 안 걸린다. */
+.ad-field input, .ad-field textarea, .ad-search, .ad-tr {
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+}
+.ad-field input:focus, .ad-field textarea:focus, .ad-search:focus, .ad-tr:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.ad-field input, .ad-field textarea {
+  width: 100%; font-family: inherit; font-size: 13px;
+  padding: 8px 10px; border-radius: 2px;   /* 인라인 조각만 2px까지 */
+}
+.ad-field textarea { resize: vertical; }
+.ad-field small { display: block; margin-top: 5px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+/* 사유가 공개인지 아닌지는 적기 전에 알아야 한다 — 이름표 옆에 못 박아 둔다 */
+.ad-req, .ad-opt {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+  font-weight: 400; padding: 2px 5px; margin-left: 6px; border: 1px solid var(--line);
+  color: var(--muted); vertical-align: 1px;
+}
+.ad-req { color: var(--accent); border-color: var(--accent); }
+
+.ad-err {
+  font-size: 12px; color: var(--danger); line-height: 1.6;
+  border: 1px solid var(--danger); padding: 8px 10px; margin-bottom: 12px;
+}
+
+/* ---------- 머리말 ---------- */
+.ad-head { max-width: 1280px; margin: 0 auto; padding: 30px 24px 6px; }
+.ad-head h1 { margin: 0 0 7px; font-size: 24px; letter-spacing: .04em; }
+.ad-lead { margin: 0 0 20px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.ad-lead a { color: var(--accent); }
+
+.ad-tabs { display: flex; gap: 2px; margin: 0 0 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ad-tab {
+  padding: 8px 13px; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  background: transparent; color: var(--muted);
+  font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.ad-tab:hover { color: var(--ink); }
+.ad-tab.on { color: var(--ink); border-bottom-color: var(--accent); }
+
+.ad-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.ad-search { font-family: inherit; font-size: 13px; padding: 7px 11px; width: 260px; border-radius: 2px; }
+.ad-sorts { display: flex; gap: 2px; }
+.ad-sort {
+  font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: 6px 11px; border: 1px solid var(--line); background: transparent;
+  color: var(--muted); border-radius: 0; margin-left: -1px;
+}
+.ad-sort:hover { background: var(--hover); }
+.ad-sort.on { color: var(--ink); background: var(--hover); border-color: var(--ink); position: relative; z-index: 1; }
+.ad-count { font-family: var(--mono); font-size: 11.5px; color: var(--muted); letter-spacing: .06em; }
+
+.ad-status {
+  max-width: 1280px; margin: 0 auto; padding: 28px 24px;
+  font-size: 13px; color: var(--muted); white-space: pre-line; line-height: 1.7;
+}
+.ad-status.ad-error { color: var(--danger); }
+
+/* ---------- 표 ---------- */
+/* 넓은 표는 제 상자 안에서 가로로 스크롤한다 — 몸통이 가로로 밀리면 안 된다 */
+.ad-tablewrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; overflow-x: auto; }
+.ad-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ad-table th {
+  text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--muted); font-weight: 400; padding: 8px 8px;
+  border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.ad-table td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ad-table tbody tr:hover { background: var(--hover); }
+/* 내려간 악보는 한눈에 — 글자를 죽이고 왼쪽에 표시를 세운다.
+   두 칸은 안 죽인다: 표시를 세운 첫 칸과, **[다시 열기]가 있는 할 일 칸**이다(내려간 줄에서
+   정작 눌러야 할 버튼을 흐리게 하면 거꾸로다). 붙박이 칸이 반투명해지면 밀려오는 칸이
+   비쳐 보이는 문제도 함께 없어진다. */
+.ad-table tr.ad-hidden td { opacity: .58; }
+.ad-table tr.ad-hidden td:first-child { box-shadow: inset 3px 0 0 var(--danger); opacity: 1; }
+.ad-table tr.ad-hidden td.ad-c-act { opacity: 1; }
+
+/* 열 너비 — 표가 좁아질 때 어디가 줄어들지를 정한다. 제목이 가장 많이 읽히므로
+   거기에 남는 폭을 주고, 나머지는 내용만큼만 차지하게 둔다. */
+.ad-c-thumb { width: 46px; }
+.ad-c-title { min-width: 180px; }
+.ad-c-author { min-width: 90px; }
+.ad-c-state, .ad-c-date { white-space: nowrap; width: 1%; }
+.ad-c-ver, .ad-c-lint, .ad-c-num { text-align: right; white-space: nowrap; }
+.ad-table td.ad-c-ver, .ad-table td.ad-c-lint, .ad-table td.ad-c-num {
+  font-family: var(--mono); font-size: 11.5px; text-align: right;
+}
+/* 할 일 열은 오른쪽에 **붙박이**다. 표가 창보다 넓어 가로로 밀릴 때 가장 먼저 잘리는
+   자리가 여기인데(실측: 810px 창에서 [내리기]가 화면 밖으로 나갔다), 정작 이 화면에
+   온 까닭이 그 버튼이다. 바탕은 --bg(표가 앉은 바닥색)라야 밀려오는 칸이 비쳐 보이지 않는다. */
+.ad-c-act { width: 1%; white-space: nowrap; }
+/* ★ 가른 선은 border가 아니라 inset box-shadow다. border-collapse 표에서 셀 테두리는
+   **셀 배경보다 아래에** 그려지므로, 배경이 불투명한 이 칸은 제 테두리를 스스로 덮어
+   버린다(내려간 줄만 반투명이라 거기서만 선이 비쳐 보였다 — 2026-08-21 실측).
+   box-shadow는 배경 위에 그려져 어느 줄에서나 똑같이 보인다. */
+.ad-table th.ad-c-act, .ad-table td.ad-c-act {
+  position: sticky; right: 0; background: var(--bg);
+  box-shadow: inset 1px 0 0 var(--line);
+}
+.ad-table tbody tr:hover td.ad-c-act { background: var(--hover); }
+
+.ad-th {
+  width: 38px; height: 50px; border: 1px solid var(--line); background: #fff;
+  object-fit: cover; object-position: top center; display: block;
+}
+/* 그림 없이 올라온 것 — 빈 칸 대신 정간 한 글자 */
+.ad-th-none {
+  width: 38px; height: 50px; border: 1px dashed var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px;
+}
+
+.ad-title { font-weight: 600; line-height: 1.35; }
+.ad-id { font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: .04em; }
+.ad-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.ad-date { font-family: var(--mono); font-size: 10.5px; color: var(--muted); white-space: nowrap; line-height: 1.6; }
+
+/* 상태·문법 배지 — 채우지 않고 테두리로만(강조색은 화면당 한 점) */
+.ad-tag {
+  display: inline-block; font-size: 10.5px; font-weight: 600;
+  padding: 2px 6px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.ad-tag-pub { color: var(--ink); border-color: var(--ink); }
+.ad-tag-off { color: var(--danger); border-color: var(--danger); }
+.ad-lintbad { color: var(--danger); font-weight: 700; }
+.ad-acts { display: flex; gap: 4px; justify-content: flex-end; }
+
+.ad-morewrap { max-width: 1280px; margin: 0 auto; padding: 20px 24px; text-align: center; }
+
+/* ---------- 내리기 창 ---------- */
+/* 그늘 색은 .modal-overlay와 **같은 고정 rgba**다. --overlay는 '악보 위에 뜨는 도구창
+   바탕'(거의 불투명한 흰색)이라 여기 쓰면 뒤가 안 비친다. dim 배경은 테마를 안 탄다. */
+.ad-overlay {
+  position: fixed; inset: 0; background: rgba(20,19,15,.5); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.ad-dlg {
+  width: 100%; max-width: 470px; max-height: 88vh; overflow-y: auto;
+  border: 1px solid var(--line); background: var(--panel);
+  box-shadow: var(--ui-shadow); padding: 26px 26px 22px;
+}
+.ad-dlg-score { margin: 0 0 18px; font-size: 13px; line-height: 1.6; }
+.ad-dlg-score code { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.ad-dlg-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.ad-after { border-top: 1px solid var(--line); margin-top: 22px; padding-top: 20px; }
+.ad-tr {
+  width: 100%; font-family: var(--mono); font-size: 11px; line-height: 1.6;
+  padding: 10px; border-radius: 2px; resize: vertical;
+}
+
+@media (max-width: 720px) {
+  .ad-search { width: 100%; }
+  .ad-head, .ad-tablewrap, .ad-morewrap { padding-left: 14px; padding-right: 14px; }
+}
