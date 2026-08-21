@@ -627,6 +627,10 @@
      fill: currentColor로 칠하고 Verovio의 선(stroke)도 currentColor라, 색 하나만 바꾸면
      음표머리·기둥·꼬리·점이 한꺼번에 따라온다. */
   #staffBody .vrv-out .staff-now { color: var(--play-now); }
+  /* 장단 범례 — 악보의 성부가 아니라 **악보 앞에 붙는 안내**다(app.js '장구 오선보' 절).
+     본 악보와 한 덩어리로 보이면 '첫 각에만 장단이 있는 곡'으로 읽히므로 옅은 줄로 가른다.
+     인쇄에서는 이 CSS가 안 걸린다 — 거기선 종이 좌표에서 자리를 띄운다. */
+  #staffBody .vrv-legend { border-bottom: 1px solid var(--line); margin-bottom: 8px; padding-bottom: 4px; }
 
   /* 게시된 악보를 열었을 때의 알림 줄 — 상단바 바로 아래, 화면 전체 폭 한 줄(마크업 자리가
      #topBar와 #appRow 사이인 까닭은 index.html 주석 참고: #main 안에 두면 왼쪽 도킹에서

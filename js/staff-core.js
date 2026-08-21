@@ -65,6 +65,29 @@
     F: { dia: 2 * 7 + 4, at: 6, glyph: "fClef", sign: "F", line: 4 }
   };
 
+  // ── 장구(타악) 표기 ──────────────────────────────────────────────────
+  // 장구는 **한 줄짜리 보표(일선보)** 에 적는다. 음높이가 없으므로 자리는 하나뿐이고,
+  // 무엇으로 쳤나는 **기둥 방향**이 말한다 — 북편(왼손, 궁)은 아래로, 채편(오른손)은 위로.
+  // 양손인 덩은 두 성부가 같은 자리에서 함께 울리는 것이라 위·아래 기둥이 다 선다.
+  // 그래서 이 파트만은 성부가 둘이다(MusicXML의 <voice> 1·2 + <backup>).
+  //   up/down = 어느 성부에 놓이나 · grace = 앞꾸밈 몇 알 · trem = 트레몰로 사선 몇 줄
+  //
+  // **작은덩·다는 덩·덕과 같은 음표로 적는다**(2026-08-21 사용자 확정) — 세기만 다를 뿐
+  // 치는 손도 자리도 같고, 크기로 가르면 작은 음표가 꾸밈음으로 읽힌다. 세기를 적고 싶어지면
+  // 크기가 아니라 셈여림표(p·f)로 붙일 것.
+  const JANGGU = {
+    "덩":       { up: true, down: true },
+    "작은덩":   { up: true, down: true },
+    "궁":       { down: true },
+    "덕":       { up: true },
+    "다":       { up: true },
+    "기덕":     { up: true, grace: 1 },     // 겹채 — 앞꾸밈 '기' + 본타 '덕'
+    "더러러러": { up: true, trem: 3 }       // 굴림채 — 기둥에 사선 셋
+  };
+  // 1선보에서 **그 한 줄 위**에 오는 자리(MusicXML <unpitched>). 자리표(percussion)와 무관하게
+  // E4임을 Verovio 6.2에서 실측했다(2026-08-21) — 한 칸 어긋나면 음표가 줄 밖에 뜬다.
+  const PERC_POS = { step: "E", octave: 4 };
+
   // 음 하나가 그 자리표에서 먹는 덧줄 수. 오선은 base ~ base+8을 덮는다.
   function ledgersFor(dia, base) {
     if (dia < base) return Math.floor((base - dia) / 2);
@@ -355,6 +378,7 @@
 
   root.JGB_STAFF_CORE = {
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF, CLEF_INST: CLEF_INST,
+    JANGGU: JANGGU, PERC_POS: PERC_POS,
     timeSig: timeSig, timeTop: timeTop, TIME_TYPES: TIME_TYPES, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,

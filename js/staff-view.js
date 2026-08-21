@@ -125,7 +125,11 @@
   function render(scores, opts) {
     if (!C) return "";
     opts = opts || {};
-    const list = (Array.isArray(scores) ? scores : [scores]).filter(Boolean);
+    // 장구(1선보, perc)는 **여기서 그리지 않는다** — 이 파일은 다섯 줄 보표를 전제로
+    // 짜여 있고(자리표·조표·음높이), 조판기를 정말 못 쓸 때의 대비책이라 새 보표 꼴을
+    // 한 벌 더 들일 값어치가 없다. 장단은 정간보 쪽에 그대로 남아 있다.
+    const list = (Array.isArray(scores) ? scores : [scores])
+      .filter(function (s) { return s && !s.perc; });
     if (!list.length) return "";
     const multi = list.length > 1;
     const jgUnits = list[0].jg || C.JG.dotted;   // 정간 하나의 길이(악보가 실어 온다)

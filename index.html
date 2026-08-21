@@ -885,6 +885,24 @@
               <option value="8">8마디</option>
             </select>
           </label>
+          <!-- 장구 — 장단은 곡에 **한 각짜리 패턴 하나**뿐인데(악보에도 첫 각 옆에 한 번만
+               그린다) 오선보의 파트는 곡 전체 길이를 가져야 해서 갈림길이 생긴다.
+               기본 '첫 마디만'은 장단 한 각을 따로 한 마디 조판해 악보 위에 얹는 것이다 —
+               정간보가 한 번만 그리는 것과 그림이 같고, 각 길이가 들쭉날쭉한 곡에도 안 휘둘린다.
+               '파트로 반복'은 진짜 성부로 맨 위에 얹어 각마다 되풀이한다(합주 총보를
+               뮤즈스코어로 넘길 때). 1선보에 북편(궁)은 기둥 아래·채편은 기둥 위로 적힌다.
+               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다. -->
+          <label class="staff-unit tip"
+            data-tip="장단을 오선보에 어떻게 적을지
+· 한 줄짜리 보표에 북편(궁)은 기둥 아래, 채편은 기둥 위로 적습니다
+· '첫 마디만'은 장단 한 각을 악보 맨 위에 한 번만 보여줍니다 (인쇄는 첫 쪽)
+· '파트로 반복'은 곡 전체에 걸쳐 각마다 되풀이합니다">장구
+            <select id="staffJanggu">
+              <option value="legend" selected>첫 마디만</option>
+              <option value="part">파트로 반복</option>
+              <option value="off">안 그림</option>
+            </select>
+          </label>
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>

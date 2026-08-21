@@ -17,9 +17,9 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", daegang: "" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", staffJanggu: "legend", wantJangdan: false, jangdan: "", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;

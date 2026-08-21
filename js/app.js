@@ -6084,6 +6084,20 @@
     return n > 0 ? n : 0;
   }
 
+  // 각 gakN개짜리 곡의 **마디 계획**. 선율과 장구가 같은 마디에 서야 하므로 셈은 한 곳에만
+  // 둔다 — 어느 한쪽에 다시 적으면 '대강마다'로 끊었을 때 장단만 딴 자리에서 갈린다.
+  //   measBeats = 마디마다의 정간 수 · measDg = 그 마디의 대강 분절(빔 묶음용)
+  //   gakMeasStart = 각 번호 → 첫 마디 번호(끝 보초 포함 — 인쇄가 각 범위를 마디 범위로 옮긴다)
+  function measurePlan(gakN) {
+    const measBeats = [], measDg = [], gakMeasStart = [];
+    for (let g = 0; g < gakN; g++) {
+      gakMeasStart.push(measBeats.length);
+      barsOfGak(beatsAt(g)).forEach(function (b) { measBeats.push(b.beats); measDg.push(b.dg); });
+    }
+    gakMeasStart.push(measBeats.length);   // 끝 보초 — 마지막 각의 끝을 집을 수 있게
+    return { measBeats: measBeats, measDg: measDg, gakMeasStart: gakMeasStart };
+  }
+
   // 선율 하나 → 오선보 재료 하나.
   //   { name, abbr, fifths, clef, beats, bpm, measLen, measures: [[음표…]] }
   //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop }  (units는 SC.DIV 기준)
@@ -6118,12 +6132,8 @@
     // measDg = 그 마디의 대강 분절(빔 묶음용) · gakMeasStart = 각 번호 → 첫 마디 번호
     // (인쇄가 각 범위를 마디 범위로 옮길 때 쓴다. 끝 보초 포함).
     const gakN = parseMelodyOffsets(melodyText != null ? melodyText : melodyFull).length;
-    const measBeats = [], measDg = [], gakMeasStart = [];
-    for (let g = 0; g < gakN; g++) {
-      gakMeasStart.push(measBeats.length);
-      barsOfGak(beatsAt(g)).forEach(function (b) { measBeats.push(b.beats); measDg.push(b.dg); });
-    }
-    gakMeasStart.push(measBeats.length);   // 끝 보초 — 마지막 각의 끝을 집을 수 있게
+    const plan = measurePlan(gakN);
+    const measBeats = plan.measBeats, measDg = plan.measDg, gakMeasStart = plan.gakMeasStart;
     const capAt = function (i) { return (measBeats[i] || beats) * jg; };
 
     // ① 자리 길이를 정수 단위로. 나눠떨어지지 않는 분박(11등분 등)에서 생기는 반올림
@@ -6224,7 +6234,7 @@
     stashActivePart();   // parts[]를 읽기 전엔 반드시 — melody는 문자열이라 사본이 낡는다
     const all = scoreViewOn();
     const idx = all ? parts.map(function (p, i) { return i; }) : [activePart];
-    return idx.map(function (i) {
+    const out = idx.map(function (i) {
       const p = parts[i];
       // 오선보에 적을 이름 — 이름을 안 적고 **악기만 고른 경우에도** 그 악기가 보여야 한다
       // (위에서 고른 것과 아래 오선보가 같은 것을 가리켜야 하므로). 총보는 열을 가려야 하니
@@ -6236,10 +6246,171 @@
                           { name: all ? partLabel(p, i) : named, abbr: p.abbr,
                             instrument: p.instrument });
     });
+    // 장구는 **맨 위**에 선다 — 각(장단)이 이 기보의 뼈대라 그것부터 읽는 것이 맞고,
+    // 빠르기 표시도 맨 위 보표에 붙어야 한다(musicxml.js는 pi===0에 적는다).
+    // '첫 마디만'(기본)은 여기 안 든다 — 그건 악보의 성부가 아니라 악보 앞에 붙는 안내라,
+    // 따로 조판해 위에 얹는다(staffDraw·staffOnlyPages).
+    if (jangguStaffOn() && jangguStaffMode() === "part") {
+      const jgs = jangguPartScore();
+      if (jgs) out.unshift(jgs);
+    }
+    return out;
+  }
+
+  // ---------- 장구 오선보 (1선보) ----------
+  // 장단은 곡에 **한 각짜리 패턴 하나**뿐이고 악보에도 첫 각 옆에 한 번만 그린다. 오선보로
+  // 옮길 때 갈림길이 생기는 까닭이 그것이다 — 오선보의 파트는 곡 전체 길이를 가져야 하므로.
+  //   첫 마디만(기본) — 장단 한 각을 **별도로 한 마디** 조판해 악보 위에 얹는다. 정간보가
+  //     한 번만 그리는 것과 그림이 같고, 각 길이가 들쭉날쭉한 곡·'대강마다' 마디 나눔에
+  //     휘둘리지 않는다. 인쇄는 **첫 쪽에만**(2026-08-21 사용자 확정).
+  //   파트로 반복 — 진짜 성부로 맨 위에 얹고 각마다 되풀이한다. 합주 총보를 뮤즈스코어로
+  //     넘길 때 쓴다. 각 길이가 표준과 다른 각에서는 패턴이 그 길이만큼만 실리고 남는
+  //     자리는 쉼표가 된다(재생이 각마다 같은 칸을 얹는 것과 같은 규칙).
+  // **총보든 파트보든 나온다**(2026-08-21 사용자 확정) — 장단은 곡에 하나뿐이라 정간보에도
+  // 늘 그려지고 재생에서도 보기와 무관하게 울린다. 그 규칙을 오선보만 뒤집을 까닭이 없다.
+  function jangguStaffMode() {
+    const v = $("staffJanggu") && $("staffJanggu").value;
+    return (v === "off" || v === "part") ? v : "legend";
+  }
+  // 오선보에 장구를 그릴 조건 — jangguSoundOn(재생)과 같은 꼴이되 재생 설정 대신 이 칸을 본다.
+  function jangguStaffOn() {
+    return jangguStaffMode() !== "off"
+      && !!($("wantJangdan") && $("wantJangdan").checked)
+      && !!($("jangdan").value || "").trim();
+  }
+
+  // 장단 줄 → 오선보 재료 하나. **선율과 같은 그릇**이라 조판·인쇄·나란히가 그대로 받는다.
+  // 다른 것은 셋뿐: perc(1선보라는 표) · lanes(성부 둘 — 채편 위 / 북편 아래) · 음높이 없음.
+  //   gakLens = 각마다의 정간 수. 범례면 [defBeats()] 하나, 파트면 곡의 각 길이 전부.
+  // 타점의 길이는 **다음 타점까지, 길어도 한 박까지**다. 북은 끌리지 않으므로 타점 뒤를
+  // 얼마나 잡아 두느냐는 관행의 문제인데, 한 박을 넘겨 잡으면 음표꼴이 없는 길이가 나와
+  // 붙임줄로 갈린다(12정간 각의 궁 하나가 '온음표 ⌒ 8분음표'가 됐다) — 북 한 번을 붙임줄로
+  // 잇는 악보는 없다. **무엇이 한 박인가는 SC.beatGroups 한 곳**이 답한다: 정간이
+  // 점4분음표·4분음표면 정간 하나, 8분음표면 대강 하나. 그래서 12/8 장단이 대강마다
+  // 점4분음표로 적히고 남는 자리는 쉼표가 된다 — 실제 장단 오선 표기의 모습이다.
+  // 마디도 넘기지 않는다(각·마디가 바뀌면 거기서 끊고 새 쉼표로 시작한다).
+  function jangguScoreOf(gakLens) {
+    const jd = parseMelodyOffsets($("jangdan").value)[0] || [];
+    if (!jd.length || !gakLens.length) return null;
+    const beats = defBeats();
+    // 정간 단위·박자표·줄 나눔은 선율과 **같은 값**이라야 마디가 나란히 선다
+    const pick = $("staffUnit") && $("staffUnit").value;
+    const unit = SC.JG[pick] ? pick : (beats === 12 ? "eighth" : "dotted");
+    const jg = SC.JG[unit];
+
+    // 각 하나의 타점 — 정간 c의 분박 i번째가 c*jg + jg*i/분박수 자리에 선다(선율과 같은 규칙).
+    // 이음(-)과 모르는 글자는 **새로 치지 않는다** — 앞 타점이 그만큼 길어질 뿐이다.
+    function strikesOfGak(n) {
+      const up = [], down = [];
+      for (let c = 0; c < n; c++) {
+        const cell = jd[c];
+        const rows = cell ? cell.text.split(/\s+/).filter(Boolean) : [];
+        for (let i = 0; i < rows.length; i++) {
+          const k = SC.JANGGU[stripSymBracket(rows[i])];
+          if (!k) continue;
+          const hit = { at: c * jg + Math.round(jg * i / rows.length),
+                        grace: k.grace || 0, trem: k.trem || 0 };
+          if (k.up) up.push(hit);
+          if (k.down) down.push(hit);
+        }
+      }
+      return [up, down];
+    }
+
+    // 그 각에서 **한 박이 끝나는 자리**들(단위 값). 타점을 여기서 끊는다 — 위 주석 참고.
+    function beatEnds(n) {
+      const grp = SC.beatGroups(unit, n, dgOf(n));
+      const ends = [];
+      for (let c = 1; c < n; c++) if (grp[c] !== grp[c - 1]) ends.push(c * jg);
+      ends.push(n * jg);
+      return ends;
+    }
+
+    // 타점들 → 그 각의 마디별 음표 목록. 타점 앞뒤의 빈 자리는 쉼표로 메운다.
+    function laneMeasures(hits, bars, ends) {
+      const out = [];
+      let at0 = 0;
+      bars.forEach(function (b) {
+        const end = at0 + b.beats * jg;
+        const inside = hits.filter(function (h) { return h.at >= at0 && h.at < end; });
+        const notes = [];
+        let at = at0;
+        inside.forEach(function (h, i) {
+          if (h.at > at) notes.push({ rest: true, units: h.at - at, graces: [], afters: [] });
+          // 다음 타점 · 이 박의 끝 · 마디의 끝 가운데 **가장 이른 것**까지가 이 타점의 길이다
+          const beatEnd = ends.filter(function (e) { return e > h.at; })[0];
+          const nx = Math.min(inside[i + 1] ? inside[i + 1].at : end,
+                              beatEnd != null ? beatEnd : end, end);
+          notes.push({ perc: true, units: nx - h.at, trem: h.trem, afters: [],
+                       // 겹채(기덕)의 앞꾸밈 — 음높이가 없으므로 알맹이는 null이고 개수만 뜻이 있다
+                       graces: h.grace ? new Array(h.grace).fill(null) : [] });
+          at = nx;
+        });
+        if (at < end) notes.push({ rest: true, units: end - at, graces: [], afters: [] });
+        out.push(notes);
+        at0 = end;
+      });
+      return out;
+    }
+
+    const measBeats = [], measDg = [], gakMeasStart = [];
+    const lanes = [[], []];
+    let struck = 0;
+    gakLens.forEach(function (n) {
+      gakMeasStart.push(measBeats.length);
+      const bars = barsOfGak(n);
+      bars.forEach(function (b) { measBeats.push(b.beats); measDg.push(b.dg); });
+      const hits = strikesOfGak(n), ends = beatEnds(n);
+      struck += hits[0].length + hits[1].length;
+      laneMeasures(hits[0], bars, ends).forEach(function (mm) { lanes[0].push(mm); });
+      laneMeasures(hits[1], bars, ends).forEach(function (mm) { lanes[1].push(mm); });
+    });
+    gakMeasStart.push(measBeats.length);
+    if (!struck) return null;   // 적힌 것이 이음뿐 — 그릴 것이 없다
+
+    return { perc: true, name: "장구", abbr: "장구", fifths: 0, clef: "G",
+             beats: beats, measBeats: measBeats, measDg: measDg, gakMeasStart: gakMeasStart,
+             bpm: Math.max(1, parseInt($("tempoBpm").value) || 60),
+             unit: unit, jg: jg, timeType: staffTimeType(), perLine: staffPerLine(),
+             daegang: parseDaegang(daegangTextFor(beats), beats).groups,
+             // measures = 채편(위 성부). musicxml.js가 마디를 여기서 세고 북편은 lanes[1]에서
+             // 가져간다 — 쪽마다 자르는 인쇄가 measures만 자르면 안 되는 까닭이 그것이다.
+             lanes: lanes, measures: lanes[0] };
+  }
+
+  // 곡 전체를 덮는 장구 파트('파트로 반복' 모드). 각 수는 **가장 긴 파트**에 맞춘다 —
+  // 장단은 곡의 뼈대라 어느 악기가 먼저 끝나든 끝까지 간다.
+  function jangguPartScore() {
+    stashActivePart();
+    const gakN = parts.reduce(function (m, p, i) {
+      const t = i === activePart ? melodyFull : p.melody;
+      return Math.max(m, parseMelodyOffsets(t).length);
+    }, 1);
+    const lens = [];
+    for (let g = 0; g < gakN; g++) lens.push(beatsAt(g));
+    return jangguScoreOf(lens);
+  }
+
+  // 범례 한 마디 — 장단은 늘 표준 정간 수라 각 길이 예외에 안 휘둘린다('각별 정간 수' 절).
+  // 빠르기는 안 적는다(noTempo) — 바로 아래 본 악보에 같은 말이 붙어 있다.
+  function jangguLegendScore() {
+    const sc = jangguScoreOf([defBeats()]);
+    if (sc) sc.noTempo = true;
+    return sc;
   }
 
   function buildMusicXml() {
-    return window.JGB_MUSICXML.build(buildStaffScores(),
+    const scores = buildStaffScores();
+    // '첫 마디만'이어도 **파일에는 곡 전체로 싣는다.** 범례는 종이에 몇 번 그릴까 하는
+    // 조판의 문제지만, MusicXML은 조판이 아니라 **곡 자체**를 담는 형식이고 장단은 실제로
+    // 곡 내내 친다. 한 마디만 넣으면 뮤즈스코어에서 '장단이 첫 각에만 있는 곡'이 되어
+    // 사실과 달라진다 — 범례가 하는 말('이 장단이 되풀이된다')을 파일은 되풀이해 적는 것으로
+    // 옮긴다. 화면과 다른 것이 아니라 같은 말의 다른 적기다.
+    if (jangguStaffOn() && jangguStaffMode() === "legend") {
+      const jgs = jangguPartScore();
+      if (jgs) scores.unshift(jgs);
+    }
+    return window.JGB_MUSICXML.build(scores,
       { title: $("title").value, subtitle: $("subtitle").value });
   }
 
@@ -6381,6 +6552,23 @@
     return "<div class=\"vrv-out\">" + html + "</div>";
   }
 
+  // 장단 범례 — 장구 한 각을 **따로 한 번** 조판해 악보 위에 얹는다(jangguStaffMode "legend").
+  // 악보의 성부가 아니라 악보 앞에 붙는 안내라 본 악보와 같은 조판에 섞지 않는다 — 섞으면
+  // 빈 장구 보표가 모든 줄에 따라붙어 긴 곡에서 종이를 통째로 먹는다.
+  // **본 악보보다 먼저 부를 것** — 조판기가 하나뿐이라 나중에 부른 쪽이 timemap을 갖는다
+  // (재생 위치 짚기는 본 악보 것이어야 한다).
+  //   폭은 제 자연 폭 그대로(adjustPageWidth) — 한 마디를 창 폭에 늘여 놓으면 우스워진다.
+  function vrvLegend(score, width) {
+    const scale = Math.max(15, Math.round(40 * staffZoom));
+    vrvTk.setOptions({
+      scale: scale, pageWidth: Math.max(600, Math.round(width * 100 / scale)),
+      pageHeight: 60000, adjustPageHeight: true, adjustPageWidth: true, noJustification: true,
+      breaks: "auto", graceFactor: VRV_GRACE, header: "none", footer: "none"
+    });
+    if (!vrvTk.loadData(window.JGB_MUSICXML.build([score], {}))) return "";
+    return "<div class=\"vrv-out vrv-legend\">" + vrvTk.renderToSVG(1, {}) + "</div>";
+  }
+
   // ----- 재생 위치 짚기 -----
   // 재생 중 지금 울리는 음표를 오선보에서도 강조한다 — 정간보가 현재 정간을 상자로 짚는
   // 그 순간과 같은 것을 가리킨다. 자리를 우리가 다시 세지 않고 **Verovio가 조판과 함께
@@ -6491,8 +6679,16 @@
     }
     const width = Math.max(320, body.clientWidth - 8);
     if (vrvTk) {
-      try { body.innerHTML = vrvRender(scores, width); return; }
-      catch (err) { console.error("Verovio 조판 실패 — staff-view로 물러납니다:", err); }
+      try {
+        // 범례가 있으면 먼저 조판해 위에 얹는다(vrvRender가 뒤라야 timemap이 본 악보 것이다)
+        let head = "";
+        if (jangguStaffOn() && jangguStaffMode() === "legend") {
+          const lg = jangguLegendScore();
+          if (lg) { try { head = vrvLegend(lg, width); } catch (e) { head = ""; } }
+        }
+        body.innerHTML = head + vrvRender(scores, width);
+        return;
+      } catch (err) { console.error("Verovio 조판 실패 — staff-view로 물러납니다:", err); }
     } else if (vrvState !== "failed") {
       // **불러오는 동안엔 대비책 그림을 그리지 않는다**(2026-08-16 사용자 제보). 예전엔
       // staff-view로 먼저 그렸는데, 6.7MB wasm이 받아지는 3초쯤 뒤 Verovio로 다시 그려지면서
@@ -6772,15 +6968,52 @@
 
   // 조판기 로드를 기다려야 해서 **프로미스**를 준다 — 준비 전에 눌러도 기다렸다 뽑고,
   // 못 불러오면 staff-view 쪽 나눔으로 물러난다(화면 칸과 같은 규칙).
+  // 인쇄용 범례 — 화면과 같은 수법이되 배율이 인쇄 오선 크기다. 종이(mm) 좌표에 앉힌
+  // 조각과 그 높이를 준다(높이만큼 본 악보를 아래로 밀어야 하므로).
+  // 3.78 = 1mm를 그리기 단위 몇으로 볼 것인가(vrvSheetPages와 같은 값).
+  function vrvLegendPiece(score, x, y, maxWmm) {
+    const scale = staffPrintVrvScale();
+    vrvTk.setOptions({
+      scale: scale, pageWidth: Math.max(100, Math.round(maxWmm * 3.78 * 100 / scale)),
+      pageHeight: 60000, adjustPageHeight: true, adjustPageWidth: true, noJustification: true,
+      breaks: "auto", graceFactor: VRV_GRACE, header: "none", footer: "none"
+    });
+    if (!vrvTk.loadData(window.JGB_MUSICXML.build([score], {}))) return null;
+    const svg = vrvTk.renderToSVG(1, {});
+    const m = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
+    if (!m) return null;
+    const w = parseFloat(m[1]) / 3.78, h = parseFloat(m[2]) / 3.78;
+    return { h: h, svg: svg.replace(/^<svg width="[\d.]+px" height="[\d.]+px"/,
+      "<svg x=\"" + x + "\" y=\"" + y + "\" width=\"" + Math.min(w, maxWmm) +
+      "\" height=\"" + h + "\" viewBox=\"0 0 " + parseFloat(m[1]) + " " + parseFloat(m[2]) + "\"") };
+  }
+
   function staffOnlyPages() {
     const scores = staffScoresOrWarn();
     if (!scores) return Promise.resolve([]);
     return vrvReady().then(function (tk) {
       const P = paperWH(), M = paperMargin();
-      const pages = tk
-        ? vrvSheetPages(scores, { x: M, y: M, w: P.w - 2 * M, h: P.h - 2 * M }, 1)
-        : staffSheetPages(scores);
-      return pages.map(function (p) { return paperWrap(p.svg); });
+      const box = { x: M, y: M, w: P.w - 2 * M, h: P.h - 2 * M };
+      // 장단 범례를 **첫 쪽 맨 위에만** 놓는다(2026-08-21 사용자 확정). 자리는 모든 쪽에서
+      // 똑같이 비운다 — 쪽마다 상자가 다르면 조판기가 한 번에 접을 수 없어서다. 그래서
+      // 둘째 쪽부터는 위 여백이 그만큼 넓어 보인다(범례 한 줄만큼).
+      let legend = null;
+      if (tk && jangguStaffOn() && jangguStaffMode() === "legend") {
+        const lg = jangguLegendScore();
+        if (lg) {
+          try { legend = vrvLegendPiece(lg, box.x, box.y, box.w); } catch (e) { legend = null; }
+        }
+      }
+      if (legend) {
+        // 조각 높이엔 조판기가 둔 위아래 여백이 이미 들어 있어 틈을 크게 잡을 것이 없다
+        const gap = legend.h * 0.15;
+        box.y += legend.h + gap;
+        box.h -= legend.h + gap;
+      }
+      const pages = tk ? vrvSheetPages(scores, box, 1) : staffSheetPages(scores, { box: box });
+      return pages.map(function (p, i) {
+        return paperWrap((legend && i === 0 ? legend.svg : "") + p.svg);
+      });
     });
   }
   function printStaffOnly() {
@@ -6869,6 +7102,9 @@
     if (!jgPages.length) return Promise.resolve([]);
 
     // ② 쪽마다 그 각 범위의 오선보를 남은 반쪽에 앉힌다 — 조판은 화면과 같은 Verovio,
+    //    **장단 범례는 여기 안 붙인다** — 왼쪽 반쪽의 정간보에 장단 줄이 이미 그려져 있어
+    //    같은 것을 한 종이에 두 번 적는 꼴이 된다(2026-08-21).
+
     //    못 불러왔으면 staff-view(같은 상자·같은 계약이라 갈아끼우기만 하면 된다).
     return vrvReady().then(function (tk) {
       return jgPages.map(function (jp) {
@@ -6885,6 +7121,8 @@
             measures: s.measures.slice(a, b),
             measBeats: (s.measBeats || []).slice(a, b),
             measDg: (s.measDg || []).slice(a, b),
+            // 장구는 성부가 둘이라 measures만 자르면 북편이 곡 전체인 채로 남는다
+            lanes: s.lanes && s.lanes.map(function (L) { return L.slice(a, b); }),
             measFrom: a
           });
         });
@@ -6963,6 +7201,7 @@
     $("staffKey").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffTime").addEventListener("change", function () { staffDraw(); saveState(); });
     $("staffBar").addEventListener("change", function () { staffDraw(); saveState(); });
+    $("staffJanggu").addEventListener("change", function () { staffDraw(); saveState(); });
     // 인쇄 오선 크기는 화면을 안 바꾼다 — 종이에만 걸리므로 다시 그리지 않는다
     $("staffPrintSize").addEventListener("change", saveState);
     $("staffPerLine").addEventListener("change", function () { staffDraw(); saveState(); });
@@ -6994,7 +7233,7 @@
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
-    "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffPrintSize"];
+    "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffJanggu", "staffPrintSize"];
   const LS_KEY = "jgb_state_v1";
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
@@ -7044,6 +7283,7 @@
     if (!("staffBar" in s.controls) && $("staffBar")) $("staffBar").value = "auto";
     if (!("staffPrintSize" in s.controls) && $("staffPrintSize")) $("staffPrintSize").value = "normal";
     if (!("staffPerLine" in s.controls) && $("staffPerLine")) $("staffPerLine").value = "auto";
+    if (!("staffJanggu" in s.controls) && $("staffJanggu")) $("staffJanggu").value = "legend";
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
     // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
     // 파트 1개로 승계한다(tempoBpm 승계와 같은 관례 — 옛 문서는 그대로 열려야 한다).

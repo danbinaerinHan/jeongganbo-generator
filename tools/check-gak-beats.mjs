@@ -26,9 +26,9 @@ const app = await loadApp(
    "gakCellOffset", "melCellSeq", "seqToCell",
    "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
    "scaleNotes", "makeScale", "realizeMelody",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "staffScoreOf", "scoreViewOn", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
   { beats: "12", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
-    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "" },
+    title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "", staffJanggu: "legend", wantJangdan: false, jangdan: "" },
   `let parts = [{ name: "", abbr: "", melody: "", muted: false }];
    let activePart = 0;
    function stashActivePart() { parts[0].melody = melodyFull; }`
