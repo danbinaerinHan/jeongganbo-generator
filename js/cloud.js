@@ -208,8 +208,12 @@
     // 관리자로 연 악보는 **되쓰는 길 하나만** 연다. 여느 칸을 살려 두면 [게시]를 눌러
     // 남의 악보를 베낀 새 게시물이 하나 더 생긴다.
     const adm = adminMode();
+    // ★ 되돌리는 쪽도 함께 적을 것. 창은 한 번 만들어 두고 여닫으므로, 관리자 모드에서
+    //   숨긴 것을 여느 모드에서 되살리지 않으면 그 탭에서는 영영 안 보인다(열쇠 안내가
+    //   그랬다). 아래 네 개는 여느 경로가 다시 정해 주지만 그래도 여기서 함께 되돌린다 —
+    //   '숨긴 자리와 되살리는 자리가 같아야' 새 항목을 더할 때 빠뜨리지 않는다.
     ["pubExisting", "pubForkNote", "pubNew", "pubDelete", "pubKeyNote"].forEach(function (k) {
-      const el = $(k); if (el && adm) el.style.display = "none";
+      const el = $(k); if (el) el.style.display = adm ? "none" : "";
     });
     $("pubAdmin").style.display = adm ? "" : "none";
     $("pubAdminGo").style.display = adm ? "" : "none";
