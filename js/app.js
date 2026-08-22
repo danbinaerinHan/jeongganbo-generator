@@ -1494,11 +1494,22 @@
     if (!list.length) { sel.closest(".ribbon-select-group").hidden = true; return; }
     // 정간 수를 이름 옆에 적어 둔다 — 고르기 전에 '각이 몇 칸이 되는지'가 보여야
     // 지금 쓰던 곡과 맞는지 알 수 있다.
+    // 모음곡(현악영산회상·가곡…)은 optgroup으로 묶는다 — 곡이 열일곱이라 한 줄로 늘어놓으면
+    // 어느 것이 어느 곡의 악장인지 안 보인다. `group`이 없는 것은 묶지 않고 그대로 세운다.
+    let box = sel, curGroup = null;
     list.forEach(function (p, i) {
+      if (p.group !== curGroup) {
+        curGroup = p.group;
+        if (p.group) {
+          box = document.createElement("optgroup");
+          box.label = p.group;
+          sel.appendChild(box);
+        } else box = sel;
+      }
       const op = document.createElement("option");
       op.value = String(i);
       op.textContent = p.name + " (" + p.beats + "정간)";
-      sel.appendChild(op);
+      box.appendChild(op);
     });
   }
 
@@ -1512,7 +1523,8 @@
       return ((k === activePart ? melodyFull : q.melody) || "").replace(/[|\s]/g, "") !== "";
     });
     if (hasNotes && defBeats() !== p.beats) {
-      if (!confirm("‘" + p.name + "’은 한 각이 " + p.beats + "정간입니다.\n" +
+      const label = (p.group ? p.group + " " : "") + p.name;
+      if (!confirm("‘" + label + "’은 한 각이 " + p.beats + "정간입니다.\n" +
                    "지금 악보(" + defBeats() + "정간)의 정간 수가 바뀌면 적어 둔 선율의 칸 나눔이 달라집니다.\n" +
                    "그래도 바꿀까요?")) {
         return;
@@ -9541,11 +9553,12 @@
   let restored = false;
   try { const raw = localStorage.getItem(LS_KEY); if (raw) { applyState(JSON.parse(raw)); restored = true; } } catch (e) {}
   if (!restored) applyInputMode();
-  // 주소에 악보가 실려 왔는가 — 링크(#s=) 또는 게시물(#v=, js/cloud.js). **해시를 떼기 전에**
-  // 봐 둬야 한다. 받은 악보가 실제로 화면에 들어오는 건 압축 풀이·서버 응답을 기다리느라 한
-  // 박자 뒤인데, 그 사이에 아래 새 문서 마법사가 열리면 [만들기]를 누르는 순간
-  // applyNewDocAnswers가 방금 받은 악보의 제목·정간 수·각 수를 덮어쓴다.
-  const incomingDoc = /^#[sv]=/.test(location.hash);
+  // 주소에 악보가 실려 왔는가 — 링크(#s=) 또는 게시물(#v=·관리자 열기 #va=, js/cloud.js).
+  // **해시를 떼기 전에** 봐 둬야 한다. 받은 악보가 실제로 화면에 들어오는 건 압축 풀이·서버
+  // 응답을 기다리느라 한 박자 뒤인데, 그 사이에 아래 새 문서 마법사가 열리면 [만들기]를
+  // 누르는 순간 applyNewDocAnswers가 방금 받은 악보의 제목·정간 수·각 수를 덮어쓴다.
+  // 형식을 늘릴 땐 이 낱말도 함께 늘릴 것.
+  const incomingDoc = /^#(s|va?)=/.test(location.hash);
   consumeShareHash(restored);   // 링크(#s=…)로 받은 악보 열기 — 비동기, 작업 중이면 confirm 후 교체
   // 새 문서 마법사 결과 적용(방금 '새 문서'로 리로드된 직후 한 번) — 없으면 저장된 작업이
   // 아예 없는 첫 실행인지 보고, 맞으면 같은 마법사를 바로 띄운다(임시저장 물어볼 것도 없음).

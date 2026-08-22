@@ -6,10 +6,10 @@
    그리지 않으므로(카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다).
 
    ── 열쇠가 어디 있나 ──────────────────────────────────────────────────────
-   익명 게시의 열쇠는 **토큰**이고 관리자의 열쇠는 **로그인 + 명단**이다. 로그인은
-   Supabase Auth(전자우편+비밀번호)를 fetch로 직접 부르고(supabase-js를 안 들이는
-   무의존 원칙), 받은 access_token을 `Authorization: Bearer`로 실어 admin_* RPC를
-   부른다. 그 토큰은 **sessionStorage에만** 둔다 — 창을 닫으면 풀리는 쪽이 맞다.
+   익명 게시의 열쇠는 **토큰**이고 관리자의 열쇠는 **로그인 + 명단**이다. 로그인·토큰
+   갱신·RPC 호출은 **js/admin-session.js(window.jgbAdmin)에 한 벌만** 있다 —
+   편집기의 js/cloud.js도 `#va=` 관리자 열기에서 같은 것을 쓰기 때문이다.
+   열쇠는 sessionStorage에만 둔다(창을 닫으면 풀린다).
 
    서버가 하는 확인은 둘이다: 로그인했는가 + admins 명단에 있는가(require_admin).
    그러니 이 파일이 화면을 아무리 열어 줘도 권한이 늘지 않는다 — 화면을 숨기는 것은
@@ -18,99 +18,20 @@
 (function () {
   "use strict";
 
-  const CFG = window.JGB_CLOUD || {};
-  const KEY = CFG.key || CFG.anonKey || "";
-  const BASE = (CFG.url || "").replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
-  const API = BASE + "/rest/v1/rpc/";
-  const AUTH = BASE + "/auth/v1/";
-  const ON = !!(BASE && KEY) && location.protocol !== "file:";
-
   const PAGE = 24;
 
   function $(id) { return document.getElementById(id); }
 
-  // ---------- 이 브라우저의 관리 세션 ----------
-  // sessionStorage다(localStorage 아님). 관리 열쇠는 오래 두지 않는다 — 창을 닫으면
-  // 풀리고, 다시 들어오려면 비밀번호를 다시 친다. 그 대가는 로그인 한 번뿐이다.
-  const SS = "jgb_admin_v1";
-  function loadSess() {
-    try { return JSON.parse(sessionStorage.getItem(SS)) || null; } catch (e) { return null; }
-  }
-  function saveSess(s) {
-    try { s ? sessionStorage.setItem(SS, JSON.stringify(s)) : sessionStorage.removeItem(SS); }
-    catch (e) {}
-  }
-  function mkSess(r) {
-    const now = Math.floor(Date.now() / 1000);
-    return {
-      access_token: r.access_token,
-      refresh_token: r.refresh_token,
-      // expires_at을 안 주는 판도 있어 expires_in에서 셈해 둔다
-      expires_at: r.expires_at || (now + (r.expires_in || 3600)),
-      email: (r.user && r.user.email) || "",
-      uid: (r.user && r.user.id) || "",
-    };
-  }
-
   // ---------- 서버와 말하기 ----------
-  function jsonErr(data, status, fallback) {
-    // Supabase Auth는 error_description·msg로, PostgREST는 message로 답한다.
-    // 서버가 사람 말로 적어 둔 까닭(사유를 안 적었다·관리자가 아니다)을 그대로 보여주는
-    // 것이 가장 친절하다 — 여기서 다시 번역하면 서버와 말이 어긋난다.
-    const m = data && (data.message || data.error_description || data.msg ||
-                       data.error || data.hint);
-    return new Error(m || (fallback + " (" + status + ")"));
-  }
-
-  function authPost(path, body) {
-    return fetch(AUTH + path, {
-      method: "POST",
-      headers: { "apikey": KEY, "Content-Type": "application/json" },
-      body: JSON.stringify(body || {}),
-    }).catch(function () {
-      throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
-    }).then(function (res) {
-      return res.json().catch(function () { return null; }).then(function (data) {
-        if (res.ok) return data;
-        if (res.status === 400 || res.status === 401) {
-          throw new Error("전자우편이나 비밀번호가 맞지 않습니다.");
-        }
-        throw jsonErr(data, res.status, "로그인하지 못했습니다");
-      });
-    });
-  }
-
-  // 만료가 가까우면 미리 새로 받는다. 60초 여유를 두는 건 부르는 도중에 만료되지 않게.
-  function fresh() {
-    const s = loadSess();
-    if (!s || !s.access_token) return Promise.reject(new Error("로그인이 필요합니다."));
-    const now = Math.floor(Date.now() / 1000);
-    if (s.expires_at - now > 60) return Promise.resolve(s);
-    if (!s.refresh_token) return Promise.reject(new Error("로그인이 풀렸습니다."));
-    return authPost("token?grant_type=refresh_token", { refresh_token: s.refresh_token })
-      .then(function (r) { const n = mkSess(r); saveSess(n); return n; })
-      .catch(function () { throw new Error("로그인이 풀렸습니다. 다시 들어와 주세요."); });
-  }
-
+  // 세션·토큰 갱신·헤더·오류 번역은 **js/admin-session.js에 한 벌만** 있다
+  // (편집기의 js/cloud.js도 `#va=` 관리자 열기에서 같은 것을 쓴다).
+  const A = window.jgbAdmin || { on: false, has: function () { return false; },
+                                 rpc: function () { return Promise.reject(new Error("설정 없음")); } };
   function rpc(fn, body) {
-    return fresh().then(function (s) {
-      return fetch(API + fn, {
-        method: "POST",
-        headers: {
-          "apikey": KEY,
-          "Authorization": "Bearer " + s.access_token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body || {}),
-      }).catch(function () {
-        throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
-      }).then(function (res) {
-        return res.json().catch(function () { return null; }).then(function (data) {
-          if (res.ok) return data;
-          if (res.status === 401) { signOut(true); throw new Error("로그인이 풀렸습니다."); }
-          throw jsonErr(data, res.status, "서버 오류");
-        });
-      });
+    return A.rpc(fn, body).catch(function (e) {
+      // 열쇠가 죽으면 화면도 로그인으로 돌려놓아야 한다 — 목록만 남아 있으면 고장으로 읽힌다.
+      if (!A.has()) signOut(true);
+      throw e;
     });
   }
 
@@ -130,7 +51,18 @@
     "none": "저작권 유보", "cc-by": "CC BY", "cc-by-nc": "CC BY-NC",
     "cc-by-sa": "CC BY-SA", "cc-by-nc-sa": "CC BY-NC-SA", "cc0": "CC0",
   };
-  function editorUrl(id) { return "index.html#v=" + encodeURIComponent(id); }
+  // 편집기를 **관리자로** 연다(`#va=`). 그냥 `#v=`로 열면 fetch_score를 타서
+  //  · 내려간 악보는 아예 안 열리고
+  //  · 조회수가 올라가며(운영자가 들여다본 것은 사람들이 본 것이 아니다)
+  //  · 고쳐도 되돌릴 길이 없다(게시자 토큰이 없으므로).
+  //
+  // ★ <a target="_blank">가 아니라 window.open인 까닭: 관리 세션은 sessionStorage에
+  //   있는데 요즘 크롬은 target="_blank"에 암묵적으로 noopener를 걸어 **세션이 새 탭에
+  //   안 따라간다**(2026-08-21 실측 — 자세한 것은 js/admin-session.js 머리말).
+  //   noopener 없는 window.open만 넘어간다. 링크로 되돌리지 말 것.
+  function openInEditor(id) {
+    window.open("index.html#va=" + encodeURIComponent(id), "_blank");
+  }
 
   function copyText(text, okMsg) {
     return navigator.clipboard.writeText(text).then(function () {
@@ -159,7 +91,7 @@
     $("adWho").textContent = who || "";
   }
   function signOut(quiet) {
-    saveSess(null);
+    A.signOut();
     showLogin(quiet ? "로그인이 풀렸습니다. 다시 들어와 주세요." : "");
   }
 
@@ -167,7 +99,7 @@
   // 관리자가 아닌 사람에게 잠깐이라도 관리 화면이 보인다.
   function enter() {
     return rpc("admin_me", {}).then(function (me) {
-      const s = loadSess();
+      const s = A.get();
       showMain((me && me.name) || (s && s.email) || "");
       load(true);
     });
@@ -197,13 +129,10 @@
       ? '<img class="ad-th" src="' + esc(s.thumb) + '" alt="" loading="lazy">'
       : '<div class="ad-th-none">井</div>';
 
-    // 내려간 악보는 편집기에서 안 열린다(fetch_score가 막는다) — 눌러도 안 되는 버튼을
-    // 살려 두면 고장으로 읽히므로 끄고 까닭을 붙인다. ⑤ 관리자 열기가 붙으면 살아난다.
-    const openBtn = s.hidden_at
-      ? '<button type="button" class="ad-btn ad-mini ad-ghost" disabled ' +
-        'title="내려간 악보는 아직 편집기에서 열 수 없습니다. [문서 받기]로 내용을 볼 수 있습니다.">열기</button>'
-      : '<a class="ad-btn ad-mini ad-ghost" href="' + editorUrl(s.id) +
-        '" target="_blank" rel="noopener">열기</a>';
+    // 내려간 악보도 열린다 — 관리자 열기는 admin_get_score를 타므로 hidden을 안 가린다.
+    // 무엇 때문에 내렸는지 보려면 열어 봐야 한다.
+    const openBtn = '<button type="button" class="ad-btn ad-mini ad-ghost" data-act="open" ' +
+      'title="편집기에서 관리자로 엽니다 — 고친 뒤 [파일 › 악보 게시]에서 갱신할 수 있습니다">열기</button>';
 
     const offBtn = s.hidden_at
       ? '<button type="button" class="ad-btn ad-mini ad-ghost" data-act="show">다시 열기</button>'
@@ -233,7 +162,8 @@
     tr.querySelectorAll("[data-act]").forEach(function (b) {
       b.addEventListener("click", function () {
         const act = b.getAttribute("data-act");
-        if (act === "hide") openDlg(s);
+        if (act === "open") openInEditor(s.id);
+        else if (act === "hide") openDlg(s);
         else if (act === "show") unhide(s);
         else if (act === "doc") grabDoc(s, b);
         else if (act === "ver") openVerDlg(s);
@@ -576,16 +506,13 @@
     const btn = $("adGo");
     btn.disabled = true;
     $("adLoginErr").style.display = "none";
-    authPost("token?grant_type=password", {
-      email: $("adEmail").value.trim(), password: $("adPw").value,
-    }).then(function (r) {
-      saveSess(mkSess(r));
+    A.signIn($("adEmail").value.trim(), $("adPw").value).then(function () {
       $("adPw").value = "";
       return enter();
     }).then(function () {
       btn.disabled = false;
     }).catch(function (err) {
-      saveSess(null);
+      A.signOut();
       btn.disabled = false;
       const e2 = $("adLoginErr");
       e2.textContent = (err && err.message) || "들어가지 못했습니다.";
@@ -668,10 +595,10 @@
   } catch (e) {}
 
   // ---------- 들어오기 ----------
-  if (!ON) {
+  if (!A.on) {
     showLogin("게시 서버가 연결되지 않았습니다(js/cloud-config.js).");
     $("adForm").querySelectorAll("input, button").forEach(function (el) { el.disabled = true; });
-  } else if (loadSess()) {
+  } else if (A.has()) {
     // 창을 새로 고쳤을 뿐이면 세션이 살아 있다. 살아 있는지는 서버에 물어서 안다.
     enter().catch(function () { signOut(true); });
   } else {

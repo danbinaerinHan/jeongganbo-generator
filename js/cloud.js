@@ -36,6 +36,8 @@
   // 까닭은 js/cloud-config.js 주석 참고(신고 절차가 갖춰지기 전에는 목록을 안 연다).
   const BROWSE_ON = CFG.browse !== false;
   const HASH_RE = /^#v=([a-z0-9]{4,32})$/;
+  // 관리자로 열기 — 관리 화면(admin.html)의 [열기]가 이 주소로 보낸다.
+  const AHASH_RE = /^#va=([a-z0-9]{4,32})$/;
 
   function $(id) { return document.getElementById(id); }
   // 통계는 앱 동작에 영향 주지 않는다 (app.js의 track과 같은 성격)
@@ -191,12 +193,40 @@
 
   // ---------- 게시 창 ----------
   function setBusy(on) {
-    ["pubGo", "pubNew", "pubCancel", "pubDelete"].forEach(function (id) {
+    ["pubGo", "pubNew", "pubCancel", "pubDelete", "pubAdminGo"].forEach(function (id) {
       const el = $(id); if (el) el.disabled = on;
     });
   }
 
+  // 관리자로 연 악보를 편집 중인가. pubId가 갈아치워졌으면(새 문서·다른 악보 열기) 아니다 —
+  // adminEditing만 보면 엉뚱한 악보를 남의 자리에 되쓸 수 있다.
+  function adminMode() {
+    return !!(adminEditing && adminOn() && window.jgbDoc.pubId() === adminEditing);
+  }
+
   function openPubModal() {
+    // 관리자로 연 악보는 **되쓰는 길 하나만** 연다. 여느 칸을 살려 두면 [게시]를 눌러
+    // 남의 악보를 베낀 새 게시물이 하나 더 생긴다.
+    const adm = adminMode();
+    ["pubExisting", "pubForkNote", "pubNew", "pubDelete", "pubKeyNote"].forEach(function (k) {
+      const el = $(k); if (el && adm) el.style.display = "none";
+    });
+    $("pubAdmin").style.display = adm ? "" : "none";
+    $("pubAdminGo").style.display = adm ? "" : "none";
+    $("pubGo").style.display = adm ? "none" : "";
+    ["pubAuthor", "pubLicense", "pubPublic", "pubRights"].forEach(function (k) {
+      const f = $(k) && $(k).closest(".field");
+      if (f) f.style.display = adm ? "none" : "";
+    });
+    if (adm) {
+      $("pubHead").textContent = "관리자 갱신";
+      $("pubAdminNote").value = "";
+      setBusy(false);
+      $("pubModal").style.display = "flex";
+      setTimeout(function () { $("pubAdminNote").focus(); }, 0);
+      return;
+    }
+
     const id = window.jgbDoc.pubId();
     const rec = pubRec(id);
     const tok = rec ? rec.token : null;
@@ -327,6 +357,83 @@
     $("cloudBanner").style.display = "";
   }
 
+  // ---------- 관리자로 열기 (#va=) ----------
+  // 여느 열기(#v=)와 무엇이 다른가:
+  //   · admin_get_score를 타므로 **내려간 악보도 열리고** 조회수가 안 오른다.
+  //   · 게시자 토큰이 없어도 같은 자리에 되쓸 수 있다(admin_save_score).
+  // 관리 세션은 sessionStorage에 있어 **이 탭에만** 있다 — 주소를 복사해 남에게 줘 봐야
+  // 그쪽에서는 열리지 않는다(열쇠가 주소에 실리지 않는다).
+  let adminEditing = null;     // 지금 관리자로 열어 둔 게시물 id
+
+  function adminOn() {
+    return !!(window.jgbAdmin && window.jgbAdmin.on && window.jgbAdmin.has());
+  }
+
+  function consumeAdminHash() {
+    const m = location.hash.match(AHASH_RE);
+    if (!m) return false;
+    const id = m[1];
+    stripHash();                       // #v=·?first=1과 같은 규칙
+    if (!adminOn()) {
+      // 알림창이 아니라 배너로 말한다. 이 자리는 **페이지가 뜨자마자**인데, 알림창은
+      // 눌러 없애기 전까지 렌더러를 통째로 막아 악보가 그려지는 것조차 못 본다.
+      // 게다가 이 길로 들어오는 사람은 대개 주소만 얻어 걸린 경우라, 하던 일을 멈춰
+      // 세울 만한 소식이 아니다.
+      $("cbText").textContent =
+        "관리자로 열 수 없습니다 — 관리 화면에서 로그인한 뒤 [열기]를 눌러 주세요.";
+      $("cbReport").style.display = "none";
+      $("cloudBanner").style.display = "";
+      return true;
+    }
+    window.jgbAdmin.rpc("admin_get_score", { p_id: id }).then(function (r) {
+      if (!window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),
+            "게시된 악보를 관리자로 엽니다.", "관리자 열기 전 자동 저장")) return;
+      window.jgbDoc.setPubId(id);
+      adminEditing = id;
+      showAdminBanner(r);
+      track("admin_open");
+    }).catch(function (e) {
+      alert("악보를 열지 못했습니다.\n" + ((e && e.message) || ""));
+    });
+    return true;
+  }
+
+  function showAdminBanner(meta) {
+    const who = meta.author ? (" · " + meta.author) : "";
+    const down = meta.hidden_at ? " · 내려간 악보" : "";
+    $("cbText").textContent =
+      "관리자로 열었습니다 (v" + (meta.ver || 1) + ")" + who + down +
+      " — 고친 뒤 [파일 › 악보 게시]의 [관리자 갱신]으로 같은 주소에 되씁니다";
+    $("cbReport").style.display = "none";     // 내가 처리하는 자리라 나에게 신고할 일이 없다
+    $("cloudBanner").style.display = "";
+  }
+
+  // 관리자 갱신 — 약관 제5조 제4항의 범위 안에서 표기를 고친 것을 같은 자리에 되쓴다.
+  // 메모를 안 적으면 서버가 막지만(admin_save_score), 서버까지 다녀와서 막히면 그 사이
+  // 무엇이 잘못됐는지 알기 어려우므로 여기서 먼저 붙든다.
+  function doAdminSave() {
+    const note = $("pubAdminNote").value.trim();
+    if (!note) {
+      alert("무엇을 왜 고쳤는지 적어 주세요.\n이 기록은 게시한 사람이 열람을 요구할 수 있습니다(약관 제5조 제6항).");
+      $("pubAdminNote").focus();
+      return;
+    }
+    setBusy(true);
+    window.jgbAdmin.rpc("admin_save_score", {
+      p_id: adminEditing, p_doc: window.jgbDoc.state(), p_note: note,
+    }).then(function (r) {
+      setBusy(false);
+      closePubModal();
+      track("admin_save");
+      alert(r && r.changed === false
+        ? "달라진 것이 없어 그대로 두었습니다."
+        : "고친 내용을 되썼습니다 (v" + (r && r.ver) + ").\n지난 판은 그대로 남아 있습니다.");
+    }).catch(function (e) {
+      setBusy(false);
+      alert((e && e.message) || "되쓰지 못했습니다.");
+    });
+  }
+
   function consumeScoreHash() {
     const m = location.hash.match(HASH_RE);
     if (!m) return;
@@ -351,6 +458,7 @@
 
   // ---------- 배선 ----------
   $("btnPublish").addEventListener("click", openPubModal);
+  $("pubAdminGo").addEventListener("click", doAdminSave);
   $("pubCancel").addEventListener("click", closePubModal);
   $("pubGo").addEventListener("click", function () { doPublish(false); });
   $("pubNew").addEventListener("click", function () { doPublish(true); });
@@ -367,5 +475,7 @@
     published: loadPubs,
   };
 
-  consumeScoreHash();
+  // #va=(관리자)를 먼저 본다. 둘은 서로 다른 주소라 겹칠 일이 없지만, 순서를 못 박아
+  // 두면 나중에 형식이 늘어도 '어느 쪽이 먼저인가'를 다시 정할 일이 없다.
+  if (!consumeAdminHash()) consumeScoreHash();
 })();

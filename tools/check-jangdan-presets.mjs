@@ -45,8 +45,9 @@ LIST.forEach(function (p) {
   ok(`${p.name} — 대강 ${p.daegang || "(없음)"}`,
      dg.length === 0 || dg.reduce((a, b) => a + b, 0) === p.beats,
      `합: ${dg.reduce((a, b) => a + b, 0)} · beats: ${p.beats}`);
-  ok(`${p.name} — 이름이 겹치지 않는다`, !seen.has(p.name));
-  seen.add(p.name);
+  const label = (p.group ? p.group + " " : "") + p.name;
+  ok(`${label} — 이름이 겹치지 않는다`, !seen.has(label));
+  seen.add(label);
   ok(`${p.name} — 타점이 있다`, cells.some((c) => JANGGU.has(c.trim())));
 });
 
