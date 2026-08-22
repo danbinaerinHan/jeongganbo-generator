@@ -8213,7 +8213,7 @@
   });
   attachGakGridGuard("jangdan", syncJangdanFromCursor);
   $("jangdanReset").addEventListener("click", resetJangdan);
-  // 장단 고르기 — 고른 뒤 칸을 '고르기…'로 되돌린다. 지금 악보의 장단이 목록의 어느 것인지를
+  // 장단 선택 — 고른 뒤 칸을 '선택'으로 되돌린다. 지금 악보의 장단이 목록의 어느 것인지를
   // 이 칸이 말해 주지는 않기 때문이다(고른 뒤에 손으로 고칠 수 있으므로 이름이 남으면
   // 거짓말이 된다). 명령을 내리는 칸이지 상태를 보여주는 칸이 아니다.
   if ($("jangdanPreset")) {
