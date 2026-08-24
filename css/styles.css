@@ -259,7 +259,6 @@
   /* 위험 명령(전체 초기화) — 글자만 위험색, 호버에서 옅은 위험 배경 */
   .tb-menu .danger { color: var(--danger-2); }
   .tb-menu .danger:hover { background: var(--danger-soft); }
-  #fileBox { position: relative; }   /* relative: 파일 메뉴(.tb-menu)의 기준점 */
   #screenBox { position: relative; } /* relative: 화면 메뉴(.tb-menu)의 기준점 */
   #viewBox { position: relative; }   /* relative: 보기(총보/파트보) 메뉴의 기준점 */
   /* relative: 오선보 [뽑기] 메뉴의 기준점. 이게 없으면 .tb-menu의 top:100%가 엉뚱한 조상을
@@ -271,6 +270,24 @@
   @media print { .tb-menu { display: none !important; } }
   /* 사이드바(오른쪽)·악보(왼쪽) 가로 배치 — 원래 body가 하던 역할을 이제 이 줄이 맡는다 */
   #appRow { flex: 1 1 auto; min-height: 0; display: flex; }
+
+  /* ---------- 오른쪽 세로 레일(#appRail) ----------
+     상단바가 가로로 꽉 차서 성격이 다른 것끼리 섞여 있던 것을 갈랐다(2026-08-25) —
+     '이 악보'는 상단바, '악보 바깥'(문서가 드나드는 길 + 앱 자체)은 이 레일. 자리는
+     #appRow의 맨 오른쪽(order:3)이라 설정 사이드바가 열리면 그 바깥에 남는다 —
+     설정을 여닫는 버튼이 레일에 있으므로 버튼이 패널과 함께 사라지면 안 된다.
+     버튼 꼴은 상단바와 같은 .topbar-cmd(기호 + 아래 작은 글씨)를 그대로 쓴다 — 같은 물건이
+     자리만 옮긴 것이라 새 어휘를 만들지 않는다. */
+  #appRail { order: 3; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+             gap: 3px; padding: 8px 5px; background: var(--panel);
+             border-left: 1px solid var(--line); overflow-y: auto; }
+  #appRail .topbar-cmd { min-width: 54px; padding: 5px 4px 4px; }
+  /* 두 무리(문서 나들이 / 앱)를 가르는 가는 선 — 상단바가 gap으로만 무리를 가르는 것과 달리
+     세로로는 간격만으론 무리가 안 읽힌다(위아래로 길게 늘어서므로). */
+  #appRail .rail-sep { width: 60%; border: none; border-top: 1px solid var(--line); margin: 7px 0; }
+  /* 레일의 드롭다운(색상)은 **왼쪽으로** 편다 — 오른쪽 끝이라 제자리(right:0)로 펴면
+     화면 밖으로 나가 열려도 안 보인다. 위아래 뒤집기는 wireTopMenu가 따로 맡는다. */
+  #appRail .tb-menu { top: 0; right: calc(100% + 8px); }
 
   /* ---------- 사이드바 ---------- */
   #sidebar {
@@ -686,7 +703,7 @@
   /* 배율 숫자 = 메뉴 버튼(▾) — 캐럿은 ::after라 JS가 textContent(%)를 갈아도 안 지워진다 */
   #zoomBar .zval { font-size: 12px; min-width: 52px; text-align: center; color: var(--muted); }
   #zoomBar .zval::after { content: "▾"; font-size: 8px; margin-left: 3px; }
-  #zoomBar .zval.on, #fileToggle.on { background: var(--hover); }
+  #zoomBar .zval.on { background: var(--hover); }
   #zoomBar > button:disabled { opacity: .35; cursor: default; }
   #zoomBar > button:disabled:hover { background: transparent; }
 
@@ -728,6 +745,9 @@
   .orn-reset { width: 100%; margin-top: 4px; padding: 5px; border: 1px solid var(--line);
                background: var(--panel); border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; }
   .orn-reset:hover { background: var(--hover); }
+  /* 설정 안의 위험한 명령(전체 초기화) — 꼴은 옆 버튼들과 같게 두고 색으로만 성격을 말한다 */
+  .orn-reset.danger-btn { color: var(--danger-2); border-color: var(--danger-soft); }
+  .orn-reset.danger-btn:hover { background: var(--danger-soft); }
   @media print { .orn-panel { display: none !important; } }
   /* 각 번호 '화면에만' 모드 — 인쇄에서는 숨김 (PNG는 저장 시 따로 뺌) */
   @media print { body.gaknum-screen .gak-num { display: none !important; } }

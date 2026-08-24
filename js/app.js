@@ -8949,7 +8949,6 @@
   }
   wireTopMenu("zoomVal", "zoomPop");
   wireTopMenu("viewToggle", "viewPop");   // 보기 전환(총보/파트보) — 악기 둘 이상일 때만 노출
-  wireTopMenu("fileToggle", "filePop");
   wireTopMenu("modeToggle", "modePop");
   wireTopMenu("screenToggle", "screenPop");   // 색상 메뉴 — 색상 테마 + 다크 전환
   wireTopMenu("betaBadge", "betaPop");   // 베타 배지 → 저장 주의 안내
@@ -9341,7 +9340,8 @@
     // '설정' 단계는 뺐다(2026-07-17) — '레이아웃 잡기'가 이미 사이드바를 통째로 비춰
     // 겹쳤고, 문서 탭(제목·종이 방향)은 따로 가르칠 만큼 헷갈리지 않다. 보관 탭의
     // 임시 저장만 아래 '인쇄 · 파일' 단계에 한 줄로 흡수.
-    { ch: 3, sel: "#outBox", id: "files", },
+    // 새 문서·인쇄는 상단바에, 나머지 파일 명령은 오른쪽 레일에 — 둘을 함께 짚는다
+    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] },
     { ch: 3, sel: "#btnHelp", id: "help", }
   ];
   let tourIdx = -1, tourOnEnd = null;
