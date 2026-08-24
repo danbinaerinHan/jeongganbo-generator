@@ -8219,18 +8219,30 @@
 
   // 설정 폼 접기/펼치기
   // 설정 패널 — 상단바 버튼은 늘 보이는 토글(열려 있으면 .on), 사이드바 안 ✕는 닫기 전용.
+  // **기본은 닫힘**: 문서를 열었을 때 먼저 보여야 하는 건 설정 폼이 아니라 악보다(주소로
+  // 받은 남의 악보라면 더욱). 마지막으로 둔 상태는 이 브라우저에 기억한다 — 다크·테마·
+  // 오선보 배율과 같은 자리(localStorage)인 건 그것이 '이 악보가 어떤 악보인가'가 아니라
+  // '내가 이 브라우저에서 어떻게 보는가'라서다. 문서 상태에 넣으면 남이 내 악보를 열 때
+  // 내 보기 방식이 따라간다.
+  const SIDE_LS_KEY = "jgb_sidebar_v1";
   function applySidebarBtn() {
     $("sidebarOpen").classList.toggle("on", !document.body.classList.contains("sidebar-collapsed"));
   }
-  $("sidebarToggle").addEventListener("click", function () {
-    document.body.classList.add("sidebar-collapsed");
+  // remember=false면 상태만 바꾸고 기억은 안 한다(투어가 잠깐 열었다 닫을 때)
+  function setSidebarOpen(on, remember) {
+    document.body.classList.toggle("sidebar-collapsed", !on);
+    if (remember) { try { localStorage.setItem(SIDE_LS_KEY, on ? "1" : "0"); } catch (e) {} }
     applySidebarBtn();
-  });
+  }
+  $("sidebarToggle").addEventListener("click", function () { setSidebarOpen(false, true); });
   $("sidebarOpen").addEventListener("click", function () {
-    document.body.classList.toggle("sidebar-collapsed");
-    applySidebarBtn();
+    setSidebarOpen(document.body.classList.contains("sidebar-collapsed"), true);
   });
-  applySidebarBtn();
+  (function () {
+    let saved = null;
+    try { saved = localStorage.getItem(SIDE_LS_KEY); } catch (e) {}
+    setSidebarOpen(saved === "1", false);
+  })();
 
   // 텍스트 에디터 페이지 넘김 (선율/가사 헤더 공용) — 악보 미리보기도 그 페이지로 따라간다
   document.querySelectorAll(".ed-pager .ed-prev").forEach(function (b) {
@@ -9250,8 +9262,7 @@
     { ch: 0, sel: "#sheetArea", id: "sheet", },
     // 설정 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)과 문서(종이 방향·제목)를
     // 어디서 바꾸는지부터 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 연다.
-    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab,
-      skipIf: function () { return document.body.classList.contains("sidebar-collapsed"); } },
+    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab },
     // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
     // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. 이미지는 손그림이 아니라 **앱이 실제로
     // 그린 악보**의 캡처다: 에디터에 "황 | 황 태 | 황태 | 황{미는표} | 황태 -황"을 넣고
@@ -9414,7 +9425,15 @@
   // '레이아웃 잡기' 단계용 — 사이드바를 레이아웃 탭으로 돌려 본문이 가리키는 컨트롤이
   // 실제로 보이게 한다. 시김새 창과 같은 규칙으로 endTour에서 원래 탭 복원.
   let tourPrevTab = null, tourTouchedTab = false;
+  let tourTouchedSide = false;   // 투어가 설정 단계를 위해 사이드바를 잠깐 열었나
   function tourEnsureLayoutTab() {
+    // 설정 패널은 기본이 닫힘이라, 이 단계를 보여주려면 잠깐 연다(투어가 끝나면 되돌린다).
+    // 예전엔 닫혀 있으면 단계를 통째로 건너뛰었는데(skipIf), 기본이 닫힘이 되면서 첫 방문자가
+    // '악보의 짜임을 어디서 바꾸나'를 영영 못 보게 된다.
+    if (document.body.classList.contains("sidebar-collapsed")) {
+      tourTouchedSide = true;
+      setSidebarOpen(true, false);
+    }
     const btn = document.querySelector('.tab[data-tab="layout"]');
     if (!btn || btn.classList.contains("active")) return;
     if (!tourTouchedTab) {
@@ -9718,6 +9737,8 @@
       if (b && !b.classList.contains("active")) b.click();
       tourTouchedPalView = false; tourPrevPalView = null;
     }
+    // prep이 사이드바를 잠깐 열었었다면 도로 닫는다(기억은 안 건드린다)
+    if (tourTouchedSide) { setSidebarOpen(false, false); tourTouchedSide = false; }
     // prep이 사이드바 탭을 돌렸었다면 원래 탭으로
     if (tourTouchedTab) {
       if (tourPrevTab) {
@@ -9779,7 +9800,7 @@
   // Cmd+Shift+R은 HTTP 캐시만 비우고 localStorage는 그대로 두므로 아무리 새로고침해도 첫 방문이
   // 될 수 없다(브라우저가 '지금 강력 새로고침'인지 JS에 알려주지도 않아 그 동작을 훅으로 잡을 수도
   // 없다). 진짜 첫 방문과 100% 같은 건 시크릿 창이고, 이건 '지금 창에서 빠르게 확인'용이다.
-  //  · 보관(jgb_snapshots_v1)과 화면 설정(jgb_dark_v1·jgb_theme_v1·jgb_staff_v1)은
+  //  · 보관(jgb_snapshots_v1)과 화면 설정(jgb_dark_v1·jgb_theme_v1·jgb_staff_v1·jgb_sidebar_v1)은
   //    **일부러 남긴다** —
   //    온보딩과 무관한데 지우면 남의 자료·설정이 날아간다. 그래서 localStorage.clear()를 쓰지 않는다.
   //  · 지금 편집 중인 곡(LS_KEY)은 지울 수밖에 없다(남아 있으면 restored라 환영 카드가 안 뜬다)
