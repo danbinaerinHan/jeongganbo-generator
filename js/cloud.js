@@ -204,6 +204,17 @@
     return !!(adminEditing && adminOn() && window.jgbDoc.pubId() === adminEditing);
   }
 
+  // 올리기 전 한 줄. 세는 자는 app.js에 있다(선율 에디터가 빨간 바탕을 깔 때 쓰는 그 함수) —
+  // 여기서 다시 세면 화면에 빨갛게 보이는 자리와 이 숫자가 어긋날 수 있다.
+  function showSyntaxNote() {
+    const el = $("pubSyntax");
+    if (!el) return;
+    let n = 0;
+    try { n = window.jgbDoc.badCount ? window.jgbDoc.badCount() : 0; } catch (e) { n = 0; }
+    el.textContent = n ? ("문법이 틀린 곳이 " + n + "군데 있습니다.") : "";
+    el.style.display = n ? "" : "none";
+  }
+
   function openPubModal() {
     // 관리자로 연 악보는 **되쓰는 길 하나만** 연다. 여느 칸을 살려 두면 [게시]를 눌러
     // 남의 악보를 베낀 새 게시물이 하나 더 생긴다.
@@ -222,6 +233,7 @@
       const f = $(k) && $(k).closest(".field");
       if (f) f.style.display = adm ? "none" : "";
     });
+    showSyntaxNote();
     if (adm) {
       $("pubHead").textContent = "관리자 갱신";
       $("pubAdminNote").value = "";

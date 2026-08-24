@@ -499,6 +499,9 @@
   }
   .readout b { color: var(--ink); }
   .warn { color: var(--danger); font-size: 11px; margin-top: 6px; }
+  /* 게시 창의 문법 한 줄은 제 줄로 서야 한다 — .warn엔 아래 여백이 없어 바로 밑의
+     '지은이' 이름표에 붙어 그 항목의 설명처럼 읽혔다. */
+  #pubSyntax { margin: 2px 0 12px; }
   /* 선율↔장단·가사 각/정간 수 어긋남 경고 — 타이핑 중엔 조용히 안 맞다가 다음 구조
      변경 때 넘치는 내용이 말없이 잘리는 걸 막기 위해, 해당 탭 바로 위에서 바로 알려준다 */
   .gak-warn { display: none; font-size: 11px; line-height: 1.5; color: var(--danger);

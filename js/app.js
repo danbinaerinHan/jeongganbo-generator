@@ -1734,6 +1734,7 @@
       "font-family:inherit;line-height:1;font-size:" + (h * 0.36) + "px;";
     card.appendChild(cap); card.appendChild(inp);
     area.appendChild(card);
+    if (domain === "mel") wireHanjaPaste(inp);
     cellEditor = card; cellEditInput = inp; cellEditDomain = domain;
     cellEditGi = gi; cellEditCi = ci;
     inp.focus();
@@ -2142,6 +2143,57 @@
   function octPrefix(oct) {
     const row = OCT_ROWS.find(function (r) { return r.oct === oct; });
     return row ? row.prefix : "";
+  }
+
+  // ---------- 한자 율명 붙여넣기 ----------
+  // 정간보 데이터의 정본은 **한글**이고 한자는 그리는 단계의 표기다. 그래서 다른 데서
+  // 한자로 된 정간보를 복사해 붙이면 화면에는 그 한자가 그대로 그려져 멀쩡해 보이는데,
+  // 앱은 그것을 율명으로 못 읽어 **재생·오선보·MusicXML에서 통째로 빠진다**(실측).
+  // 눈으로는 알 수 없는 종류의 어긋남이라 붙여넣는 자리에서 돌려놓는다.
+  //
+  // 되돌림표는 YUL·OCT_HANJA를 뒤집어 만든다. ★ 같은 한자가 두 뜻을 갖는 것은 **뺀다** —
+  // 지금은 -1층의 侇가 유·이 둘에 적혀 있어(둘 중 하나가 오기다) 그 글자만 그대로 둔다.
+  // 짐작으로 남의 글자를 바꾸지 않는다.
+  // ★ 이 자리(octPrefix 뒤)여야 한다 — OCT_ROWS보다 앞에서 만들면 TDZ에 걸린다.
+  const HANJA_TO_YUL = (function () {
+    const seen = {};
+    const put = function (ch, txt) { (seen[ch] = seen[ch] || {})[txt] = 1; };
+    for (const b in YUL) put(YUL[b], b);
+    for (const o in OCT_HANJA) {
+      for (const b in OCT_HANJA[o]) put(OCT_HANJA[o][b], octPrefix(Number(o)) + b);
+    }
+    const map = {};
+    for (const ch in seen) {
+      const v = Object.keys(seen[ch]);
+      if (v.length === 1) map[ch] = v[0];
+    }
+    return map;
+  })();
+  function fromHanja(text) {
+    let out = "";
+    for (const ch of text) out += (HANJA_TO_YUL[ch] || ch);
+    return out;
+  }
+  // 선율을 적는 칸에만 건다(곁줄·장단·텍스트는 글자를 적는 자리라 한자가 제 뜻이다).
+  // execCommand("insertText")로 넣는 것은 **⌘Z를 살려 두려는 것**이다 — value를 직접
+  // 갈아치우면 브라우저의 되돌리기 기록이 끊긴다.
+  function wireHanjaPaste(el) {
+    el.addEventListener("paste", function (e) {
+      const cb = e.clipboardData || window.clipboardData;
+      if (!cb) return;
+      const t = cb.getData("text");
+      if (!t) return;
+      const conv = fromHanja(t);
+      if (conv === t) return;              // 한자가 없으면 브라우저 기본 동작 그대로
+      e.preventDefault();
+      let ok = false;
+      try { ok = document.execCommand("insertText", false, conv); } catch (err) {}
+      if (ok) return;
+      const a = el.selectionStart, b = el.selectionEnd;
+      el.value = el.value.slice(0, a) + conv + el.value.slice(b);
+      el.setSelectionRange(a + conv.length, a + conv.length);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    });
   }
   // 유니코드 한자가 아예 없는 특수 율명(거문고 전용 저음역 등) — 전용 SVG 이미지로 그린다.
   // 12율×5옥타브 전부 이미지를 만드는 대신 실제로 쓰이는 음만 등록: 팔레트 '특수' 줄,
@@ -7689,6 +7741,18 @@
     pubId: function () { return pubId; },                    // 이 문서가 어느 게시물인지
     // 게시 직후 부른다. 토큰은 받지 않는다 — 수정 권한은 문서가 아니라 브라우저에 있다.
     setPubId: function (id) { pubId = (typeof id === "string" && id) ? id : null; saveState(); },
+    // 이 문서에 앱이 못 읽는 자리가 몇 **군데**인가(글자 수가 아니라 이어진 덩이 수).
+    // 게시 창이 올리기 전에 한 줄로 알려 주는 데 쓴다 — 세는 자는 선율 에디터가 빨간
+    // 바탕을 깔 때 쓰는 그 함수 그대로다.
+    badCount: function () {
+      stashActivePart();
+      let n = 0;
+      parts.forEach(function (p) {
+        const fb = melodyBadFlags(p.melody || "");
+        for (let i = 0; i < fb.bad.length; i++) if (fb.bad[i] && !fb.bad[i - 1]) n++;
+      });
+      return n;
+    },
   };
 
   // ---------- 링크 공유 (문서를 URL 해시에 담기) ----------
@@ -8154,6 +8218,8 @@
   $("edFontUp").addEventListener("click", function () { edFontPx = Math.min(26, edFontPx + 1); applyEdFont(); saveState(); });
 
   // 멜로디 편집 → 그리드 재정렬 + 렌더 + 현재 정간 하이라이트 갱신
+  // 에디터 모드의 선율 글상자에도 같은 붙여넣기 규칙(직접 입력의 정간 카드는 openCellEditor에서)
+  wireHanjaPaste($("melody"));
   $("melody").addEventListener("input", function () {
     reformatMelodyEditor();
     syncFullFromEditor(); render(); syncActiveFromCursor(); updateMelodyHl();
