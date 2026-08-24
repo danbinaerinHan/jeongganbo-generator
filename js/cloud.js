@@ -389,9 +389,9 @@
       $("cloudBanner").style.display = "";
       return true;
     }
-    window.jgbAdmin.rpc("admin_get_score", { p_id: id }).then(function (r) {
-      if (!window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),
-            "게시된 악보를 관리자로 엽니다.", "관리자 열기 전 자동 저장")) return;
+    window.jgbAdmin.rpc("admin_get_score", { p_id: id }).then(async function (r) {
+      if (!(await window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),
+            "게시된 악보를 관리자로 엽니다.", "관리자 열기 전 자동 저장"))) return;
       window.jgbDoc.setPubId(id);
       adminEditing = id;
       showAdminBanner(r);
@@ -445,11 +445,11 @@
     // 해시는 먼저 뗀다 — 이 주소를 북마크해 두고 새로고침할 때마다 편집하던 악보가
     // 게시본으로 되돌아가면 안 된다(#s=·?first=1과 같은 규칙).
     stripHash();
-    rpc("fetch_score", { p_id: id }).then(function (r) {
+    rpc("fetch_score", { p_id: id }).then(async function (r) {
       const mine = !!tokenFor(id);
       // 작업 중이던 문서가 있으면 묻고 보관함에 자동 저장한다 — 절차는 링크 열기와 한 몸(app.js)
-      if (!window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),
-            "게시된 악보를 엽니다.", "게시 악보 열기 전 자동 저장")) return;
+      if (!(await window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),
+            "게시된 악보를 엽니다.", "게시 악보 열기 전 자동 저장"))) return;
       // 들인 문서 안의 pubId는 게시 당시 값이라 실제와 어긋날 수 있다(예: 다른 게시물을
       // 복사해 만든 문서). 방금 연 주소가 정본이므로 그것으로 맞춰 둔다.
       window.jgbDoc.setPubId(id);

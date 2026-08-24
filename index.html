@@ -1768,6 +1768,27 @@
     </div>
   </div>
 
+  <!-- 남이 준 악보 들이기 확인 창(#adoptModal, app.js '남이 준 악보 들이기' 절) — 링크(#s=)·
+       게시 악보(#v=)·관리자 열기(#va=) 셋이 함께 쓴다. 작업 중이던 문서가 있을 때만 뜬다.
+       예전엔 confirm() 하나(OK=저장 후 열기 / 취소=열지 않음)라 '저장하지 않고 열기'가
+       없었다 — 취소가 두 가지 뜻(안 열기 · 저장 없이 열기)을 다 못 맡아서 생긴 구멍이다.
+       [저장하지 않고 열기]는 [취소]·[저장하고 열기]와 다른 줄에 뗀다 — pub-del과 같은
+       이유(되돌릴 수 없어 보이는 명령을 나란히 두면 손이 미끄러진다)다. 실제로는 render()가
+       쌓아 둔 되돌리기 단계 안에 남아 ⌘Z로 되돌릴 수 있어 그 정도로 무겁진 않으므로,
+       pub-del의 danger색은 안 쓰고 절제된 테두리꼴로 낮춘다 — 안내 문구가 그 사실을 알려준다. -->
+  <div id="adoptModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h3>다른 악보 열기</h3>
+      <p class="adopt-msg" id="adoptMsg"></p>
+      <div class="btns">
+        <button type="button" id="adoptCancel" class="secondary">취소</button>
+        <button type="button" id="adoptSave">저장하고 열기</button>
+      </div>
+      <button type="button" id="adoptDiscard" class="adopt-discard">저장하지 않고 열기</button>
+      <div class="adopt-hint">저장하지 않고 열어도 열고 난 뒤 ⌘/Ctrl+Z로 지금 작업을 되돌릴 수 있습니다.</div>
+    </div>
+  </div>
+
   <!-- 도움말 센터 — 상단바 ? 버튼(#btnHelp)으로 여는 큰 모달. 정간보를 처음 보는 사람의
        기초(정간보란?)부터 사용 흐름(시작하기)·입력 문법(입력 방법)·단축키까지 4개 탭.
        탭 클래스는 사이드바용 .tab/.tabpanel과 절대 겹치면 안 됨(app.js가 문서 전체를

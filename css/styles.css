@@ -565,6 +565,16 @@
              border-radius: 0; font-size: 12px; cursor: pointer; font-family: inherit; }
   .pub-del:hover { background: var(--danger-soft); }
 
+  /* 남이 준 악보 들이기 확인 창(#adoptModal) 전용 */
+  .adopt-msg { color: var(--muted); font-size: 12.5px; line-height: 1.6; margin: 0 0 14px; }
+  /* [저장하지 않고 열기]는 pub-del처럼 [취소]·[저장하고 열기]와 다른 줄에 뗀다(손 미끄럼 방지).
+     되돌리기로 살릴 수 있는 정도라 danger색까지는 안 쓰고 절제된 테두리꼴로 낮춘다. */
+  .adopt-discard { display: block; width: 100%; margin-top: 8px; padding: 8px;
+                   border: 1px solid var(--line); background: transparent; color: var(--muted);
+                   border-radius: 0; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .adopt-discard:hover { border-color: var(--muted); color: var(--ink); background: var(--hover); }
+  .adopt-hint { color: var(--muted); font-size: 10.5px; line-height: 1.5; margin-top: 8px; }
+
   /* ---------- 미리보기 + 멜로디 에디터 ---------- */
   /* 떠 있는 바(.float-bar)·패널들의 기준점을 스크롤되는 #sheetArea가 아니라 #main으로 둬서
      악보를 스크롤해도 그 자리에 그대로 떠 있게 한다 */

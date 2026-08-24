@@ -7638,18 +7638,39 @@
 
   // ---------- 남이 준 악보 들이기 (링크·게시물 공용) ----------
   // 받은 악보를 화면에 들이는 절차는 출처가 무엇이든 같다: 작업 중이던 문서가 있으면 먼저
-  // 묻고, 예이면 그 문서를 보관함에 자동 저장한 뒤 교체한다. 링크(#s=)가 쓰던 절차를 그대로
-  // 뽑아 둔 것으로, 뒤에 붙는 게시물 열기(js/cloud.js)도 이 길을 타야 한다 — '남의 악보가 내
-  // 작업을 조용히 덮지 않는다'는 약속은 출처가 늘 때마다 다시 쓸 것이 아니다.
-  // 반환값 false = 사용자가 취소 → 부른 쪽은 아무것도 바꾸지 말 것.
-  function adoptState(state, hadWork, openMsg, snapTag) {
+  // 묻고, '저장하고 열기'면 그 문서를 보관함에 자동 저장한 뒤 교체하고, '저장하지 않고
+  // 열기'면 그냥 교체한다. 링크(#s=)가 쓰던 절차를 그대로 뽑아 둔 것으로, 뒤에 붙는 게시물
+  // 열기(js/cloud.js)도 이 길을 타야 한다 — '남의 악보가 내 작업을 조용히 덮지 않는다'는
+  // 약속은 출처가 늘 때마다 다시 쓸 것이 아니다.
+  // 세 갈래(저장 후 열기/저장 없이 열기/취소)라 confirm() 하나로는 못 물어 #adoptModal을 쓴다
+  // — 예전엔 취소 하나가 '안 열기'와 '저장 없이 열기'를 다 못 맡아 후자가 아예 없었다.
+  function askAdopt(openMsg) {
+    return new Promise(function (resolve) {
+      $("adoptMsg").textContent = openMsg;
+      $("adoptModal").style.display = "flex";
+      function done(v) {
+        $("adoptModal").style.display = "none";
+        $("adoptSave").onclick = $("adoptDiscard").onclick = $("adoptCancel").onclick = null;
+        resolve(v);
+      }
+      $("adoptSave").onclick = function () { done("save"); };
+      $("adoptDiscard").onclick = function () { done("discard"); };
+      $("adoptCancel").onclick = function () { done("cancel"); };
+    });
+  }
+  // 반환값 false = 사용자가 취소 → 부른 쪽은 아무것도 바꾸지 말 것. 비동기(모달 응답을
+  // 기다림)라 부르는 쪽도 await/then으로 받아야 한다.
+  async function adoptState(state, hadWork, openMsg, snapTag) {
     if (hadWork) {
-      if (!confirm(openMsg + "\n지금 작업은 사이드바 '보관' 탭에 저장해 둡니다.")) return false;
-      const list = loadSnaps();
-      list.unshift({ id: Date.now(), name: (($("title").value.trim() || "제목 없음") + " — " + snapTag),
-        time: new Date().toISOString(), state: collectState() });
-      while (list.length > SNAP_MAX) list.pop();
-      saveSnaps(list); renderSnapList();
+      const choice = await askAdopt(openMsg);
+      if (choice === "cancel") return false;
+      if (choice === "save") {
+        const list = loadSnaps();
+        list.unshift({ id: Date.now(), name: (($("title").value.trim() || "제목 없음") + " — " + snapTag),
+          time: new Date().toISOString(), state: collectState() });
+        while (list.length > SNAP_MAX) list.pop();
+        saveSnaps(list); renderSnapList();
+      }
     }
     restoreFromState(state);
     return true;
@@ -7731,7 +7752,7 @@
       const state = JSON.parse(new TextDecoder().decode(raw));
       // 해시는 들이기 전에 뗀다 — 취소하든 열든 주소에는 남기지 않는다(원래 동작).
       strip();
-      if (!adoptState(state, hadWork, "링크에 담긴 악보를 엽니다.", "링크 열기 전 자동 저장")) return;
+      if (!(await adoptState(state, hadWork, "링크에 담긴 악보를 엽니다.", "링크 열기 전 자동 저장"))) return;
       track("share_open");
     } catch (e) {
       strip();
