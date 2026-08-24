@@ -30,6 +30,7 @@ const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);
 const val = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const DRY = has("--dry");
+const FIX = has("--fix-safe");
 const VERBOSE = has("--verbose");
 const ONLY = val("--id", null);
 const LIMIT = Number(val("--limit", 0)) || 0;
@@ -91,6 +92,7 @@ await import("../js/janggu-data.js");
 const app = await loadApp(
   ["const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE",
    "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
+   "const:OCT_ROWS", "octPrefix",
    "matchSpecialNote", "symURL", "melodyBadFlags"],
   {}
 );
@@ -137,6 +139,81 @@ function badRuns(text) {
   return runs;
 }
 
+// ---------- 손대도 되는 교정 (--fix-safe) ----------
+// **답이 하나로 정해지는 것만** 고친다. 검사기가 아는 것은 '앱이 이 글자를 못 읽는다'까지고
+// 무엇을 쓰려던 것인지는 모르므로, 짐작이 끼어드는 갈래(시김새 이름 오타·어긋난 괄호 짝·
+// 문장부호)는 손대지 않고 표시만 한다. 약관 제5조 제4항이 교정 범위를 '**명백한** 표기
+// 오류'로 좁혀 둔 것과 같은 선이다.
+//
+//   ① 한자 율명 → 한글   黃 → 황 · 潢 → 청황
+//   ② 괄호 안 빈칸 걷기   { 흘림표 } → {흘림표}
+//
+// ①의 대응표는 **app.js의 YUL·OCT_HANJA를 그 자리에서 읽어 뒤집은 것**이다(사본이 아니다).
+// 뒤집을 때 같은 한자가 두 뜻을 갖는 것은 빼 둔다 — 2026-08-24 실측으로 57자 중 侇 하나가
+// 배유·배이 둘로 갈린다(app.js의 OCT_HANJA에 같은 글자가 두 번 적혀 있다).
+const octPrefix = app.fn("octPrefix");
+const HANJA = (() => {
+  const src = readFileSync(join(ROOT, "js/app.js"), "utf8");
+  const pairs = (t) => {
+    const o = {};
+    for (const [, k, v] of t.matchAll(/([가-힣])\s*:\s*"([^"]+)"/g)) o[k] = v;
+    return o;
+  };
+  const yulSrc = src.slice(src.indexOf("\n  const YUL = {"));
+  const YUL = pairs(yulSrc.slice(0, yulSrc.indexOf("};")));
+  const at = src.indexOf("\n  const OCT_HANJA = {");
+  const octSrc = src.slice(at, src.indexOf("\n  };", at));
+  const seen = new Map();
+  const put = (ch, txt) => {
+    if (!seen.has(ch)) seen.set(ch, new Set());
+    seen.get(ch).add(txt);
+  };
+  for (const [b, ch] of Object.entries(YUL)) put(ch, b);
+  for (const line of octSrc.split("\n")) {
+    const m = line.match(/"(-?\d)":\s*\{(.*)\}/);
+    if (!m) continue;
+    for (const [b, ch] of Object.entries(pairs(m[2]))) put(ch, octPrefix(Number(m[1])) + b);
+  }
+  const map = {};
+  let split = 0;
+  for (const [ch, set] of seen) { if (set.size === 1) map[ch] = [...set][0]; else split++; }
+  return { map, split, total: seen.size };
+})();
+
+const CLOSE = { "{": "}", "[": "]", "(": ")" };
+const clean = (t) => !melodyBadFlags(t).bad.some(Boolean);
+
+// 한 조각을 고쳐 본다. 무엇을 몇 군데 고쳤는지 함께 돌려준다.
+function fixText(text) {
+  let hanja = 0, spaces = 0;
+  let out = "";
+  for (const ch of text) {
+    if (HANJA.map[ch]) { out += HANJA.map[ch]; hanja++; } else out += ch;
+  }
+  // 괄호 안 빈칸 — 줄바꿈은 건드리지 않는다(그건 닫는 괄호를 빠뜨린 쪽에 가깝다).
+  out = out.replace(/([{[(])([^{}[\]()\n]*)([)\]}])/g, (m, open, inner, close) => {
+    if (CLOSE[open] !== close) return m;          // 짝이 어긋나면 손대지 않는다
+    if (!/\s/.test(inner)) return m;
+    const t = inner.trim();
+    if (!t || /\s/.test(t)) return m;             // 가운데 빈칸이면 이름이 아니다
+    if (!clean(open + t + close)) return m;       // 빈칸을 걷어도 못 읽으면 그대로 둔다
+    spaces++;
+    return open + t + close;
+  });
+  return { text: out, hanja, spaces };
+}
+
+// ★ 고친 뒤 **반드시 다시 재 본다.** 틀린 자리가 줄지 않았거나 없던 자리가 새로 생겼으면
+//   그 교정은 버린다 — 남의 악보를 짐작으로 바꾸지 않겠다는 약속을 코드로 지키는 자리다.
+function fixSafely(text) {
+  const before = melodyBadFlags(text).bad.filter(Boolean).length;
+  const r = fixText(text);
+  if (r.text === text) return null;
+  const after = melodyBadFlags(r.text).bad.filter(Boolean).length;
+  if (after >= before) return null;
+  return { text: r.text, hanja: r.hanja, spaces: r.spaces, before, after };
+}
+
 // 문서 하나 — 총보면 파트마다 따로 센다. 옛 v1은 루트 melody 하나뿐이다.
 function scanDoc(doc) {
   const parts = Array.isArray(doc && doc.parts) && doc.parts.length
@@ -152,6 +229,29 @@ function scanDoc(doc) {
   return out;
 }
 
+// 문서를 통째로 고쳐 본다. 파트마다 따로 재고, 하나라도 고쳐졌으면 새 문서를 돌려준다.
+function fixDoc(doc) {
+  const d = JSON.parse(JSON.stringify(doc));
+  let hanja = 0, spaces = 0, touched = 0;
+  const lanes = Array.isArray(d.parts) && d.parts.length ? d.parts : [d];
+  lanes.forEach((p) => {
+    if (typeof p.melody !== "string" || !p.melody) return;
+    const r = fixSafely(p.melody);
+    if (!r) return;
+    p.melody = r.text; hanja += r.hanja; spaces += r.spaces; touched++;
+  });
+  return touched ? { doc: d, hanja, spaces } : null;
+}
+
+// 고친 사실을 판에 적는 말. 무엇을 몇 군데 고쳤는지가 남아야 게시자가 읽고 판단할 수 있다
+// (약관 제5조 제5·6항).
+function fixNote(f) {
+  const bits = [];
+  if (f.hanja) bits.push("한자 율명 " + f.hanja + "자를 한글로");
+  if (f.spaces) bits.push("괄호 안 빈칸 " + f.spaces + "군데 정리");
+  return "표기 자동 교정 — " + bits.join(" · ") + " (tools/scan-published.mjs --fix-safe)";
+}
+
 // ---------- 훑기 ----------
 console.log("서버: " + BASE);
 const c = creds();
@@ -159,6 +259,13 @@ const auth = await post("/auth/v1/token?grant_type=password", c, false);
 token = auth.access_token;
 const me = await rpc("admin_me", {});
 console.log("관리자: " + (me.name || c.email) + (DRY ? "  · 살펴보기만 함(--dry)" : ""));
+if (FIX) {
+  console.log("교정 모드(--fix-safe) — 답이 하나로 정해지는 것만 고칩니다: " +
+              "한자 율명 " + Object.keys(HANJA.map).length + "자" +
+              (HANJA.split ? "(뜻이 갈리는 " + HANJA.split + "자는 뺌)" : "") +
+              " · 괄호 안 빈칸.");
+  console.log("  시김새 이름 오타·어긋난 괄호 짝·문장부호는 손대지 않고 표시만 합니다.\n");
+}
 
 async function listAll() {
   const all = [];
@@ -178,14 +285,28 @@ async function listAll() {
 const list = ONLY ? [{ id: ONLY, title: "(지정)", lint_bad: null }] : await listAll();
 console.log("악보 " + list.length + "곡\n");
 
-let dirty = 0, wrote = 0, unchanged = 0;
+let dirty = 0, wrote = 0, unchanged = 0, repaired = 0;
 const rows = [];
 for (const s of list) {
   let r;
   try { r = await rpc("admin_get_score", { p_id: s.id }); }
   catch (e) { console.log("  ! " + s.id + " — " + e.message); continue; }
 
-  const found = scanDoc(r.doc);
+  let doc = r.doc, fixed = null;
+  if (FIX) {
+    fixed = fixDoc(doc);
+    if (fixed) {
+      doc = fixed.doc;
+      const note = fixNote(fixed);
+      console.log("  ✎ " + r.id + " " + r.title + " — " + note.replace(/ \(tools.*$/, ""));
+      if (!DRY) {
+        try { await rpc("admin_save_score", { p_id: r.id, p_doc: doc, p_note: note }); repaired++; }
+        catch (e) { console.log("  ! " + r.id + " 되쓰지 못했습니다 — " + e.message); doc = r.doc; }
+      }
+    }
+  }
+
+  const found = scanDoc(doc);
   const bad = found.reduce((n, f) => n + f.runs.length, 0);
   if (bad) dirty++;
   rows.push({ id: r.id, title: r.title, ver: r.ver, bad, found, was: s.lint_bad });
@@ -231,6 +352,10 @@ if (!hit.length) {
 }
 
 console.log("\n훑은 악보 " + rows.length + " · 어긋난 악보 " + dirty +
+            (FIX ? " · 고친 악보 " + (DRY ? "0(--dry)" : repaired) : "") +
             (DRY ? " · (--dry라 아무것도 안 적었습니다)"
                  : " · 새로 적음 " + wrote + " · 그대로 " + unchanged));
+if (FIX && !DRY && repaired) {
+  console.log("고친 악보는 판이 하나 올라갔습니다 — 관리 화면에서 판 번호를 눌러 되돌릴 수 있습니다.");
+}
 console.log("결과는 관리 화면(admin.html)의 '문법 오류' 탭에서 볼 수 있습니다.");
