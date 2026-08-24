@@ -168,6 +168,17 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   **문서가 손대진 상태면 덮어쓰지 않고 멈춘다**(버리고 새로 만들려면 `--force`).
   지문은 끝의 빈 줄을 떨군 본문으로 뜬다 — 쓸 때와 읽을 때 손질이 다르면 손 안 댄 문서도
   '고쳐졌다'로 걸린다(실제로 한 번 그랬다).
+- `tools/scan-published.mjs` — **게시된 악보의 문법을 훑어 결과를 서버에 적는다**
+  (`scores.lint_bad` → 관리 화면의 '문법 오류' 탭). 서버는 악보를 모르므로(schema.sql 뼈대 ①)
+  재는 일은 여기서 하고 서버엔 **숫자만** 간다. 재는 자는 app.js의 `melodyBadFlags`를
+  app-sandbox로 떼어 온 것 — 편집기에서 빨간 바탕을 깔아 주는 바로 그 함수라, 화면과 검사가
+  어긋날 수가 없다. **선율만** 본다(곁줄·장단은 글자를 적는 자리라 틀렸다고 말할 잣대가 없다).
+  · 관리자 로그인으로 든다(`JGB_ADMIN_EMAIL`/`JGB_ADMIN_PW` 또는 `server/admin.local.json`,
+    gitignore). service_role 키는 안 쓴다.
+  · **BASESET 빗장**을 먼저 지난다: app-sandbox는 BASESET(성립하는 율명 낱자)을 손으로 박아
+    둔 대역으로 건네는데, app.js의 `YUL`과 어긋나면 멀쩡한 율명이 죄다 '틀림'이 되어 **모든
+    악보가 통째로 오류로 보고된다**. 그래서 YUL을 소스에서 읽어 대조하고 어긋나면 멈춘다.
+  · 값이 달라진 악보만 적는다(여러 번 돌려도 `lint_at`이 헛되이 갱신되지 않는다).
 - `tools/check-symbols-registry.mjs` — 사전이 만들어 내는 표 9개가 **기준 커밋의 app.js에 손으로
   적혀 있던 값과 똑같은지** 대조한다. 사전을 손본 뒤 `node tools/check-symbols-registry.mjs`가
   깨지면 악보 모양이 달라졌다는 뜻. 기호를 **새로 들이는 건 통과**시키고 몇 개 늘었는지만

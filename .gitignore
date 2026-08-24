@@ -30,6 +30,8 @@ NEXT-SESSION.md
 server/tokens.local.json
 # 국악원 OMR 게시물(69곡)의 수정 열쇠 — tools/publish-ngc-omr.mjs가 쓰고 만든다. 커밋 금지.
 server/ngc-tokens.local.json
+# 관리자 로그인 — tools/scan-published.mjs가 읽는다(환경변수로 줘도 된다). 절대 커밋 금지.
+server/admin.local.json
 
 # 국악원 OMR 데이터셋 — CC BY-NC-SA 원자료·변환물·그림. 리포에는 변환기 코드만 담는다.
 국악원OMR데이터셋/
