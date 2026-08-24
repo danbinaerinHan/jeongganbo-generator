@@ -372,6 +372,27 @@
   function showBanner(meta, mine) {
     const who = meta.author ? (" · " + meta.author) : "";
     const lic = LICENSE_KO[meta.license] ? (" · " + LICENSE_KO[meta.license]) : "";
+    // 운영자가 표기를 고친 판이면 **그것부터** 말한다. 약관 제5조 제6항이 게시자에게 교정
+    // 기록의 열람과 원상회복을 요구할 권리를 주는데, 고쳐진 줄을 모르면 쓸 수 없는 권리다.
+    // 제 악보를 여는 순간 보이는 것이 가장 빠른 알림이라 여기 둔다(서버는 마지막 판이
+    // 운영자 것일 때만 admin_edit을 보낸다 — 그 뒤 게시자가 갱신했으면 안 알린다).
+    const ae = meta.admin_edit;
+    if (ae) {
+      // 메모가 스스로 무엇을 고쳤는지 말하므로 여기서 되풀이하지 않는다('표기를 교정한 판'
+      // + '표기 자동 교정 —'이 겹쳐 읽혔다). 메모 끝의 도구 이름은 게시자에게 쓸모가 없어 뗀다.
+      $("cbText").textContent =
+        "운영자가 고친 판입니다 (v" + ae.ver + ")" +
+        (ae.note ? " · " + String(ae.note).replace(/\s*\(tools\/[^)]*\)\s*$/, "") : "") +
+        (mine ? " — 되돌리기를 요구하시려면 [문의]로 알려 주세요" : "");
+      // 내 악보라도 이때는 연락할 길이 있어야 한다(원상회복 요구) — [신고]를 살려 둔다
+      const rep0 = $("cbReport");
+      rep0.style.display = "";
+      rep0.href = reportMailto(meta.id, meta.title);
+      rep0.textContent = mine ? "문의" : "신고";
+      $("cloudBanner").style.display = "";
+      return;
+    }
+    $("cbReport").textContent = "신고";
     $("cbText").textContent = mine
       ? ("내가 게시한 악보입니다" + who + " — 고친 뒤 [파일 › 악보 게시]에서 같은 주소로 갱신할 수 있습니다")
       : ("공유받은 악보입니다" + who + lic + " — 여기서 고쳐도 원본은 바뀌지 않습니다");

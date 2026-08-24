@@ -573,6 +573,16 @@ begin
     'doc',        s.doc,
     'title',      s.title,
     'ver',        s.ver,
+    -- 마지막 판이 **운영자가 고친 것**이면 그 사실을 함께 알린다(없으면 null).
+    -- 약관 제5조 제6항이 게시자에게 '교정 기록의 열람과 원상회복을 요구할 권리'를 주는데,
+    -- 고쳐진 줄을 모르면 쓸 수 없는 권리다 — 제 악보를 여는 순간 보이게 하는 것이 가장 빠르다.
+    -- 게시자가 그 뒤에 스스로 갱신했으면(마지막 판이 게시자 것) 굳이 알리지 않는다.
+    'admin_edit', (select case when v.by_kind = 'admin'
+                          then jsonb_build_object('ver', v.ver, 'note', v.note, 'at', v.created_at)
+                          end
+                     from public.score_versions v
+                    where v.score_id = s.id
+                    order by v.ver desc limit 1),
     'author',     s.author,
     'license',    s.license,
     'visibility', s.visibility,
