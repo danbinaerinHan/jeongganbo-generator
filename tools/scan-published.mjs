@@ -185,9 +185,50 @@ const HANJA = (() => {
 const CLOSE = { "{": "}", "[": "]", "(": ")" };
 const clean = (t) => !melodyBadFlags(t).bad.some(Boolean);
 
+// ③ 칸 나눔 — 한 분박이 좌우로 갈린 자리에 스페이스를 넣는다.
+//
+// 짐작이 아닌 까닭 둘:
+//   · **어디에 넣을지**를 앱이 이미 정해 놨다. 좌우 칸 경계는 tokenizeNotes+groupRowTokens가
+//     그리기에 쓰는 그 경계이고, 여기서는 그 경계를 되찾을 뿐 규칙을 새로 적지 않는다.
+//   · **소리가 안 바뀐다.** 좌우로 붙여 쓰나 상하로 나누나 시간 나눔이 같다(2026-08-24 실측:
+//     음높이·시각·길이가 완전히 일치). 달라지는 것은 그려지는 모양뿐이다.
+//
+// ★ 시김새가 낀 칸은 손대지 않는다. `{흘림표}황`은 '흘림표를 황에 붙이려던 것'일 수도
+//   '독립 시김새를 위 분박에 두려던 것'일 수도 있어 **뜻이 갈리는 유일한 경우**다.
+//   쉼표(쉼)·이음(-)은 시김새가 아니라 그대로 다룬다.
+const tokenizeNotes = app.fn("tokenizeNotes");
+const groupRowTokens = app.fn("groupRowTokens");
+const parseMelodyOffsets = app.fn("parseMelodyOffsets");
+// ORN_CAT은 app.js 안에서 사전(JGB_SYM)으로 만들어지는 표라 떼어 올 수가 없다.
+// **같은 사전에서 같은 방식으로** 다시 만든다 — 사본을 적는 것이 아니다.
+const ORN_CAT = {};
+(globalThis.JGB_SYM.ornList || []).forEach((o) => { ORN_CAT[o.s] = o.c; });
+const liveToks = (row) => tokenizeNotes(row).filter((tk) =>
+  !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo"));
+const groupsOf = (row) => groupRowTokens(liveToks(row));
+// 붙임 시김새가 낀 그룹이 있으면 손대지 않는다(위 ★). 쉼표·이음은 ORN_CAT에 없어 그대로 다룬다.
+const hasOrn = (row) => groupsOf(row).some((g) => g.main.sym != null && ORN_CAT[g.main.sym]);
+
+// 한 분박(공백 없는 조각)을 그룹 경계에서 갈라 스페이스로 잇는다.
+// 앞에서부터 '그룹 하나가 되는 가장 긴 조각'을 떼는 식이라, 경계를 직접 세지 않는다.
+function splitRow(row) {
+  const out = [];
+  let rest = row;
+  while (rest) {
+    let cut = 0;
+    for (let i = 1; i <= rest.length; i++) {
+      if (groupsOf(rest.slice(0, i)).length === 1) cut = i;
+    }
+    if (!cut) return null;                 // 앞에서부터 못 떼면 포기(있어선 안 되는 꼴)
+    out.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  return out.length > 1 ? out.join(" ") : null;
+}
+
 // 한 조각을 고쳐 본다. 무엇을 몇 군데 고쳤는지 함께 돌려준다.
 function fixText(text) {
-  let hanja = 0, spaces = 0;
+  let hanja = 0, spaces = 0, splits = 0;
   let out = "";
   for (const ch of text) {
     if (HANJA.map[ch]) { out += HANJA.map[ch]; hanja++; } else out += ch;
@@ -202,7 +243,28 @@ function fixText(text) {
     spaces++;
     return open + t + close;
   });
-  return { text: out, hanja, spaces };
+
+  // 칸마다 훑어 한 분박짜리 좌우 칸을 가른다. 뒤에서부터 고쳐야 앞 칸의 자리가 안 밀린다.
+  const cells = [];
+  parseMelodyOffsets(out).forEach(function (gak) {
+    gak.forEach(function (c) { if (c.text) cells.push(c); });
+  });
+  for (let i = cells.length - 1; i >= 0; i--) {
+    const c = cells[i];
+    const rows = c.text.split(/\s+/).filter(Boolean);
+    if (rows.length !== 1) continue;
+    if (groupsOf(rows[0]).length < 2) continue;
+    if (hasOrn(rows[0])) continue;                   // 뜻이 갈리는 자리는 그대로 둔다
+    const fixedRow = splitRow(rows[0]);
+    if (!fixedRow) continue;
+    // 칸 안의 앞뒤 공백은 그대로 두고 알맹이만 바꾼다
+    const raw = out.slice(c.start, c.end);
+    const at = raw.indexOf(rows[0]);
+    if (at < 0) continue;
+    out = out.slice(0, c.start + at) + fixedRow + out.slice(c.start + at + rows[0].length);
+    splits++;
+  }
+  return { text: out, hanja, spaces, splits };
 }
 
 // ★ 고친 뒤 **반드시 다시 재 본다.** 틀린 자리가 줄지 않았거나 없던 자리가 새로 생겼으면
@@ -213,7 +275,7 @@ function fixSafely(text) {
   if (r.text === text) return null;
   const after = melodyBadFlags(r.text).bad.filter(Boolean).length;
   if (after >= before) return null;
-  return { text: r.text, hanja: r.hanja, spaces: r.spaces, before, after };
+  return { text: r.text, hanja: r.hanja, spaces: r.spaces, splits: r.splits, before, after };
 }
 
 // 문서 하나 — 총보면 파트마다 따로 센다. 옛 v1은 루트 melody 하나뿐이다.
@@ -234,15 +296,15 @@ function scanDoc(doc) {
 // 문서를 통째로 고쳐 본다. 파트마다 따로 재고, 하나라도 고쳐졌으면 새 문서를 돌려준다.
 function fixDoc(doc) {
   const d = JSON.parse(JSON.stringify(doc));
-  let hanja = 0, spaces = 0, touched = 0;
+  let hanja = 0, spaces = 0, splits = 0, touched = 0;
   const lanes = Array.isArray(d.parts) && d.parts.length ? d.parts : [d];
   lanes.forEach((p) => {
     if (typeof p.melody !== "string" || !p.melody) return;
     const r = fixSafely(p.melody);
     if (!r) return;
-    p.melody = r.text; hanja += r.hanja; spaces += r.spaces; touched++;
+    p.melody = r.text; hanja += r.hanja; spaces += r.spaces; splits += r.splits; touched++;
   });
-  return touched ? { doc: d, hanja, spaces } : null;
+  return touched ? { doc: d, hanja, spaces, splits } : null;
 }
 
 // 고친 사실을 판에 적는 말. 무엇을 몇 군데 고쳤는지가 남아야 게시자가 읽고 판단할 수 있다
@@ -251,6 +313,7 @@ function fixNote(f) {
   const bits = [];
   if (f.hanja) bits.push("한자 율명 " + f.hanja + "자를 한글로");
   if (f.spaces) bits.push("괄호 안 빈칸 " + f.spaces + "군데 정리");
+  if (f.splits) bits.push("한 정간 안에서 붙여 쓴 " + f.splits + "군데를 분박으로 나눔");
   return "표기 자동 교정 — " + bits.join(" · ") + " (tools/scan-published.mjs --fix-safe)";
 }
 
@@ -265,8 +328,8 @@ if (FIX) {
   console.log("교정 모드(--fix-safe) — 답이 하나로 정해지는 것만 고칩니다: " +
               "한자 율명 " + Object.keys(HANJA.map).length + "자" +
               (HANJA.split ? "(뜻이 갈리는 " + HANJA.split + "자는 뺌)" : "") +
-              " · 괄호 안 빈칸.");
-  console.log("  시김새 이름 오타·어긋난 괄호 짝·문장부호는 손대지 않고 표시만 합니다.\n");
+              " · 괄호 안 빈칸 · 한 정간 안에서 붙여 쓴 것을 분박으로 나누기.");
+  console.log("  시김새 이름 오타·어긋난 괄호 짝·문장부호·시김새가 낀 칸은 손대지 않고 표시만 합니다.\n");
 }
 
 async function listAll() {
