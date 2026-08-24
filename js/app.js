@@ -42,6 +42,16 @@
   // 각 한 자리를 다 쓰면 제목 칸이 너무 커 보이고, 정간 한 칸이면 남는 폭이 간격으로만
   // 몰려 첫 페이지 간격이 뒷페이지의 세 배가 된다(2026-08-24 사용자 확정).
   const TITLE_W_MID = 0.5;
+  // 빠르기 표기(一分・○○井)의 글자 크기(정간 대비)와 한 글자가 차지하는 세로 자리(글자 대비).
+  // 예전엔 높이 예약이 0.42×1.12, 실제 그리기가 0.38×1.12로 **서로 다른 수**였다 —
+  // 예약이 실제보다 10% 컸다. 자리를 1.12(글자 크기의 12%만큼 벌어짐)에서 1.00(글자 크기 =
+  // 글자 자리)으로 좁힌 건 표기가 헐렁해 보이기도 했고 세로를 그만큼 아꼈기 때문이다.
+  // 1.00보다 촘촘하면 획 많은 글자(八·六·百)가 서로 닿는다(2026-08-24 실측·사용자 확정).
+  // 사용자 자간(#tempoSpacing)은 이 값 위에 얹힌다.
+  const TEMPO_F = 0.34, TEMPO_LEAD = 1.00;
+  // 첫 페이지가 빠르기 표기 자리로 위 여백을 빌릴 때 종이 끝에 남겨 두는 몫(mm) —
+  // 프린터가 못 찍는 가장자리가 있어 0까지 밀지 않는다.
+  const TOP_SAFE = 5;
   // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계.
   // 예전엔 {0.3, 0.6, 1.0}으로 '격자선보다 눈에 띄게 굵게'였는데 전반적으로 너무 굵어서
   // 한 단계씩 낮췄고, 굵게는 다시 T_THICK까지 낮췄다 — 악보에 이미 있는 굵은 가로줄
@@ -4266,23 +4276,42 @@
     const wNeed = wCells * desiredCell + wGaps * desiredGap + wLys * desiredLyExtra;
     // 세로 예산 — 각 길이가 섞이면 페이지마다 높이가 달라지므로 가장 높은 페이지를 기준으로
     // 정간 크기(cell)를 정한다. 모든 각이 같은 길이면 예전 식(maxBands×(beats+머리단))과 같다.
-    let hNeed = 1;
-    pages.forEach(function (p) {
+    // 첫 페이지 위에 얹히는 것들(빠르기 표기·가로 제목)도 세로를 먹는다. 예전엔 이걸 안 세서
+    // 배율이 정해진 뒤에 그 높이만큼 격자가 아래로 밀렸고, 밀린 만큼 종이 밖으로 나갔다
+    // (군악 실측 15.8mm 잘림 — 표기를 짧게 써도 5.7mm 잘렸다). 배율에 정비례하는 값이라
+    // desired 단위로 미리 잴 수 있다.
+    const dTempoH = wantTempo
+      ? Array.from(tempoStr).length * (desiredCell * TEMPO_F * tempoMul * TEMPO_LEAD
+          + (parseFloat($("tempoSpacing").value) || 0))
+        + (parseFloat($("tempoGap").value) || 0) : 0;
+    const dTitleTopH = titleTopMode
+      ? (desiredTitle * 1.35 + (subTxt ? desiredSub * 1.5 : 0)
+         + Math.max(0, titleParts.length - 1) * desiredTitle * 1.15
+         + Math.max(0, subParts.length - 1) * desiredSub * 1.2) : 0;
+    // 격자를 줄이기 전에 **위 여백을 먼저 빌린다** — 표기가 여백 쪽으로 올라가는 만큼
+    // 격자는 덜 작아진다. 페이지마다 제 예산으로 재고 첫 페이지만 이 몫을 더 쓴다.
+    const TOP_BORROW = Math.max(0, MARGIN - TOP_SAFE);
+    let hNeed = 1, scaleH = Infinity;
+    pages.forEach(function (p, pi) {
       const units = p.bands.reduce(function (a, _, i) { return a + bandBeatsOf(p, i) + headRatio; }, 0);
-      hNeed = Math.max(hNeed, units * desiredCell + (p.bands.length - 1) * desiredBandGap);
+      const h = units * desiredCell + (p.bands.length - 1) * desiredBandGap;
+      hNeed = Math.max(hNeed, h);   // 격자만 — 아래 '페이지 채움' 나눔이 이 값을 쓴다
+      scaleH = Math.min(scaleH, (availH + (pi === 0 ? TOP_BORROW : 0))
+                                / (h + (pi === 0 ? dTempoH + dTitleTopH : 0)));
     });
-    const scale = Math.min(1, availW / wNeed, availH / hNeed);
+    const scale = Math.min(1, availW / wNeed, scaleH);
 
     const cell = desiredCell * scale;
     const gap = desiredGap * scale;
     let bandGap = desiredBandGap * scale;
     // 템포 표시(一分・XX井) — 맨 처음 각 위, 첫 페이지에만. 세로 여유 계산에도 쓰므로 먼저 구한다.
     // tempoMul을 곱해야 크기를 키운 만큼 위 공간도 같이 늘어난다(안 그러면 그리기가 avail에 걸려 잘림).
-    const tempoFont = cell * 0.42 * tempoMul;
-    // 자간(#tempoSpacing, mm) — verticalText가 한 글자 자리를 `font*1.12 + spacing`으로 잡으므로
-    // 예약도 같은 셈을 써야 한다. 어긋나면 자간을 벌린 만큼 글자가 위로 삐져나가 잘린다.
+    const tempoFont = cell * TEMPO_F * tempoMul;
+    // 자간(#tempoSpacing, mm) — 빠르기 표기의 한 글자 자리는 `font*TEMPO_LEAD + spacing`이다
+    // (verticalText의 1.12와의 차이는 drawTempoLabel이 자간에 실어 넘긴다). 예약과 그리기가
+    // 같은 셈을 써야 한다 — 어긋나면 자간을 벌린 만큼 글자가 위로 삐져나가 잘린다.
     const tempoSpacing = (parseFloat($("tempoSpacing").value) || 0) * scale;
-    const tempoLineH = tempoFont * 1.12 + tempoSpacing;
+    const tempoLineH = tempoFont * TEMPO_LEAD + tempoSpacing;
     // 격자와 템포 글자 사이 여백 — 각/장 이름(#gakNameGap)과 따로 노는 제 값(#tempoGap).
     // 예약과 그리기(drawTempoLabel)가 이 한 값을 같이 쓴다: 예전엔 예약은 tempoFont*0.45,
     // 그리기는 gakNameGap이라 서로 어긋나 있었다. 지금은 숨은 칸이고 드래그(상하)가 써 준다.
@@ -4406,7 +4435,13 @@
       const pageTempoH = (wantTempo && pageIdx === 0) ? tempoH : 0;
       const pageTitleTopH = pageIdx === 0 ? titleTopH : 0;   // 가로 제목은 첫 페이지에만
       const pageTopExtra = pageTempoH + pageTitleTopH;
-      const gridY = frameY + pageTopExtra + (frameH - pageTopExtra - gridTotalH) / 2;
+      // 빠르기 표기가 격자를 종이 밖으로 밀어낼 판이면 **모자란 만큼만** 위 여백을 빌려
+      // 테두리째 위로 올린다(종이 끝에서 TOP_SAFE는 남긴다). 여백을 다 빌려도 모자라는
+      // 몫은 위 배율 셈이 이미 격자를 줄여 놓았으므로, 여기서 넘칠 일은 없다.
+      const borrowTop = (pageIdx === 0)
+        ? Math.max(0, Math.min(TOP_BORROW, pageTopExtra + gridTotalH - frameH)) : 0;
+      const fTop = frameY - borrowTop, fHb = frameH + borrowTop;
+      const gridY = fTop + pageTopExtra + (fHb - pageTopExtra - gridTotalH) / 2;
       const bandRight = gridX + gridTotalW;
 
       // 바깥 테두리: 가로는 격자에 맞추고, 세로는 '페이지 채움' 비율에 따라
@@ -4414,7 +4449,7 @@
       // 상자 위/아래 y는 제목 칸 세로선도 같이 쓰므로 페이지 스코프에 둔다.
       const fillT = pageFillPct / 100;
       const hugY = gridY - INNER_PAD, hugBottom = gridY + gridTotalH + INNER_PAD;
-      const boxTop = hugY + (frameY - hugY) * fillT;
+      const boxTop = hugY + (fTop - hugY) * fillT;
       const boxBottom = hugBottom + ((frameY + frameH) - hugBottom) * fillT;
       if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, boxTop,
         visibleW + 2 * INNER_PAD, boxBottom - boxTop, T_FRAME));
@@ -4669,20 +4704,23 @@
             const gap = tempoGap;   // 위 예약(tempoH)과 같은 값 — 어긋나면 잘리거나 뜬다
             const avail = (b === 0 ? Math.max(2, topY - 1) : Math.max(2, bandGap * 0.9)) - gap;
             const nGaps = chars.length - 1;
-            const perF = 0.85 + 1.12 * nGaps;               // f에 비례하는 몫(자간 0일 때 총 높이)
-            const f = Math.min(cell * 0.38 * mul, Math.max(1, avail) / perF);
+            const perF = 0.85 + TEMPO_LEAD * nGaps;         // f에 비례하는 몫(자간 0일 때 총 높이)
+            const f = Math.min(cell * TEMPO_F * mul, Math.max(1, avail) / perF);
             // 자간(#tempoSpacing)은 글자 크기와 무관한 고정 mm라, 글자를 놓고 **남는 높이까지만**
             // 벌어진다. 안 막으면 표기가 각 위 여백을 넘어 종이 밖으로 올라가 잘린다(높이 예약
             // tempoH는 밴드 사이 간격을 나눌 때만 쓰여 여기를 지켜주지 못한다).
             // 좁히는 쪽(음수)은 넘칠 일이 없으니 그대로 통과시킨다.
             const spMax = nGaps > 0 ? Math.max(0, (avail - perF * f) / nGaps) : 0;
             const sp = Math.min(tempoSpacing, spMax);
-            const lineH = f * 1.12 + sp;                     // verticalText의 한 글자 자리와 같은 셈
+            // verticalText는 한 글자 자리를 font*1.12로 잡는다 — 빠르기 표기는 그보다 촘촘히
+            // (TEMPO_LEAD) 세우므로 그 차이를 자간에 실어 넘긴다(사용자 자간은 그 위에 얹힌다).
+            const spV = sp + f * (TEMPO_LEAD - 1.12);
+            const lineH = f * TEMPO_LEAD + sp;               // 높이 예약(tempoLineH)과 같은 셈
             const startY = topY - gap + f * 0.06 - nGaps * lineH;
             // 좌우 오프셋(숨은 #tempoOffX, mm) — 드래그가 써 주는 값. 상하는 숨은 #tempoGap이
             // 담당(높이 예약과 한 값이라야 잘리지 않으므로 별도 dy를 두지 않는다).
             const tOffX = (parseFloat($("tempoOffX") && $("tempoOffX").value) || 0) * scale;
-            const tG = verticalText(cx + tOffX, startY, tempoStr, f, 400, "#000", NOTE_FONT, sp).g;
+            const tG = verticalText(cx + tOffX, startY, tempoStr, f, 400, "#000", NOTE_FONT, spV).g;
             const tHolder = el("g", {});
             tHolder.appendChild(tG);
             svg.appendChild(tHolder);
