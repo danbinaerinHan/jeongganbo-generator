@@ -93,6 +93,8 @@ const app = await loadApp(
   ["const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE",
    "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "const:OCT_ROWS", "octPrefix",
+   // 칸 나눔 규칙(좌우는 상하가 있을 때만)이 쓰는 것들 — melodyBadFlags가 안에서 부른다
+   "parseMelodyOffsets", "tokenizeNotes", "groupRowTokens", "cellSplitBad",
    "matchSpecialNote", "symURL", "melodyBadFlags"],
   {}
 );

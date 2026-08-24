@@ -449,7 +449,57 @@
       if (BASESET.has(ch)) { i += 1; continue; }
       bad[i] = true; i += 1;
     }
+
+    // 여기까지는 '무엇이 적혔나'(글자 단위)이고, 아래는 '어떻게 나뉘었나'(칸 단위)다.
+    // 자리 셈이 두 가지라 조심할 것: a는 코드포인트 단위, parseMelodyOffsets의 start/end는
+    // UTF-16 단위다. 보통은 같지만 BMP 밖 글자(이모지 등)가 섞이면 어긋나므로 그때만 자리표를
+    // 만들어 옮긴다(평소에는 만들지 않으니 타이핑마다 드는 값이 없다).
+    let toCp = null;
+    if (text.length !== a.length) {
+      toCp = new Array(text.length);
+      let ci = 0, u = 0;
+      while (u < text.length) {
+        const n = String.fromCodePoint(text.codePointAt(u)).length;
+        for (let k = 0; k < n; k++) toCp[u + k] = ci;
+        u += n; ci += 1;
+      }
+    }
+    const cpAt = function (u) { return toCp ? (toCp[u] != null ? toCp[u] : a.length) : u; };
+
+    parseMelodyOffsets(text).forEach(function (gak) {
+      gak.forEach(function (c) {
+        if (!c.text || !cellSplitBad(c.text)) return;
+        const from = cpAt(c.start), to = cpAt(c.end);
+        for (let k = from; k < to && k < a.length; k++) {
+          if (!/\s/.test(a[k])) bad[k] = true;   // 칸을 가른 것이 없으니 글자만 칠한다
+        }
+      });
+    });
     return { a: a, bad: bad };
+  }
+
+  // ---------- 정간 나눔 규칙 ----------
+  // **좌우로 나누려면 상하로 먼저 나뉘어 있어야 한다**(2026-08-24 사용자 확정).
+  // 정간보는 세로로 먼저 쪼개는 기보다. 한 정간 안에서 공백은 위아래 분박을 가르고, 글자를
+  // 붙여 쓰면 그 분박 안에서 좌우로 갈린다. 그러니 분박이 하나뿐인데 좌우로 갈리는 꼴은 없다:
+  //     "황 태"(상하 둘)  ○      "황태 황"(첫 분박이 좌우)  ○      "황태"(상하 없이 좌우)  ✗
+  // 곧 **좌우로 놓으려면 스페이스가 적어도 한 번은 있어야 한다.**
+  //
+  // ★ 시김새를 **음표 앞**에 쓰면 여기 걸린다(`{흘림표}황`). 앞에 쓰면 붙지 않고 제 칸을
+  //   열어 좌우 두 칸이 되기 때문이다(실측). 종류와 무관하게 시김새는 **음표 뒤**에 쓴다:
+  //     중{흘림표} · 중{니레} · 중{퇴성} → 한 칸(붙음)      {흘림표}중 → 두 칸(갈림)
+  //   홀로 선 시김새(`{니레}`)는 제 분박을 차지하는 독립 시김새라 한 칸이고 걸리지 않는다.
+  //
+  // 세는 자는 그리기가 쓰는 그것 그대로다(rowToks 필터 + groupRowTokens) — 여기서 따로 세면
+  // 화면에 그려진 칸 수와 검사가 어긋난다.
+  function cellSplitBad(cellText) {
+    const rows = cellText.split(/\s+/).filter(Boolean);
+    if (rows.length !== 1) return false;      // 상하로 나뉘었으면 좌우는 마음대로
+    // 숨표·빠르기는 칸을 차지하지 않는다(drawCell이 배치에서 빼는 것과 같은 규칙)
+    const toks = tokenizeNotes(rows[0]).filter(function (tk) {
+      return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
+    });
+    return groupRowTokens(toks).length > 1;
   }
 
   // 에디터 뒤 배경 레이어에 같은 글을 깔고, 잘못된 글자에만 빨간 배경을 입힌다
