@@ -36,6 +36,12 @@
   // — 예시 악보처럼 테두리가 페이지 끝에 닿지 않고 항상 여백을 조금 둔다
   const MARGIN_BASE = 12, MARGIN_MIN = 9, INNER_PAD = 5;
   const T_THIN = 0.14, T_THICK = 0.32, T_FRAME = 0.63, T_DAEGANG = 0.45;   // 정간·각 선은 아주 살짝 얇게(0.16/0.36에서)
+  const LY_W_RATIO = 0.4;    // 곁줄 한 줄의 폭(정간 칸 대비) — 자리 셈과 그리기가 같이 본다
+  // 제목 칸 폭이 '정간 한 칸'(0)과 '각 한 자리'(1) 사이 어디에 서나. 총보에서만 뜻이 있다
+  // (파트보는 둘이 같은 값이라 어디에 두든 예전 그대로). 가운데로 둔 건 눈으로 고른 값 —
+  // 각 한 자리를 다 쓰면 제목 칸이 너무 커 보이고, 정간 한 칸이면 남는 폭이 간격으로만
+  // 몰려 첫 페이지 간격이 뒷페이지의 세 배가 된다(2026-08-24 사용자 확정).
+  const TITLE_W_MID = 0.5;
   // 셀 서식(직접 입력)에서 사용자가 고르는 테두리 굵기 3단계.
   // 예전엔 {0.3, 0.6, 1.0}으로 '격자선보다 눈에 띄게 굵게'였는데 전반적으로 너무 굵어서
   // 한 단계씩 낮췄고, 굵게는 다시 T_THICK까지 낮췄다 — 악보에 이미 있는 굵은 가로줄
@@ -320,6 +326,40 @@
     return gakPerRow - n < 1 ? Math.max(0, gakPerRow - 1) : n;
   }
 
+  // 한 각(묶음) 안에 서는 파트 열들과, 그중 곁줄이 켜진 파트. 그리기(render)와 자리 셈
+  // (titleSlotPlan)이 **같은 답**을 봐야 해서 한 곳에 둔다 — 총보라고 남의 곁줄 자리를
+  // 만들어 두지 않으므로(사용자 확정) '켜짐'은 활성 파트만 창 열림까지 쳐 준다.
+  function partColumns() {
+    const scoreMode = scoreViewOn();
+    const list = scoreMode ? parts : [parts[activePart]];
+    const activeCol = scoreMode ? activePart : 0;
+    const lyOn = list.map(function (p, i) {
+      if (i === activeCol) return lyricsLaneOn();
+      return String(p.lyrics || "").replace(/[|\s]/g, "") !== "";
+    });
+    return { list: list, activeCol: activeCol, lyOn: lyOn };
+  }
+
+  // 제목 칸이 있는 페이지의 자리 셈. **총보에서 '각 한 자리'는 파트 수(+곁줄)만큼 넓은데
+  // 제목 칸·장단 칸은 정간 한 칸 폭**이라, 그냥 두면 첫 페이지만 그 차이만큼 좁아지고
+  // 빈 폭이 왼쪽 끝에 띠로 남는다(군악 실측: 15칸 중 4칸). 그래서 셋으로 나눠 쓴다:
+  //   ① 제목은 '각 한 자리'를 예약하되 칸 폭은 그 자리와 정간 한 칸의 가운데(TITLE_W_MID)
+  //   ② 남는 폭에 장단 줄(정간 한 칸 + 간격)이 들어가면 장단은 각 자리를 따로 안 먹는다
+  //   ③ 그러고도 남는 폭은 그 밴드의 각 사이 간격들이 고루 나눠 갖는다(gap0)
+  // 여기가 정하는 건 ②뿐이다(용량이 걸려 formStructure도 봐야 하므로). ①③은 배율이 정해진
+  // 뒤라야 재므로 render가 같은 식으로 잇는다 — 배율은 모두에 똑같이 곱해져 ②를 안 바꾼다.
+  function titleSlotPlan(titleGak) {
+    if (!$("wantJangdan").checked || titleGak <= 0) return { jdInSlack: false };
+    const cols = partColumns();
+    const cell = Math.max(2, parseFloat($("cellSize").value) || 11);
+    const lyExtra = cell * LY_W_RATIO;
+    const gakW = cols.list.length * cell + cols.lyOn.filter(Boolean).length * lyExtra;
+    const gap = cols.lyOn[0] ? Math.max(0, (parseFloat($("gakGap").value) || 0) - lyExtra)
+                             : Math.max(0, parseFloat($("gakGap").value) || 0);
+    // 제목이 비워 준 폭(각 한 자리 − 정간 한 칸)에 장단 줄이 들어가나
+    return { jdInSlack: titleGak * (gakW - cell) >= cell + gap };
+  }
+
   // 현재 폼의 구조(정간수, 총 각 수 등). reconcile/render 매핑 공용.
   function formStructure() {
     const beats = Math.max(1, parseInt($("beats").value) || 1);
@@ -329,8 +369,9 @@
       : Math.max(1, Math.min(12, parseInt($("stackCount").value) || autoStack));
     const titleGak = titleGakFor(gakPerRow);
     // 제목 칸은 첫 페이지 전체 높이를 차지하므로 모든 밴드가 제목 자리만큼 좁아지고,
-    // 장단을 켜면 맨 처음 밴드에서 한 각 자리를 더 차지한다
-    const jdSlot = $("wantJangdan").checked ? 1 : 0;
+    // 장단을 켜면 맨 처음 밴드에서 한 각 자리를 더 차지한다 — 다만 총보에서 제목 칸이
+    // 비워 준 폭에 장단 줄이 들어가면 각 자리는 안 먹는다(titleSlotPlan ②)
+    const jdSlot = ($("wantJangdan").checked && !titleSlotPlan(titleGak).jdInSlack) ? 1 : 0;
     const capacity = Math.max(1, (gakPerRow - titleGak) * stack - jdSlot);
     return { beats, gakPerRow, stack, titleGak, capacity };
   }
@@ -4017,16 +4058,13 @@
     // 파트보(기본)는 P=1로 아래 전부가 예전과 완전히 같은 경로를 탄다.
     stashActivePart();   // 비활성 파트 내용도 그리므로 parts[]를 먼저 최신으로
     const scoreMode = scoreViewOn();
-    const partList = scoreMode ? parts : [parts[activePart]];
+    // 파트 열 목록·파트별 곁줄은 자리 셈(titleSlotPlan)과 같은 함수에서 받는다
+    const partCols = partColumns();
+    const partList = partCols.list;
     const P = partList.length;
-    const activeCol = scoreMode ? activePart : 0;   // partList 안에서 활성 파트의 자리
+    const activeCol = partCols.activeCol;   // partList 안에서 활성 파트의 자리
     document.body.classList.toggle("score-view", scoreMode);
-    // 파트별 곁줄 — 내용이 있는 파트만 제 열 옆에 나온다(총보라고 남의 곁줄 자리를 만들어
-    // 두지 않는다 — 사용자 확정). 활성 파트만 '창 열림'(빈 줄 보이기)도 켬으로 친다.
-    const partLyOn = partList.map(function (p, i) {
-      if (i === activeCol) return wantLyrics;
-      return String(p.lyrics || "").replace(/[|\s]/g, "") !== "";
-    });
+    const partLyOn = partCols.lyOn;
     const lyOnCount = partLyOn.filter(Boolean).length;
     // 텍스트(자유 주석)는 켜짐 스위치가 없어 '하나라도 있음'을 레이어 사용 표시(초록 점)에 쓴다
     // — 제목·부제 서식도 텍스트 창 소관(2026-07-24 분리)이라 함께 센다
@@ -4139,7 +4177,9 @@
     const cap0 = Math.max(1, gakPerRow - titleGak);
     // 장단 줄은 악곡 맨 처음 각 옆의 '한 각 자리'를 차지한다 — 그래서 맨 처음 밴드는
     // 각이 하나 줄어들고, 대신 모든 밴드의 폭이 같아져 위아래가 어긋나지 않는다.
-    const jdSlot = wantJangdan ? 1 : 0;
+    // 총보에서 제목 칸이 비워 준 폭에 장단 줄이 들어가면(titleSlotPlan ②) 각 자리는 안 먹는다.
+    const jdInSlack = titleSlotPlan(titleGak).jdInSlack;
+    const jdSlot = (wantJangdan && !jdInSlack) ? 1 : 0;
     const page0cap = Math.max(1, cap0 * stack - jdSlot); // 첫 페이지(제목 포함, 모든 밴드 동일 폭)
     const pageNcap = gakPerRow * stack;                 // 이후 페이지
     const wantGak = !gakUserSet ? page0cap
@@ -4188,7 +4228,7 @@
     // 가사 줄(정간 오른쪽 좁은 칸) 너비 — 켜져 있으면 각(정간)마다 매번 추가됨.
     // 가사 칸은 정간(각) 오른쪽에 딱 붙인다(간격 0) — 남는 간격은 전부 다음 각과의 사이로
     const desiredLyGap = 0;
-    const desiredLyW = desiredCell * 0.4;   // 곁줄 한 줄의 폭 — 켜진 파트마다 하나씩 늘어난다
+    const desiredLyW = desiredCell * LY_W_RATIO;   // 곁줄 한 줄의 폭 — 켜진 파트마다 하나씩 늘어난다
     const desiredLyExtra = desiredLyGap + desiredLyW;
     // 가사 줄은 각 사이 간격 '안'에 들어간다 — 가사를 켜도 (남는 간격 + 가사 줄) 합이
     // 원래 간격과 같아 각 기둥 위치·전체 폭이 안 바뀐다. 간격이 가사 줄보다 좁으면
@@ -4211,7 +4251,9 @@
           // 장단 자리는 한 각(묶음) 자리와 같은 폭으로 잡아 아래 밴드들과 열이 맞는다.
           let cells = m * P, gaps = m - 1, lys = m * lyOnCount;
           if (pi === 0 && i === 0 && jdSlot) { cells += P; gaps += 1; lys += lyOnCount; }
-          if (p.hasTitle) { cells += titleGak; gaps += titleGak; }   // 제목 칸 + titleGutter(간격 1개)
+          // 제목 칸은 **각 한 자리**를 예약한다(칸 폭은 그보다 좁고 남는 몫은 간격이 갖는다 —
+          // titleSlotPlan ①③). 정간 한 칸으로 예약하면 총보에서 첫 페이지만 좁아진다.
+          if (p.hasTitle) { cells += titleGak * P; lys += titleGak * lyOnCount; gaps += titleGak; }
           const w = cells * desiredCell + gaps * desiredGap + lys * desiredLyExtra;
           if (w > bestW) { bestW = w; wCells = cells; wGaps = gaps; wLys = lys; }
         });
@@ -4272,11 +4314,21 @@
     const headH = cell * headRatio;
     // 한 각(묶음)의 폭 — 파트 정간 열 P개 + 켜진 곁줄들. 파트보(P=1)면 예전 그대로.
     const gakW = P * cell + lyOnCount * lyExtraFull;
-    const slot = gakW + gap;
     // 밴드 높이는 이제 밴드마다 다르다(각 길이가 섞이면) — 페이지 루프에서 bandBeatsOf로 잡는다
-    const titleGutter = gap;   // 격자 ↔ 제목 칸 사이 여유(다른 각 사이 간격과 동일)
     const gridTotalW = wCells * cell + wGaps * gap + wLys * lyExtraFull;
-    const titleWidth = titleGak > 0 ? (titleGak * cell + (titleGak - 1) * gap) : 0;
+    // 제목 칸이 예약한 '각 한 자리'를 셋이 나눠 쓴다(titleSlotPlan 머리말 참고).
+    // 장단 띠(jdStrip)는 장단 줄 자리로, 제목 칸은 정간 폭과 각 자리 폭의 가운데로,
+    // 남는 폭(titleSlack)은 그 밴드의 각 사이 간격들이 고루 갖는다 → 왼쪽에 빈 띠가 안 남는다.
+    // 파트보(P=1·곁줄 없음)는 titleMinW === titleMaxW라 셋 다 0이 되어 예전과 한 획도 다르지 않다.
+    const jdStrip = jdInSlack ? (jdW + gap) : 0;
+    const titleMinW = titleGak * cell + (titleGak - 1) * gap;      // 정간 칸 폭(파트보와 같은 폭)
+    const titleMaxW = Math.max(titleMinW, titleGak * (gakW + gap) - gap - jdStrip);
+    const titleWidth = titleGak > 0 ? (titleMinW + (titleMaxW - titleMinW) * TITLE_W_MID) : 0;
+    const titleSlack = titleGak > 0 ? Math.max(0, titleMaxW - titleWidth) : 0;
+    // 제목 칸이 있는 페이지의 각 사이 간격 — 남는 폭을 그 밴드의 간격 수로 나눠 더한다
+    // (간격 자리 = 각 사이 (cap0−1)개 + 격자와 제목 칸 사이 1개 = cap0개)
+    const gap0 = gap + titleSlack / Math.max(1, gakPerRow - titleGak);
+    const titleGutter = gap0 + jdStrip;   // 격자 ↔ 제목 칸 사이 여유(장단 띠를 품는다)
     // 프레임·가운데 정렬은 '실제로 보이는' 오른쪽 끝 기준 — 맨 오른쪽 가사 자리가 모든
     // 밴드에서 비어 있으면(장단 칸 옆은 늘 빈 띠, 내용 없이 열린 가사 열) 그 폭만큼
     // 프레임을 줄이고 중앙정렬도 보이는 폭으로 잡는다. 어느 한 밴드라도 오른쪽 끝을
@@ -4328,6 +4380,10 @@
     let gakAccum = 0;
 
     pages.forEach(function (page, pageIdx) {
+      // 제목 칸이 있는 페이지는 각 사이 간격이 조금 넓다 — 제목 칸·장단 띠가 쓰고 남은
+      // 폭을 간격들이 나눠 갖는 것이라, 밴드 폭이 다른 페이지와 정확히 같아진다.
+      const pgGap = page.hasTitle ? gap0 : gap;
+      const pgSlot = gakW + pgGap;
       const svg = el("svg", { viewBox: `0 0 ${PW} ${PH}`, xmlns: NS,
         "xmlns:xlink": "http://www.w3.org/1999/xlink" });
       const bgRect = rect(0, 0, PW, PH, 0, { fill: "#fff", stroke: "none" });
@@ -4407,9 +4463,15 @@
         const musicRightEdge = page.hasTitle ? (bandRight - titleWidth - titleGutter) : bandRight;
         // 장단은 전체 악곡의 맨 처음 각(gakAccum===0) 옆에만 붙고, 한 각 자리(가사 폭 포함)를 차지함
         // — 그래야 아래 밴드들과 좌우 폭이 정확히 같아진다
-        const bandJdExtra = (wantJangdan && gakAccum === 0)
+        const jdBand = wantJangdan && gakAccum === 0;   // 장단 줄이 붙는 밴드(악곡 맨 처음)
+        const bandJdExtra = (wantJangdan && gakAccum === 0 && !jdInSlack)
           ? jdExtraFull + (gakW - cell) : 0;   // 장단 자리 = 한 각(묶음) 자리와 같은 폭
-        const musicLeft = musicRightEdge - (nMusic * gakW + (nMusic - 1) * gap) - bandJdExtra;
+        // 장단 칸의 오른쪽 끝 — 각 한 자리를 먹을 땐 그 자리 맨 왼쪽(각들 옆), 제목 칸이
+        // 비워 준 띠에 들어갈 땐 격자 바로 오른쪽(첫 각 옆)에 붙는다. 어느 쪽이든 장단은
+        // 첫 각 옆이고, 넓은 여유는 장단과 제목 칸 사이로 간다.
+        const jdRightX = jdInSlack ? (musicRightEdge + gap + jdW)
+                                   : (musicRightEdge - (gakW - cell));
+        const musicLeft = musicRightEdge - (nMusic * gakW + (nMusic - 1) * pgGap) - bandJdExtra;
 
         // 밴드 위/아래 통줄의 오른쪽 끝.
         // 제목이 있는 페이지는 모든 밴드의 통줄이 제목 칸 세로선까지 쭉 이어진다(예시 악보 방식).
@@ -4420,7 +4482,7 @@
         if (wantJangdan && gakAccum === 0) {
           // 맨 처음 밴드의 가장 오른쪽은 장단 칸 — 장단 칸엔 가사 자리가 없으므로
           // 통줄도 장단 칸 오른쪽 선에서 끝나야 튀어나오지 않는다
-          capBase = musicRightEdge - (gakW - cell);
+          capBase = jdRightX;
         } else if (partLyOn[0]) {
           // 가로(맨 위) 제목이면 오른쪽에 제목 칸이 없으므로, 맨 오른쪽 가사 열을
           // 상자로 감싸지 않고 열어 둔다(통줄도 각의 오른쪽 선까지만).
@@ -4438,7 +4500,7 @@
 
         for (let m = 0; m < nMusic; m++) {
           // 장단은 맨 처음(가장 오른쪽) 자리를 차지하므로, 이 밴드의 모든 각이 그만큼 왼쪽으로 밀림.
-          const gakRight = musicRightEdge - m * slot - bandJdExtra;   // 이 각(묶음)의 오른쪽 끝
+          const gakRight = musicRightEdge - m * pgSlot - bandJdExtra;   // 이 각(묶음)의 오른쪽 끝
           const gakLeft = gakRight - gakW;
           const melIdx = gakAccum + m;
           // 이 각의 정간 수·아래끝·대강 자리 — 각 길이가 섞이면 각마다 다르다
@@ -4734,7 +4796,7 @@
             // 줄은 온전한 한 각이다. 아래 셈이 각별 값 대신 이 값을 보도록 여기서 가린다.
             const gBeats = defBeats(), gBottom = gridTop + gBeats * cell, gDg = dgSetFor(gBeats);
             // 장단 자리는 한 각(묶음) 자리 폭 — 장단 칸은 그 자리의 맨 왼쪽(각들의 선 끝)에 맞춘다
-            const jdRight = musicRightEdge - (gakW - cell), jdLeft = jdRight - jdW;
+            const jdRight = jdRightX, jdLeft = jdRight - jdW;
             // 템포 표기 — 장단이 있으면 첫 각 대신 장단 칸 위에(같은 각/장 규칙)
             if (wantTempo && pageIdx === 0) drawTempoLabel((jdLeft + jdRight) / 2, bandTop);
             // 어느 칸이 장단인지 알려주는 회색 '장단' 라벨 — 각 번호와 한 세트:
@@ -4891,13 +4953,13 @@
         } else {
           for (let m = 0; m < nMusic; m++) {
             const gi = gakAccum - nMusic + m;   // gakAccum은 위에서 이미 nMusic만큼 늘었다
-            const gRight = musicRightEdge - m * slot - bandJdExtra;
+            const gRight = musicRightEdge - m * pgSlot - bandJdExtra;
             const yb = gridTop + beatsAt(gi) * cell;
             svg.appendChild(line(gRight - gakW, yb, gRight, yb, T_THICK));
             structuralSegs.push([gRight - gakW, yb, gRight, yb, T_THICK]);
           }
-          if (bandJdExtra) {   // 장단 칸은 제 높이(표준 각)로 따로 마감
-            const jdR = musicRightEdge - (gakW - cell), yb = gridTop + defBeats() * cell;
+          if (bandJdExtra || jdBand) {   // 장단 칸은 제 높이(표준 각)로 따로 마감
+            const jdR = jdRightX, yb = gridTop + defBeats() * cell;
             svg.appendChild(line(jdR - jdW, yb, jdR, yb, T_THICK));
             structuralSegs.push([jdR - jdW, yb, jdR, yb, T_THICK]);
           }
@@ -4909,7 +4971,9 @@
         }
 
         // 대강선 — 각마다 끊어 그리지 않고, 통줄처럼 밴드 폭 전체(제목 칸 앞까지)로 한 번에 그림
-        const daegangRight = Math.min(capBase, musicRightEdge);
+        // 장단이 제목 칸 띠에 들어간 밴드는 장단 칸이 격자 오른쪽 바깥이라, 대강선도
+        // 거기까지 이어 긋는다(각 한 자리를 먹을 때와 같은 그림 — 각 사이 간격을 가로지른다)
+        const daegangRight = jdBand && jdInSlack ? jdRightX : Math.min(capBase, musicRightEdge);
         if (bandUniform) {
           dgSetFor(bandBeats).forEach(function (i) {
             svg.appendChild(line(musicLeft, gridTop + i * cell, daegangRight, gridTop + i * cell, T_DAEGANG));
@@ -4919,15 +4983,15 @@
           // 길이가 섞인 밴드 — 대강도 각마다 다르므로 각 폭에서 끊어 긋는다
           for (let m = 0; m < nMusic; m++) {
             const gi = gakAccum - nMusic + m;
-            const gRight = Math.min(musicRightEdge - m * slot - bandJdExtra, daegangRight);
+            const gRight = Math.min(musicRightEdge - m * pgSlot - bandJdExtra, daegangRight);
             dgSetFor(beatsAt(gi)).forEach(function (i) {
               const y = gridTop + i * cell;
               svg.appendChild(line(gRight - gakW, y, gRight, y, T_DAEGANG));
               structuralSegs.push([gRight - gakW, y, gRight, y, T_DAEGANG]);
             });
           }
-          if (bandJdExtra) {
-            const jdR = musicRightEdge - (gakW - cell);
+          if (bandJdExtra || jdBand) {
+            const jdR = jdRightX;
             dgSetFor(defBeats()).forEach(function (i) {
               const y = gridTop + i * cell;
               svg.appendChild(line(jdR - jdW, y, jdR, y, T_DAEGANG));
