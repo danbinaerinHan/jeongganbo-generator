@@ -267,6 +267,50 @@ function fixText(text) {
   return { text: out, hanja, spaces, splits };
 }
 
+// ④ 곁줄(가사) 분박을 선율에 맞춘다.
+//
+// 선율 정간을 분박으로 나누면 곁줄도 따라 나뉘어야 하는데, ③은 선율만 본다. 그래서 여기서
+// 따로 맞춘다 — **이미 나뉜 뒤의 악보도 고칠 수 있게** 선율 교정과 떼어 두었다.
+// (2026-08-24: 자동 교정을 돌리고 나서 '큰물결작은물결'의 가사가 안 맞는다는 제보로 붙였다.)
+//
+// 나누는 조건이 좁다. **한 분박짜리 곁줄 칸이 딱 그 수만큼의 한글 낱글자일 때만** 나눈다:
+//     선율 「청고 청고」(2) + 곁줄 「작은」(한글 2자)  →  「작 은」
+// 글자 수가 모자라면(「물」 한 자에 음 둘) 한 음절을 두 음에 걸쳐 부르는 자리라 **그대로 둔다**.
+// 기호({늘임표})나 한글 아닌 글자가 섞여 있어도 손대지 않는다 — 짐작이 들어가는 자리다.
+const HANGUL_ONLY = /^[가-힣]+$/;
+function fitLyrics(melody, lyrics) {
+  if (!lyrics || !lyrics.trim()) return null;
+  const mg = parseMelodyOffsets(melody);
+  const lg = parseMelodyOffsets(lyrics);
+  const jobs = [];
+  mg.forEach(function (gak, g) {
+    gak.forEach(function (mc, i) {
+      const rows = (mc.text || "").split(/\s+/).filter(Boolean);
+      if (rows.length < 2) return;                       // 선율이 안 나뉜 칸은 볼 것 없다
+      const lc = (lg[g] || [])[i];
+      if (!lc || !lc.text) return;
+      if (lc.text.split(/\s+/).filter(Boolean).length !== 1) return;   // 이미 나뉘어 있다
+      if (!HANGUL_ONLY.test(lc.text)) return;            // 기호·한자 섞임 — 손대지 않는다
+      if ([...lc.text].length !== rows.length) return;   // 글자 수가 안 맞음 — 그대로 둔다
+      jobs.push({ cell: lc, to: [...lc.text].join(" ") });
+    });
+  });
+  if (!jobs.length) return null;
+  // 뒤에서부터 고쳐야 앞 칸의 자리가 안 밀린다
+  let out = lyrics;
+  for (let k = jobs.length - 1; k >= 0; k--) {
+    const c = jobs[k].cell;
+    const raw = out.slice(c.start, c.end);
+    const at = raw.indexOf(c.text);
+    if (at < 0) continue;
+    out = out.slice(0, c.start + at) + jobs[k].to + out.slice(c.start + at + c.text.length);
+  }
+  // 칸·각의 수는 그대로여야 한다(칸 안만 고쳤으므로) — 아니면 버린다
+  const same = (a, b) => a.length === b.length && a.every((x, i) => x.length === b[i].length);
+  if (!same(parseMelodyOffsets(out), lg)) return null;
+  return { lyrics: out, n: jobs.length };
+}
+
 // ★ 고친 뒤 **반드시 다시 재 본다.** 틀린 자리가 줄지 않았거나 없던 자리가 새로 생겼으면
 //   그 교정은 버린다 — 남의 악보를 짐작으로 바꾸지 않겠다는 약속을 코드로 지키는 자리다.
 function fixSafely(text) {
@@ -296,15 +340,17 @@ function scanDoc(doc) {
 // 문서를 통째로 고쳐 본다. 파트마다 따로 재고, 하나라도 고쳐졌으면 새 문서를 돌려준다.
 function fixDoc(doc) {
   const d = JSON.parse(JSON.stringify(doc));
-  let hanja = 0, spaces = 0, splits = 0, touched = 0;
+  let hanja = 0, spaces = 0, splits = 0, lyr = 0, touched = 0;
   const lanes = Array.isArray(d.parts) && d.parts.length ? d.parts : [d];
   lanes.forEach((p) => {
     if (typeof p.melody !== "string" || !p.melody) return;
     const r = fixSafely(p.melody);
-    if (!r) return;
-    p.melody = r.text; hanja += r.hanja; spaces += r.spaces; splits += r.splits; touched++;
+    if (r) { p.melody = r.text; hanja += r.hanja; spaces += r.spaces; splits += r.splits; touched++; }
+    // 곁줄은 선율이 안 바뀐 악보에서도 맞출 것이 있다(이미 나뉜 뒤에 들여온 규칙이라)
+    const L = fitLyrics(p.melody, p.lyrics);
+    if (L) { p.lyrics = L.lyrics; lyr += L.n; touched++; }
   });
-  return touched ? { doc: d, hanja, spaces, splits } : null;
+  return touched ? { doc: d, hanja, spaces, splits, lyr } : null;
 }
 
 // 고친 사실을 판에 적는 말. 무엇을 몇 군데 고쳤는지가 남아야 게시자가 읽고 판단할 수 있다
@@ -314,6 +360,7 @@ function fixNote(f) {
   if (f.hanja) bits.push("한자 율명 " + f.hanja + "자를 한글로");
   if (f.spaces) bits.push("괄호 안 빈칸 " + f.spaces + "군데 정리");
   if (f.splits) bits.push("한 정간 안에서 붙여 쓴 " + f.splits + "군데를 분박으로 나눔");
+  if (f.lyr) bits.push("곁줄 " + f.lyr + "군데를 선율 분박에 맞춰 나눔");
   return "표기 자동 교정 — " + bits.join(" · ") + " (tools/scan-published.mjs --fix-safe)";
 }
 
@@ -328,7 +375,7 @@ if (FIX) {
   console.log("교정 모드(--fix-safe) — 답이 하나로 정해지는 것만 고칩니다: " +
               "한자 율명 " + Object.keys(HANJA.map).length + "자" +
               (HANJA.split ? "(뜻이 갈리는 " + HANJA.split + "자는 뺌)" : "") +
-              " · 괄호 안 빈칸 · 한 정간 안에서 붙여 쓴 것을 분박으로 나누기.");
+              " · 괄호 안 빈칸 · 한 정간 안에서 붙여 쓴 것을 분박으로 나누기 · 곁줄을 선율 분박에 맞추기.");
   console.log("  시김새 이름 오타·어긋난 괄호 짝·문장부호·시김새가 낀 칸은 손대지 않고 표시만 합니다.\n");
 }
 
