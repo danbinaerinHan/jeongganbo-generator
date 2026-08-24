@@ -364,6 +364,13 @@ end $$;
 -- 만들 뿐이라(오버로드) 옛 판이 남는다 — 먼저 떨어뜨려야 PostgREST가 헷갈리지 않는다.
 drop function if exists public.publish_score(jsonb, text, text, text);
 drop function if exists public.update_score(text, text, jsonb);
+-- 문법 검사 결과(p_lint)를 함께 받는 판으로 갈아끼운다(2026-08-24).
+-- ★ 여기 적는 것은 **떨어뜨릴 옛 서명**이다(새 서명이 아니다) — create or replace는 인자가
+--   다르면 '다른 함수'를 하나 더 만들 뿐이라, 옛 것을 안 지우면 오버로드로 남아 PostgREST가
+--   어느 쪽을 부를지 헷갈린다.
+drop function if exists public.publish_score(jsonb, text, text, text, boolean, text);
+drop function if exists public.update_score(text, text, jsonb, boolean, text);
+drop function if exists public.admin_save_score(text, jsonb, text);
 
 create or replace function public.publish_score(
   p_doc     jsonb,
@@ -371,7 +378,12 @@ create or replace function public.publish_score(
   p_license text default 'none',
   p_fork_of text default null,
   p_public  boolean default true,   -- 둘러보기에 올릴 것인가 (아니면 주소를 아는 사람만)
-  p_thumb   text default null
+  p_thumb   text default null,
+  -- 올리는 브라우저가 재 온 문법 오류 수. **서버는 악보를 못 읽으므로**(설계 뼈대 ①) 재는
+  -- 일은 거기서 하고 여기엔 숫자만 온다 — 게시 창이 어차피 그 값을 띄우고 있어서 공짜다.
+  -- ★ 믿을 수 있는 값은 아니다(마음먹으면 0을 보낸다). 운영자가 볼 힌트지 빗장이 아니고,
+  --   tools/scan-published.mjs가 언제든 덮어쓴다. 안 보내면(null) 안 적는다.
+  p_lint    integer default null
 )
 returns jsonb
 language plpgsql
@@ -417,7 +429,8 @@ begin
 
   v_token := encode(gen_random_bytes(24), 'hex');
 
-  insert into public.scores (id, doc, doc_v, title, author, license, visibility, token_hash, fork_of, thumb)
+  insert into public.scores (id, doc, doc_v, title, author, license, visibility, token_hash, fork_of, thumb,
+                             lint_bad, lint_at)
   values (
     v_id, p_doc,
     coalesce(nullif(p_doc ->> 'v', '')::smallint, 1),
@@ -426,7 +439,9 @@ begin
     public.hash_token(v_token),
     -- 원본이 실제로 있을 때만 계보로 남긴다(남의 파일에 실려 온 낯선 id는 조용히 버림)
     (select s.id from public.scores s where s.id = p_fork_of),
-    nullif(p_thumb, '')
+    nullif(p_thumb, ''),
+    case when p_lint is null then null else greatest(p_lint, 0) end,
+    case when p_lint is null then null else now() end
   );
 
   insert into public.publish_log (ip_hash) values (v_ip);
@@ -449,7 +464,8 @@ create or replace function public.update_score(
   p_token  text,
   p_doc    jsonb,
   p_public boolean default null,   -- null = 지금 공개 설정을 그대로 둔다
-  p_thumb  text default null       -- null = 지금 미리보기를 그대로 둔다
+  p_thumb  text default null,      -- null = 지금 미리보기를 그대로 둔다
+  p_lint   integer default null    -- null = 지금 문법 검사 결과를 그대로 둔다(위 publish_score 참고)
 )
 returns jsonb
 language plpgsql
@@ -479,6 +495,8 @@ begin
          -- 통째로 보내므로, 그냥 올리면 '공개 ↔ 주소만'을 오갈 때마다 같은 악보가 판으로
          -- 쌓인다. jsonb 비교는 키 차례를 안 따지므로 뜻이 같으면 같다고 본다.
          ver        = case when doc is distinct from p_doc then ver + 1 else ver end,
+         lint_bad   = case when p_lint is null then lint_bad else greatest(p_lint, 0) end,
+         lint_at    = case when p_lint is null then lint_at  else now() end,
          updated_at = now()
    where id = p_id
      and token_hash = public.hash_token(p_token)
@@ -866,7 +884,8 @@ end $$;
 create or replace function public.admin_save_score(
   p_id   text,
   p_doc  jsonb,
-  p_note text
+  p_note text,
+  p_lint integer default null   -- 고친 뒤의 문법 오류 수(편집기가 재 온다). null = 그대로 둔다
 )
 returns jsonb
 language plpgsql
@@ -898,6 +917,8 @@ begin
          doc_v      = coalesce(nullif(p_doc ->> 'v', '')::smallint, 1),
          title      = public.title_of(p_doc),
          ver        = case when v_same then ver else ver + 1 end,
+         lint_bad   = case when p_lint is null then lint_bad else greatest(p_lint, 0) end,
+         lint_at    = case when p_lint is null then lint_at  else now() end,
          updated_at = case when v_same then updated_at else now() end
    where id = p_id
   returning ver into v_ver;
@@ -1206,8 +1227,8 @@ revoke all on function public.publish_rate_limit()                     from publ
 revoke all on function public.version_keep()                           from public, anon, authenticated;
 revoke all on function public.push_version(text, text, uuid, text)     from public, anon, authenticated;
 revoke all on function public.is_admin()                               from public, anon, authenticated;
-revoke all on function public.publish_score(jsonb, text, text, text, boolean, text) from public, anon, authenticated;
-revoke all on function public.update_score(text, text, jsonb, boolean, text)        from public, anon, authenticated;
+revoke all on function public.publish_score(jsonb, text, text, text, boolean, text, integer) from public, anon, authenticated;
+revoke all on function public.update_score(text, text, jsonb, boolean, text, integer)        from public, anon, authenticated;
 revoke all on function public.delete_score(text, text)                 from public, anon, authenticated;
 revoke all on function public.fetch_score(text)                        from public, anon, authenticated;
 revoke all on function public.list_scores(text, text, integer, integer, text, text) from public, anon, authenticated;
@@ -1216,7 +1237,7 @@ revoke all on function public.admin_note(uuid, text, text, jsonb)       from pub
 revoke all on function public.admin_me()                                from public, anon, authenticated;
 revoke all on function public.admin_list_scores(text, text, integer, integer, text) from public, anon, authenticated;
 revoke all on function public.admin_get_score(text)                     from public, anon, authenticated;
-revoke all on function public.admin_save_score(text, jsonb, text)       from public, anon, authenticated;
+revoke all on function public.admin_save_score(text, jsonb, text, integer)       from public, anon, authenticated;
 revoke all on function public.admin_set_hidden(text, boolean, text, text) from public, anon, authenticated;
 revoke all on function public.admin_versions(text)                      from public, anon, authenticated;
 revoke all on function public.admin_version(text, integer)              from public, anon, authenticated;
@@ -1230,8 +1251,8 @@ revoke all on function public.admin_log_list(integer, integer, text)    from pub
 --   바깥에서 부를 수 있으면 빗장을 안에 둔 뜻이 없어진다.
 -- ★ push_version·is_admin도 마찬가지다. 판을 뜨는 일은 게시·갱신에 딸린 것이지 따로
 --   부를 일이 아니고, is_admin은 명단을 떠보는 창구가 된다.
-grant execute on function public.publish_score(jsonb, text, text, text, boolean, text) to anon, authenticated;
-grant execute on function public.update_score(text, text, jsonb, boolean, text)        to anon, authenticated;
+grant execute on function public.publish_score(jsonb, text, text, text, boolean, text, integer) to anon, authenticated;
+grant execute on function public.update_score(text, text, jsonb, boolean, text, integer)        to anon, authenticated;
 grant execute on function public.delete_score(text, text)               to anon, authenticated;
 grant execute on function public.fetch_score(text)                      to anon, authenticated;
 grant execute on function public.list_scores(text, text, integer, integer, text, text) to anon, authenticated;
@@ -1243,7 +1264,7 @@ grant execute on function public.list_scores(text, text, integer, integer, text,
 grant execute on function public.admin_me()                                to authenticated;
 grant execute on function public.admin_list_scores(text, text, integer, integer, text) to authenticated;
 grant execute on function public.admin_get_score(text)                     to authenticated;
-grant execute on function public.admin_save_score(text, jsonb, text)       to authenticated;
+grant execute on function public.admin_save_score(text, jsonb, text, integer)       to authenticated;
 grant execute on function public.admin_set_hidden(text, boolean, text, text) to authenticated;
 grant execute on function public.admin_versions(text)                      to authenticated;
 grant execute on function public.admin_version(text, integer)              to authenticated;

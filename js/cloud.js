@@ -204,13 +204,19 @@
     return !!(adminEditing && adminOn() && window.jgbDoc.pubId() === adminEditing);
   }
 
-  // 올리기 전 한 줄. 세는 자는 app.js에 있다(선율 에디터가 빨간 바탕을 깔 때 쓰는 그 함수) —
-  // 여기서 다시 세면 화면에 빨갛게 보이는 자리와 이 숫자가 어긋날 수 있다.
+  // 이 문서에 앱이 못 읽는 자리가 몇 군데인가. 세는 자는 app.js에 있다(선율 에디터가 빨간
+  // 바탕을 깔 때 쓰는 그 함수) — 여기서 다시 세면 화면에 빨갛게 보이는 자리와 어긋난다.
+  // 서버는 악보를 못 읽으므로(schema.sql 설계 뼈대 ①) **재는 일은 여기서 하고 숫자만 올린다.**
+  // 옛 app.js(badCount가 없던 판)와도 같이 돌게 null을 돌려준다 — 그러면 서버가 안 적는다.
+  function badCount() {
+    try { return window.jgbDoc.badCount ? window.jgbDoc.badCount() : null; } catch (e) { return null; }
+  }
+
+  // 올리기 전 한 줄.
   function showSyntaxNote() {
     const el = $("pubSyntax");
     if (!el) return;
-    let n = 0;
-    try { n = window.jgbDoc.badCount ? window.jgbDoc.badCount() : 0; } catch (e) { n = 0; }
+    const n = badCount() || 0;
     el.textContent = n ? ("문법이 틀린 곳이 " + n + "군데 있습니다.") : "";
     el.style.display = n ? "" : "none";
   }
@@ -297,7 +303,8 @@
     makeThumb().then(function (thumb) {
       if (tok && !asNew) {
         return rpc("update_score", { p_id: id, p_token: tok, p_doc: doc,
-                                     p_public: isPublic, p_thumb: thumb }).then(function () {
+                                     p_public: isPublic, p_thumb: thumb,
+                                     p_lint: badCount() }).then(function () {
           rememberPub(id, tok, window.jgbDoc.title(), isPublic);
           track("publish_update");
           done(); closePubModal();
@@ -313,6 +320,8 @@
         p_fork_of: id || null,
         p_public: isPublic,
         p_thumb: thumb,
+        // 올리는 순간 함께 재 둔다 — 관리 화면의 '문법 오류' 탭이 저절로 채워진다
+        p_lint: badCount(),
       }).then(function (r) {
         rememberPub(r.id, r.token, window.jgbDoc.title(), isPublic);
         window.jgbDoc.setPubId(r.id);
@@ -437,6 +446,7 @@
     setBusy(true);
     window.jgbAdmin.rpc("admin_save_score", {
       p_id: adminEditing, p_doc: window.jgbDoc.state(), p_note: note,
+      p_lint: badCount(),      // 고치고 되쓰는 자리이므로 여기서도 다시 재 둔다
     }).then(function (r) {
       setBusy(false);
       closePubModal();
