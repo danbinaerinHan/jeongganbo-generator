@@ -46,9 +46,10 @@
   // 예전엔 높이 예약이 0.42×1.12, 실제 그리기가 0.38×1.12로 **서로 다른 수**였다 —
   // 예약이 실제보다 10% 컸다. 자리를 1.12(글자 크기의 12%만큼 벌어짐)에서 1.00(글자 크기 =
   // 글자 자리)으로 좁힌 건 표기가 헐렁해 보이기도 했고 세로를 그만큼 아꼈기 때문이다.
-  // 1.00보다 촘촘하면 획 많은 글자(八·六·百)가 서로 닿는다(2026-08-24 실측·사용자 확정).
+  // 1.00보다 촘촘하면 획 많은 글자(八·六·百)가 서로 닿는다(2026-08-24 실측) — 자리는 여기가
+  // 하한이고, 더 줄일 몫은 글자 크기 쪽에 있다(0.38 → 0.34 → 0.30, 2026-08-25 사용자 확정).
   // 사용자 자간(#tempoSpacing)은 이 값 위에 얹힌다.
-  const TEMPO_F = 0.34, TEMPO_LEAD = 1.00;
+  const TEMPO_F = 0.30, TEMPO_LEAD = 1.00;
   // 첫 페이지가 빠르기 표기 자리로 위 여백을 빌릴 때 종이 끝에 남겨 두는 몫(mm) —
   // 프린터가 못 찍는 가장자리가 있어 0까지 밀지 않는다.
   const TOP_SAFE = 5;
@@ -4449,7 +4450,14 @@
       // 상자 위/아래 y는 제목 칸 세로선도 같이 쓰므로 페이지 스코프에 둔다.
       const fillT = pageFillPct / 100;
       const hugY = gridY - INNER_PAD, hugBottom = gridY + gridTotalH + INNER_PAD;
-      const boxTop = hugY + (fTop - hugY) * fillT;
+      let boxTop = hugY + (fTop - hugY) * fillT;
+      // 빠르기 표기·가로 제목이 있으면 **테두리 위끝이 그것을 가로지르지 않게** 위로 올린다.
+      // 예전엔 '페이지 채움' 중간값에서 테두리 선이 표기 글자 한가운데를 지나갔다(채움 50%
+      // 실측: 표기 13.4~45.6mm에 테두리가 26.9mm). 표기도 종이에 찍히는 내용이니 상자 안에
+      // 든다 — 채움 100%가 이미 그렇게 그려지고 있었고, 이제 어느 채움값에서나 같다.
+      // 글자를 줄여서는 못 막는다: 표기가 짧아지면 테두리도 따라 내려와 여전히 가로지른다.
+      if (pageTopExtra > 0)
+        boxTop = Math.min(boxTop, gridY - pageTopExtra - INNER_PAD * 0.5);
       const boxBottom = hugBottom + ((frameY + frameH) - hugBottom) * fillT;
       if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, boxTop,
         visibleW + 2 * INNER_PAD, boxBottom - boxTop, T_FRAME));
