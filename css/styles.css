@@ -847,6 +847,24 @@
   .ribbon { display: flex; flex-wrap: wrap; align-items: stretch; gap: 2px; padding: 5px 8px;
             margin-bottom: 10px;
             background: var(--soft); border: 1px solid var(--line); border-radius: 8px; }
+  /* 줄바꿈 자리 — 좁아졌을 때 **어디서** 줄이 바뀔지 못 박는다(index.html의 .rb-break 주석
+     참고). 기준은 창 폭이 아니라 **기능바가 실제로 받는 폭**이라야 한다 — 기능바는 #main
+     안에 있어 설정 패널을 열면 330px가 빠지고 왼쪽 도킹이면 또 다르므로, @media로는 창은
+     넓은데 기능바만 좁은 경우를 못 잡는다. 그래서 컨테이너 쿼리를 쓴다.
+     · 한 줄로 서는 데 드는 폭은 직접 입력 951px·에디터 545px(2026-08-25 실측) — 문턱을
+       950px로 둔 값이 그것이다. 에디터는 '입력' 그룹이 없어 이 문턱까지 갈 일이 거의 없고,
+       가더라도 줄을 가를 짝(마우스|입력)이 없으므로 **직접 입력에서만** 자리를 못 박는다.
+     · 왼쪽 세로 도킹은 애초에 세로로 쌓이므로 대상이 아니다(container-type도 안 준다 —
+       거기서는 기능바 폭이 내용에서 나와, 인라인 크기 담기를 걸면 폭이 무너진다).
+     · 둘째 줄은 topctl(24) + gap(2)만큼 들여쓴다 — 첫 줄만 도킹 버튼이 자리를 먹어
+       그냥 두면 아래 줄이 왼쪽으로 튀어나온다(실측: 첫 줄 35px, 둘째 줄 9px). */
+  body:not(.ribbon-left) #melodyRibbon { container-type: inline-size; }
+  .rb-break { display: none; flex-basis: 100%; height: 0; }
+  @container (max-width: 950px) {
+    body.input-direct .rb-break { display: block; }
+    body.input-direct .rb-break-sep { display: none; }
+    body.input-direct .rb-break + .ribbon-group { margin-left: 26px; }
+  }
   /* 도킹 컨트롤 묶음 — 가로 배치에선 앞쪽 아이콘, 세로 도킹에선 맨 위 한 줄(헤더).
      예전의 기능바 접기(.ribbon.collapsed)는 없앴다 — index.html 주석 참고. */
   .ribbon-topctl { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }

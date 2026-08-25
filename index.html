@@ -668,7 +668,14 @@
             data-tip="텍스트 도구창을 열고 닫습니다">文<span>텍스트</span></button>
         </div>
       </div>
-      <div class="ribbon-sep win-toggle-sep"></div>
+      <!-- ↓ 여기가 기능바가 좁아졌을 때 줄이 바뀌는 자리다(.rb-break). 그냥 두면 flex-wrap이
+           오른쪽 그룹부터 하나씩 떨궈, 두 줄이 될 때마다 무리가 다르게 갈렸다 — 폭이 정한
+           것이지 뜻이 정한 것이 아니다. 지금은 뜻으로 가른다:
+             위 줄 = 무엇을 어디에 적나 (마우스 · 입력)
+             아래 줄 = 악보의 틀과 꼴 (각 삽입/삭제 · 정간 편집 · 크기)
+           줄이 바뀌면 이 구분선은 줄 끝에 홀로 남으므로 함께 숨긴다(.rb-break-sep). -->
+      <div class="ribbon-sep win-toggle-sep rb-break-sep"></div>
+      <div class="rb-break" aria-hidden="true"></div>
       <div class="ribbon-group">
         <div class="rb-cap">각 삽입/삭제</div>
         <div class="rb-items">
