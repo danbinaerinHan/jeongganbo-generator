@@ -1649,8 +1649,15 @@
   .help-fig { display: block; margin: 10px auto; max-width: 320px; width: 100%; height: auto; }
   .help-pane p.help-credit { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line);
                              font-size: 11px; line-height: 1.6; color: var(--muted); }
-  .help-foot { padding: 10px 18px; border-top: 1px solid var(--line); text-align: right;
-               flex: 0 0 auto; }
+  /* 발 — 왼쪽에 만든 이 한 줄, 오른쪽에 [둘러보기]. 예전엔 text-align:right 하나였다. */
+  .help-foot { padding: 10px 18px; border-top: 1px solid var(--line); flex: 0 0 auto;
+               display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  /* 만든 이 표시 — 메타 라벨 어휘(작게·옅게)로 두어 [둘러보기]와 무게를 다투지 않게 한다.
+     ★ 클래스 이름이 .help-credit이 아닌 건 그게 이미 도움말 본문의 **자료 출처 표시**
+     (국립국악원 정악보 참조)에 쓰이고 있어서다 — 성격이 다른 두 글에 같은 이름을 주지 않는다. */
+  .help-maker { font-size: 11px; color: var(--muted); letter-spacing: .03em; text-align: left; }
+  .help-maker a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+  .help-maker a:hover { color: var(--ink); }
   /* 발의 [둘러보기]는 이 화면에서 '지금 눌러야 할 것'이라 유일하게 채워진 버튼 */
   .help-foot button { border: 1px solid var(--accent); background: var(--accent); color: #fff;
                       border-radius: 0; padding: 7px 14px; font-size: 12px; font-weight: 600;

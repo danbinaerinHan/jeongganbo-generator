@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>우물사이 Umulsai | 웹에서 그리는 정간보 편집기</title>
 <meta name="description" content="우물사이는 웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기입니다. 설치 없이 정간보 만들기를 시작하세요. Umulsai is a free web-based editor for Jeongganbo, Korean traditional music notation.">
+<meta name="author" content="한단비내린 (Danbinaerin Han)">
+<!-- 구조화 데이터(JSON-LD) — 화면에는 안 보이고 검색엔진만 읽는다. 만든 이·라이선스를
+     기계가 읽을 수 있는 꼴로 한 번 적어 두는 자리다(사람에게 보이는 표시는 도움말 발과
+     꼬리말 저작권 한 줄뿐 — 악보나 첫 화면에는 두지 않는다). -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication",
+ "name":"우물사이 (Umulsai)","url":"https://www.umulsai.com/",
+ "applicationCategory":"MultimediaApplication","operatingSystem":"Web","inLanguage":"ko",
+ "isAccessibleForFree":true,
+ "license":"https://opensource.org/licenses/MIT",
+ "description":"웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기.",
+ "author":{"@type":"Person","name":"한단비내린","alternateName":"Danbinaerin Han",
+           "url":"https://github.com/danbinaerinHan"},
+ "codeRepository":"https://github.com/danbinaerinHan/jeongganbo-generator"}
+</script>
 <meta property="og:title" content="우물사이 Umulsai — 웹에서 그리는 정간보 편집기">
 <meta property="og:description" content="웹 브라우저에서 정간보를 그리고, 편집하고, 인쇄할 수 있는 무료 정간보 편집기. 설치 없이 시작하세요.">
 <meta property="og:type" content="website">
@@ -578,7 +593,7 @@
     </div>
     <!-- 저작권 — 사이드바 맨 아래에 상시(어느 탭이든). 화면 UI에만, 악보(인쇄/PNG)엔 안 나온다.
          margin-top:auto로 아래에 붙는다(#sidebar는 flex 세로열). -->
-    <div class="side-copy">© 2026 우물사이</div>
+    <div class="side-copy">© 2026 한단비내린</div>
   </aside>
 
   <main id="main">
@@ -2006,6 +2021,15 @@
         </div>
       </div>
       <div class="help-foot">
+        <!-- 만든 이 — 궁금해서 도움말을 연 사람만 보는 자리다. 악보(인쇄·PNG)나 첫 화면에는
+             두지 않는다: 종이로 나가는 것은 **사용자의 악보**라 거기 앱 만든 이의 이름이
+             찍히면 안 되고, 첫 화면은 자기소개 자리가 아니다. 링크를 걸 수 있는 유일하게
+             자연스러운 자리이기도 하다(꼬리말 저작권 한 줄은 링크 없이 이름만). -->
+        <span class="help-maker">우물사이 · 한단비내린 제작 ·
+          <a href="https://github.com/danbinaerinHan/jeongganbo-generator/blob/main/LICENSE"
+             target="_blank" rel="noopener">MIT</a> ·
+          <a href="https://github.com/danbinaerinHan/jeongganbo-generator"
+             target="_blank" rel="noopener">GitHub</a></span>
         <button type="button" id="helpTourBtn">둘러보기 다시 시작</button>
       </div>
     </div>
