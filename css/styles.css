@@ -285,9 +285,12 @@
   /* 두 무리(문서 나들이 / 앱)를 가르는 가는 선 — 상단바가 gap으로만 무리를 가르는 것과 달리
      세로로는 간격만으론 무리가 안 읽힌다(위아래로 길게 늘어서므로). */
   #appRail .rail-sep { width: 60%; border: none; border-top: 1px solid var(--line); margin: 7px 0; }
-  /* 레일의 드롭다운(색상)은 **왼쪽으로** 편다 — 오른쪽 끝이라 제자리(right:0)로 펴면
-     화면 밖으로 나가 열려도 안 보인다. 위아래 뒤집기는 wireTopMenu가 따로 맡는다. */
-  #appRail .tb-menu { top: 0; right: calc(100% + 8px); }
+  /* 레일의 드롭다운(색상)은 **떠서**(fixed) 버튼 왼쪽에 붙는다. absolute로 두면 안 된다 —
+     #appRail은 창이 낮을 때를 위해 overflow-y:auto인데, 한 축이 visible이 아니면 다른 축도
+     auto가 되어 **상자 밖으로 나간 메뉴가 통째로 잘린다**(2026-08-25 사용자 제보: 색상 메뉴가
+     열려도 안 보였다 — 상자 좌표는 멀쩡해서 좌표만 재면 못 잡는다). 도구창 ? 안내(placeGuide)·
+     리본 툴팁(#ribbonTipFloat)이 같은 이유로 이미 쓰던 수법이고, 자리는 wireTopMenu가 잰다. */
+  #appRail .tb-menu { position: fixed; top: auto; right: auto; }
 
   /* ---------- 사이드바 ---------- */
   #sidebar {

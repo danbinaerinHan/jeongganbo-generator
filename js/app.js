@@ -8926,7 +8926,17 @@
       // 같은 취지). 상단바 메뉴들은 늘 자리가 남아 이 가지를 안 탄다.
       if (on) {
         const pop = $(popId);
-        pop.style.top = ""; pop.style.bottom = "";   // 먼저 제자리로 두고 재야 참값이 나온다
+        pop.style.top = ""; pop.style.bottom = ""; pop.style.left = "";   // 먼저 제자리로 두고 재야 참값이 나온다
+        // 스크롤 상자 안에 사는 메뉴(오른쪽 레일)는 CSS가 position:fixed로 띄운다 — absolute면
+        // 상자 밖으로 나간 메뉴가 잘려 열려도 안 보인다. 그때는 자리를 여기서 재어 넣는다:
+        // 버튼 **왼쪽**에 붙이고(레일이 화면 오른쪽 끝이라), 위아래는 화면 안으로 눌러 넣는다.
+        if (getComputedStyle(pop).position === "fixed") {
+          const r = $(btnId).getBoundingClientRect();
+          const w = pop.offsetWidth, h = pop.offsetHeight;
+          pop.style.left = Math.max(8, r.left - w - 8) + "px";
+          pop.style.top = Math.max(8, Math.min(r.top, window.innerHeight - h - 8)) + "px";
+          return;
+        }
         if (pop.getBoundingClientRect().bottom > window.innerHeight - 8) {
           pop.style.top = "auto";
           pop.style.bottom = "calc(100% + 10px)";
