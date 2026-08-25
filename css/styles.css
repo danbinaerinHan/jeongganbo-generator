@@ -1132,22 +1132,28 @@
   .mel-btn:hover { background: var(--hover); }
   .mel-btn:disabled { opacity: .45; cursor: default; }
   /* 시김새 수정 버튼 강조 — 문구가 길어서('시김새 미세조정하기') 다른 리본 버튼처럼
-     아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남 */
-  #ornEditToggle, #ornEditToggleEd, #ornMapToggle, #rangeClearToggle, #winToggleCellStyle {
+     아이콘 위·글자 아래 두 줄 대신 가로 배치로 예외 처리, 폭도 내용에 맞춰 늘어남.
+     ★ 이 예외는 **정말 긴 문구에만** 준다. 예전엔 [내용 지우기](5자)·[정간 서식](4자)도
+     이 목록에 끼어 있었는데, 둘 다 [율명/시김새](6자)보다 짧아 예외를 받을 까닭이 없었고
+     — 선택자 목록에 딸려 들어간 것으로 보인다 — 기능바에서 그 둘만 가로로 길고(94·83px 대
+     58px) 강조색 상자라 혼자 튀었다. 게다가 강조색으로 채워진 상자가 상시 둘이나 떠 있어
+     '지금 눌러야 할 것'이라는 강조색의 뜻이 흐려졌다(2026-08-25 뺐다). 새 버튼을 여기
+     더할 땐 라벨을 58px 안에 못 넣는 게 맞는지 먼저 재 볼 것. */
+  #ornEditToggle, #ornEditToggleEd, #ornMapToggle {
                    flex-direction: row; width: auto; gap: 5px; padding: 6px 11px;
                    font-size: 15px; color: var(--accent); border-color: var(--accent);
                    background: var(--accent-soft); font-weight: 700; }
-  #ornEditToggle span, #ornEditToggleEd span, #ornMapToggle span, #rangeClearToggle span, #winToggleCellStyle span {
+  #ornEditToggle span, #ornEditToggleEd span, #ornMapToggle span {
                    font-size: 11px; font-weight: 700; }
-  #ornEditToggle:hover, #ornEditToggleEd:hover, #ornMapToggle:hover, #rangeClearToggle:hover, #winToggleCellStyle:hover {
+  #ornEditToggle:hover, #ornEditToggleEd:hover, #ornMapToggle:hover {
                    background: var(--accent-soft); }
-  #ornEditToggle.on, #ornEditToggleEd.on, #ornMapToggle.on, #rangeClearToggle.on, #winToggleCellStyle.on {
+  #ornEditToggle.on, #ornEditToggleEd.on, #ornMapToggle.on {
                    background: var(--accent); color: #fff; }
   /* .ribbon-btn span이 기본적으로 color:var(--muted)(어두운 회색)를 못박아둬서, 켜진(.on)
      상태의 흰 글자색이 라벨(span)에는 상속되지 않고 그대로 남아 갈색 배경 위에서 잘 안 보였다 */
-  #ornEditToggle.on span, #ornEditToggleEd.on span, #ornMapToggle.on span, #rangeClearToggle.on span, #winToggleCellStyle.on span {
+  #ornEditToggle.on span, #ornEditToggleEd.on span, #ornMapToggle.on span {
                    color: #fff; }
-  #ornMapToggle:disabled, #rangeClearToggle:disabled, #winToggleCellStyle:disabled {
+  #ornMapToggle:disabled {
                    opacity: .4; cursor: default; background: var(--accent-soft); color: var(--accent); }
   /* '전체 가사 담기'도 라벨이 길어 같은 가로 배치 예외 필요(강조색은 아님 — 일회성 동작) */
   #lyricsToTextBtn { flex-direction: row; width: auto; gap: 5px; padding: 5px 10px; }
