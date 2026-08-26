@@ -74,6 +74,9 @@
   let activeRow = -1, activeRows = 1;        // 정간 내부 행(분박) 위치 (-1 = 정간 전체)
   let activeArea = "mel";                    // 하이라이트 대상: mel(선율) / jd(장단) / ly(가사)
   let cellGeom = {};                        // 렌더 시 정간 좌표 저장(하이라이트용, page 포함)
+  // 곁줄 칸 좌표 — cellGeom과 같은 꼴이고 자리만 다르다(활성 파트의 곁줄만).
+  // 곁줄 구간 선택의 파란 표시가 이걸 보고 그려진다.
+  let lyGeom = {};
   // 재생 표시용 정간 좌표 — **파트(열)마다** 담는다: playGeom[열][각][정간].
   // cellGeom과 겹쳐 보이지만 답하는 물음이 다르다. cellGeom은 '지금 편집하는 칸이 어디냐'라
   // 활성 파트 열만 담고(클릭·에디터·둘러보기가 그 뜻으로 쓴다), 이쪽은 '그려진 칸이 어디냐'라
@@ -103,10 +106,17 @@
   // 정간보 기본 드래그 = 구간 선택(스프레드시트 방식). 드래그 없이 그냥 누르면(클릭) 그 정간을
   // 편집하고, 다른 칸으로 번지면(mouseenter) 드래그로 확정해 구간을 고른다 — 선택은 손을 뗀
   // 뒤에도 남아있어서, 구간 지우기·셀 서식 칠하기/지우기 버튼을 나중에 눌러 적용할 수 있다.
-  let melSelStart = null, melSelEnd = null;  // 지금 선택된 정간 구간(없으면 null)
+  let melSelStart = null, melSelEnd = null;  // 지금 선택된 구간(없으면 null)
   let melSelActive = false;                  // 마우스가 눌린 채로 클릭/드래그 판정 중인지
   let melSelDidDrag = false;                 // 이번 제스처가 다른 칸으로 번져 드래그로 확정됐는지
-  function hasMelSel() { return !!(melSelStart && melSelEnd); }
+  // 고른 구간이 **어느 줄의 것인가** — 정간(mel)과 곁줄(ly)은 자리도 내용도 다른 줄이라
+  // 복사·붙여넣기도 따로 논다(정간을 복사하면 정간만, 곁줄을 복사하면 곁줄만 옮겨진다).
+  // 구간 지우기·정간 서식 같은 정간 도구는 mel일 때만 산다(hasMelSel).
+  let melSelLane = "mel";                    // "mel" | "ly"
+  let lyDragFrom = null;                     // 곁줄에서 누른 자리 — 번져야(드래그) 선택이 된다
+  function hasSel() { return !!(melSelStart && melSelEnd); }
+  function hasMelSel() { return hasSel() && melSelLane === "mel"; }
+  function clearSel() { melSelStart = null; melSelEnd = null; melSelLane = "mel"; lyDragFrom = null; }
   // 셀 서식 모드인지 — 직접 입력에선 셀 서식 도구창이 떠 있을 때(.win-open), 에디터에선
   // 셀 서식 레일 탭이 활성일 때(.active). 이 모드에선 정간 클릭이 '내용 편집'(노란 입력창)이
   // 아니라 '서식 적용 대상 선택'이 된다 — 한 칸 클릭도, 여러 칸 드래그도 전부 선택.
@@ -954,19 +964,24 @@
     render();
   }
 
-  // ---------- 정간 구간 복사 / 오려두기 / 붙여넣기 ----------
-  // 드래그로 고른 정간 구간을 통째로 옮긴다. 담는 것은 **그 정간에 보이는 것 전부** —
-  // 선율(율명·시김새)·곁줄·정간 서식(배경색·가로줄). 장단은 곡에 한 줄뿐이라(gi가 늘 0)
-  // 정간 구간의 일부가 아니므로 제외한다.
+  // ---------- 구간 복사 / 오려두기 / 붙여넣기 ----------
+  // 드래그로 고른 구간을 통째로 옮긴다. **정간과 곁줄은 각자 제 것만 옮긴다**(2026-08-26
+  // 사용자 확정): 정간을 고르면 선율(율명·시김새)과 정간 서식(배경색·가로줄)이, 곁줄을
+  // 고르면 곁줄 글자가 간다. 예전엔 정간 구간에 곁줄까지 딸려 갔는데, 가락만 옮기려 해도
+  // 가사가 함께 밀려와 지우는 일이 되레 늘었다 — 정간과 곁줄은 자리도 내용도 다른 줄이다.
+  // 장단은 곡에 한 줄뿐이라(gi가 늘 0) 구간의 일부가 아니므로 어느 쪽에도 안 든다.
   // 조작은 **단축키뿐**(⌘/Ctrl+C·X·V) — 기능바에 버튼을 두지 않기로 했다.
-  let melClip = null;   // [{mel, ly, style}] — melCellSeq 순서로 편 배열
+  let melClip = null;   // 정간: [{mel, style}] — melCellSeq 순서로 편 배열
+  let lyClip = null;    // 곁줄: [글자] — 같은 순서
 
-  function melSelRange() {
-    if (!hasMelSel()) return null;
+  // 줄을 안 가리는 구간(단축키 핸들러가 lane을 보고 갈라 쓴다)
+  function selRange() {
+    if (!hasSel()) return null;
     const a = melCellSeq(melSelStart.gi, melSelStart.ci);
     const b = melCellSeq(melSelEnd.gi, melSelEnd.ci);
     return { lo: Math.min(a, b), hi: Math.max(a, b) };
   }
+  function melSelRange() { return hasMelSel() ? selRange() : null; }
   function seqToCell(seq) {
     let gi = 0;
     while (gi < 5000 && seq >= beatsAt(gi)) { seq -= beatsAt(gi); gi += 1; }
@@ -993,20 +1008,11 @@
   // 만들며 늘리면 붙여넣기가 '구조를 바꾸는 일'이 되어 페이지 배치까지 흔들린다.
   function pasteMelCells(start, cells) {
     const melRows = cellTextRows(melodyFull);
-    const lyRows = cellTextRows(lyricsFull);
-    let touchedLy = false;
     cells.forEach(function (cell, k) {
       const p = seqToCell(start + k);
       if (p.gi >= melRows.length) return;               // 악보 끝을 넘는 몫
       while (melRows[p.gi].length < beatsAt(p.gi)) melRows[p.gi].push("");
       melRows[p.gi][p.ci] = cell.mel;
-      // 곁줄은 줄이 아직 없을 수도 있다(내용 없이 시작한 악보) — 넣을 게 있거나 이미 있을 때만 만든다
-      if (cell.ly || (lyRows[p.gi] && lyRows[p.gi][p.ci])) {
-        while (lyRows.length <= p.gi) lyRows.push([]);
-        while (lyRows[p.gi].length < beatsAt(p.gi)) lyRows[p.gi].push("");
-        lyRows[p.gi][p.ci] = cell.ly;
-        touchedLy = true;
-      }
       // 서식은 '덮어쓰기' — 붙여넣은 자리의 옛 서식을 먼저 걷어야 원본과 같은 모습이 된다
       if (cellStyles[p.gi] && cellStyles[p.gi][p.ci]) {
         delete cellStyles[p.gi][p.ci];
@@ -1019,26 +1025,56 @@
       }
     });
     melodyFull = melRows.map(function (g) { return g.join(" | "); }).join("\n");
-    if (touchedLy) lyricsFull = lyRows.map(function (g) { return g.join(" | "); }).join("\n");
     render();
     refreshEditorSlices();
   }
   function copyMelRange(cut) {
     const r = melSelRange();
     if (!r) return false;
-    const mel = cellTextRows(melodyFull), ly = cellTextRows(lyricsFull);
+    const mel = cellTextRows(melodyFull);
     const cells = [];
     for (let seq = r.lo; seq <= r.hi; seq++) {
       const p = seqToCell(seq);
       cells.push({
         mel: (mel[p.gi] && mel[p.gi][p.ci]) || "",
-        ly: (ly[p.gi] && ly[p.gi][p.ci]) || "",
         style: cloneCellStyle(cellStyles[p.gi] && cellStyles[p.gi][p.ci])
       });
     }
     melClip = cells;
     // 오려두기 = 복사 + 그 자리를 빈 칸으로 덮기(같은 길에 빈 것을 붙이는 셈)
-    if (cut) pasteMelCells(r.lo, cells.map(function () { return { mel: "", ly: "", style: null }; }));
+    if (cut) pasteMelCells(r.lo, cells.map(function () { return { mel: "", style: null }; }));
+    return true;
+  }
+  // 곁줄은 글자뿐이라 담을 것도 글자 하나뿐이다. 붙일 자리에 줄이 아직 없을 수도 있어
+  // (내용 없이 시작한 악보) 넣을 게 있거나 이미 있을 때만 칸을 만든다.
+  function pasteLyCells(start, cells) {
+    const lyRows = cellTextRows(lyricsFull);
+    const nGak = cellTextRows(melodyFull).length;
+    let touched = false;
+    cells.forEach(function (txt, k) {
+      const p = seqToCell(start + k);
+      if (p.gi >= nGak) return;                          // 악보 끝을 넘는 몫
+      if (!txt && !(lyRows[p.gi] && lyRows[p.gi][p.ci])) return;
+      while (lyRows.length <= p.gi) lyRows.push([]);
+      while (lyRows[p.gi].length < beatsAt(p.gi)) lyRows[p.gi].push("");
+      lyRows[p.gi][p.ci] = txt;
+      touched = true;
+    });
+    if (touched) lyricsFull = lyRows.map(function (g) { return g.join(" | "); }).join("\n");
+    render();
+    refreshEditorSlices();
+  }
+  function copyLyRange(cut) {
+    const r = selRange();
+    if (!r || melSelLane !== "ly") return false;
+    const ly = cellTextRows(lyricsFull);
+    const cells = [];
+    for (let seq = r.lo; seq <= r.hi; seq++) {
+      const p = seqToCell(seq);
+      cells.push((ly[p.gi] && ly[p.gi][p.ci]) || "");
+    }
+    lyClip = cells;
+    if (cut) pasteLyCells(r.lo, cells.map(function () { return ""; }));
     return true;
   }
 
@@ -4402,7 +4438,7 @@
       ? { from: dg.groups[0], to: dg.groups[0] + dg.groups[1] } : null;
 
     stopPlayback();
-    cellGeom = {}; playGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = [];
+    cellGeom = {}; lyGeom = {}; playGeom = {}; jdGeom = {}; pageHi = []; playHi = []; pageSvgs = []; ornInstances = [];
     // 직접 입력 카드는 #sheet 밖(#sheetArea)에 있어 다시 그려도 살아남는다 —
     // 실시간 반영 중(keepCellEditor)이 아니면 구조가 바뀌는 것이므로 닫는다
     if (!keepCellEditor) closeCellEditor();
@@ -4682,11 +4718,13 @@
                 // 기본 동작: 아직 클릭인지 드래그인지 모름 — mouseup에서 판가름한다
                 // (다른 칸으로 번지면 드래그로 확정, 안 번기면 그냥 클릭 → 이 칸을 편집)
                 melSelActive = true; melSelDidDrag = false;
+                melSelLane = "mel"; lyDragFrom = null;
                 melSelStart = { gi: gi, ci: ci }; melSelEnd = { gi: gi, ci: ci };
                 render();
               });
               hit.addEventListener("mouseenter", function () {
-                if (!melSelActive) return;
+                // 곁줄에서 시작한 드래그가 정간으로 넘어와도 안 잡는다 — 줄은 안 섞인다
+                if (!melSelActive || lyDragFrom || melSelLane !== "mel") return;
                 melSelDidDrag = true;
                 melSelEnd = { gi: gi, ci: ci };
                 render();
@@ -4928,9 +4966,28 @@
                 { fill: "transparent", stroke: "none", "pointer-events": "all",
                   class: melIdx === 0 ? "tour-lane-ly" : null });
               lyHit.style.cursor = "text";
+              (lyGeom[melIdx] = lyGeom[melIdx] || {})[j] =
+                { page: pageIdx, x: lyLeft, y: gridTop + j * cell, w: lyW, h: cell };
               (function (gi, ci) {
-                // 가사는 더블클릭으로만 편집 — 정간 드래그 선택과 헷갈리지 않게
-                lyHit.addEventListener("mousedown", function (e) { e.preventDefault(); });
+                // 가사는 더블클릭으로만 편집 — 정간 드래그 선택과 헷갈리지 않게.
+                // 끌면(다른 칸으로 번지면) 곁줄 구간 선택이 된다 — 정간과 같은 손놀림이되
+                // **고르는 것도 복사·붙여넣기도 곁줄만**이다.
+                // ★ 여기서 render()를 부르면 안 된다: 다시 그리면 더블클릭의 두 번째 눌림이
+                //   새로 만든 요소에 떨어져 아래 dblclick이 통째로 안 열린다. 그래서 누른
+                //   자리만 적어 두고(lyDragFrom) **번진 뒤에야** 선택으로 굳힌다 — 그냥
+                //   한 번 누르는 길은 예전과 한 획도 다르지 않다.
+                lyHit.addEventListener("mousedown", function (e) {
+                  e.preventDefault();
+                  if (ornEditMode) return;
+                  melSelActive = true; melSelDidDrag = false;
+                  lyDragFrom = { gi: gi, ci: ci };
+                });
+                lyHit.addEventListener("mouseenter", function () {
+                  if (!melSelActive || !lyDragFrom) return;
+                  melSelDidDrag = true; melSelLane = "ly";
+                  melSelStart = lyDragFrom; melSelEnd = { gi: gi, ci: ci };
+                  render();
+                });
                 lyHit.addEventListener("dblclick", function (e) {
                   e.preventDefault();
                   // 시김새 수정 모드였다면 끄고 **편집을 이어서 연다**. 선율·장단 칸은 한 번
@@ -5257,21 +5314,27 @@
       });
     }
 
-    // 정간 구간 선택 — 드래그로 고르면(또는 고른 뒤에도 계속) 옅은 파란색으로 표시.
-    // 구간 지우기·셀 서식 칠하기/지우기 버튼이 이 선택을 대상으로 즉시 적용된다.
+    // 구간 선택 — 드래그로 고르면(또는 고른 뒤에도 계속) 옅은 파란색으로 표시.
+    // 고른 줄(melSelLane)의 좌표표를 본다: 정간이면 cellGeom, 곁줄이면 lyGeom.
+    // 구간 지우기·셀 서식 칠하기/지우기 버튼은 정간 구간일 때만 산다(hasMelSel).
     if (melSelStart && melSelEnd) {
       const lo = Math.min(melCellSeq(melSelStart.gi, melSelStart.ci), melCellSeq(melSelEnd.gi, melSelEnd.ci));
       const hi = Math.max(melCellSeq(melSelStart.gi, melSelStart.ci), melCellSeq(melSelEnd.gi, melSelEnd.ci));
-      Object.keys(cellGeom).forEach(function (giKey) {
+      const selGeom = melSelLane === "ly" ? lyGeom : cellGeom;
+      Object.keys(selGeom).forEach(function (giKey) {
         const gi = parseInt(giKey, 10);
-        const row = cellGeom[gi];
+        const row = selGeom[gi];
         Object.keys(row).forEach(function (ciKey) {
           const ci = parseInt(ciKey, 10);
           if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
           const cg = row[ci];
           const svg = pageSvgs[cg.page]; if (!svg) return;
+          // pointer-events none — 이 표시는 클릭 영역보다 **뒤에** 생기므로 그냥 두면
+          // 고른 칸 위를 덮어, 고른 자리를 다시 눌러 편집하는 길이 막힌다(곁줄은 더블클릭이라
+          // 더 그렇다). 보여주기만 하는 사각형이니 손은 그대로 통과시킨다.
           svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
-            { fill: "#5b8def", "fill-opacity": "0.22", stroke: "#3a6fd8", "stroke-width": "0.15", class: "no-print" }));
+            { fill: "#5b8def", "fill-opacity": "0.22", stroke: "#3a6fd8", "stroke-width": "0.15",
+              "pointer-events": "none", class: "no-print" }));
         });
       });
     }
@@ -6075,7 +6138,7 @@
     melodyFull = p.melody; lyricsFull = p.lyrics; cellStyles = p.cellStyles;
     setOrnInstrument(p.instrument, { silent: true });
     // 이전 파트를 가리키던 것들 정리 — 정간 선택·시김새 선택은 그 파트의 것이었다
-    melSelStart = null; melSelEnd = null; refreshMelSelBtns();
+    clearSel(); refreshMelSelBtns();
     ornSel = null; hideOrnPanel();
     edPage = 0; edRange = null; edLyRange = null;
     reconcileMelody(); reconcileLyrics();
@@ -8538,8 +8601,9 @@
     if (!hasMelSel()) return;
     clearMelodyRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci);
   });
-  // 정간 구간 복사·오려두기·붙여넣기 (⌘/Ctrl+C·X·V) — 드래그로 고른 구간이 대상이고,
+  // 구간 복사·오려두기·붙여넣기 (⌘/Ctrl+C·X·V) — 드래그로 고른 구간이 대상이고,
   // 붙여넣기는 **고른 구간의 첫 칸부터** 덮어쓴다. 버튼은 두지 않기로 했다.
+  // **정간과 곁줄은 서로 안 섞인다**: 지금 고른 줄(melSelLane)의 것만 담고 그 줄에만 붙는다.
   // 글자를 치는 중(input/textarea)이거나 글을 고른 상태면 브라우저 기본 동작에 양보한다 —
   // 도움말·안내문은 user-select가 살아 있어 거기서 ⌘C가 먹어야 한다.
   document.addEventListener("keydown", function (e) {
@@ -8549,21 +8613,23 @@
     const tag = (e.target && e.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
     if (window.getSelection && String(window.getSelection())) return;
-    const r = melSelRange();
+    const r = selRange();
     if (!r) return;
+    const lane = melSelLane;
+    const clip = lane === "ly" ? lyClip : melClip;
     if (k === "v") {
-      if (!melClip || !melClip.length) return;
+      if (!clip || !clip.length) return;
       e.preventDefault();
       // 붙인 만큼으로 선택을 넓혀 무엇이 들어갔는지 눈에 보이게 한다(악보 끝에서 잘린 만큼은 빼고).
       // 악보 전체의 마지막 정간 번호 — 각 길이가 섞이면 각 수×정간 수로는 못 센다
       const lastSeq = Math.max(0, gakCellOffset(parseMelodyOffsets(melodyFull).length) - 1);
-      const end = Math.min(r.lo + melClip.length - 1, lastSeq);
+      const end = Math.min(r.lo + clip.length - 1, lastSeq);
       melSelStart = seqToCell(r.lo); melSelEnd = seqToCell(end);
-      pasteMelCells(r.lo, melClip);
+      if (lane === "ly") pasteLyCells(r.lo, clip); else pasteMelCells(r.lo, clip);
       return;
     }
     e.preventDefault();
-    copyMelRange(k === "x");
+    if (lane === "ly") copyLyRange(k === "x"); else copyMelRange(k === "x");
   });
   // 셀 서식 — 배경색/테두리 각각 칠하기·지우기 버튼 4개. 전부 '지금 선택된 구간'에 즉시
   // 적용되는 실행 버튼(토글 아님). 색은 그냥 '지금 고른 값'일 뿐이라 여러 색을 번갈아
@@ -8630,6 +8696,10 @@
   document.addEventListener("mouseup", function () {
     if (!melSelActive) return;
     melSelActive = false;
+    // 곁줄에서 시작한 제스처 — 번지지 않았으면(그냥 한 번 누름) **아무것도 안 건드린다**.
+    // 곁줄 편집은 더블클릭이라 여기서 다시 그리면 두 번째 눌림이 새 요소에 떨어진다.
+    if (lyDragFrom && !melSelDidDrag) { lyDragFrom = null; return; }
+    lyDragFrom = null;
     if (!melSelDidDrag && !cellStyleMode()) {
       const s = melSelStart;
       melSelStart = null; melSelEnd = null;
