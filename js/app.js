@@ -129,7 +129,7 @@
   let melSelRect = null;                     // {pLo,pHi,gLo,gHi,rLo,rHi} — 없으면 null
   let melSelRectFrom = null;                 // 네모를 시작한 칸 {p,g,r}
   let melSelClickPart = null;                // 남의 파트 열을 '그냥 눌렀을 때' 갈아탈 자리
-  function hasSel() { return !!(melSelStart && melSelEnd) || melSelRanges.length > 0; }
+  function hasSel() { return !!(melSelStart && melSelEnd) || melSelRanges.length > 0 || !!melSelRect; }
   function hasMelSel() { return hasSel() && melSelLane === "mel"; }
   function clearSel() {
     melSelStart = null; melSelEnd = null; melSelLane = "mel"; lyDragFrom = null;
@@ -219,10 +219,17 @@
     // 곁줄 구간도 복사·붙여넣기가 되므로 두 줄 다 대상이고, 어느 줄인지도 함께 적는다.
     const hint = $("melSelHint");
     if (hint) {
-      const n = hasSel() ? selSeqs().length : 0;
+      // 총보 네모는 여러 악기에 걸칠 수 있으므로 파트별 구간을 다 세고, 걸친 악기 수도 적는다
+      let n = 0, nParts = 0;
+      if (melSelLane === "ly") { n = hasSel() ? selSeqs().length : 0; nParts = 1; }
+      else selByPart().forEach(function (g) {
+        nParts += 1;
+        g.ranges.forEach(function (r) { n += r.hi - r.lo + 1; });
+      });
       hint.classList.toggle("on", n > 0);
       hint.innerHTML = n > 0
-        ? "<b>" + (melSelLane === "ly" ? "곁줄" : "정간") + " " + n + "칸</b> 고름<br>" +
+        ? "<b>" + (melSelLane === "ly" ? "곁줄" : "정간") + " " + n + "칸</b> 고름" +
+          (nParts > 1 ? " <b>(" + nParts + "악기)</b>" : "") + "<br>" +
           "⌘/Ctrl + <b>C</b> 복사 · <b>X</b> 오려두기 · <b>V</b> 붙여넣기"
         : "";
     }
@@ -1043,24 +1050,59 @@
   // 매 렌더마다 전역 스냅샷(saveState)이 남으므로 전역 되돌리기(Cmd/Ctrl+Z)로 복구할 수 있다.
   // 고른 구간이 여럿일 수 있으므로(⌘/Ctrl+클릭) **구간 하나를 받는 속알맹이**와
   // **고른 것 전부를 도는 껍데기**를 나눈다 — 껍데기가 마지막에 한 번만 다시 그린다.
-  function clearMelodySel() {
-    selRangeList().forEach(function (r) { clearMelodySeq(r.lo, r.hi); });
+  // ---------- 고른 것을 '파트별 구간 목록'으로 ----------
+  // 총보 네모는 파트를 가로지르므로, 손대는 쪽은 **어느 파트의 어느 구간인지**를 받아야 한다.
+  // 파트보(또는 활성 파트 하나짜리 선택)는 [{p: activePart, ranges:[…]}] 하나가 나오므로
+  // 아래 도구들이 두 경우를 한 길로 다룬다.
+  function selByPart() {
+    if (melSelRect) {
+      const R = melSelRect, out = [];
+      for (let p = R.pLo; p <= R.pHi; p++) {
+        if (!parts[p]) continue;
+        const rs = [];
+        for (let g = R.gLo; g <= R.gHi; g++) {
+          const n = beatsAt(g);
+          const lo = Math.max(0, R.rLo), hi = Math.min(R.rHi, n - 1);
+          if (lo > hi) continue;
+          rs.push({ lo: melCellSeq(g, lo), hi: melCellSeq(g, hi) });
+        }
+        if (rs.length) out.push({ p: p, ranges: rs });
+      }
+      return out;
+    }
+    const rs = selRangeList();
+    return rs.length ? [{ p: activePart, ranges: rs }] : [];
+  }
+  // 고른 파트들을 차례로 만진다. **활성 파트도 예외로 두지 않는다** — stash로 작업 사본을
+  // parts[]에 먼저 적어 두면 어느 파트든 `parts[p]` 하나로 같게 다룰 수 있고, 끝난 뒤
+  // hydrate로 작업 사본을 도로 채운다(활성 파트만 특별 취급하면 길이 둘로 갈린다).
+  function editSelParts(fn) {
+    const groups = selByPart();
+    if (!groups.length) return;
+    stashActivePart();
+    groups.forEach(function (g) { if (parts[g.p]) fn(parts[g.p], g.ranges, g.p); });
+    hydrateActivePart();
+    refreshEditorSlices();
     render();
   }
-  function clearMelodySeq(lo, hi) {
-    const rows = parseMelodyOffsets(melodyFull).map(function (g) { return g.map(function (c) { return c.text; }); });
-    let changed = false;
-    for (let gi = 0; gi < rows.length; gi++) {
-      for (let ci = 0; ci < rows[gi].length; ci++) {
-        if (melCellSeq(gi, ci) >= lo && melCellSeq(gi, ci) <= hi && rows[gi][ci] !== "") {
-          rows[gi][ci] = ""; changed = true;
-        }
+  // 구간 안의 정간을 차례로 훑는다(그 파트의 각 수를 넘는 자리는 건너뛴다)
+  function eachSelCell(ranges, fn) {
+    ranges.forEach(function (r) {
+      for (let seq = r.lo; seq <= r.hi; seq++) {
+        const q = seqToCell(seq);
+        fn(q.gi, q.ci, seq, r);
       }
-    }
-    if (changed) {
-      melodyFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
-      refreshEditorSlices();
-    }
+    });
+  }
+  function clearMelodySel() {
+    editSelParts(function (part, ranges) {
+      const rows = cellTextRows(part.melody);
+      let changed = false;
+      eachSelCell(ranges, function (gi, ci) {
+        if (rows[gi] && rows[gi][ci] != null && rows[gi][ci] !== "") { rows[gi][ci] = ""; changed = true; }
+      });
+      if (changed) part.melody = rows.map(function (g) { return g.join(" | "); }).join("\n");
+    });
   }
 
   // ---------- 구간 복사 / 오려두기 / 붙여넣기 ----------
@@ -1113,48 +1155,66 @@
   }
   // start 자리부터 cells를 차례로 덮어쓴다. 악보 끝을 넘는 몫은 조용히 버린다 — 각을 새로
   // 만들며 늘리면 붙여넣기가 '구조를 바꾸는 일'이 되어 페이지 배치까지 흔들린다.
-  function pasteMelCells(start, cells) {
-    pasteMelAt(cells.map(function (_c, k) { return start + k; }), cells);
-  }
-  // seqs[i] 자리에 cells[i]를 쓴다 — 붙여넣기는 이어진 자리를, 오려두기는 고른 자리
-  // 그대로(구멍을 건너뛰며)를 준다.
-  function pasteMelAt(seqs, cells) {
-    const melRows = cellTextRows(melodyFull);
+  // 한 파트의 seqs[i] 자리에 cells[i]를 쓴다 — 붙여넣기는 이어진 자리를, 오려두기는 고른
+  // 자리 그대로(구멍을 건너뛰며)를 준다.
+  function pasteMelAtPart(part, seqs, cells) {
+    const melRows = cellTextRows(part.melody);
+    const st = part.cellStyles || (part.cellStyles = {});
     cells.forEach(function (cell, k) {
-      const p = seqToCell(seqs[k]);
-      if (p.gi >= melRows.length) return;               // 악보 끝을 넘는 몫
-      while (melRows[p.gi].length < beatsAt(p.gi)) melRows[p.gi].push("");
-      melRows[p.gi][p.ci] = cell.mel;
+      const q = seqToCell(seqs[k]);
+      if (q.gi >= melRows.length) return;               // 악보 끝을 넘는 몫
+      while (melRows[q.gi].length < beatsAt(q.gi)) melRows[q.gi].push("");
+      melRows[q.gi][q.ci] = cell.mel;
       // 서식은 '덮어쓰기' — 붙여넣은 자리의 옛 서식을 먼저 걷어야 원본과 같은 모습이 된다
-      if (cellStyles[p.gi] && cellStyles[p.gi][p.ci]) {
-        delete cellStyles[p.gi][p.ci];
-        pruneCellStyleEntry(p.gi, p.ci);
-      }
-      const st = cloneCellStyle(cell.style);   // 붙일 때도 새로 떠야 여러 번 붙여도 안 얽힌다
-      if (st) {
-        cellStyles[p.gi] = cellStyles[p.gi] || {};
-        cellStyles[p.gi][p.ci] = st;
-      }
+      if (st[q.gi] && st[q.gi][q.ci]) { delete st[q.gi][q.ci]; pruneCellStyleIn(st, q.gi, q.ci); }
+      const cs = cloneCellStyle(cell.style);   // 붙일 때도 새로 떠야 여러 번 붙여도 안 얽힌다
+      if (cs) { st[q.gi] = st[q.gi] || {}; st[q.gi][q.ci] = cs; }
     });
-    melodyFull = melRows.map(function (g) { return g.join(" | "); }).join("\n");
-    render();
-    refreshEditorSlices();
+    part.melody = melRows.map(function (g) { return g.join(" | "); }).join("\n");
   }
+  // **담는 것은 파트별 덩이**(block[파트 오프셋][칸]) — 총보 네모는 여러 악기에 걸치므로
+  // 한 줄짜리 배열로는 무엇이 어느 악기 것인지 잃는다. 파트보는 덩이가 하나뿐이다.
   function copyMelRange(cut) {
-    if (!hasMelSel()) return false;
-    const seqs = selSeqs();
-    if (!seqs.length) return false;
-    const mel = cellTextRows(melodyFull);
-    const cells = seqs.map(function (seq) {
-      const p = seqToCell(seq);
-      return {
-        mel: (mel[p.gi] && mel[p.gi][p.ci]) || "",
-        style: cloneCellStyle(cellStyles[p.gi] && cellStyles[p.gi][p.ci])
-      };
+    const groups = selByPart();
+    if (!groups.length || melSelLane === "ly") return false;
+    stashActivePart();
+    const block = groups.map(function (g) {
+      const rows = cellTextRows(parts[g.p].melody);
+      const st = parts[g.p].cellStyles || {};
+      const cells = [];
+      eachSelCell(g.ranges, function (gi, ci) {
+        cells.push({
+          mel: (rows[gi] && rows[gi][ci]) || "",
+          style: cloneCellStyle(st[gi] && st[gi][ci])
+        });
+      });
+      return cells;
     });
-    melClip = cells;
+    melClip = { block: block };
     // 오려두기 = 복사 + **고른 그 자리들**을 빈 칸으로 덮기(흩어져 골랐으면 구멍은 그대로 둔다)
-    if (cut) pasteMelAt(seqs, cells.map(function () { return { mel: "", style: null }; }));
+    if (cut) {
+      editSelParts(function (part, ranges) {
+        const seqs = []; eachSelCell(ranges, function (_gi, _ci, seq) { seqs.push(seq); });
+        pasteMelAtPart(part, seqs, seqs.map(function () { return { mel: "", style: null }; }));
+      });
+    }
+    return true;
+  }
+  // 붙여넣기 — 고른 곳의 **맨 앞 파트·맨 앞 칸**을 닻으로 삼아 덩이를 펼친다.
+  // 칸은 이어진 자리에 차례로 놓는다(구멍을 건너뛰며 붙이면 무엇이 어디로 갈지 못 센다).
+  function pasteMelClip() {
+    const groups = selByPart();
+    if (!groups.length || !melClip || !melClip.block || !melClip.block.length) return false;
+    const startP = groups[0].p, startSeq = groups[0].ranges[0].lo;
+    stashActivePart();
+    melClip.block.forEach(function (cells, i) {
+      const part = parts[startP + i];
+      if (!part) return;                                // 악기 수를 넘는 몫은 버린다
+      pasteMelAtPart(part, cells.map(function (_c, k) { return startSeq + k; }), cells);
+    });
+    hydrateActivePart();
+    refreshEditorSlices();
+    render();
     return true;
   }
   // 곁줄은 글자뿐이라 담을 것도 글자 하나뿐이다. 붙일 자리에 줄이 아직 없을 수도 있어
@@ -1196,34 +1256,30 @@
   // ---------- 셀 서식(배경색·테두리, 직접 입력) ----------
   // 정간 하나의 서식 항목(fill/border)이 둘 다 없으면 cellStyles에서 아예 지워서
   // 빈 {} 찌꺼기가 저장/되돌리기 스냅샷에 남지 않게 한다.
-  function pruneCellStyleEntry(gi, ci) {
-    const row = cellStyles[gi];
+  function pruneCellStyleEntry(gi, ci) { pruneCellStyleIn(cellStyles, gi, ci); }
+  // 어느 파트의 서식표든 같게 다듬는다(총보 네모는 남의 파트 표도 만진다)
+  function pruneCellStyleIn(styles, gi, ci) {
+    const row = styles[gi];
     if (!row || !row[ci]) return;
     const entry = row[ci];
     if (!entry.fill && !entry.border) {
       delete row[ci];
-      if (!Object.keys(row).length) delete cellStyles[gi];
+      if (!Object.keys(row).length) delete styles[gi];
     }
   }
   // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi)의 정간마다 배경색을 적용(color가 null이면 지움).
   // 멜로디 전용 되돌리기 스택은 건드리지 않는다 — saveState()가 렌더마다 전체 상태를 스냅샷하므로
   // 앱 전체 되돌리기(Cmd/Ctrl+Z)가 색 변경도 그대로 커버한다.
   function applyCellFillSel(color) {
-    selRangeList().forEach(function (r) { applyCellFillSeq(r.lo, r.hi, color); });
-    render();
-  }
-  function applyCellFillSeq(lo, hi, color) {
-    Object.keys(cellGeom).forEach(function (giKey) {
-      const gi = parseInt(giKey, 10);
-      Object.keys(cellGeom[gi]).forEach(function (ciKey) {
-        const ci = parseInt(ciKey, 10);
-        if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+    editSelParts(function (part, ranges) {
+      const st = part.cellStyles || (part.cellStyles = {});
+      eachSelCell(ranges, function (gi, ci) {
         if (color) {
-          cellStyles[gi] = cellStyles[gi] || {};
-          cellStyles[gi][ci] = Object.assign({}, cellStyles[gi][ci], { fill: color });
-        } else if (cellStyles[gi] && cellStyles[gi][ci]) {
-          delete cellStyles[gi][ci].fill;
-          pruneCellStyleEntry(gi, ci);
+          st[gi] = st[gi] || {};
+          st[gi][ci] = Object.assign({}, st[gi][ci], { fill: color });
+        } else if (st[gi] && st[gi][ci]) {
+          delete st[gi][ci].fill;
+          pruneCellStyleIn(st, gi, ci);
         }
       });
     });
@@ -1251,29 +1307,28 @@
   // (sidesForCellInRange의 seq === hi), 흩어진 선택을 한 구간으로 뭉뚱그리면 그 사이의
   // 안 고른 칸까지 덩이에 끌려든다.
   function applyCellBorderSel(spec, mode) {
-    selRangeList().forEach(function (r) { applyCellBorderSeq(r.lo, r.hi, spec, mode); });
-    render();
-  }
-  function applyCellBorderSeq(lo, hi, spec, mode) {
-    Object.keys(cellGeom).forEach(function (giKey) {
-      const gi = parseInt(giKey, 10);
-      Object.keys(cellGeom[gi]).forEach(function (ciKey) {
-        const ci = parseInt(ciKey, 10);
-        const seq = melCellSeq(gi, ci);
-        if (seq < lo || seq > hi) return;
-        const sides = sidesForCellInRange(seq, lo, hi, mode);
-        if (!sides.length) return;
-        cellStyles[gi] = cellStyles[gi] || {};
-        const entry = cellStyles[gi][ci] || {};
-        const border = Object.assign({}, entry.border);
-        sides.forEach(function (side) {
-          if (spec) border[side] = { width: spec.width, style: spec.style };
-          else delete border[side];
-        });
-        entry.border = Object.keys(border).length ? border : undefined;
-        if (!entry.border) delete entry.border;
-        cellStyles[gi][ci] = entry;
-        pruneCellStyleEntry(gi, ci);
+    editSelParts(function (part, ranges) {
+      const st = part.cellStyles || (part.cellStyles = {});
+      // **구간마다 따로 돈다** — 합치기·없애기의 '안쪽 가로줄'은 이어진 한 덩이 안의
+      // 이야기라(sidesForCellInRange의 seq === hi), 여러 구간을 뭉뚱그리면 그 사이 칸까지
+      // 덩이에 끌려든다. 총보 네모에서는 각마다 한 구간이므로 각마다 제 안쪽만 걸린다.
+      ranges.forEach(function (r) {
+        for (let seq = r.lo; seq <= r.hi; seq++) {
+          const q = seqToCell(seq);
+          const sides = sidesForCellInRange(seq, r.lo, r.hi, mode);
+          if (!sides.length) continue;
+          st[q.gi] = st[q.gi] || {};
+          const entry = st[q.gi][q.ci] || {};
+          const border = Object.assign({}, entry.border);
+          sides.forEach(function (side) {
+            if (spec) border[side] = { width: spec.width, style: spec.style };
+            else delete border[side];
+          });
+          entry.border = Object.keys(border).length ? border : undefined;
+          if (!entry.border) delete entry.border;
+          st[q.gi][q.ci] = entry;
+          pruneCellStyleIn(st, q.gi, q.ci);
+        }
       });
     });
   }
@@ -8890,25 +8945,51 @@
     const tag = (e.target && e.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
     if (window.getSelection && String(window.getSelection())) return;
-    const r = selRange();
-    if (!r) return;
     const lane = melSelLane;
-    const clip = lane === "ly" ? lyClip : melClip;
+    if (lane === "ly") {
+      const r = selRange();
+      if (!r) return;
+      if (k === "v") {
+        if (!lyClip || !lyClip.length) return;
+        e.preventDefault();
+        const lastSeq = Math.max(0, gakCellOffset(parseMelodyOffsets(melodyFull).length) - 1);
+        const end = Math.min(r.lo + lyClip.length - 1, lastSeq);
+        melSelRanges = [];
+        melSelStart = seqToCell(r.lo); melSelEnd = seqToCell(end);
+        pasteLyCells(r.lo, lyClip);
+        return;
+      }
+      e.preventDefault();
+      copyLyRange(k === "x");
+      return;
+    }
+    // 정간 — 총보 네모면 파트별 덩이, 파트보면 덩이 하나(같은 길을 지난다)
+    if (!selByPart().length) return;
     if (k === "v") {
-      if (!clip || !clip.length) return;
+      if (!melClip || !melClip.block || !melClip.block.length) return;
       e.preventDefault();
       // 붙인 만큼으로 선택을 넓혀 무엇이 들어갔는지 눈에 보이게 한다(악보 끝에서 잘린 만큼은 빼고).
-      // 악보 전체의 마지막 정간 번호 — 각 길이가 섞이면 각 수×정간 수로는 못 센다
+      const groups = selByPart();
+      const startP = groups[0].p, startSeq = groups[0].ranges[0].lo;
+      const nCells = melClip.block[0].length;
       const lastSeq = Math.max(0, gakCellOffset(parseMelodyOffsets(melodyFull).length) - 1);
-      const end = Math.min(r.lo + clip.length - 1, lastSeq);
+      const end = Math.min(startSeq + nCells - 1, lastSeq);
+      pasteMelClip();
       // 붙인 자리만 보이게 — 흩어져 골라 두었던 것은 여기서 걷는다
-      melSelRanges = [];
-      melSelStart = seqToCell(r.lo); melSelEnd = seqToCell(end);
-      if (lane === "ly") pasteLyCells(r.lo, clip); else pasteMelCells(r.lo, clip);
+      if (melSelRect) {
+        const pHi = Math.min(parts.length - 1, startP + melClip.block.length - 1);
+        const a = seqToCell(startSeq), b = seqToCell(end);
+        melSelRect = { pLo: startP, pHi: pHi, gLo: a.gi, gHi: b.gi, rLo: a.ci, rHi: b.ci };
+        syncRectToRanges();
+      } else {
+        melSelRanges = [];
+        melSelStart = seqToCell(startSeq); melSelEnd = seqToCell(end);
+      }
+      render();
       return;
     }
     e.preventDefault();
-    if (lane === "ly") copyLyRange(k === "x"); else copyMelRange(k === "x");
+    copyMelRange(k === "x");
   });
   // 셀 서식 — 배경색/테두리 각각 칠하기·지우기 버튼 4개. 전부 '지금 선택된 구간'에 즉시
   // 적용되는 실행 버튼(토글 아님). 색은 그냥 '지금 고른 값'일 뿐이라 여러 색을 번갈아
