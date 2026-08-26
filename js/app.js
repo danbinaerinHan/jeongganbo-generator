@@ -7428,6 +7428,13 @@
       });
     });
   }
+  // 나란히 놓는 방향 — 메뉴 안 고르는 칸. 뽑을 때 한 번 고르는 값이라 문서에 저장하지 않는다
+  // (오선 크기와 달리 종이에 남는 성질이 아니라 '이번에 어떻게 뽑을까'라서).
+  function sideDir() {
+    const v = $("staffSideDir") && $("staffSideDir").value;
+    return v === "tb" ? "tb" : "lr";
+  }
+
   function printSideBySide(dir) {
     sideBySidePages(dir).then(function (pages) {
       printPages(pages, "side-" + (dir || "lr"), sideBySideBox(dir));
@@ -7466,17 +7473,15 @@
         }
       }
     } catch (e) {}
-    // 출력 메뉴 — 파일(MusicXML) · 오선보만 인쇄/PNG · 정간보와 나란히 인쇄/PNG
-    wireTopMenu("staffOutToggle", "staffOutPop");
-    $("staffExport").addEventListener("click", exportMusicXml);
+    // 오선보 출력 — 버튼은 오른쪽 레일의 [출력] 메뉴에 있다(2026-08-26에 옮겼다: 예전엔
+    // 이 창 머리줄의 [출력 ▾]라 '오선보를 뽑으려면 창부터 열어야 한다'는 숨은 규칙이 있었다).
+    // 배선은 그대로 여기 둔다 — 이 블록은 창 열림과 무관하게 시작할 때 한 번 돈다.
     $("staffPrint").addEventListener("click", printStaffOnly);
     $("staffPng").addEventListener("click", pngStaffOnly);
-    // 나란히 — 놓는 방향이 종이 방향까지 정한다(좌우=가로 · 위아래=세로). 핸들러에 이벤트가
-    // 그대로 들어가면 dir 자리에 Event가 앉으므로 감싸서 넘긴다.
-    $("staffPrintSide").addEventListener("click", function () { printSideBySide("lr"); });
-    $("staffPngSide").addEventListener("click", function () { pngSideBySide("lr"); });
-    $("staffPrintSideTB").addEventListener("click", function () { printSideBySide("tb"); });
-    $("staffPngSideTB").addEventListener("click", function () { pngSideBySide("tb"); });
+    // 나란히 — 놓는 방향이 종이 방향까지 정한다(좌우=가로 · 위아래=세로). 예전엔 방향이
+    // 명령 이름에 들어가 넷이었는데, 메뉴 안 고르는 칸(#staffSideDir)으로 옮겨 둘로 줄였다.
+    $("staffPrintSide").addEventListener("click", function () { printSideBySide(sideDir()); });
+    $("staffPngSide").addEventListener("click", function () { pngSideBySide(sideDir()); });
     // 정간을 무엇으로 보나 · 조표·박자표를 무엇으로 적나 · 마디를 어떻게 끊나 · 한 줄에 몇
     // 마디 — 다섯 다 문서 값이라 saveState까지 부른다(배율·높이는 브라우저별 보기 설정이라
     // 다른 자리에 산다).
@@ -8979,6 +8984,11 @@
   // 상단바로 일원화했다(사이드바 '보관' 탭엔 임시 저장만 남음).
   $("btnPng").addEventListener("click", downloadPng);
   $("btnPrint").addEventListener("click", () => { track("export_print"); window.print(); });
+  // 출력 메뉴(오른쪽 레일) — 정간보 · 오선보 · 나란히를 한 자리에 모은 곳.
+  // 메뉴 안 [정간보 인쇄]는 상단바 [인쇄]와 **같은 명령**이다(밖에 지름길이 하나 더 있는 것 —
+  // 1급 버튼 예외라 그 하나만 두 자리에 산다, CLAUDE.md 참고).
+  wireTopMenu("outToggle", "outPop");
+  $("outPrintJgb").addEventListener("click", () => { track("export_print"); window.print(); });
   // 인쇄 → 'PDF로 저장'의 기본 파일명은 탭 제목(document.title)에서 오므로, 인쇄하는
   // 동안만 곡 제목으로 바꿨다가 되돌린다. beforeprint/afterprint 이벤트를 쓰므로
   // 인쇄 버튼뿐 아니라 브라우저 메뉴·Cmd/Ctrl+P로 인쇄할 때도 똑같이 적용된다.

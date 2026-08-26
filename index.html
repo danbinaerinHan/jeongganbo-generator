@@ -266,19 +266,64 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <span class="lbl">저장</span>
       </button>
-      <button type="button" id="btnPng" class="topbar-cmd tip"
-        data-tip="PNG 다운로드
-· 악보를 그림 파일로 내려받습니다">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-        <span class="lbl">PNG</span>
-      </button>
-      <button type="button" id="btnMusicXml" class="topbar-cmd tip"
-        data-tip="오선보로 내보내기 (MusicXML)
+      <!-- 출력 — 종이·그림·오선보 파일로 나가는 길을 **한 자리에** 모은다(2026-08-26).
+           예전엔 정간보 인쇄(상단바) · PNG·MusicXML(레일) · 오선보 인쇄/PNG/MusicXML과
+           나란히 인쇄/PNG(오선보 창 [출력 ▾])로 **10개가 세 자리**에 흩어져 있었고,
+           MusicXML은 두 자리에 있었다. 게다가 '오선보를 뽑으려면 오선보 창부터 열어야
+           한다'는 숨은 규칙이 있었는데 — 기능적으로는 그럴 이유가 없다(vrvReady가 조판기를
+           알아서 불러오고 buildStaffScores도 창과 무관하다) — 버튼이 거기에만 있어서였다.
+           묶는 잣대는 **무엇을 뽑나**(정간보 / 오선보 / 나란히)이고, 나란히의 좌우·위아래는
+           이름에서 빼 고르는 칸으로 옮겼다(4개 → 2개).
+           상단바 [인쇄]는 그대로 둔다 — 가장 흔한 '정간보 인쇄'의 지름길이고 1급 버튼
+           예외라서다(CLAUDE.md). 그래서 그 하나만 두 자리에 있다. -->
+      <div id="outBoxRail">
+        <button type="button" id="outToggle" class="topbar-cmd tip"
+          data-tip="출력 — 인쇄 · PNG · MusicXML
+· 정간보 · 오선보 · 둘을 나란히">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <span class="lbl">출력</span>
+        </button>
+        <div id="outPop" class="tb-menu">
+          <div class="tb-menu-cap">정간보</div>
+          <!-- 상단바 [인쇄]와 같은 명령이다(지름길이 밖에 하나 더 있는 것) -->
+          <button type="button" id="outPrintJgb">인쇄</button>
+          <button type="button" id="btnPng">PNG 다운로드</button>
+          <hr>
+          <div class="tb-menu-cap">오선보</div>
+          <button type="button" id="staffPrint">인쇄</button>
+          <button type="button" id="staffPng">PNG 다운로드</button>
+          <!-- 오선보(MusicXML) — 시김새를 실제 음높이로 풀어 적으므로 재생과 같은 표(기호
+               사전의 snd)를 본다. 배선·환산 규칙은 app.js '오선보 내보내기' 절. -->
+          <button type="button" id="btnMusicXml" class="tip"
+            data-tip="오선보로 내보내기 (MusicXML)
 · 시김새를 실제 음높이로 풀어 적습니다
-· 뮤즈스코어·피날레·시벨리우스에서 열립니다">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-        <span class="lbl">MusicXML</span>
-      </button>
+· 뮤즈스코어·피날레·시벨리우스에서 열립니다">MusicXML 파일</button>
+          <hr>
+          <div class="tb-menu-cap">정간보 + 오선보 나란히</div>
+          <!-- 놓는 방향이 종이 방향까지 정한다(좌우=가로 · 위아래=세로). 예전엔 방향이
+               이름에 들어가 명령이 넷이었다 — 고르는 칸으로 옮겨 둘로 줄였다. -->
+          <label class="tb-menu-field">방향
+            <select id="staffSideDir">
+              <option value="lr" selected>좌우</option>
+              <option value="tb">위아래</option>
+            </select>
+          </label>
+          <button type="button" id="staffPrintSide">인쇄</button>
+          <button type="button" id="staffPngSide">PNG 다운로드</button>
+          <hr>
+          <!-- 인쇄 오선 크기 — **뽑을 때만 쓰는 값**이라 오선보 창 머리줄이 아니라 여기 둔다
+               (머리줄은 화면에서 보며 고치는 칸들 자리다). 조판에서 악보 크기를 말하는 단위가
+               '오선 한 칸 몇 mm'이므로 그 말로 적는다 — 표준은 1.75mm(Behind Bars).
+               **문서에 딸린 값**이라 CTRL_IDS에 있다. -->
+          <label class="tb-menu-field">오선 크기
+            <select id="staffPrintSize">
+              <option value="small">작게 (1.4mm)</option>
+              <option value="normal" selected>보통 (1.75mm)</option>
+              <option value="large">크게 (2.2mm)</option>
+            </select>
+          </label>
+        </div>
+      </div>
       <button type="button" id="btnShareLink" class="topbar-cmd tip"
         data-tip="악보를 담은 링크 복사
 · 링크를 연 사람에게 이 악보가 그대로 열립니다
@@ -919,47 +964,6 @@
           <button type="button" id="staffZoomOut" class="icon-btn" title="작게">−</button>
           <span id="staffZoomVal">100%</span>
           <button type="button" id="staffZoomIn" class="icon-btn" title="크게">+</button>
-          <!-- 출력 — 오선보를 밖으로 내보내는 길을 한자리에 모은 메뉴(.tb-menu, wireTopMenu).
-               예전엔 [파일로](MusicXML) 하나뿐이었는데 인쇄·PNG가 붙으면서 머리줄이 버튼
-               넷으로 불었다. 이름이 '뽑기'였던 것을 '출력'으로 고쳤다(2026-08-15 사용자 요청) —
-               인쇄·PNG·파일을 함께 덮는 말이라야 하고, 앱의 다른 자리('인쇄')와도 결이 맞는다.
-               코드 식별자(staffOut*)는 그대로 둔다 — 표시 이름과 식별자를 가르는 이 리포의 관례. 자주 안 쓰는 명령은 늘어놓지 말고 접는다는 상단바 규칙과 같다.
-               '나란히'는 정간보와 오선보를 한 장에 앉힌다. **놓는 방향이 종이 방향을 정한다**
-               (2026-08-16 사용자 요청): 좌우면 가로로 긴 종이·위아래면 세로로 긴 종이라야
-               반쪽이 안 찌그러진다. 사용자의 종이 크기는 그대로 쓰고 방향만 돌린다.
-               좌우 = 왼쪽 오선보·오른쪽 정간보(정간보가 오른쪽에서 시작해 왼쪽으로 읽으므로),
-               위아래 = 위 정간보·아래 오선보(먼저 읽는 것을 위에). -->
-          <span id="staffOutBox">
-            <button type="button" id="staffOutToggle" class="tip"
-              data-tip="오선보를 파일·종이로 출력
-· MusicXML은 뮤즈스코어·피날레·시벨리우스에서 열립니다
-· 인쇄·PNG는 정간보와 같은 종이 크기·여백을 씁니다">출력 ▾</button>
-            <div id="staffOutPop" class="tb-menu">
-              <!-- 인쇄 오선 크기 — **뽑을 때만 쓰는 값**이라 머리줄이 아니라 이 메뉴 안에 둔다
-                   (머리줄은 화면에서 보며 고치는 칸들 자리다). 조판에서 악보 크기를 말하는
-                   단위가 '오선 한 칸 몇 mm'이므로 그 말로 적는다 — 표준은 1.75mm(Behind Bars).
-                   예전엔 2.19mm 고정이라 표준보다 25% 컸고, 각이 긴 곡에서 종이가 모자라
-                   음표머리가 겹쳤다(2026-08-16 실측). **문서에 딸린 값**이라 CTRL_IDS에 있다. -->
-              <label class="tb-menu-field">오선 크기
-                <select id="staffPrintSize">
-                  <option value="small">작게 (1.4mm)</option>
-                  <option value="normal" selected>보통 (1.75mm)</option>
-                  <option value="large">크게 (2.2mm)</option>
-                </select>
-              </label>
-              <hr>
-              <button type="button" id="staffExport">MusicXML 파일로</button>
-              <hr>
-              <button type="button" id="staffPrint">오선보만 인쇄</button>
-              <button type="button" id="staffPng">오선보만 PNG</button>
-              <hr>
-              <button type="button" id="staffPrintSide">좌우로 나란히 인쇄</button>
-              <button type="button" id="staffPngSide">좌우로 나란히 PNG</button>
-              <hr>
-              <button type="button" id="staffPrintSideTB">위아래로 나란히 인쇄</button>
-              <button type="button" id="staffPngSideTB">위아래로 나란히 PNG</button>
-            </div>
-          </span>
           <button type="button" id="staffClose" class="icon-btn" title="닫기">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>

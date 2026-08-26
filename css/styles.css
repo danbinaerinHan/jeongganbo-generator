@@ -255,7 +255,13 @@
                             white-space: nowrap; }
   .tb-menu .tb-menu-field select { font-size: 12px; padding: 2px 18px 2px 5px;
                                    background-position: right 5px center; background-size: 10px; }
-  #staffOutPop { min-width: 216px; }
+  /* 고르는 칸이 든 메뉴는 최소 폭을 준다 — 라벨+칸이 가장 긴 명령 이름보다 넓어 두 줄로
+     갈렸다. 출력 메뉴(#outPop)가 그 칸을 둘 갖는다(방향·오선 크기). */
+  #outPop { min-width: 216px; }
+  /* 메뉴 안 묶음 이름표 — '무엇을 뽑나'(정간보 / 오선보 / 나란히)로 가른 세 묶음의 머리.
+     명령 버튼과 성격이 다르므로 메타 라벨 어휘(작게·옅게·자간)로 둔다. */
+  .tb-menu .tb-menu-cap { padding: 6px 12px 3px; font-size: 10.5px; font-weight: 700;
+                          color: var(--muted); letter-spacing: .06em; }
   /* 위험 명령(전체 초기화) — 글자만 위험색, 호버에서 옅은 위험 배경 */
   .tb-menu .danger { color: var(--danger-2); }
   .tb-menu .danger:hover { background: var(--danger-soft); }
@@ -264,7 +270,7 @@
   /* relative: 오선보 [뽑기] 메뉴의 기준점. 이게 없으면 .tb-menu의 top:100%가 엉뚱한 조상을
      기준으로 재어 메뉴가 화면 아래로 떨어져 **열려도 안 보인다**(2026-08-14 사용자 제보).
      .tb-menu를 새로 놓을 땐 감싼 상자에 이 줄을 꼭 함께 둘 것. */
-  #staffOutBox { position: relative; }
+
   /* 화면 메뉴에서 지금 쓰는 테마 표시 — '선택된 옵션 바탕' 변수 그대로 */
   #screenPop button.sel { background: var(--accent-tint); }
   @media print { .tb-menu { display: none !important; } }
@@ -630,7 +636,6 @@
   .staff-tools { margin-left: auto; display: flex; align-items: center; gap: 4px; }
   .staff-tools #staffZoomVal { font-size: 11px; color: var(--muted); min-width: 34px;
                                text-align: center; }
-  .staff-tools #staffExport { font-size: 11px; padding: 3px 8px; }
   /* 정간 = 점4분음표/4분음표 고르기. 폼 컨트롤 바탕·글자·포커스는 파일 앞쪽 공통 규칙에
      맡긴다(여기서 다시 칠하면 다크모드 값만 어긋난다 — 기호 검색칸에서 그랬다). */
   .staff-unit { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
