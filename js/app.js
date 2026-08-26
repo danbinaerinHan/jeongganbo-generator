@@ -8987,7 +8987,8 @@
     if (direct) {
       // #leftDock은 위쪽 배치에선 display:contents(없는 셈), 왼쪽 도킹에선 세로 열이 된다
       const ld = $("leftDock");
-      if (ribbon.parentNode !== ld) ld.appendChild(ribbon);
+      // 레일은 늘 **맨 앞** — 그 뒤가 펼침 패널(#dockPanel)이다
+      if (ribbon.parentNode !== ld) ld.insertBefore(ribbon, ld.firstChild);
     } else {
       const dock = $("editorDock");
       const dockBody = dock.querySelector(".dock-body");
@@ -9037,8 +9038,9 @@
   // 손잡이(#leftDockResizer)를 끌면 정해지고, 더블클릭하면 자동으로 돌아간다.
   let leftDockW = null;
   const LEFTDOCK_MIN = 240;   // 최소 가로폭 보장
+  // 사용자가 끌어 정한 폭은 **펼침 패널**이 갖는다 — 레일은 늘 같은 폭이라 조절할 것이 없다.
   function applyLeftDockW() {
-    const ld = $("leftDock");
+    const ld = $("dockPanel");
     if (!ld) return;
     if (typeof leftDockW === "number") {
       document.body.classList.add("leftdock-custom");
@@ -9055,7 +9057,7 @@
       e.preventDefault();
       rz.classList.add("dragging");
       const startX = e.clientX;
-      const startW = $("leftDock").getBoundingClientRect().width;
+      const startW = $("dockPanel").getBoundingClientRect().width;
       function move(ev) {
         const maxW = Math.max(LEFTDOCK_MIN, window.innerWidth * 0.6);
         leftDockW = Math.round(Math.max(LEFTDOCK_MIN, Math.min(maxW, startW + (ev.clientX - startX))));
@@ -9078,12 +9080,16 @@
     w.parentNode.insertBefore(ph, w);
     DIRECT_WIN_HOME.set(w, ph);
   });
+  // 왼쪽 도킹에서 열린 도구창을 **펼침 패널(#dockPanel)** 로 옮긴다.
+  // 예전엔 기능바 **안**에 넣고 flex order로 자리를 잡았는데, 기능바가 아이콘 레일이 되며
+  // (2026-08-26) 레일과 패널이 나란한 두 칸이 됐다 — 창은 레일이 아니라 그 옆 칸에 산다.
+  // 패널이 비면 CSS가 숨기므로 평소에는 레일 폭(72px)만 차지한다.
   function dockDirectWins() {
     const leftMode = document.body.classList.contains("ribbon-left");
+    const panel = $("dockPanel");
     document.querySelectorAll(".direct-win").forEach(function (w) {
       if (leftMode && w.classList.contains("win-open")) {
-        // 기능바 안으로 넣는다 — 실제 위치(입력 그룹 바로 아래)는 CSS flex order가 잡는다.
-        if (w.parentNode !== $("melodyRibbon")) $("melodyRibbon").appendChild(w);
+        if (panel && w.parentNode !== panel) panel.appendChild(w);
         // 떠 있을 때 끌어둔 인라인 좌표는 도킹(position:relative)에서 어긋남 유발 — 지운다
         w.style.top = ""; w.style.left = "";
       } else {
@@ -9091,6 +9097,9 @@
         if (ph && w.previousSibling !== ph) ph.parentNode.insertBefore(w, ph.nextSibling);
       }
     });
+    // 폭 조절 손잡이는 패널이 떠 있을 때만 뜻이 있다(레일 폭은 고정)
+    document.body.classList.toggle("dock-panel-open",
+      leftMode && !!(panel && panel.children.length));
   }
   function applyRibbonPos() {
     const left = inputMode === "direct" && ribbonPos === "left";
