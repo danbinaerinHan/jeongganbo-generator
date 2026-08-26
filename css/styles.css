@@ -574,6 +574,13 @@
   #newDocModal .at-add { border-radius: 0; background: var(--panel);
                          border-color: var(--line); color: var(--ink); }
   #newDocModal .at-add:hover { border-color: var(--muted); background: var(--hover); }
+  /* 악기 편성 줄 — 곡 제목 줄(#ndTitle + #ndTitleLayout)과 같은 짜임: 고르는 칸은 고정 폭,
+     글자 칸이 남는 폭을 갖는다. `.field select`가 width:100%라 그냥 두면 악기 칸이 혼자
+     한 줄을 다 먹고 이름 칸과 ✕가 아래로 접힌다(2026-08-26 실측). */
+  #ndParts .tx-item { flex-wrap: nowrap; gap: 6px; padding: 5px 0; }
+  #ndParts .tx-item select { flex: 0 0 96px; width: 96px; }
+  #ndParts .tx-item input[type="text"] { flex: 1 1 auto; min-width: 0; width: auto; }
+  #ndParts .tx-item .tx-del { flex: 0 0 auto; }
 
   .btns { display: flex; gap: 6px; margin-top: 10px; }
   .btns button {
@@ -1019,9 +1026,14 @@
   .mgr-win .dock-panel-grip { display: flex; }   /* 그립은 입력 방식과 무관하게 늘 보인다 */
   .mgr-win .melody-head { flex: 0 0 auto; }      /* 세로 flex 창 머리줄 필수 규칙 */
   .parts-hint { font-size: 11.5px; color: var(--muted); margin: 2px 0 8px; }
-  .part-item .part-name { flex: 1 1 auto; min-width: 0; width: auto; }
-  .part-item .part-abbr { flex: 0 0 auto; width: 52px; }   /* 총보 둘째 줄부터 붙는 약어 */
-  .part-item .part-inst { flex: 0 0 auto; }
+  /* 한 악기 = 한 줄. **선택자에 input[type=text]를 함께 적어야** 한다 — 위 .tx-item
+     input[type="text"](150px)이 클래스 하나 + 속성이라 `.part-item .part-abbr`(클래스 둘)를
+     이기고, 그러면 약어 칸이 150px로 부풀어 창 오른쪽 끝까지 뻗고 악기·버튼이 통째로 다음
+     줄로 접힌다(2026-08-26 실측: 줄 높이 79px). 남는 폭은 이름 칸만 갖는다. */
+  .tx-item.part-item { flex-wrap: nowrap; gap: 6px; }
+  .part-item input[type="text"].part-name { flex: 1 1 auto; min-width: 56px; width: auto; }
+  .part-item input[type="text"].part-abbr { flex: 0 0 52px; width: 52px; }   /* 총보 둘째 줄부터 붙는 약어 */
+  .part-item .part-inst { flex: 0 0 auto; max-width: 92px; }
   /* 지금 편집하는 파트 행 — 색만 살짝, 테두리 반경은 행 안쪽 여백과 맞춘다 */
   .part-item.active { background: var(--accent-tint); border-radius: 8px; }
   .parts-foot { margin-top: 10px; flex: 0 0 auto; }
@@ -1512,8 +1524,11 @@
                                 border-radius: 6px; font-family: inherit; font-size: 13px; }
   .tx-item label { display: flex; align-items: center; gap: 5px;
                    font-size: 11px; color: var(--muted); white-space: nowrap; }
+  /* background(단축)이 아니라 background-color — 단축으로 적으면 위 `select` 규칙이 깔아 둔
+     화살표 아이콘(background-image)까지 함께 지워져 고르는 칸이 글자 칸처럼 보인다. */
   .tx-item select, .tx-item input[type="number"] { padding: 4px 6px; border: 1px solid var(--line);
-                   border-radius: 6px; font-family: inherit; font-size: 12px; background: var(--panel); }
+                   border-radius: 6px; font-family: inherit; font-size: 12px; background-color: var(--panel); }
+  .tx-item select { padding-right: 24px; }   /* 오른쪽 9px에 앉는 12px 화살표 자리 */
   .tx-item input[type="number"] { width: 58px; }
   .tx-item .tx-del { border: none; background: none; color: var(--danger); cursor: pointer;
                      font-size: 16px; line-height: 1; padding: 2px 6px; }
