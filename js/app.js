@@ -114,9 +114,56 @@
   // 구간 지우기·정간 서식 같은 정간 도구는 mel일 때만 산다(hasMelSel).
   let melSelLane = "mel";                    // "mel" | "ly"
   let lyDragFrom = null;                     // 곁줄에서 누른 자리 — 번져야(드래그) 선택이 된다
-  function hasSel() { return !!(melSelStart && melSelEnd); }
+  // **떨어져 있는 자리도 함께 고를 수 있다**(⌘/Ctrl+클릭·드래그, 2026-08-26 사용자 요청).
+  // 흩어진 칸에 배경색·굵은 줄을 입힐 때 한 번씩 따로 하지 않아도 되게 한 것.
+  // 담는 꼴은 **'이어진 구간의 목록'**이지 '칸의 집합'이 아니다 — 합치기·없애기가 '구간의
+  // 안쪽 가로줄'을 다루므로(sidesForCellInRange의 seq === hi) 어디까지가 한 덩이인지를
+  // 잃으면 그 셈이 무너진다. 지금 끌고 있는 구간은 melSelStart~End 그대로이고,
+  // 앞서 담아 둔 것들만 여기 쌓인다.
+  let melSelRanges = [];                     // [{lo,hi}] — 먼저 담아 둔 구간들(같은 줄만)
+  let melSelAdd = false;                     // 이번 제스처가 '더하기'(⌘/Ctrl)로 시작했나
+  function hasSel() { return !!(melSelStart && melSelEnd) || melSelRanges.length > 0; }
   function hasMelSel() { return hasSel() && melSelLane === "mel"; }
-  function clearSel() { melSelStart = null; melSelEnd = null; melSelLane = "mel"; lyDragFrom = null; }
+  function clearSel() {
+    melSelStart = null; melSelEnd = null; melSelLane = "mel"; lyDragFrom = null;
+    melSelRanges = []; melSelAdd = false;
+  }
+  // 고른 구간 전부 — 담아 둔 것 + 지금 끌고 있는 것. 겹치거나 맞닿는 것은 하나로 합쳐
+  // 순서대로 준다(합쳐야 '안쪽 가로줄' 셈이 이어진 덩이 하나로 맞는다).
+  function selRangeList() {
+    const rs = melSelRanges.slice();
+    if (melSelStart && melSelEnd) {
+      const a = melCellSeq(melSelStart.gi, melSelStart.ci);
+      const b = melCellSeq(melSelEnd.gi, melSelEnd.ci);
+      rs.push({ lo: Math.min(a, b), hi: Math.max(a, b) });
+    }
+    rs.sort(function (x, y) { return x.lo - y.lo; });
+    const out = [];
+    rs.forEach(function (r) {
+      const last = out[out.length - 1];
+      if (last && r.lo <= last.hi + 1) last.hi = Math.max(last.hi, r.hi);
+      else out.push({ lo: r.lo, hi: r.hi });
+    });
+    return out;
+  }
+  // 곁줄 구간을 새로 잡기 직전 — 더하기(⌘/Ctrl)면 앞서 고른 것을 담아 두고, 아니면 비운다.
+  // 정간 mousedown이 하는 일과 같되 곁줄은 '번진 뒤에야' 굳히므로 그 자리에서 부른다.
+  function beginLySel() {
+    if (melSelAdd && melSelLane === "ly" && melSelStart && melSelEnd) {
+      const a = melCellSeq(melSelStart.gi, melSelStart.ci);
+      const b = melCellSeq(melSelEnd.gi, melSelEnd.ci);
+      melSelRanges.push({ lo: Math.min(a, b), hi: Math.max(a, b) });
+    } else {
+      melSelRanges = [];
+    }
+    melSelLane = "ly";
+  }
+  // 고른 칸의 순서 번호 — 하이라이트가 '이 칸이 골라졌나'를 물을 때 쓴다
+  function selSeqSet() {
+    const s = new Set();
+    selRangeList().forEach(function (r) { for (let q = r.lo; q <= r.hi; q++) s.add(q); });
+    return s;
+  }
   // 셀 서식 모드인지 — 직접 입력에선 셀 서식 도구창이 떠 있을 때(.win-open), 에디터에선
   // 셀 서식 레일 탭이 활성일 때(.active). 이 모드에선 정간 클릭이 '내용 편집'(노란 입력창)이
   // 아니라 '서식 적용 대상 선택'이 된다 — 한 칸 클릭도, 여러 칸 드래그도 전부 선택.
@@ -945,9 +992,13 @@
   }
   // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi) 안의 음·시김새를 모두 지운다(빈 정간으로).
   // 매 렌더마다 전역 스냅샷(saveState)이 남으므로 전역 되돌리기(Cmd/Ctrl+Z)로 복구할 수 있다.
-  function clearMelodyRange(startGi, startCi, endGi, endCi) {
-    const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
-    const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+  // 고른 구간이 여럿일 수 있으므로(⌘/Ctrl+클릭) **구간 하나를 받는 속알맹이**와
+  // **고른 것 전부를 도는 껍데기**를 나눈다 — 껍데기가 마지막에 한 번만 다시 그린다.
+  function clearMelodySel() {
+    selRangeList().forEach(function (r) { clearMelodySeq(r.lo, r.hi); });
+    render();
+  }
+  function clearMelodySeq(lo, hi) {
     const rows = parseMelodyOffsets(melodyFull).map(function (g) { return g.map(function (c) { return c.text; }); });
     let changed = false;
     for (let gi = 0; gi < rows.length; gi++) {
@@ -961,7 +1012,6 @@
       melodyFull = rows.map(function (g) { return g.join(" | "); }).join("\n");
       refreshEditorSlices();
     }
-    render();
   }
 
   // ---------- 구간 복사 / 오려두기 / 붙여넣기 ----------
@@ -975,11 +1025,19 @@
   let lyClip = null;    // 곁줄: [글자] — 같은 순서
 
   // 줄을 안 가리는 구간(단축키 핸들러가 lane을 보고 갈라 쓴다)
+  // 고른 것 전체를 감싸는 한 구간 — **붙여넣기 닻(첫 칸)**을 잡는 데 쓴다.
+  // 흩어져 골랐어도 붙여넣기는 가장 앞 칸부터 **연속으로** 덮는다(구멍을 건너뛰며 붙이면
+  // 무엇이 어디로 갈지 눈으로 셀 수가 없다).
   function selRange() {
-    if (!hasSel()) return null;
-    const a = melCellSeq(melSelStart.gi, melSelStart.ci);
-    const b = melCellSeq(melSelEnd.gi, melSelEnd.ci);
-    return { lo: Math.min(a, b), hi: Math.max(a, b) };
+    const rs = selRangeList();
+    if (!rs.length) return null;
+    return { lo: rs[0].lo, hi: rs[rs.length - 1].hi };
+  }
+  // 고른 칸을 순서대로 편 배열(구멍은 건너뛴다) — 복사·오려두기가 담는 차례가 이것이다
+  function selSeqs() {
+    const out = [];
+    selRangeList().forEach(function (r) { for (let q = r.lo; q <= r.hi; q++) out.push(q); });
+    return out;
   }
   function melSelRange() { return hasMelSel() ? selRange() : null; }
   function seqToCell(seq) {
@@ -1007,9 +1065,14 @@
   // start 자리부터 cells를 차례로 덮어쓴다. 악보 끝을 넘는 몫은 조용히 버린다 — 각을 새로
   // 만들며 늘리면 붙여넣기가 '구조를 바꾸는 일'이 되어 페이지 배치까지 흔들린다.
   function pasteMelCells(start, cells) {
+    pasteMelAt(cells.map(function (_c, k) { return start + k; }), cells);
+  }
+  // seqs[i] 자리에 cells[i]를 쓴다 — 붙여넣기는 이어진 자리를, 오려두기는 고른 자리
+  // 그대로(구멍을 건너뛰며)를 준다.
+  function pasteMelAt(seqs, cells) {
     const melRows = cellTextRows(melodyFull);
     cells.forEach(function (cell, k) {
-      const p = seqToCell(start + k);
+      const p = seqToCell(seqs[k]);
       if (p.gi >= melRows.length) return;               // 악보 끝을 넘는 몫
       while (melRows[p.gi].length < beatsAt(p.gi)) melRows[p.gi].push("");
       melRows[p.gi][p.ci] = cell.mel;
@@ -1029,30 +1092,33 @@
     refreshEditorSlices();
   }
   function copyMelRange(cut) {
-    const r = melSelRange();
-    if (!r) return false;
+    if (!hasMelSel()) return false;
+    const seqs = selSeqs();
+    if (!seqs.length) return false;
     const mel = cellTextRows(melodyFull);
-    const cells = [];
-    for (let seq = r.lo; seq <= r.hi; seq++) {
+    const cells = seqs.map(function (seq) {
       const p = seqToCell(seq);
-      cells.push({
+      return {
         mel: (mel[p.gi] && mel[p.gi][p.ci]) || "",
         style: cloneCellStyle(cellStyles[p.gi] && cellStyles[p.gi][p.ci])
-      });
-    }
+      };
+    });
     melClip = cells;
-    // 오려두기 = 복사 + 그 자리를 빈 칸으로 덮기(같은 길에 빈 것을 붙이는 셈)
-    if (cut) pasteMelCells(r.lo, cells.map(function () { return { mel: "", style: null }; }));
+    // 오려두기 = 복사 + **고른 그 자리들**을 빈 칸으로 덮기(흩어져 골랐으면 구멍은 그대로 둔다)
+    if (cut) pasteMelAt(seqs, cells.map(function () { return { mel: "", style: null }; }));
     return true;
   }
   // 곁줄은 글자뿐이라 담을 것도 글자 하나뿐이다. 붙일 자리에 줄이 아직 없을 수도 있어
   // (내용 없이 시작한 악보) 넣을 게 있거나 이미 있을 때만 칸을 만든다.
   function pasteLyCells(start, cells) {
+    pasteLyAt(cells.map(function (_c, k) { return start + k; }), cells);
+  }
+  function pasteLyAt(seqs, cells) {
     const lyRows = cellTextRows(lyricsFull);
     const nGak = cellTextRows(melodyFull).length;
     let touched = false;
     cells.forEach(function (txt, k) {
-      const p = seqToCell(start + k);
+      const p = seqToCell(seqs[k]);
       if (p.gi >= nGak) return;                          // 악보 끝을 넘는 몫
       if (!txt && !(lyRows[p.gi] && lyRows[p.gi][p.ci])) return;
       while (lyRows.length <= p.gi) lyRows.push([]);
@@ -1065,16 +1131,16 @@
     refreshEditorSlices();
   }
   function copyLyRange(cut) {
-    const r = selRange();
-    if (!r || melSelLane !== "ly") return false;
+    if (melSelLane !== "ly") return false;
+    const seqs = selSeqs();
+    if (!seqs.length) return false;
     const ly = cellTextRows(lyricsFull);
-    const cells = [];
-    for (let seq = r.lo; seq <= r.hi; seq++) {
+    const cells = seqs.map(function (seq) {
       const p = seqToCell(seq);
-      cells.push((ly[p.gi] && ly[p.gi][p.ci]) || "");
-    }
+      return (ly[p.gi] && ly[p.gi][p.ci]) || "";
+    });
     lyClip = cells;
-    if (cut) pasteLyCells(r.lo, cells.map(function () { return ""; }));
+    if (cut) pasteLyAt(seqs, cells.map(function () { return ""; }));
     return true;
   }
 
@@ -1093,9 +1159,11 @@
   // 드래그로 고른 구간(startGi,startCi)~(endGi,endCi)의 정간마다 배경색을 적용(color가 null이면 지움).
   // 멜로디 전용 되돌리기 스택은 건드리지 않는다 — saveState()가 렌더마다 전체 상태를 스냅샷하므로
   // 앱 전체 되돌리기(Cmd/Ctrl+Z)가 색 변경도 그대로 커버한다.
-  function applyCellFillRange(startGi, startCi, endGi, endCi, color) {
-    const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
-    const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+  function applyCellFillSel(color) {
+    selRangeList().forEach(function (r) { applyCellFillSeq(r.lo, r.hi, color); });
+    render();
+  }
+  function applyCellFillSeq(lo, hi, color) {
     Object.keys(cellGeom).forEach(function (giKey) {
       const gi = parseInt(giKey, 10);
       Object.keys(cellGeom[gi]).forEach(function (ciKey) {
@@ -1110,7 +1178,6 @@
         }
       });
     });
-    render();
   }
   // 드래그로 고른 구간에서, 정간 하나의 순서 위치(seq)에 따라 어느 변을 건드릴지 계산.
   // 모드 넷뿐이다(예전 프리셋 '전체/바깥쪽'은 좌우를 건드려서 없앴다):
@@ -1131,9 +1198,14 @@
   }
   // 드래그로 고른 구간의 정간마다 테두리를 적용(또는 지움).
   // 칠하기: spec = { width, style }. 지우기: spec = null (계산된 변만 지움).
-  function applyCellBorderRange(startGi, startCi, endGi, endCi, spec, mode) {
-    const lo = Math.min(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
-    const hi = Math.max(melCellSeq(startGi, startCi), melCellSeq(endGi, endCi));
+  // **구간마다 따로 돈다** — 합치기·없애기의 '안쪽 가로줄'은 이어진 한 덩이 안의 이야기라
+  // (sidesForCellInRange의 seq === hi), 흩어진 선택을 한 구간으로 뭉뚱그리면 그 사이의
+  // 안 고른 칸까지 덩이에 끌려든다.
+  function applyCellBorderSel(spec, mode) {
+    selRangeList().forEach(function (r) { applyCellBorderSeq(r.lo, r.hi, spec, mode); });
+    render();
+  }
+  function applyCellBorderSeq(lo, hi, spec, mode) {
     Object.keys(cellGeom).forEach(function (giKey) {
       const gi = parseInt(giKey, 10);
       Object.keys(cellGeom[gi]).forEach(function (ciKey) {
@@ -1155,7 +1227,6 @@
         pruneCellStyleEntry(gi, ci);
       });
     });
-    render();
   }
   // 이중선의 안쪽 줄이 격자선에서 칸 안쪽으로 떨어지는 거리(선 중심 기준)
   // — 굵기에 비례하되 얇아도 흰 틈이 또렷이 보이게 최소값을 둔다
@@ -4734,6 +4805,16 @@
                 // 기본 동작: 아직 클릭인지 드래그인지 모름 — mouseup에서 판가름한다
                 // (다른 칸으로 번지면 드래그로 확정, 안 번기면 그냥 클릭 → 이 칸을 편집)
                 melSelActive = true; melSelDidDrag = false;
+                // ⌘/Ctrl을 누른 채면 **앞서 고른 것을 담아 두고** 하나 더 고른다.
+                // 줄이 다르면(정간↔곁줄) 섞지 않고 처음부터 다시 고른다.
+                melSelAdd = (e.metaKey || e.ctrlKey);
+                if (melSelAdd && melSelLane === "mel" && melSelStart && melSelEnd) {
+                  const a = melCellSeq(melSelStart.gi, melSelStart.ci);
+                  const b = melCellSeq(melSelEnd.gi, melSelEnd.ci);
+                  melSelRanges.push({ lo: Math.min(a, b), hi: Math.max(a, b) });
+                } else if (!melSelAdd || melSelLane !== "mel") {
+                  melSelRanges = [];
+                }
                 melSelLane = "mel"; lyDragFrom = null;
                 melSelStart = { gi: gi, ci: ci }; melSelEnd = { gi: gi, ci: ci };
                 render();
@@ -4996,11 +5077,13 @@
                   e.preventDefault();
                   if (ornEditMode) return;
                   melSelActive = true; melSelDidDrag = false;
+                  melSelAdd = (e.metaKey || e.ctrlKey);
                   lyDragFrom = { gi: gi, ci: ci };
                 });
                 lyHit.addEventListener("mouseenter", function () {
                   if (!melSelActive || !lyDragFrom) return;
-                  melSelDidDrag = true; melSelLane = "ly";
+                  if (!melSelDidDrag) beginLySel();
+                  melSelDidDrag = true;
                   melSelStart = lyDragFrom; melSelEnd = { gi: gi, ci: ci };
                   render();
                 });
@@ -5333,16 +5416,16 @@
     // 구간 선택 — 드래그로 고르면(또는 고른 뒤에도 계속) 옅은 파란색으로 표시.
     // 고른 줄(melSelLane)의 좌표표를 본다: 정간이면 cellGeom, 곁줄이면 lyGeom.
     // 구간 지우기·셀 서식 칠하기/지우기 버튼은 정간 구간일 때만 산다(hasMelSel).
-    if (melSelStart && melSelEnd) {
-      const lo = Math.min(melCellSeq(melSelStart.gi, melSelStart.ci), melCellSeq(melSelEnd.gi, melSelEnd.ci));
-      const hi = Math.max(melCellSeq(melSelStart.gi, melSelStart.ci), melCellSeq(melSelEnd.gi, melSelEnd.ci));
+    if (hasSel()) {
+      // 떨어져 있는 구간도 함께 고를 수 있으므로 '이 칸이 골라졌나'를 집합에 묻는다
+      const picked = selSeqSet();
       const selGeom = melSelLane === "ly" ? lyGeom : cellGeom;
       Object.keys(selGeom).forEach(function (giKey) {
         const gi = parseInt(giKey, 10);
         const row = selGeom[gi];
         Object.keys(row).forEach(function (ciKey) {
           const ci = parseInt(ciKey, 10);
-          if (melCellSeq(gi, ci) < lo || melCellSeq(gi, ci) > hi) return;
+          if (!picked.has(melCellSeq(gi, ci))) return;
           const cg = row[ci];
           const svg = pageSvgs[cg.page]; if (!svg) return;
           // pointer-events none — 이 표시는 클릭 영역보다 **뒤에** 생기므로 그냥 두면
@@ -6801,6 +6884,38 @@
     a.download = (($("title").value || "").trim() || "정간보") + ".musicxml";
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+  // MEI 내보내기 — **조판기가 이미 안에서 MusicXML을 MEI로 바꿔** 그리고 있으므로
+  // (오선보 보기 절 참고: Verovio에 MusicXML을 그대로 먹인다), 그 결과를 `getMEI()`로
+  // 되받아 적기만 하면 된다. 옮겨 적는 셈이 한 벌도 새로 안 생긴다 —
+  // **musicxml.js 옆에 MEI 생성기를 따로 만들지 말 것.**
+  // 실측(늴리리야, Verovio 6.2): MusicXML 42,980자 → MEI 35,036자, RNG 스키마 선언 포함.
+  // 조판기가 없으면(못 불러왔을 때) 이 길만 막히고 나머지 출력은 그대로다.
+  function exportMei() {
+    const btn = $("btnMei");
+    if (btn) { btn.disabled = true; btn.textContent = "MEI 만드는 중…"; }
+    vrvReady().then(function (tk) {
+      if (btn) { btn.disabled = false; btn.textContent = "MEI 파일"; }
+      if (!tk) { alert("MEI로 내보내려면 오선보 조판기가 있어야 하는데 불러오지 못했습니다."); return; }
+      let mei = "";
+      try {
+        if (!tk.loadData(buildMusicXml())) throw new Error("조판기가 이 악보를 읽지 못했습니다");
+        mei = tk.getMEI({});
+      } catch (err) {
+        alert("MEI로 내보내지 못했습니다 — " + ((err && err.message) || err));
+        return;
+      }
+      track("export_mei");
+      const blob = new Blob([mei], { type: "application/xml" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = (($("title").value || "").trim() || "정간보") + ".mei";
+      a.click();
+      URL.revokeObjectURL(a.href);
+      // 조판기에 실어 둔 악보가 이 셈으로 바뀌었으니 화면 오선보를 다시 그린다
+      // (열려 있지 않으면 scheduleStaff가 스스로 물러난다).
+      scheduleStaff();
+    });
   }
   // 검증용 노출 (jgbShareLink·jgbAudioEvents와 같은 성격)
   window.jgbMusicXml = buildMusicXml;
@@ -8621,7 +8736,7 @@
   // 있어야 동작하고, 없으면 아무 일도 안 한다(refreshMelSelBtns가 매 렌더 disabled 처리).
   $("rangeClearToggle").addEventListener("click", function () {
     if (!hasMelSel()) return;
-    clearMelodyRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci);
+    clearMelodySel();
   });
   // 구간 복사·오려두기·붙여넣기 (⌘/Ctrl+C·X·V) — 드래그로 고른 구간이 대상이고,
   // 붙여넣기는 **고른 구간의 첫 칸부터** 덮어쓴다. 버튼은 두지 않기로 했다.
@@ -8646,6 +8761,8 @@
       // 악보 전체의 마지막 정간 번호 — 각 길이가 섞이면 각 수×정간 수로는 못 센다
       const lastSeq = Math.max(0, gakCellOffset(parseMelodyOffsets(melodyFull).length) - 1);
       const end = Math.min(r.lo + clip.length - 1, lastSeq);
+      // 붙인 자리만 보이게 — 흩어져 골라 두었던 것은 여기서 걷는다
+      melSelRanges = [];
       melSelStart = seqToCell(r.lo); melSelEnd = seqToCell(end);
       if (lane === "ly") pasteLyCells(r.lo, clip); else pasteMelCells(r.lo, clip);
       return;
@@ -8658,12 +8775,12 @@
   // 칠해도 칠하기/지우기 버튼 자체는 서로 안 헷갈리게 분리해둔다.
   $("cellFillPaintToggle").addEventListener("click", function () {
     if (!hasMelSel()) return;
-    applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, cellStylePendingColor);
+    applyCellFillSel(cellStylePendingColor);
   });
   // 버튼은 전부 '즉시 실행' — 악보에서 정간을 먼저 드래그로 고른 뒤 누르면 바로 적용된다.
   function applyBorderToSelection(spec, mode) {
     if (!hasMelSel()) return;
-    applyCellBorderRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, spec, mode);
+    applyCellBorderSel(spec, mode);
   }
   $("cellStyleColorPicker").addEventListener("change", function () {
     cellStylePendingColor = $("cellStyleColorPicker").value;
@@ -8708,7 +8825,7 @@
   // 물고 있는 좌우 테두리를 걷어낼 유일한 길이라 일부러 'all'이다.
   $("cellStyleResetBtn").addEventListener("click", function () {
     if (!hasMelSel()) return;
-    applyCellFillRange(melSelStart.gi, melSelStart.ci, melSelEnd.gi, melSelEnd.ci, null);
+    applyCellFillSel(null);
     applyBorderToSelection(null, "all");
   });
   // 정간 구간 선택 — 드래그(다른 칸으로 번짐)로 확정되면 선택을 유지, 안 번지면(그냥 클릭)
@@ -8723,11 +8840,12 @@
     // 새 요소에 떨어져 편집이 안 열린다). 선택 모드에선 그 한 칸을 고른다.
     if (lyDragFrom && !melSelDidDrag) {
       const from = lyDragFrom; lyDragFrom = null;
-      if (selectModeOn()) { melSelLane = "ly"; melSelStart = from; melSelEnd = from; render(); }
+      if (selectModeOn()) { beginLySel(); melSelStart = from; melSelEnd = from; render(); }
       return;
     }
     lyDragFrom = null;
-    if (!melSelDidDrag && !selectModeOn()) {
+    // ⌘/Ctrl+클릭은 입력 모드에서도 '하나 더 고르기'다 — 편집칸을 열지 않는다
+    if (!melSelDidDrag && !selectModeOn() && !melSelAdd) {
       const s = melSelStart;
       melSelStart = null; melSelEnd = null;
       render();
@@ -9126,6 +9244,7 @@
   });
   $("btnExport").addEventListener("click", exportFile);
   $("btnMusicXml").addEventListener("click", exportMusicXml);
+  if ($("btnMei")) $("btnMei").addEventListener("click", exportMei);
   $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importFile(e.target.files[0]);
@@ -9309,6 +9428,21 @@
   });
   document.querySelectorAll("#helpModal .help-tab").forEach(function (btn) {
     btn.addEventListener("click", function () { showHelpPane(btn.getAttribute("data-help")); });
+  });
+  // **?** 한 키로 단축키 표를 연다(다시 누르거나 Esc로 닫는다). 도움말 창 → '단축키' 탭
+  // 두 걸음이던 것을 한 걸음으로 — 단축키를 찾는 사람은 단축키로 찾는다.
+  // 글자를 치는 중이면 그냥 '?'를 적어야 하므로 입력칸에서는 비켜선다(⌘C·V와 같은 규칙).
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "?" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    e.preventDefault();
+    const open = $("helpModal").style.display === "flex";
+    const onKeys = document.querySelector("#helpModal .help-pane[data-help=\"keys\"].active");
+    if (open && onKeys) { closeHelpModal(); return; }
+    if (!open) openHelpModal();
+    showHelpPane("keys");
   });
   // 도해 2(정간 해부)의 시김새 표식 — 손그림 곡선 대신 실제 시김새 이미지(흘림표)를 끼운다.
   (function () {
