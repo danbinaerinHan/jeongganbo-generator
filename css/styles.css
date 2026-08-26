@@ -885,8 +885,15 @@
      참고). 기준은 창 폭이 아니라 **기능바가 실제로 받는 폭**이라야 한다 — 기능바는 #main
      안에 있어 설정 패널을 열면 330px가 빠지고 왼쪽 도킹이면 또 다르므로, @media로는 창은
      넓은데 기능바만 좁은 경우를 못 잡는다. 그래서 컨테이너 쿼리를 쓴다.
-     · 한 줄로 서는 데 드는 폭은 직접 입력 951px·에디터 545px(2026-08-25 실측) — 문턱을
-       950px로 둔 값이 그것이다. 에디터는 '입력' 그룹이 없어 이 문턱까지 갈 일이 거의 없고,
+     · 한 줄로 서는 데 드는 폭은 직접 입력 1010px·에디터 586px(2026-08-26 실측, 마우스
+       모드가 셋이 되며 다시 잼 — 예전엔 951/545였다) — 문턱을 1010px로 둔 값이 그것이다.
+       **버튼 폭·그룹을 손보면 이 값을 반드시 다시 잴 것**: 자연 한 줄 폭보다 문턱이 낮으면
+       그 사이 폭에서 flex-wrap이 먼저 제멋대로 줄을 갈라 이 규칙이 통째로 헛돈다.
+     · **곁줄이 켜진 문서는 그룹이 하나 더 붙는다**(#lyricsScaleGroup, body.want-lyrics) —
+       자연 폭이 1127px로 늘어나므로 문턱도 그만큼 올린 짝을 따로 둔다. 하나로 두면 곁줄
+       악보의 1011~1127px 구간이 예전처럼 제멋대로 갈렸다(예전 문턱 950 시절에도 곁줄
+       악보의 자연 폭은 1066이라 같은 틈이 있었다 — 이번에 함께 메운다).
+       에디터는 '입력' 그룹이 없어 이 문턱까지 갈 일이 거의 없고,
        가더라도 줄을 가를 짝(마우스|입력)이 없으므로 **직접 입력에서만** 자리를 못 박는다.
      · 왼쪽 세로 도킹은 애초에 세로로 쌓이므로 대상이 아니다(container-type도 안 준다 —
        거기서는 기능바 폭이 내용에서 나와, 인라인 크기 담기를 걸면 폭이 무너진다).
@@ -894,10 +901,15 @@
        그냥 두면 아래 줄이 왼쪽으로 튀어나온다(실측: 첫 줄 35px, 둘째 줄 9px). */
   body:not(.ribbon-left) #melodyRibbon { container-type: inline-size; }
   .rb-break { display: none; flex-basis: 100%; height: 0; }
-  @container (max-width: 950px) {
+  @container (max-width: 1010px) {
     body.input-direct .rb-break { display: block; }
     body.input-direct .rb-break-sep { display: none; }
     body.input-direct .rb-break + .ribbon-group { margin-left: 26px; }
+  }
+  @container (max-width: 1130px) {
+    body.input-direct.want-lyrics .rb-break { display: block; }
+    body.input-direct.want-lyrics .rb-break-sep { display: none; }
+    body.input-direct.want-lyrics .rb-break + .ribbon-group { margin-left: 26px; }
   }
   /* 도킹 컨트롤 묶음 — 가로 배치에선 앞쪽 아이콘, 세로 도킹에선 맨 위 한 줄(헤더).
      예전의 기능바 접기(.ribbon.collapsed)는 없앴다 — index.html 주석 참고. */

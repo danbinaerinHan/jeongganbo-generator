@@ -690,21 +690,33 @@
           <svg class="rp-top" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line></svg>
         </button>
       </div>
-      <!-- 마우스 모드 — 가장 왼쪽. 선택(클릭해서 정간 입력·편집) / 이동(악보를 잡고 끌어
-           화면을 움직임). 이동 모드에선 CSS(body.pan-mode)가 악보 클릭을 막고 손 모양 커서로
-           바꾼다. -->
+      <!-- 마우스 모드 — 가장 왼쪽. 입력(클릭해서 정간 편집) / 선택(클릭도 구역 선택) /
+           이동(악보를 잡고 끌어 화면을 움직임). 이동 모드에선 CSS(body.pan-mode)가 악보
+           클릭을 막고 손 모양 커서로 바꾼다.
+           ★ 예전엔 [선택]·[이동] 둘이었는데 그 [선택]이 하는 일은 사실 **입력**이었다
+             (툴팁도 '클릭해 입력·편집'). 진짜 구역 선택은 버튼 없는 드래그 제스처뿐이라
+             이름과 동작이 어긋나 있었고, 정간 서식 창이 열렸을 때만 '클릭=선택'이 되는
+             숨은 예외가 따로 있었다. 셋으로 가르며 그 예외가 곧 [선택] 모드가 됐다
+             (2026-08-26 사용자 확정). -->
       <div class="ribbon-group">
         <div class="rb-cap">마우스</div>
         <div class="rb-items">
-          <button type="button" id="cursorSelect" class="ribbon-btn cursor-btn tip on"
+          <button type="button" id="cursorInput" class="ribbon-btn cursor-btn tip on"
+            data-tip="입력 모드
+· 정간을 클릭해 편집합니다
+· 끌면 구역이 선택됩니다">
+            <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            <span>입력</span></button>
+          <button type="button" id="cursorSelect" class="ribbon-btn cursor-btn tip"
             data-tip="선택 모드
-· 정간을 클릭해 입력·편집">
+· 클릭도 끌기도 구역 선택입니다(편집창이 안 열립니다)
+· 정간 서식 창을 열면 저절로 이 모드가 됩니다">
             <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>
             <span>선택</span></button>
           <button type="button" id="cursorPan" class="ribbon-btn cursor-btn tip"
             data-tip="이동 모드
 · 악보를 잡고 끌어 화면을 움직입니다
-· 편집하려면 '선택'으로">
+· 편집하려면 '입력'으로">
             <svg class="cur-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg>
             <span>이동</span></button>
         </div>

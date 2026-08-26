@@ -1473,17 +1473,33 @@
     try { localStorage.setItem(DARK_LS_KEY, on ? "1" : "0"); } catch (e) {}
   });
 
-  // ---------- 마우스 모드: 선택(클릭 편집) / 이동(악보 잡고 팬) ----------
+  // ---------- 마우스 모드: 입력(클릭 편집) / 선택(클릭도 구역 선택) / 이동(악보 잡고 팬) ----------
   // 이동 모드에선 body.pan-mode가 악보 클릭을 막고(CSS), 여기서 #sheetArea를 끌어 스크롤을
   // 옮긴다. 편집 상호작용과 겹치지 않게 팬은 이동 모드에서만 동작한다.
-  function setCursorMode(pan) {
-    if (pan && cellEditInput) commitCellEditor(false);   // 편집 카드 열려 있으면 정리
-    document.body.classList.toggle("pan-mode", pan);
-    if ($("cursorSelect")) $("cursorSelect").classList.toggle("on", !pan);
+  //
+  // ★ 예전엔 [선택]·[이동] 둘이었고 그 [선택]이 하는 일은 사실 **입력**이었다. 진짜 구역
+  //   선택은 버튼 없는 드래그 제스처뿐이라 이름과 동작이 어긋났고, 정간 서식 창이 열렸을
+  //   때만 '클릭=선택'이 되는 숨은 예외(cellStyleMode)가 따로 있었다. 셋으로 가르며 그
+  //   예외가 곧 [선택] 모드가 됐다 — **정간 서식 창이 열려 있으면 모드 값과 무관하게
+  //   선택**이고(selectModeOn), 창을 닫으면 고르던 모드로 저절로 돌아간다.
+  //   모드는 '내가 지금 어떻게 만지나'라 문서에도 앱 설정에도 안 남는다(늘 입력으로 시작).
+  let cursorMode = "input";                  // "input" | "select" | "pan"
+  function selectModeOn() { return cursorMode === "select" || cellStyleMode(); }
+  function refreshCursorBtns() {
+    const pan = cursorMode === "pan", sel = !pan && selectModeOn();
+    if ($("cursorInput")) $("cursorInput").classList.toggle("on", !pan && !sel);
+    if ($("cursorSelect")) $("cursorSelect").classList.toggle("on", sel);
     if ($("cursorPan")) $("cursorPan").classList.toggle("on", pan);
   }
-  if ($("cursorSelect")) $("cursorSelect").addEventListener("click", function () { setCursorMode(false); });
-  if ($("cursorPan")) $("cursorPan").addEventListener("click", function () { setCursorMode(true); });
+  function setCursorMode(mode) {
+    if (mode !== "input" && cellEditInput) commitCellEditor(false);   // 편집 카드 열려 있으면 정리
+    cursorMode = mode;
+    document.body.classList.toggle("pan-mode", mode === "pan");
+    refreshCursorBtns();
+  }
+  if ($("cursorInput")) $("cursorInput").addEventListener("click", function () { setCursorMode("input"); });
+  if ($("cursorSelect")) $("cursorSelect").addEventListener("click", function () { setCursorMode("select"); });
+  if ($("cursorPan")) $("cursorPan").addEventListener("click", function () { setCursorMode("pan"); });
   // 악보가 화면보다 좁아 가로 스크롤 여지가 없을 땐 시트 자체를 옆으로 밀어(translate) 둘 수
   // 있게 한다 — 팔레트 창에 가리는 악보를 옆에 치워두는 용도. 줌이 바뀌면 범위 안으로 되돌림.
   // translate는 transform(scale)과 별개 속성이라 줌과 안 겹치고, #sheet의 transform 트랜지션도 안 탄다.
@@ -5342,6 +5358,10 @@
     updateHighlight();
     saveState();
     refreshMelSelBtns();
+    // 정간 서식 창을 여닫으면 마우스 모드가 따라 바뀐다(selectModeOn) — 그 사실이 버튼에
+    // 비쳐야 '왜 클릭이 편집을 안 여나'가 눈에 보인다. 창 여닫는 자리가 모드마다 달라
+    // (직접 입력=activateDirectPanel, 에디터=레일 탭) 여기 한 곳에서 맞춘다.
+    refreshCursorBtns();
 
     // 선율·장단·가사는 구조 변경(각 추가/삭제, 종이 크기 등) 시점에만 서로 맞춰지고
     // (reconcileJangdan/reconcileLyrics) 타이핑 중엔 조용히 어긋난 채로 있을 수 있다 —
@@ -8341,6 +8361,7 @@
       });
       // 곁줄 탭을 고르고 벗어날 때 빈 곁줄이 생기고 사라진다(직접 입력의 창 여닫이와 같은 규칙)
       if (lyBefore !== lyricsLaneOn()) render();
+      refreshCursorBtns();   // 정간 서식 탭을 오가면 마우스 모드가 따라 바뀐다(selectModeOn)
     });
   });
 
@@ -8367,6 +8388,7 @@
     if (gakBefore !== !!document.querySelector("#gakNameArea.win-open") ||
         txtBefore !== !!document.querySelector("#textArea.win-open") ||
         lyBefore !== lyricsLaneOn()) render();
+    refreshCursorBtns();   // 정간 서식 창을 여닫으면 마우스 모드가 따라 바뀐다(selectModeOn)
   }
   document.querySelectorAll(".win-toggle").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -8696,11 +8718,16 @@
   document.addEventListener("mouseup", function () {
     if (!melSelActive) return;
     melSelActive = false;
-    // 곁줄에서 시작한 제스처 — 번지지 않았으면(그냥 한 번 누름) **아무것도 안 건드린다**.
-    // 곁줄 편집은 더블클릭이라 여기서 다시 그리면 두 번째 눌림이 새 요소에 떨어진다.
-    if (lyDragFrom && !melSelDidDrag) { lyDragFrom = null; return; }
+    // 곁줄에서 시작한 제스처 — 번지지 않았으면(그냥 한 번 누름) 입력 모드에선
+    // **아무것도 안 건드린다**(곁줄 편집은 더블클릭이라, 여기서 다시 그리면 두 번째 눌림이
+    // 새 요소에 떨어져 편집이 안 열린다). 선택 모드에선 그 한 칸을 고른다.
+    if (lyDragFrom && !melSelDidDrag) {
+      const from = lyDragFrom; lyDragFrom = null;
+      if (selectModeOn()) { melSelLane = "ly"; melSelStart = from; melSelEnd = from; render(); }
+      return;
+    }
     lyDragFrom = null;
-    if (!melSelDidDrag && !cellStyleMode()) {
+    if (!melSelDidDrag && !selectModeOn()) {
       const s = melSelStart;
       melSelStart = null; melSelEnd = null;
       render();
