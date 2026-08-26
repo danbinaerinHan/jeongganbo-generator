@@ -8889,7 +8889,54 @@
   // 그 칸을 편집한다. 손을 뗀 위치가 정간 밖이어도 여기서 판가름한다.
   // 단, 셀 서식 모드(도구창/탭이 열려 있음)에서는 클릭도 '한 칸 선택'으로 유지 —
   // 내용 편집(노란 입력창)이 아니라 서식 적용 대상을 고르는 중이므로.
+  // 파트보에서 **각 아래·위로 끌면 저절로 다음 각·이전 각으로 이어진다**(2026-08-26 사용자 요청).
+  // 정간보는 다음 각이 **왼쪽**에 있어, 스프레드시트처럼 아래로만 끌면 그 각의 맨 아래에서
+  // 멈춘다 — 이어가려면 손을 왼쪽 위로 올려야 했다. 여기서는 아래로 넘친 만큼을 '다음 각의
+  // 그만큼'으로 옮겨 읽는다(글줄이 다음 줄로 넘어가듯). 위로 넘치면 이전 각의 끝 쪽으로 간다.
+  //
+  // 칸 위에 있는 동안은 예전처럼 mouseenter가 맡는다 — 여기는 **칸 밖으로 나갔을 때만** 든다.
+  // 총보는 열이 파트마다 있어 '아래로 넘친 만큼'이 어느 열로 가야 하는지가 정해지지 않으므로
+  // 대상이 아니다(총보는 네모 선택이 따로 있다).
+  let melSelOverTarget = null;   // 같은 칸이면 다시 그리지 않으려고 기억해 둔다
+  document.addEventListener("mousemove", function (e) {
+    if (!melSelActive || melSelLane !== "mel" || lyDragFrom || scoreViewOn()) return;
+    // 포인터가 놓인 쪽(page)의 SVG 좌표로 옮긴다
+    let svg = null;
+    for (let i = 0; i < pageSvgs.length; i++) {
+      const r = pageSvgs[i].getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+        svg = pageSvgs[i]; break;
+      }
+    }
+    if (!svg) return;
+    const pi = pageSvgs.indexOf(svg);
+    const pt = svgPointFromEvent(svg, e);
+    // 그 쪽에서 포인터의 x가 걸리는 각(열)을 찾는다 — 열 하나는 각 하나다(파트보라 P=1).
+    let hitGak = null, top = 0, h = 0, n = 0;
+    Object.keys(cellGeom).forEach(function (gk) {
+      if (hitGak !== null) return;
+      const row = cellGeom[gk], keys = Object.keys(row);
+      if (!keys.length) return;
+      const c0 = row[keys[0]];
+      if (c0.page !== pi) return;
+      if (pt.x < c0.x || pt.x > c0.x + c0.w) return;
+      hitGak = parseInt(gk, 10); top = c0.y; h = c0.h; n = keys.length;
+    });
+    if (hitGak === null || !h) return;
+    const rel = Math.floor((pt.y - top) / h);
+    if (rel >= 0 && rel < n) return;        // 칸 위 — mouseenter가 맡는다
+    const base = melCellSeq(hitGak, 0);
+    const lastSeq = Math.max(0, gakCellOffset(parseMelodyOffsets(melodyFull).length) - 1);
+    const target = Math.max(0, Math.min(lastSeq, base + rel));
+    if (target === melSelOverTarget) return;
+    melSelOverTarget = target;
+    melSelDidDrag = true;
+    melSelEnd = seqToCell(target);
+    render();
+  });
+
   document.addEventListener("mouseup", function () {
+    melSelOverTarget = null;
     if (!melSelActive) return;
     melSelActive = false;
     // 곁줄에서 시작한 제스처 — 번지지 않았으면(그냥 한 번 누름) 입력 모드에선
