@@ -1069,8 +1069,10 @@
     flex-direction: column; flex-wrap: nowrap;
     width: auto; margin: 0;
     /* 내용이 길어 스크롤바가 생길 때만 열이 ~15px 넓어지며 널뛰던 것 방지 —
-       스크롤바 자리를 늘 예약(오버레이 스크롤바 환경에선 원래 자리 안 차지해 무해) */
-    scrollbar-gutter: stable;
+       스크롤바 자리를 늘 예약(오버레이 스크롤바 환경에선 원래 자리 안 차지해 무해).
+       **both-edges**인 건 한쪽만 예약하면 카드가 왼쪽으로 8px·오른쪽으로 23px 떨어져
+       열 안에서 눈에 띄게 치우쳐 보이기 때문이다(실측). */
+    scrollbar-gutter: stable both-edges;
   }
   /* 세로 배치에선 그룹 구분선도 가로줄로 눕힌다 */
   body.ribbon-left #melodyRibbon .ribbon-sep { width: auto; height: 1px; }
@@ -1084,16 +1086,26 @@
   }
 
   /* --- 왼쪽 도킹 꾸밈(밋밋함 완화) --- */
-  /* 도킹 되돌리기 버튼을 열 맨 위 한 줄(헤더)로 — 아래 구분선. */
+  /* 도킹 되돌리기 버튼 — 열 맨 위 **오른쪽 끝**에 붙는 chrome 컨트롤이다.
+     ★ 예전엔 왼쪽 끝에 홀로 놓고 아래에 가로줄을 그었는데, 그 줄이 가를 것이 없었다:
+       바로 아래 그룹 카드가 제 테두리로 이미 구획을 만든다(그래서 .ribbon-sep도 여기선
+       숨긴다 — 같은 까닭이다). 24px짜리 아이콘 하나 밑에 열을 가로지르는 줄이 그어져
+       머리글도 아니고 구분선도 아닌 것이 떠 있었다(2026-08-26 사용자 지적).
+       오른쪽에 두는 건 이 앱에서 '창을 어떻게 놓을까'를 다루는 손잡이가 늘 오른쪽 끝인
+       것과 같다(도구창 머리줄의 ✕·.mh-right). 줄 대신 여백만으로 띄운다. */
   body.ribbon-left #melodyRibbon > .ribbon-topctl {
-    width: 100%; justify-content: flex-start; gap: 4px;
-    padding: 1px 2px 7px; margin-bottom: 6px;
-    border-bottom: 1px solid var(--line);
+    width: 100%; justify-content: flex-end; gap: 4px;
+    padding: 0 2px; margin-bottom: 4px;
   }
   /* 세로 도킹에선 섹션 이름표(.rb-cap)를 강조색 소제목처럼 — 회색 잔글씨보다 구획이 또렷하고
      밋밋함이 줄어든다. 각 그룹엔 옅은 강조 배경 카드를 깔아 시각 리듬을 준다. */
+  /* ★ 테두리는 **바깥 상자에만** 있고 안쪽 그룹은 배경(흰 카드)으로만 구획한다.
+     둘 다 테두리를 가지면 '상자 속 상자'가 되어 선이 겹겹이 보인다 — 열의 경계는 이미
+     바깥 상자가 긋고 있으므로 안쪽은 밝기 차이만으로 충분하다(2026-08-26).
+     반대로 바깥 테두리를 걷고 카드에만 두는 길도 그려 봤으나, --soft(#faf8f3)와
+     --bg(#f4f4f2)가 거의 같은 색이라 열이 통째로 배경에 녹아 경계를 잃는다(실측). */
   body.ribbon-left #melodyRibbon > .ribbon-group {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); border-radius: 8px;
     padding: 5px 8px 7px; margin: 0 2px;
   }
   body.ribbon-left #melodyRibbon > .ribbon-group .rb-cap {
