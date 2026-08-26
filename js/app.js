@@ -4871,6 +4871,7 @@
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
                 switchPart(pIdx);   // stash→전환→render까지 — 좌표가 새로 잡힌 뒤에 연다
+                if (selectModeOn()) return;   // 선택 모드: 갈아타기만 하고 편집은 안 연다
                 if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
                 else openCellEditor("mel", gi, ci);
               });
@@ -5003,6 +5004,7 @@
             (function (gi, cxv, topv, pg) {
               gnHit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
+                if (selectModeOn()) return;   // 편집 칸은 입력 모드에서만
                 if (cellEditInput) commitCellEditor(false);
                 openGakNameCard(gi, pg, cxv, topv);
               });
@@ -5053,6 +5055,11 @@
                 jdHit.addEventListener("mousedown", function (e) {
                   e.preventDefault();
                   if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
+                  // 편집 칸은 **입력 모드에서만** 열린다. 장단 줄은 구간 선택의 대상이
+                  // 아니므로(곡에 한 줄뿐이라 복사·서식이 안 걸린다) 선택 모드에선 아무
+                  // 일도 안 한다 — 예전엔 여기만 모드 검사를 안 지나 [선택]인데도 칸이
+                  // 열렸다(2026-08-26 사용자 제보).
+                  if (selectModeOn()) return;
                   if (cellEditInput) commitCellEditor(false);
                   if (inputMode === "editor") CELL_EDIT.jd.setCursor(0, ci, true);
                   else openCellEditor("jd", 0, ci);
@@ -5124,6 +5131,7 @@
                   // 더블클릭이라야 열리므로 '여기에 글자를 넣겠다'는 뜻 말고 될 수가 없다.
                   // 예전엔 여기서도 멈춰서 아무 반응이 없었고, 모드를 켜둔 걸 잊은 사람에겐
                   // 곁줄이 고장 난 것처럼 보였다(도구창·탭을 바꿀 때 모드가 꺼지는 것과 같은 규칙).
+                  if (selectModeOn()) return;   // 편집 칸은 입력 모드에서만
                   exitOrnEditMode();
                   if (cellEditInput) commitCellEditor(false);
                   if (inputMode === "editor") CELL_EDIT.ly.setCursor(gi, ci, true);
@@ -5144,6 +5152,7 @@
                   e.preventDefault();
                   exitOrnEditMode();
                   switchPart(pIdx);
+                  if (selectModeOn()) return;   // 선택 모드: 갈아타기만
                   if (inputMode === "editor") CELL_EDIT.ly.setCursor(gi, ci, true);
                   else openCellEditor("ly", gi, ci);
                 });
@@ -5167,6 +5176,7 @@
                 lyOpen.addEventListener("mousedown", function (e) { e.preventDefault(); });
                 lyOpen.addEventListener("dblclick", function (e) {
                   e.preventDefault();
+                  if (selectModeOn()) return;   // 편집 칸은 입력 모드에서만
                   exitOrnEditMode();
                   if (cellEditInput) commitCellEditor(false);
                   // 곁줄을 켜는 길은 모드마다 다르다(lyricsWinOpen이 둘 다 본다):
