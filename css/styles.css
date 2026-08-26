@@ -1137,6 +1137,12 @@
      order 3으로 밀어 도구창 아래로 보낸다. DOM 순서와 무관하게 JS는 그냥 기능바에 붙인다. */
   body.ribbon-left #melodyRibbon > .win-toggle-group ~ * { order: 3; }
   body.ribbon-left #melodyRibbon > .direct-win.win-open { order: 2; }
+  /* ★ **정간 서식 창만은 '정간 편집' 그룹 아래**에 온다 — 그 창을 여는 버튼이 거기 있기
+     때문이다(2026-08-26 사용자 지적). 나머지 창(井傍長章文)은 '입력' 그룹의 것이라 그 바로
+     아래(order 2)가 맞다. 창이 낀 자리 뒤로 크기 그룹과 그 앞 구분선을 함께 민다. */
+  body.ribbon-left #melodyRibbon > #cellStyleWin.win-open { order: 4; }
+  body.ribbon-left #melodyRibbon > .size-sep,
+  body.ribbon-left #melodyRibbon > .ribbon-slider-group { order: 5; }
   /* 기능바 안에 녹아든 도구창 — 뜬 창의 카드(배경·테두리·그림자·absolute)를 벗겨
      기능바와 한 구역처럼 보이게 하고, 폭은 zoom으로 살짝 줄인다(율명 표 450px → ~380px). */
   body.ribbon-left #melodyRibbon > .direct-win.win-open,
@@ -1151,7 +1157,12 @@
   body.ribbon-left #melodyRibbon > #jangdanArea.win-open,
   body.ribbon-left #melodyRibbon > #lyricsArea.win-open,
   body.ribbon-left #melodyRibbon > #textArea.win-open,
+  body.ribbon-left #melodyRibbon > #cellStyleWin.win-open,
   body.ribbon-left #melodyRibbon > #gakNameArea.win-open { width: 450px; }
+  /* 정간 서식 창 속은 원래 258px(--cs-w)에 묶여 있었다 — 도킹된 창은 폭이 열 폭을 따르므로
+     그대로 두면 **열을 넓혀도 내용은 258px에 머물러 오른쪽이 휑하고, 좁히면 넘친다**
+     (2026-08-26 사용자 지적: 열 491px에 내용 258px). 도킹 중에는 창 폭을 그대로 쓴다. */
+  body.ribbon-left #melodyRibbon #cellStyleWin { --cs-w: 100%; }
   /* 도크 폭 끌기 손잡이 — 왼쪽 도킹에서만 열 사이에 나타난다(더블클릭 = 자동 폭).
      다른 리사이저(#melodyResizer·#melodySplit)와 같은 언어: 가운데 알약 그립이
      항상 보이고, 올리면 강조색 — '끌 수 있다'가 눈에 보이게. */
@@ -1174,6 +1185,7 @@
   body.ribbon-left.leftdock-custom #melodyRibbon > #lyricsArea.win-open,
   body.ribbon-left.leftdock-custom #melodyRibbon > #textArea.win-open,
   body.ribbon-left.leftdock-custom #melodyRibbon > #gakNameArea.win-open,
+  body.ribbon-left.leftdock-custom #melodyRibbon > #cellStyleWin.win-open,
   body.ribbon-left.leftdock-custom #melodyRibbon > #paletteCol.win-open { width: auto; }
   /* 시김새 격자는 공통 격자(minmax 66px)가 알아서 줄바꿈 — 기본 폭 6개/줄, 폭 따라 가변 */
   /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,
@@ -1308,7 +1320,11 @@
   .cs-row { display: flex; align-items: center; gap: 6px; max-width: var(--cs-w); margin-bottom: 6px; }
   .cs-row:last-child { margin-bottom: 0; }
   .cs-lab { font-size: 10px; font-weight: 600; color: var(--muted); flex: 0 0 auto; }
-  .cs-seg { display: inline-flex; gap: 4px; margin-left: auto; }
+  /* 방향 토글 묶음 — 라벨 오른쪽에 붙되 **남는 폭을 채운다**. 창이 열 폭을 따라 넓어지면서
+     margin-left:auto만으로는 두 칩이 오른쪽 구석에 외따로 떨어져 보였다(열 691px 실측).
+     아래 실행 버튼들과 같은 리듬으로 두 칩이 폭을 반씩 나눠 갖는다. */
+  .cs-seg { display: flex; gap: 4px; margin-left: auto; flex: 1 1 auto; min-width: 0; }
+  .cs-seg > .cell-style-option { flex: 1 1 0; min-width: 0; }
   /* 3칸 균등 그리드 — 버튼이 제 글자 폭대로 벌어지지 않게. minmax(0,1fr)이라야 안의 글자가
      칸을 밀어 넓히지 않는다. 창 안의 모든 버튼 줄이 이걸 쓰므로 줄이 달라도 열이 맞는다
      (칸이 남으면 비워 둘 것 — 하나를 늘려 채우면 그 버튼만 딴 물건처럼 길어진다). */
@@ -1364,8 +1380,12 @@
      글자 시작점을 모든 버튼에서 똑같게 맞추려는 것. 예전 justify-content:center는 아이콘 폭
      (세로 13 vs 가로 17px)과 글자 수(2~3자)가 달라 버튼마다 글자가 제각각 시작했다
      (합치기 30 / 굵게 36 / 이중선 32px…). 아이콘은 칸 안에서 가운데, 글자는 왼끝. */
-  .cs-grid .cell-style-action { display: grid; grid-template-columns: 18px 1fr;
-                                justify-content: start; align-items: center; gap: 6px; }
+  /* 열 폭을 따라 버튼이 넓어질 수 있게 되면서(도킹 중 --cs-w:100%) 두 칸을 **가운데로 모은다**
+     — 1fr로 두면 폭이 넓을수록 아이콘+글자가 왼쪽 구석에 몰려 버튼이 텅 비어 보인다
+     (열 691px 실측). auto+justify-content:center면 두 칸이 서로 붙은 채 가운데 서므로,
+     아이콘 칸(18px 고정)이 지키던 '글자 시작점 맞추기'는 그대로다. */
+  .cs-grid .cell-style-action { display: grid; grid-template-columns: 18px auto;
+                                justify-content: center; align-items: center; gap: 6px; }
   .cs-grid .cell-style-action svg { justify-self: center; }
   .cs-grid .cell-style-action span { justify-self: start; }
   /* 창 폭을 꽉 채우는 실행 버튼(초기화) — .cell-style-action의 width:auto를 덮어야 하므로
