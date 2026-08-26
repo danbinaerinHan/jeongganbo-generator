@@ -29,6 +29,18 @@
 --     사람이 고른 것(공개/주소만)이고, hidden_at은 운영자가 내린 것이다. 한 칸에 섞으면
 --     숨김을 풀 때 원래 공개 설정이 무엇이었는지 잃는다.
 --
+--  ⑥ (3단계에서 더함) 열쇠가 셋이고, 셋이 저마다 제 함수를 갖는다. 함수 이름의 앞머리가
+--     곧 '무엇으로 여는가'다:
+--       (앞머리 없음) 토큰            · admin_* 로그인+명단 · owner_* 로그인+임자
+--     한 함수에 '관리자면 토큰 없이도'나 '로그인했으면 토큰 없이도'를 끼워 넣지 않는다 —
+--     그 함수의 계약이 둘이 되면 읽는 사람이 매번 어느 쪽 이야기인지 가려야 한다.
+--     ★ 계정은 토큰을 **대신하지 않고 곁에 선다.** 로그인한 채 올려도 토큰은 예전처럼
+--       나오고, 계정이 더해 주는 것은 '토큰을 잃어도 되찾는 길'뿐이다.
+--
+--  ★ 권한은 틀려도 조용하다 — 빠뜨린 revoke는 오류가 아니라 열린 문이다. 파일 끝에
+--    '빗장 점검' 쿼리를 두었고, 이 파일이 스스로와 어긋나지 않는지는
+--    `node tools/check-schema-grants.mjs`가 본다. 함수를 더하면 그 검사를 돌릴 것.
+--
 -- 클라이언트(js/cloud.js)는 supabase-js 없이 fetch로 부른다(무의존 원칙):
 --   POST https://<프로젝트>.supabase.co/rest/v1/rpc/publish_score
 --   헤더: apikey: <anon 키> · Content-Type: application/json
@@ -88,6 +100,24 @@ alter table public.scores add column if not exists hidden_note   text;
 alter table public.scores add column if not exists lint_bad      smallint;
 alter table public.scores add column if not exists lint_at       timestamptz;
 
+-- 3단계(이용자 계정)에서 더한 칸.
+--  owner — 로그인한 채로 올렸으면 그 계정. **익명 게시는 null인 채로 그대로 간다.**
+--
+-- ★ 토큰을 대신하는 칸이 아니라 **곁에 서는 칸**이다. 게시하면 토큰은 예전처럼 나오고
+--   브라우저에 남는다 — 계정을 지우거나 로그아웃해도 그 브라우저에서는 계속 고칠 수 있게.
+--   owner가 더해 주는 것은 '브라우저를 지워 토큰을 잃어도 계정으로 되찾는 길'이다.
+--   그래서 열쇠가 셋이 되고, 셋이 저마다 제 함수를 갖는다(맨 아래 owner_* 절 머리말).
+--
+-- ★ auth.users를 참조(FK)하지 않는다 — admins와 같은 까닭이다(이 파일을 대시보드에
+--   몇 번이고 다시 돌리는 것이 설치 방법인데 auth 스키마에 손을 뻗으면 그 재실행이 환경을
+--   탄다). 계정을 지우면 이 칸에 남은 uid로는 아무도 로그인할 수 없으니 열쇠가 되지 않고,
+--   **악보 자체는 안 지워진다** — 개인정보처리방침 제4조가 그렇게 약속하고 있다.
+alter table public.scores add column if not exists owner uuid;
+
+-- '내 악보' 목록이 쓰는 차례. 계정 있는 게시는 한동안 소수라 부분 인덱스가 알맞다.
+create index if not exists scores_owner_idx
+  on public.scores (owner, created_at desc) where owner is not null;
+
 -- 둘러보기가 쓰는 차례. 부분 인덱스라 공개분만 담아 가볍다.
 create index if not exists scores_public_recent_idx
   on public.scores (created_at desc) where visibility = 'public';
@@ -130,6 +160,36 @@ create table if not exists public.score_versions (
 -- (push_version 참고) — 최초 게시본은 게시자의 것이고 신고 처리의 증거이기도 하다.
 create or replace function public.version_keep() returns integer
   language sql immutable as $$ select 20 $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 이용자 보관함 — user_snapshots
+-- ---------------------------------------------------------------------------
+-- 지금 임시 저장은 그 브라우저의 localStorage(jgb_snapshots_v1)에 갇혀 있다. 정간보 한 곡에
+-- 여러 날이 걸리니 기기를 옮기면 이어 쓸 수가 없는데, 그게 계정이 주는 가장 큰 편익이다.
+--
+-- ★ 로컬 보관함을 **대신하지 않는다.** 계정 없이도 임시 저장은 그대로 되고, 여기는 그 위에
+--   얹히는 자리다(계정은 뺏는 것이 아니라 더 주는 것 — docs/구조-계정.md).
+--
+-- ★ 이 표도 **RPC로만 연다**(설계 뼈대 ②). RLS 정책을 걸어 표를 직접 여는 쪽이 SQL은
+--   짧지만, 그러면 이 리포에서 표를 직접 여는 유일한 자리가 생기고 칸 수·크기 제한을
+--   강제할 곳이 사라진다. 문서 하나가 1MB까지이므로 개수를 안 조이면 한 사람이 표를
+--   가득 채울 수 있다.
+create table if not exists public.user_snapshots (
+  id         uuid        primary key default extensions.gen_random_uuid(),
+  owner      uuid        not null,
+  title      text        not null default '제목 없음',
+  doc        jsonb       not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists user_snapshots_owner_idx
+  on public.user_snapshots (owner, updated_at desc);
+
+-- 한 계정이 서버에 둘 수 있는 임시 저장 수. 넘으면 **가장 오래 안 건드린 것부터** 밀린다
+-- (로컬 보관함이 SNAP_MAX로 하는 것과 같은 규칙이라 옮겨 다녀도 감각이 안 바뀐다).
+create or replace function public.snapshot_keep() returns integer
+  language sql immutable as $$ select 50 $$;
 
 
 -- ---------------------------------------------------------------------------
@@ -429,8 +489,10 @@ begin
 
   v_token := encode(gen_random_bytes(24), 'hex');
 
+  -- owner는 인자로 받지 않고 **지금 로그인한 사람**을 그대로 적는다(익명이면 null).
+  -- 인자로 받으면 남의 uid를 적어 보낼 수 있고, 애초에 부르는 쪽이 정할 일이 아니다.
   insert into public.scores (id, doc, doc_v, title, author, license, visibility, token_hash, fork_of, thumb,
-                             lint_bad, lint_at)
+                             lint_bad, lint_at, owner)
   values (
     v_id, p_doc,
     coalesce(nullif(p_doc ->> 'v', '')::smallint, 1),
@@ -441,7 +503,8 @@ begin
     (select s.id from public.scores s where s.id = p_fork_of),
     nullif(p_thumb, ''),
     case when p_lint is null then null else greatest(p_lint, 0) end,
-    case when p_lint is null then null else now() end
+    case when p_lint is null then null else now() end,
+    auth.uid()
   );
 
   insert into public.publish_log (ip_hash) values (v_ip);
@@ -1202,6 +1265,343 @@ begin
 end $$;
 
 
+-- ============================================================================
+-- 계정 임자용 RPC — 로그인한 본인만 부를 수 있다
+-- ============================================================================
+-- 이 스키마에는 이제 **열쇠가 셋**이고, 셋이 저마다 제 함수를 갖는다. 이름 앞머리가 곧
+-- '무엇으로 여는가'다:
+--
+--   (앞머리 없음)  열쇠 = **토큰**      publish/update/delete/fetch/list_scores
+--   admin_*        열쇠 = **로그인 + 명단**   admin_save_score(…, 메모)
+--   owner_*        열쇠 = **로그인 + 임자**   owner_update_score(…)
+--
+-- update_score에 '로그인했으면 토큰 없이도'를 끼워 넣지 않는다 — 관리자 층을 지을 때
+-- 정한 규칙 그대로다(위 '관리자용 RPC' 절 머리말). 한 함수의 계약이 둘이 되면 읽는
+-- 사람이 매번 '지금 어느 쪽 이야기인가'를 가려야 한다.
+--
+-- ★ owner_*는 기록을 안 남긴다. admin_log는 **남의 악보를 만진 근거**라서 남기는 것이고,
+--   제 악보를 제가 고치는 일에는 남길 것이 없다(판 score_versions은 그대로 쌓인다).
+--
+-- 전부 `authenticated`에만 열고 `anon`에는 안 연다(맨 아래 grant). 그래도 첫 줄에서
+-- require_login()을 다시 묻는 까닭은 관리자 쪽과 같다 — 권한을 여는 자리와 확인하는
+-- 자리가 떨어져 있으면 언젠가 한쪽만 고쳐진다.
+-- ============================================================================
+
+-- 로그인했는가. 아니면 그 자리에서 멈추고, 맞으면 그 uid를 돌려준다.
+-- require_admin()과 짝을 이루는 함수다 — 이쪽은 **명단을 묻지 않는다**(누구나 제 것은
+-- 만질 수 있어야 하므로). 그래서 둘을 합치지 말 것: 묻는 것이 서로 다르다.
+create or replace function public.require_login()
+returns uuid
+language plpgsql
+stable
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid uuid := auth.uid();
+begin
+  if v_uid is null then
+    raise exception '로그인이 필요합니다.' using errcode = '42501';
+  end if;
+  return v_uid;
+end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 내 악보 목록 — owner_list_scores
+-- ---------------------------------------------------------------------------
+-- list_scores와 무엇이 다른가: **주소만 공개인 것과 내려간 것까지** 다 보인다(내 것이므로).
+-- 내려간 악보는 사유(hidden_reason)를 함께 준다 — 약관 제6조 ④가 '왜 내려갔는지 확인할
+-- 수 있는 자리'를 약속하는데, 제 악보 목록보다 그것이 먼저 보일 자리가 없다.
+-- doc은 여기서도 뺀다(목록이 수 MB가 된다).
+create or replace function public.owner_list_scores(
+  p_limit  integer default 24,
+  p_offset integer default 0
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid    uuid := public.require_login();
+  v_limit  integer := least(greatest(coalesce(p_limit, 24), 1), 48);
+  v_offset integer := greatest(coalesce(p_offset, 0), 0);
+  v_items  jsonb;
+  v_total  bigint;
+begin
+  select count(*) into v_total from public.scores where owner = v_uid;
+
+  with hits as (
+    select * from public.scores
+     where owner = v_uid
+     order by created_at desc
+     limit v_limit offset v_offset
+  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id',            h.id,
+           'title',         h.title,
+           'author',        h.author,
+           'license',       h.license,
+           'thumb',         h.thumb,
+           'fork_of',       h.fork_of,
+           'visibility',    h.visibility,
+           'view_count',    h.view_count,
+           'ver',           h.ver,
+           'lint_bad',      h.lint_bad,
+           'hidden_at',     h.hidden_at,
+           'hidden_reason', h.hidden_reason,   -- 공개 사유만. hidden_note(운영자 메모)는 안 준다
+           'created_at',    h.created_at,
+           'updated_at',    h.updated_at
+         ) order by h.created_at desc), '[]'::jsonb)
+    into v_items from hits h;
+
+  return jsonb_build_object('items', v_items, 'total', v_total,
+                            'limit', v_limit, 'offset', v_offset);
+end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 내 악보 고치기 — owner_update_score
+-- ---------------------------------------------------------------------------
+-- update_score와 하는 일은 같고 **열쇠만 다르다**(토큰 → 로그인 + 임자). 그래서 지키는
+-- 것도 똑같다: hidden_at은 안 건드리고(내려간 악보를 임자가 고쳐 도로 올릴 수는 없다),
+-- 내용이 그대로면 판을 안 올리며, 쓴 다음에 판을 뜬다.
+--
+-- ★ 토큰을 갈아 끼우지 않는다. 여기서 새 토큰을 발급하면 **다른 기기에 남아 있던 옛
+--   토큰이 죽어**, 휴대폰에서 되찾은 순간 노트북이 못 고치게 된다. 계정은 토큰을
+--   대신하는 것이 아니라 곁에 서는 것이다(scores.owner 칸 주석).
+create or replace function public.owner_update_score(
+  p_id     text,
+  p_doc    jsonb,
+  p_public boolean default null,   -- null = 지금 공개 설정을 그대로 둔다
+  p_thumb  text default null,
+  p_lint   integer default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid     uuid := public.require_login();
+  v_updated timestamptz;
+  v_ver     integer;
+begin
+  perform public.check_doc(p_doc);
+  perform public.check_thumb(p_thumb);
+
+  update public.scores
+     set doc        = p_doc,
+         doc_v      = coalesce(nullif(p_doc ->> 'v', '')::smallint, 1),
+         title      = public.title_of(p_doc),
+         thumb      = coalesce(nullif(p_thumb, ''), thumb),
+         visibility = case when p_public is null then visibility
+                           when p_public then 'public' else 'unlisted' end,
+         ver        = case when doc is distinct from p_doc then ver + 1 else ver end,
+         lint_bad   = case when p_lint is null then lint_bad else greatest(p_lint, 0) end,
+         lint_at    = case when p_lint is null then lint_at  else now() end,
+         updated_at = now()
+   where id = p_id
+     and owner = v_uid
+  returning ver, updated_at into v_ver, v_updated;
+
+  -- 없는 id와 남의 악보를 **같은 말로** 되돌려준다(update_score와 같은 까닭 — id를 훑어
+  -- 게시물이 있는지 알아내지 못하게).
+  if v_updated is null then
+    raise exception '이 악보를 고칠 권한이 없습니다.' using errcode = '42501';
+  end if;
+
+  perform public.push_version(p_id, 'user', null::uuid, null);
+
+  return jsonb_build_object('id', p_id, 'ver', v_ver, 'updated_at', v_updated);
+end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 내 악보 지우기 — owner_delete_score
+-- ---------------------------------------------------------------------------
+create or replace function public.owner_delete_score(p_id text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid uuid := public.require_login();
+  v_hit integer;
+begin
+  delete from public.scores where id = p_id and owner = v_uid;
+  get diagnostics v_hit = row_count;
+  if v_hit = 0 then
+    raise exception '이 악보를 지울 권한이 없습니다.' using errcode = '42501';
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 익명으로 올린 악보를 계정에 붙이기 — owner_adopt_score
+-- ---------------------------------------------------------------------------
+-- 계정이 생기기 전에 올린 악보들(과 계정 없이 올린 뒤 나중에 로그인한 사람의 악보)이
+-- 계정으로 넘어오는 길이다. **토큰이 아직 브라우저에 남아 있는 동안**에만 된다 —
+-- 그 토큰을 갖고 있다는 것이 곧 '내가 올린 것'의 유일한 증거이므로.
+--
+-- ★ 그래서 이 길은 **토큰을 잃기 전에** 지나야 한다. 잃은 뒤에는 본인 확인을 할 수단이
+--   없어 운영자도 붙여 줄 수 없다(publish_score 머리말과 같은 사정). 클라이언트는
+--   로그인한 사람에게 jgb_published_v1에 남은 악보를 한 번에 붙여 주는 것이 좋다.
+--
+-- ★ 임자가 이미 있는 악보는 **말없이 넘기지 않는다.** 토큰은 브라우저에 있고 계정은
+--   사람에게 있어, 한 악보를 두 사람이 각각 '내 것'이라 여길 수 있다. 먼저 붙인 쪽이
+--   임자다.
+create or replace function public.owner_adopt_score(p_id text, p_token text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid uuid := public.require_login();
+  s     public.scores%rowtype;
+begin
+  select * into s from public.scores
+   where id = p_id and token_hash = public.hash_token(p_token);
+  if not found then
+    raise exception '이 악보를 계정에 붙일 권한이 없습니다.' using errcode = '42501';
+  end if;
+
+  if s.owner is not null then
+    -- 이미 내 것이면 아무 일도 안 하고 그렇다고 답한다(여러 번 불러도 탈이 없게).
+    if s.owner = v_uid then
+      return jsonb_build_object('id', p_id, 'owner', true, 'already', true);
+    end if;
+    raise exception '이 악보는 이미 다른 계정에 붙어 있습니다.' using errcode = '42501';
+  end if;
+
+  -- 판을 안 올린다 — 악보의 내용이 바뀐 것이 아니라 임자가 적힌 것뿐이다.
+  update public.scores set owner = v_uid where id = p_id;
+  return jsonb_build_object('id', p_id, 'owner', true, 'already', false);
+end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 서버 보관함 — owner_snap_*
+-- ---------------------------------------------------------------------------
+-- 목록은 doc을 빼고 준다(임시 저장 하나가 1MB까지라 목록이 수십 MB가 될 수 있다).
+-- 꺼낼 때만 owner_snap_get으로 한 덩이씩 받는다.
+create or replace function public.owner_snap_list()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid uuid := public.require_login();
+begin
+  return (
+    select coalesce(jsonb_agg(jsonb_build_object(
+             'id',         t.id,
+             'title',      t.title,
+             'bytes',      octet_length(t.doc::text),
+             'created_at', t.created_at,
+             'updated_at', t.updated_at
+           ) order by t.updated_at desc), '[]'::jsonb)
+      from public.user_snapshots t where t.owner = v_uid);
+end $$;
+
+
+-- p_id를 주면 그것을 덮어쓰고, 안 주면 새로 담는다. 로컬 보관함에서 '덮어쓰기'와
+-- '새로 담기'가 한 버튼인 것과 같은 결이다.
+create or replace function public.owner_snap_save(
+  p_doc   jsonb,
+  p_id    uuid default null,
+  p_title text default null   -- null이면 문서에서 제목을 뽑아 쓴다
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid   uuid := public.require_login();
+  v_title text := coalesce(nullif(btrim(coalesce(p_title, '')), ''), public.title_of(p_doc));
+  v_id    uuid;
+  v_n     integer;
+begin
+  perform public.check_doc(p_doc);
+
+  if p_id is not null then
+    update public.user_snapshots
+       set doc = p_doc, title = v_title, updated_at = now()
+     where id = p_id and owner = v_uid
+    returning id into v_id;
+    if v_id is null then
+      raise exception '이 임시 저장을 고칠 권한이 없습니다.' using errcode = '42501';
+    end if;
+  else
+    insert into public.user_snapshots (owner, title, doc)
+    values (v_uid, v_title, p_doc)
+    returning id into v_id;
+  end if;
+
+  -- 칸이 넘치면 **가장 오래 안 건드린 것부터** 민다(로컬 보관함의 SNAP_MAX와 같은 규칙).
+  -- 방금 담은 것은 updated_at이 지금이라 절대 안 밀린다.
+  select count(*) into v_n from public.user_snapshots where owner = v_uid;
+  if v_n > public.snapshot_keep() then
+    delete from public.user_snapshots t
+     where t.owner = v_uid
+       and t.id in (
+         select t2.id from public.user_snapshots t2
+          where t2.owner = v_uid
+          order by t2.updated_at desc
+          offset public.snapshot_keep());
+  end if;
+
+  return jsonb_build_object('id', v_id, 'title', v_title);
+end $$;
+
+
+create or replace function public.owner_snap_get(p_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid uuid := public.require_login();
+  t     public.user_snapshots%rowtype;
+begin
+  select * into t from public.user_snapshots where id = p_id and owner = v_uid;
+  if not found then
+    raise exception '그런 임시 저장이 없습니다.' using errcode = '42501';
+  end if;
+  return jsonb_build_object('id', t.id, 'title', t.title, 'doc', t.doc,
+                            'created_at', t.created_at, 'updated_at', t.updated_at);
+end $$;
+
+
+create or replace function public.owner_snap_delete(p_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_uid uuid := public.require_login();
+  v_hit integer;
+begin
+  delete from public.user_snapshots where id = p_id and owner = v_uid;
+  get diagnostics v_hit = row_count;
+  if v_hit = 0 then
+    raise exception '그런 임시 저장이 없습니다.' using errcode = '42501';
+  end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+
 -- ---------------------------------------------------------------------------
 -- 권한 — 테이블은 닫고 RPC만 연다
 -- ---------------------------------------------------------------------------
@@ -1213,6 +1613,7 @@ alter table public.publish_log    enable row level security;
 alter table public.score_versions enable row level security;
 alter table public.admins         enable row level security;
 alter table public.admin_log      enable row level security;
+alter table public.user_snapshots enable row level security;
 
 revoke all on table public.scores         from anon, authenticated;
 revoke all on table public.publish_log    from anon, authenticated;
@@ -1221,6 +1622,9 @@ revoke all on table public.publish_log    from anon, authenticated;
 revoke all on table public.score_versions from anon, authenticated;
 revoke all on table public.admins         from anon, authenticated;
 revoke all on table public.admin_log      from anon, authenticated;
+-- 이용자 보관함도 마찬가지다. 정책을 걸어 표를 직접 여는 쪽이 짧지만, 그러면 이 리포에서
+-- 표를 직접 여는 유일한 자리가 생기고 칸 수·크기 제한을 강제할 곳이 사라진다(표 주석 참고).
+revoke all on table public.user_snapshots from anon, authenticated;
 
 -- 함수는 일단 전부 걷고 필요한 것만 다시 준다.
 -- ★ `from public`만으로는 모자란다 — Supabase는 public 스키마에 새로 만들어지는 함수의
@@ -1255,6 +1659,16 @@ revoke all on function public.admin_restore(text, integer, text)        from pub
 revoke all on function public.admin_delete_score(text, text)            from public, anon, authenticated;
 revoke all on function public.admin_set_lint(text, integer)             from public, anon, authenticated;
 revoke all on function public.admin_log_list(integer, integer, text)    from public, anon, authenticated;
+revoke all on function public.require_login()                           from public, anon, authenticated;
+revoke all on function public.snapshot_keep()                           from public, anon, authenticated;
+revoke all on function public.owner_list_scores(integer, integer)       from public, anon, authenticated;
+revoke all on function public.owner_update_score(text, jsonb, boolean, text, integer) from public, anon, authenticated;
+revoke all on function public.owner_delete_score(text)                  from public, anon, authenticated;
+revoke all on function public.owner_adopt_score(text, text)             from public, anon, authenticated;
+revoke all on function public.owner_snap_list()                         from public, anon, authenticated;
+revoke all on function public.owner_snap_save(jsonb, uuid, text)        from public, anon, authenticated;
+revoke all on function public.owner_snap_get(uuid)                      from public, anon, authenticated;
+revoke all on function public.owner_snap_delete(uuid)                   from public, anon, authenticated;
 
 -- 브라우저(anon)가 부를 수 있는 것은 이 다섯뿐이다.
 -- ★ hash_token·caller_ip_hash·gen_score_id는 일부러 빼 둔다 — 토큰 해시 셈과 id 뽑기를
@@ -1282,6 +1696,18 @@ grant execute on function public.admin_restore(text, integer, text)        to au
 grant execute on function public.admin_delete_score(text, text)            to authenticated;
 grant execute on function public.admin_set_lint(text, integer)             to authenticated;
 grant execute on function public.admin_log_list(integer, integer, text)    to authenticated;
+
+-- 계정 임자용도 **anon에는 안 연다.** 로그인만으로는 남의 악보에 닿지 못하고(제 것만
+-- 걸리게 where owner = v_uid), 함수마다 첫 줄에서 require_login()이 다시 묻는다.
+-- ★ require_login·snapshot_keep은 여기 없다 — 안에서만 쓰는 부품이다(require_admin과 같다).
+grant execute on function public.owner_list_scores(integer, integer)       to authenticated;
+grant execute on function public.owner_update_score(text, jsonb, boolean, text, integer) to authenticated;
+grant execute on function public.owner_delete_score(text)                  to authenticated;
+grant execute on function public.owner_adopt_score(text, text)             to authenticated;
+grant execute on function public.owner_snap_list()                         to authenticated;
+grant execute on function public.owner_snap_save(jsonb, uuid, text)        to authenticated;
+grant execute on function public.owner_snap_get(uuid)                      to authenticated;
+grant execute on function public.owner_snap_delete(uuid)                   to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 이미 올라와 있던 악보를 판 표에 들이기 (한 번만 먹고 그 뒤엔 아무 일도 안 한다)
@@ -1353,4 +1779,75 @@ notify pgrst, 'reload schema';
 --        -H 'Content-Type: application/json' -d '{"p_token":"x"}'          -- 권한 없음
 --   curl -s "$URL/rest/v1/rpc/admin_list_scores" -X POST -H "apikey: $ANON" \
 --        -H 'Content-Type: application/json' -d '{}'                       -- 권한 없음
+-- ============================================================================
+
+
+-- ============================================================================
+-- 빗장 점검 — 열려 있으면 안 되는 것이 열려 있지 않은가
+-- ============================================================================
+-- **이 쿼리가 한 줄이라도 뱉으면 그것이 곧 구멍이다.** SQL Editor에 붙여넣어 돌린다.
+--
+-- 왜 두는가: Supabase는 public 스키마에 새로 만들어지는 함수의 실행 권한을 anon·
+-- authenticated에게 **직접** 준다(위 revoke 절의 2026-08-04 실측). 그래서 앞으로 함수를
+-- 더하며 revoke 줄을 빠뜨리면 그 함수가 **조용히 브라우저에 열린다** — 오류도 경고도 없다.
+--
+-- 그리고 그 위험은 이용자 계정이 열리는 날 한 단계 커진다. 그전까지는 '로그인할 수 있는
+-- 사람 = 관리자'였지만, 그날부터 authenticated는 **아무나**다. 사람이 기억하는 대신
+-- 다시 돌릴 수 있는 자리를 둔 까닭이 이것이다.
+--
+-- 허용 목록을 고칠 일이 생기면 위 grant 절과 **함께** 고칠 것 — 두 곳이 어긋나면 이
+-- 점검이 거짓으로 조용해진다.
+/*
+with allowed(fn, who) as (values
+  -- 익명 RPC 다섯 — 브라우저(anon)가 부르는 것
+  ('publish_score','anon'), ('update_score','anon'), ('delete_score','anon'),
+  ('fetch_score','anon'),   ('list_scores','anon'),
+  -- 관리자용 열하나 — 로그인 + admins 명단
+  ('admin_me','authenticated'),          ('admin_list_scores','authenticated'),
+  ('admin_get_score','authenticated'),   ('admin_save_score','authenticated'),
+  ('admin_set_hidden','authenticated'),  ('admin_versions','authenticated'),
+  ('admin_version','authenticated'),     ('admin_restore','authenticated'),
+  ('admin_delete_score','authenticated'),('admin_set_lint','authenticated'),
+  ('admin_log_list','authenticated'),
+  -- 계정 임자용 여덟 — 로그인 + 제 것
+  ('owner_list_scores','authenticated'), ('owner_update_score','authenticated'),
+  ('owner_delete_score','authenticated'),('owner_adopt_score','authenticated'),
+  ('owner_snap_list','authenticated'),   ('owner_snap_save','authenticated'),
+  ('owner_snap_get','authenticated'),    ('owner_snap_delete','authenticated')
+),
+open_fns as (
+  select p.proname::text as fn, r.rolname::text as who
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+   cross join (values ('anon'),('authenticated')) as r(rolname)
+   where n.nspname = 'public'
+     and has_function_privilege(r.rolname, p.oid, 'execute')
+)
+-- ① 허용 목록 밖인데 열려 있는 함수 (anon에만 열린 것은 authenticated에도 열려 있다)
+select '함수가 열려 있음' as 무엇, o.fn as 이름, o.who as 누구에게
+  from open_fns o
+ where not exists (
+   select 1 from allowed a
+    where a.fn = o.fn and (a.who = o.who or a.who = 'anon'))
+union all
+-- ② 표가 직접 열려 있음 (RPC만 열기로 한 규칙이 깨진 자리)
+select '표가 열려 있음', t.table_name, t.grantee
+  from information_schema.role_table_grants t
+ where t.table_schema = 'public' and t.grantee in ('anon','authenticated')
+union all
+-- ③ RLS가 꺼진 표
+select 'RLS 꺼짐', c.relname::text, ''
+  from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity
+union all
+-- ④ 밖에 열린 함수인데 search_path를 안 고정한 것
+--    (SECURITY DEFINER + 열린 search_path는 남이 스키마를 앞에 끼워 넣을 틈이 된다)
+select 'search_path 안 고정', p.proname::text, ''
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname = 'public' and p.prosecdef
+   and not exists (select 1 from unnest(coalesce(p.proconfig, '{}'))  cfg
+                    where cfg like 'search_path=%')
+   and (has_function_privilege('anon', p.oid, 'execute')
+     or has_function_privilege('authenticated', p.oid, 'execute'));
+*/
 -- ============================================================================

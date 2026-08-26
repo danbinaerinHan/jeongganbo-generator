@@ -219,6 +219,11 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
       새로 생겼으면 그 교정을 버린다 — 짐작으로 남의 악보를 바꾸지 않겠다는 약속을
       코드로 지키는 자리다.
     · 되쓰기는 `admin_save_score`라 판이 쌓이고 메모가 남는다(되돌릴 수 있다).
+- `tools/check-schema-grants.mjs` — **서버 빗장이 스스로와 어긋나지 않는가**: 함수마다
+  revoke가 있나 · `admin_*`·`owner_*`가 anon에 안 열렸나 · 첫 줄에서 다시 묻나 ·
+  search_path를 고정했나 · **schema.sql 끝 '빗장 점검' 쿼리의 허용 목록이 실제 grant와 같나**
+  (낡으면 그 쿼리가 구멍을 보고도 조용해진다) · 표가 RLS를 켜고 정책이 0개인가.
+  SQL을 실행하지 않고 글자만 본다 — 실제 권한은 그 점검 쿼리를 SQL Editor에서 돌려 볼 것.
 - `tools/check-symbols-registry.mjs` — 사전이 만들어 내는 표 9개가 **기준 커밋의 app.js에 손으로
   적혀 있던 값과 똑같은지** 대조한다. 사전을 손본 뒤 `node tools/check-symbols-registry.mjs`가
   깨지면 악보 모양이 달라졌다는 뜻. 기호를 **새로 들이는 건 통과**시키고 몇 개 늘었는지만
@@ -384,7 +389,14 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
       (localStorage↔sessionStorage)·드는 길·여는 문이 셋 다 다르다. index.html에서
       user-session.js는 **cloud.js보다 먼저** 싣는다(레일 [계정]을 cloud.js가 여닫는다).
     · **이용자가 로그인하기 시작하면 '`authenticated` ≈ 관리자일 수도 있는 사람'이라는
-      옛 전제가 깨진다** — 계정을 여는 날 `authenticated`에 grant된 것을 전수 점검할 것.
+      옛 전제가 깨진다.** 2026-08-26에 전수 점검을 마쳤고(표 정책 0개 · 함수마다
+      require_admin/require_login), **함수를 더할 땐 `revoke` 줄을 빠뜨리지 말 것** —
+      Supabase는 새 함수를 anon·authenticated에 **직접** 열어 주므로 빠뜨린 revoke는
+      오류가 아니라 열린 문이다. 지켜보는 자리 둘: `server/schema.sql` 맨 끝의 '빗장 점검'
+      쿼리(실제 서버) · `node tools/check-schema-grants.mjs`(파일이 스스로와 어긋나는가).
+    · **한 함수에 열쇠를 둘 달지 말 것.** 이름 앞머리가 곧 열쇠다 — 앞머리 없음=토큰 ·
+      `admin_*`=로그인+명단 · `owner_*`=로그인+임자. 계정은 토큰을 **대신하지 않고 곁에
+      선다**(로그인해 올려도 토큰은 그대로 나온다).
   - 새 문서(#btnNewDoc)도 **1급 버튼**(#outBox 맨 앞, 새 문서→인쇄→파일 순) — 파일 메뉴
     안(File > New 자리)에 뒀더니 사람들이 못 찾았다(2026-07-18). 인쇄와 같은 '찾기 쉬움'
     예외이고, 중복 금지 원칙대로 메뉴에서는 뺐다. 도로 메뉴에 넣지 말 것.
