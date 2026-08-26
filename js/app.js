@@ -7860,6 +7860,22 @@
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
     "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffJanggu", "staffPrintSize"];
   const LS_KEY = "jgb_state_v1";
+  // 문서에 딸린 칸의 **기본값** — 페이지가 처음 그려진 그대로(HTML의 value/checked)를 한 번
+  // 떠 둔다. 문서를 들일 때(applyState) 그 문서에 **없는 칸은 이 값으로 되돌린다.**
+  // ★ 안 되돌리면 앞서 보던 악보의 값이 그대로 남는다 — 남창계면 두거(각0이 5정간인 가곡)를
+  //   열고 이어서 늴리리야를 열면 **늴리리야의 첫 각이 5정간으로 그려졌다**(2026-08-26 실측:
+  //   늴리리야 파일엔 gakBeats가 없는데 화면엔 앞 문서의 "1:5, 16:11"이 남아 있었다).
+  //   각 길이가 틀리면 악보가 통째로 다른 곡이 된다. 예전엔 staffUnit 같은 몇 칸만 손으로
+  //   되돌리고 있었는데, 그 목록에 없는 칸(gakBeats·daegang·title·joPreset…)이 다 새고 있었다.
+  //   여기서 한 번에 막으므로 **손으로 적던 예외 목록은 지웠다 — 되살리지 말 것.**
+  // 뜨는 자리가 CTRL_IDS 바로 아래인 건, 이 시점의 DOM 값이 곧 HTML에 적힌 기본값이기
+  // 때문이다(문서를 들이거나 그리는 일은 전부 이 아래·init에서 일어난다).
+  const CTRL_DEFAULTS = {};
+  CTRL_IDS.forEach(function (id) {
+    const el = $(id);
+    if (!el) return;
+    CTRL_DEFAULTS[id] = (el.type === "checkbox") ? el.checked : el.value;
+  });
 
   // 이 문서가 서버에 게시된 것이라면 그 게시물 id(js/cloud.js가 읽고 쓴다).
   // **수정 토큰은 여기 두지 않는다** — 권한은 게시한 브라우저의 localStorage에만 있어야 하고,
@@ -7892,23 +7908,17 @@
 
   function applyState(s) {
     if (!s || !s.controls) return;
+    // **문서에 없는 칸은 기본값으로 되돌린다**(CTRL_DEFAULTS 주석 참고) — 건너뛰면 앞서 보던
+    // 악보의 값이 남아, 다른 악보를 열었을 때 각 길이·조·제목 같은 것이 뒤섞인다.
     CTRL_IDS.forEach(function (id) {
-      if (!(id in s.controls)) return;
       const el = $(id);
-      if (el.type === "checkbox") el.checked = !!s.controls[id];
-      else el.value = s.controls[id];
+      if (!el) return;
+      const v = (id in s.controls) ? s.controls[id] : CTRL_DEFAULTS[id];
+      if (el.type === "checkbox") el.checked = !!v;
+      else el.value = (v == null ? "" : v);
     });
     // 예전에 저장된 "이미지" 표기 옵션은 제거됐으므로 폰트(한자)로 대체
     if (!$("noteMode").value) $("noteMode").value = "font";
-    // 정간 단위가 문서에 안 적혀 있으면 **'자동'으로 되돌린다** — 위 루프는 없는 칸을 건너뛰어
-    // 앞서 보던 악보의 값이 남는데, 그러면 남의 12정간 곡을 열었을 때 36/8로 펼쳐진다
-    // (국악원 자료처럼 이 칸이 없는 문서가 있다). 적혀 있으면 그 값이 그대로 이긴다.
-    if (!("staffUnit" in s.controls) && $("staffUnit")) $("staffUnit").value = "auto";
-    if (!("staffTime" in s.controls) && $("staffTime")) $("staffTime").value = "auto";
-    if (!("staffBar" in s.controls) && $("staffBar")) $("staffBar").value = "auto";
-    if (!("staffPrintSize" in s.controls) && $("staffPrintSize")) $("staffPrintSize").value = "normal";
-    if (!("staffPerLine" in s.controls) && $("staffPerLine")) $("staffPerLine").value = "auto";
-    if (!("staffJanggu" in s.controls) && $("staffJanggu")) $("staffJanggu").value = "legend";
     if (typeof s.jangdan === "string") $("jangdan").value = s.jangdan;   // 장단은 곡에 하나(공유)
     // 파트 — v2는 parts[]. v1(옛 저장분·파일·박제된 링크)은 루트의 단일 선율·곁줄·서식을
     // 파트 1개로 승계한다(tempoBpm 승계와 같은 관례 — 옛 문서는 그대로 열려야 한다).
