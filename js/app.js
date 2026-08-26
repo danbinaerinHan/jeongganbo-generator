@@ -8637,6 +8637,14 @@
       if (inputMode === "editor") CELL_EDIT.mel.setCursor(s.gi, s.ci, true);
       else openCellEditor("mel", s.gi, s.ci);
     } else {
+      // 구간이 잡히면 **입력칸에서 포커스를 뗀다.** ⌘C·⌘X·⌘V 핸들러는 글자를 치는 중이면
+      // (target이 input/textarea) 브라우저 기본 동작에 양보하는데, 에디터 모드는 정간을
+      // 한 번만 눌러도 선율 textarea에 포커스가 남으므로 그 뒤 드래그로 구간을 골라도
+      // 단축키가 그 칸으로 가 버렸다 — 파란 선택이 눈에 보이는데 복사·붙여넣기는 아무 일도
+      // 안 하니 기능이 없는 것처럼 보였다(2026-08-26 사용자 제보). 악보에서 구간을 끄는
+      // 것과 글자를 치는 것은 다른 일이니, 손을 뗀 자리에서 포커스도 악보로 넘어와야 한다.
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT")) ae.blur();
       render();
     }
   });
