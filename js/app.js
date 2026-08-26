@@ -1555,6 +1555,11 @@
   //   선택**이고(selectModeOn), 창을 닫으면 고르던 모드로 저절로 돌아간다.
   //   모드는 '내가 지금 어떻게 만지나'라 문서에도 앱 설정에도 안 남는다(늘 입력으로 시작).
   let cursorMode = "input";                  // "input" | "select" | "pan"
+  // 입력 모드가 아닐 때 접어 둔 '무엇을 넣는' 도구창 — 입력으로 돌아오면 그대로 되살린다
+  let cursorStashedWin = null;
+  // 井 율/시김새 · 傍 곁줄 · 長 장단 · 章 · 文 — **넣는** 창들. 정간 서식은 여기 없다:
+  // 그건 '고른 구간에 무엇을 하나'라 선택 모드의 짝이므로 모드를 바꿔도 닫지 않는다.
+  const CURSOR_INPUT_WINS = ["paletteCol", "lyricsArea", "jangdanArea", "gakNameArea", "textArea"];
   function selectModeOn() { return cursorMode === "select" || cellStyleMode(); }
   function refreshCursorBtns() {
     const pan = cursorMode === "pan", sel = !pan && selectModeOn();
@@ -1566,6 +1571,19 @@
     if (mode !== "input" && cellEditInput) commitCellEditor(false);   // 편집 카드 열려 있으면 정리
     cursorMode = mode;
     document.body.classList.toggle("pan-mode", mode === "pan");
+    // 입력 모드를 벗어나면 **넣는 도구창은 접는다** — 고르거나 화면을 옮기는 중에 입력
+    // 팔레트가 떠 있으면 지금 무엇을 하는 모드인지가 흐려진다(2026-08-26 사용자 지적).
+    // 입력으로 돌아오면 접어 둔 그 창을 되살린다 — 다만 그 사이 사용자가 다른 창을 열어
+    // 두었으면 그쪽 뜻이 먼저다(아무것도 안 열려 있을 때만 되살린다).
+    if (mode !== "input") {
+      const open = CURSOR_INPUT_WINS.filter(function (id) {
+        const w = $(id); return w && w.classList.contains("win-open");
+      })[0];
+      if (open) { cursorStashedWin = open; activateDirectPanel(null); }
+    } else if (cursorStashedWin) {
+      const id = cursorStashedWin; cursorStashedWin = null;
+      if (!document.querySelector(".direct-win.win-open")) activateDirectPanel(id);
+    }
     refreshCursorBtns();
   }
   if ($("cursorInput")) $("cursorInput").addEventListener("click", function () { setCursorMode("input"); });
