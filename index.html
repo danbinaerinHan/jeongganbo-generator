@@ -803,6 +803,11 @@
             data-tip="정간 서식 팔레트를 열고 닫습니다
 · 배경색 · 합치기 · 나누기 · 없애기 · 가로줄 모양">□<span>정간 서식</span></button>
         </div>
+        <!-- 고른 구간이 있을 때만 뜨는 한 줄 — '골라 두면 무엇을 할 수 있나'를 그 자리에서
+             말한다. [선택] 모드가 무엇을 위한 것인지 이름만으로는 안 읽힌다는 지적(2026-08-26)
+             에서 나온 자리다. 버튼도 창도 안 늘리려고 이 그룹 아래 글줄 하나로 뒀고, 고르기
+             전에는 통째로 숨는다(app.js refreshMelSelBtns가 채운다). -->
+        <div class="rb-selhint" id="melSelHint"></div>
       </div>
       <div class="ribbon-sep"></div>
       <div class="ribbon-group ribbon-slider-group">

@@ -183,6 +183,18 @@
       const el = $(id);
       if (el) el.disabled = !on;
     });
+    // 고른 구간이 있을 때만 '이제 무엇을 할 수 있나'를 기능바에 한 줄로 띄운다 —
+    // [선택] 모드가 무엇을 위한 것인지 버튼 이름만으로는 안 읽혀서 둔 자리다.
+    // 곁줄 구간도 복사·붙여넣기가 되므로 두 줄 다 대상이고, 어느 줄인지도 함께 적는다.
+    const hint = $("melSelHint");
+    if (hint) {
+      const n = hasSel() ? selSeqs().length : 0;
+      hint.classList.toggle("on", n > 0);
+      hint.innerHTML = n > 0
+        ? "<b>" + (melSelLane === "ly" ? "곁줄" : "정간") + " " + n + "칸</b> 고름<br>" +
+          "⌘/Ctrl + <b>C</b> 복사 · <b>X</b> 오려두기 · <b>V</b> 붙여넣기"
+        : "";
+    }
   }
   let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
   // 테두리 모양을 바꿀 가로줄(위/아래) — UI에 이 둘뿐이다. 정간보는 한 칸씩 세로로 쌓인

@@ -926,6 +926,21 @@
   .rb-cap label { cursor: inherit; }
   .rb-items { display: flex; align-items: center; justify-content: center; gap: 3px;
               flex: 1 1 auto; }
+  /* 고른 구간이 있을 때만 뜨는 안내 한 줄('정간 편집' 그룹 아래) — [선택] 모드가 무엇을
+     위한 것인지 그 자리에서 말해 주는 글줄이다(2026-08-26).
+     ★ **왼쪽 도킹에서만 뜬다.** 가로 배치(위쪽·에디터 독)에서는 기능바 바로 옆이 아니라
+       바로 위/아래가 악보라, 이 줄이 나타나는 순간 기능바가 44px 높아지며 **악보가
+       내려앉는다** — 그 일이 드래그 도중(둘째 칸으로 번질 때)에 일어나므로 손끝 아래의
+       칸이 어긋나 구간이 엉뚱하게 잡힌다(실측: 72 → 116px). 왼쪽 도킹은 악보가 옆에 있어
+       열이 높아져도 악보가 안 움직이므로 이 문제가 없다. 가로 배치에서는 [선택] 툴팁이
+       같은 말을 진다.
+     · 폭은 그룹 버튼 두 개(58×2+gap)에 맞춰 묶는다 — 이 줄 때문에 그룹이 넓어지면
+       기능바 한 줄 폭이 달라져 .rb-break 문턱(1010/1130px)을 다시 재야 한다. */
+  .rb-selhint { display: none; max-width: 122px; margin: 4px auto 0;
+                font-size: 9.5px; line-height: 1.35; color: var(--muted);
+                text-align: center; white-space: normal; word-break: keep-all; }
+  body.ribbon-left .rb-selhint.on { display: block; }
+  .rb-selhint b { color: var(--accent); font-weight: 700; }
   .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
   .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
                 gap: 2px; width: 58px; padding: 6px 2px 5px; border: 1px solid transparent;
