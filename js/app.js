@@ -844,6 +844,12 @@
   // 현재 편집 중인 칸을 밝은 색으로 표시 — 선율 정간 / 장단 칸 / 가사 줄 공용
   function updateHighlight() {
     for (let i = 0; i < pageHi.length; i++) pageHi[i].style.display = "none";
+    // 노란 표시는 **'지금 편집하는 자리'**다 — 입력 모드에서만 뜻이 있다.
+    // 선택·이동 모드에선 편집을 안 하므로, 그대로 두면 **마지막으로 고쳤던 엉뚱한 칸**이
+    // 계속 노랗게 남아 방금 파랗게 고른 자리와 따로 논다(2026-08-26 사용자 제보).
+    // 자리(activeGak·activeCellIdx)는 그대로 두고 그리기만 접으므로, 입력 모드로 돌아오면
+    // 저절로 제자리에 다시 뜬다.
+    if (!(cursorMode === "input" && !cellStyleMode())) return;
     if (activeArea === "jd") {   // 장단 칸 (악곡 맨 처음 각 옆 한 줄)
       const jg = jdGeom[activeCellIdx];
       if (!jg) return;
@@ -1566,7 +1572,11 @@
   //   예외가 곧 [선택] 모드가 됐다 — **정간 서식 창이 열려 있으면 모드 값과 무관하게
   //   선택**이고(selectModeOn), 창을 닫으면 고르던 모드로 저절로 돌아간다.
   //   모드는 '내가 지금 어떻게 만지나'라 문서에도 앱 설정에도 안 남는다(늘 입력으로 시작).
-  let cursorMode = "input";                  // "input" | "select" | "pan"
+  // var인 건 이 절이 파일 아래쪽(1500줄대)에 있어서다 — 위쪽의 updateHighlight()가 이 값을
+  // 읽는데, let이면 로드 도중에 그 함수가 불릴 때 '아직 안 만들어진 변수'라 예외가 난다(TDZ).
+  // var는 hoisting되어 undefined로 읽히므로 그때는 노란 표시가 조용히 안 뜰 뿐이다
+  // (js/vendor 지연 로드의 vrvTk가 같은 까닭으로 var다).
+  var cursorMode = "input";                  // "input" | "select" | "pan"
   // 입력 모드가 아닐 때 접어 둔 '무엇을 넣는' 도구창 — 입력으로 돌아오면 그대로 되살린다
   let cursorStashedWin = null;
   // 井 율/시김새 · 傍 곁줄 · 長 장단 · 章 · 文 — **넣는** 창들. 정간 서식은 여기 없다:
@@ -1597,6 +1607,9 @@
       if (!document.querySelector(".direct-win.win-open")) activateDirectPanel(id);
     }
     refreshCursorBtns();
+    // 노란 '편집 자리' 표시는 입력 모드에서만 뜬다(updateHighlight) — 모드를 바꾼 그 순간
+    // 반영되어야 하므로 여기서 한 번 부른다. 다시 그리는 것보다 훨씬 싸다.
+    updateHighlight();
   }
   if ($("cursorInput")) $("cursorInput").addEventListener("click", function () { setCursorMode("input"); });
   if ($("cursorSelect")) $("cursorSelect").addEventListener("click", function () { setCursorMode("select"); });
@@ -8517,6 +8530,7 @@
       // 곁줄 탭을 고르고 벗어날 때 빈 곁줄이 생기고 사라진다(직접 입력의 창 여닫이와 같은 규칙)
       if (lyBefore !== lyricsLaneOn()) render();
       refreshCursorBtns();   // 정간 서식 탭을 오가면 마우스 모드가 따라 바뀐다(selectModeOn)
+      updateHighlight();
     });
   });
 
@@ -8543,7 +8557,10 @@
     if (gakBefore !== !!document.querySelector("#gakNameArea.win-open") ||
         txtBefore !== !!document.querySelector("#textArea.win-open") ||
         lyBefore !== lyricsLaneOn()) render();
-    refreshCursorBtns();   // 정간 서식 창을 여닫으면 마우스 모드가 따라 바뀐다(selectModeOn)
+    // 정간 서식 창을 여닫으면 마우스 모드가 따라 바뀐다(selectModeOn) — 버튼 표시도,
+    // 노란 '편집 자리' 표시도 그 자리에서 함께 맞춘다(이 창은 render()를 안 타는 길이다).
+    refreshCursorBtns();
+    updateHighlight();
   }
   document.querySelectorAll(".win-toggle").forEach(function (b) {
     b.addEventListener("click", function () {
