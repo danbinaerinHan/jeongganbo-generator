@@ -744,7 +744,7 @@
                하는 일이 다르다 — 井은 정간 **안에 넣기**, □는 정간 **자체를 꾸미기**. -->
           <button type="button" id="winToggleYul" class="ribbon-btn win-toggle tip" data-target="paletteCol"
             data-tip="정간 안에 넣는 팔레트를 열고 닫습니다
-· 창 머리의 '율명 | 시김새'로 갈아 끼웁니다">井<span>율명/시김새</span></button>
+· 창 머리의 '율 | 시김새'로 갈아 끼웁니다">井<span>율명/시김새</span></button>
           <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
             data-tip="곁줄 도구창을 열고 닫습니다
 · 곁줄 = 정간 오른쪽에 붙는 줄. 노랫말·활 기호(뜰·튕김 등)·장구 구음을 적습니다
@@ -1102,11 +1102,13 @@
                  입력·소리·크기는 팔레트 전체(표·건반·시김새)에 걸치는 컨트롤이라 설정
                  묶음 밖 첫 줄 오른쪽에 둔다 -->
             <div class="pal-top">
-              <span class="pal-col-title">음</span>
+              <!-- 창 제목(.pal-col-title)을 두지 않는다 — 바로 옆 보기 탭('율 | 시김새')이
+                   이 창이 무엇인지 이미 말한다. 예전엔 '음'이라는 제목이 탭 앞에 붙어
+                   같은 말을 두 번 했다(2026-08-26 사용자 지적). -->
               <!-- 보기 전환 — 두 모드가 이 한 창을 같이 쓰므로 창 안에 있어야 한다.
                    buildPalette()가 내용을 갈아 끼울 뿐이라 창 높이는 그대로다. -->
               <div class="pal-views">
-                <button type="button" class="pal-view active" data-view="yul">율명</button>
+                <button type="button" class="pal-view active" data-view="yul">율</button>
                 <button type="button" class="pal-view" data-view="orn">시김새</button>
               </div>
               <span class="pal-top-right">

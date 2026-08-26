@@ -1607,7 +1607,8 @@
      전부 position:absolute라 이 박스가 빈 채로 330px를 그대로 차지해 사이드바 전체가
      안 줄어드는 문제가 있었다. 높이를 없애 빈 상자가 자리만 차지하지 않게 한다. */
   #melodyArea.mel-direct #melodyRow { height: 0; }
-  /* 도구창 제목('율명'/'시김새') — 직접 입력 모드에서만 */
+  /* 도구창 제목 — 직접 입력 모드에서만. 지금 쓰는 곳은 '정간 서식' 창 하나다
+     (율명/시김새 창은 보기 탭이 곧 제목이라 따로 안 둔다 — index.html 주석 참고). */
   .pal-col-title { display: none; }
   #melodyArea.mel-direct .pal-col-title {
     display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
