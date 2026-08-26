@@ -122,11 +122,42 @@
   // 앞서 담아 둔 것들만 여기 쌓인다.
   let melSelRanges = [];                     // [{lo,hi}] — 먼저 담아 둔 구간들(같은 줄만)
   let melSelAdd = false;                     // 이번 제스처가 '더하기'(⌘/Ctrl)로 시작했나
+  // **총보에서는 네모(사각)로 고른다**(2026-08-26 사용자 확정) — 파트 범위 × 각 범위 × 정간
+  // 범위. 화면 그대로의 사각형(열이 죽 이어지는 것)이 아니라 **악보 편집기의 네모**다:
+  // (각0,대금)에서 (각2,대금)으로 끌면 그 사이 악기들이 아니라 **대금의 각0~각2**가 잡힌다.
+  // 파트보는 열이 하나뿐이라 예전 그대로 '읽는 차례'로 이어진다(각 아래로 넘기면 다음 각).
+  let melSelRect = null;                     // {pLo,pHi,gLo,gHi,rLo,rHi} — 없으면 null
+  let melSelRectFrom = null;                 // 네모를 시작한 칸 {p,g,r}
+  let melSelClickPart = null;                // 남의 파트 열을 '그냥 눌렀을 때' 갈아탈 자리
   function hasSel() { return !!(melSelStart && melSelEnd) || melSelRanges.length > 0; }
   function hasMelSel() { return hasSel() && melSelLane === "mel"; }
   function clearSel() {
     melSelStart = null; melSelEnd = null; melSelLane = "mel"; lyDragFrom = null;
     melSelRanges = []; melSelAdd = false;
+    melSelRect = null; melSelRectFrom = null;
+  }
+  // 네모를 '범위 목록'으로도 적어 둔다 — **활성 파트 하나에만 걸칠 때만**.
+  // 그래야 지금 있는 도구(구간 지우기·정간 서식·복사)가 손댈 것 없이 그대로 먹는다.
+  // 여러 파트에 걸친 네모는 표시만 되고 도구는 아직 안 붙는다(2단계에서 잇는다).
+  function syncRectToRanges() {
+    melSelRanges = []; melSelStart = null; melSelEnd = null; melSelLane = "mel";
+    const R = melSelRect;
+    if (!R || R.pLo !== activePart || R.pHi !== activePart) return;
+    for (let g = R.gLo; g <= R.gHi; g++) {
+      const n = beatsAt(g);
+      const lo = Math.max(0, R.rLo), hi = Math.min(R.rHi, n - 1);
+      if (lo > hi) continue;
+      melSelRanges.push({ lo: melCellSeq(g, lo), hi: melCellSeq(g, hi) });
+    }
+  }
+  // 네모를 두 칸(시작·지금)으로 다시 잡는다
+  function setRectFrom(a, b) {
+    melSelRect = {
+      pLo: Math.min(a.p, b.p), pHi: Math.max(a.p, b.p),
+      gLo: Math.min(a.g, b.g), gHi: Math.max(a.g, b.g),
+      rLo: Math.min(a.r, b.r), rHi: Math.max(a.r, b.r)
+    };
+    syncRectToRanges();
   }
   // 고른 구간 전부 — 담아 둔 것 + 지금 끌고 있는 것. 겹치거나 맞닿는 것은 하나로 합쳐
   // 순서대로 준다(합쳐야 '안쪽 가로줄' 셈이 이어진 덩이 하나로 맞는다).
@@ -4830,7 +4861,7 @@
             const hit = rect(x, cyTop, cell, cell, 0,
               { fill: "transparent", stroke: "none", "pointer-events": "all", class: tourCls });
             hit.style.cursor = "text";
-            (function (gi, ci) {
+            (function (gi, ci, pi) {
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
@@ -4848,6 +4879,15 @@
                 // 기본 동작: 아직 클릭인지 드래그인지 모름 — mouseup에서 판가름한다
                 // (다른 칸으로 번지면 드래그로 확정, 안 번기면 그냥 클릭 → 이 칸을 편집)
                 melSelActive = true; melSelDidDrag = false;
+                // 총보는 네모로 고른다 — 파트를 가로질러도 되므로 시작 칸에 파트 번호를 담는다
+                if (scoreViewOn()) {
+                  melSelAdd = false; lyDragFrom = null; melSelRanges = [];
+                  melSelRectFrom = { p: pi, g: gi, r: ci };
+                  setRectFrom(melSelRectFrom, melSelRectFrom);
+                  render();
+                  return;
+                }
+                melSelRect = null; melSelRectFrom = null;
                 // ⌘/Ctrl을 누른 채면 **앞서 고른 것을 담아 두고** 하나 더 고른다.
                 // 줄이 다르면(정간↔곁줄) 섞지 않고 처음부터 다시 고른다.
                 melSelAdd = (e.metaKey || e.ctrlKey);
@@ -4865,11 +4905,17 @@
               hit.addEventListener("mouseenter", function () {
                 // 곁줄에서 시작한 드래그가 정간으로 넘어와도 안 잡는다 — 줄은 안 섞인다
                 if (!melSelActive || lyDragFrom || melSelLane !== "mel") return;
+                if (melSelRectFrom) {   // 총보 네모
+                  melSelDidDrag = true;
+                  setRectFrom(melSelRectFrom, { p: pi, g: gi, r: ci });
+                  render();
+                  return;
+                }
                 melSelDidDrag = true;
                 melSelEnd = { gi: gi, ci: ci };
                 render();
               });
-            })(melIdx, j);
+            })(melIdx, j, pi);
             svg.appendChild(hit);
           }
           // 총보에서 남의 파트 열을 누르면 그 파트로 갈아타고 누른 칸을 곧장 연다 —
@@ -4880,13 +4926,23 @@
               { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
             hit.style.cursor = "text";
             (function (pIdx, gi, ci) {
+              // 누르는 순간엔 아직 클릭인지 드래그인지 모른다 — 네모만 잡아 두고, 손을 뗄 때
+              // 번지지 않았으면(그냥 클릭) 그때 갈아타고 편집을 연다(mouseup 핸들러).
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
-                switchPart(pIdx);   // stash→전환→render까지 — 좌표가 새로 잡힌 뒤에 연다
-                if (selectModeOn()) return;   // 선택 모드: 갈아타기만 하고 편집은 안 연다
-                if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
-                else openCellEditor("mel", gi, ci);
+                melSelActive = true; melSelDidDrag = false; melSelAdd = false;
+                lyDragFrom = null; melSelRanges = [];
+                melSelRectFrom = { p: pIdx, g: gi, r: ci };
+                melSelClickPart = { p: pIdx, g: gi, r: ci };
+                setRectFrom(melSelRectFrom, melSelRectFrom);
+                render();
+              });
+              hit.addEventListener("mouseenter", function () {
+                if (!melSelActive || !melSelRectFrom) return;
+                melSelDidDrag = true;
+                setRectFrom(melSelRectFrom, { p: pIdx, g: gi, r: ci });
+                render();
               });
             })(pi, melIdx, j);
             svg.appendChild(hit);
@@ -5469,7 +5525,24 @@
     // 구간 선택 — 드래그로 고르면(또는 고른 뒤에도 계속) 옅은 파란색으로 표시.
     // 고른 줄(melSelLane)의 좌표표를 본다: 정간이면 cellGeom, 곁줄이면 lyGeom.
     // 구간 지우기·셀 서식 칠하기/지우기 버튼은 정간 구간일 때만 산다(hasMelSel).
-    if (hasSel()) {
+    // 총보 네모 — 파트를 가로지르므로 활성 파트 좌표표(cellGeom)가 아니라 **모든 열의
+    // 좌표표(playGeom)** 를 본다. 그 둘의 차이는 위 playGeom 주석 참고.
+    if (melSelRect) {
+      const R = melSelRect;
+      for (let p = R.pLo; p <= R.pHi; p++) {
+        const pg = playGeom[p]; if (!pg) continue;
+        for (let g = R.gLo; g <= R.gHi; g++) {
+          const row = pg[g]; if (!row) continue;
+          for (let r = R.rLo; r <= R.rHi; r++) {
+            const cg = row[r]; if (!cg) continue;
+            const svg = pageSvgs[cg.page]; if (!svg) continue;
+            svg.appendChild(rect(cg.x, cg.y, cg.w, cg.h, 0,
+              { fill: "#5b8def", "fill-opacity": "0.22", stroke: "#3a6fd8", "stroke-width": "0.15",
+                "pointer-events": "none", class: "no-print" }));
+          }
+        }
+      }
+    } else if (hasSel()) {
       // 떨어져 있는 구간도 함께 고를 수 있으므로 '이 칸이 골라졌나'를 집합에 묻는다
       const picked = selSeqSet();
       const selGeom = melSelLane === "ly" ? lyGeom : cellGeom;
@@ -8948,6 +9021,30 @@
       return;
     }
     lyDragFrom = null;
+    // 총보 네모 — 번졌으면 그대로 두고, 그냥 눌렀으면 예전처럼 그 파트로 갈아타고 편집을 연다
+    if (melSelRectFrom) {
+      const click = melSelClickPart;
+      melSelRectFrom = null; melSelClickPart = null;
+      if (melSelDidDrag) { render(); return; }
+      if (click) {
+        melSelRect = null; melSelRanges = [];
+        switchPart(click.p);   // stash→전환→render까지 — 좌표가 새로 잡힌 뒤에 연다
+        // 선택 모드면 갈아탄 파트의 그 칸을 골라 둔다(switchPart가 선택을 비우므로 뒤에)
+        if (selectModeOn()) { setRectFrom(click, click); render(); return; }
+        if (inputMode === "editor") CELL_EDIT.mel.setCursor(click.g, click.r, true);
+        else openCellEditor("mel", click.g, click.r);
+        return;
+      }
+      // 활성 파트 열을 그냥 누른 경우 — 선택 모드면 한 칸 선택으로 남기고, 아니면 편집
+      if (selectModeOn()) { render(); return; }
+      const c = melSelRect;
+      melSelRect = null; melSelRanges = []; render();
+      if (c) {
+        if (inputMode === "editor") CELL_EDIT.mel.setCursor(c.gLo, c.rLo, true);
+        else openCellEditor("mel", c.gLo, c.rLo);
+      }
+      return;
+    }
     // ⌘/Ctrl+클릭은 입력 모드에서도 '하나 더 고르기'다 — 편집칸을 열지 않는다
     if (!melSelDidDrag && !selectModeOn() && !melSelAdd) {
       const s = melSelStart;
