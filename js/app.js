@@ -7926,14 +7926,19 @@
   };
 
   // ---------- 링크 공유 (문서를 URL 해시에 담기) ----------
+  // ★ **[링크] 버튼은 2026-08-26에 없앴다**(사용자 확정) — [게시]가 같은 일을 더 잘한다:
+  //   주소가 짧아 메신저에서 안 잘리고, 올린 뒤에도 같은 주소로 고칠 수 있으며, 공유마당에
+  //   오른다. 링크는 우락 전곡이 2,000자를 넘어 잘리기 일쑤였다.
+  //   **읽는 쪽(consumeShareHash)은 남긴다** — 이미 글·메신저에 박제된 `#s=…` 링크가 계속
+  //   열려야 하기 때문이다. 만드는 쪽(shareLinkBuild)도 그 짝을 검증할 창구로 남는다.
+  //   되살릴 일이 생기면 버튼과 shareLinkCopy만 다시 붙이면 된다.
   // 문서 전체(collectState)를 deflate로 압축해 주소의 해시에 싣는다:
   //   https://umulsai.com/#s=1.<base64url>
   // 해시는 서버로 전송되지 않으므로 정적 페이지 그대로 동작한다(서버·계정 불요).
   // 압축은 브라우저 내장 CompressionStream("deflate-raw") — 외부 라이브러리를 안 들이는
-  // 무의존 원칙 유지. 우락 전곡이 payload 약 2,000자(실측)라 메신저·브라우저 한계 안이고,
-  // SHARE_WARN_LEN을 넘으면 파일 공유를 권한다. "1."은 버전 접두어 — 링크는 글·논문에
-  // 박제되어 몇 년 뒤 열릴 수 있으므로, 형식이 바뀌어도 옛 버전 링크는 계속 읽어야 한다.
-  const SHARE_WARN_LEN = 8000;
+  // 무의존 원칙 유지. 우락 전곡이 payload 약 2,000자(실측). "1."은 버전 접두어 — 링크는
+  // 글·논문에 박제되어 몇 년 뒤 열릴 수 있으므로, 형식이 바뀌어도 옛 버전 링크는 계속 읽어야
+  // 한다(길이가 길면 잘린다고 경고하던 SHARE_WARN_LEN은 만드는 버튼과 함께 걷었다).
   function b64urlFromBytes(bytes) {
     let s = "";
     for (let i = 0; i < bytes.length; i += 0x8000)   // 한 번에 spread하면 인자 수 한계에 걸릴 수 있어 쪼갠다
@@ -7955,21 +7960,9 @@
     const comp = await bytesThroughStream(new TextEncoder().encode(json), new CompressionStream("deflate-raw"));
     return location.origin + location.pathname + "#s=1." + b64urlFromBytes(comp);
   }
-  window.jgbShareLink = shareLinkBuild;   // 검증·임베드용 노출 (window.jgbTrack과 같은 성격)
-  async function shareLinkCopy() {
-    if (typeof CompressionStream === "undefined") { alert("이 브라우저는 링크 공유를 지원하지 않습니다."); return; }
-    track("share_link");
-    const link = await shareLinkBuild();
-    if (link.length > SHARE_WARN_LEN &&
-        !confirm("곡이 커서 링크가 매우 깁니다(" + link.length + "자). 메신저에 따라 잘릴 수 있으니 '파일로 저장' 공유를 권합니다.\n그래도 복사할까요?")) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      alert("악보를 담은 링크가 복사되었습니다.\n붙여넣기로 공유하세요.");
-    } catch (e) {
-      // 클립보드 권한이 없는 환경 — 손으로 복사할 수 있게 보여준다
-      prompt("자동 복사가 막혀 있습니다. 아래 링크를 직접 복사해 주세요.", link);
-    }
-  }
+  // 검증·임베드용 노출 (window.jgbTrack과 같은 성격). **버튼은 없앴지만 만드는 자는 남는다** —
+  // 아래 consumeShareHash가 옛 링크를 읽는 짝이고, 형식이 맞는지 검증할 길이 있어야 한다.
+  window.jgbShareLink = shareLinkBuild;
   // 링크로 받은 악보 열기 — init에서 한 번 호출된다.
   // 규칙은 ?first=1과 같다: 해시는 쓰자마자 replaceState로 주소에서 뗀다 — 안 떼면 이
   // 주소를 새로고침할 때마다 편집하던 악보가 링크 내용으로 되돌아간다. 작업 중이던
@@ -9015,7 +9008,6 @@
   });
   $("btnExport").addEventListener("click", exportFile);
   $("btnMusicXml").addEventListener("click", exportMusicXml);
-  $("btnShareLink").addEventListener("click", shareLinkCopy);
   $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importFile(e.target.files[0]);
