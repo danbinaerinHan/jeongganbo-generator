@@ -820,13 +820,9 @@
       </div>
     </div>
     <!-- 기능바 왼쪽 도킹용 그릇 — 위쪽 배치에선 display:contents라 없는 셈이고,
-         body.ribbon-left일 때만 **가로 두 칸**(아이콘 레일 | 펼침 패널)이 된다.
-         직접 입력이면 JS(applyInputMode)가 기능바를 늘 이 안 맨 앞에 넣는다(레일이 된다). -->
-    <div id="leftDock">
-      <!-- 펼침 패널 — 레일의 도구 버튼을 누르면 그 도구창이 여기로 옮겨 온다(dockDirectWins).
-           비어 있으면 CSS(:empty)가 통째로 숨기므로 평소에는 레일 폭만 차지한다. -->
-      <div id="dockPanel"></div>
-    </div>
+         body.ribbon-left일 때만 세로 열이 되어 기능바와 열린 도구창을 위아래로 담는다.
+         직접 입력이면 JS(applyInputMode)가 기능바를 늘 이 안에 넣는다. -->
+    <div id="leftDock"></div>
     <!-- 왼쪽 도킹 폭 조절 손잡이 — 직접 입력 + 왼쪽 도킹에서만 보임(CSS). 더블클릭 = 자동 폭 -->
     <div id="leftDockResizer" title="끌어서 폭 조절 · 더블클릭 = 자동"></div>
     <!-- 악보 열 — #sheetArea(종이)와 #staffPane(오선보)을 위아래로 쌓는 그릇.
