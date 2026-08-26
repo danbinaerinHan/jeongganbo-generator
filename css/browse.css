@@ -1,5 +1,5 @@
 /* ============================================================================
-   모아보기(browse.html) — 편집기와 같은 팔레트, 다른 판짜임
+   공유마당(browse.html) — 편집기와 같은 팔레트, 다른 판짜임
    ============================================================================
    색·글꼴은 styles.css에서 그대로 받는다(:root·body.dark·body.theme-*). 여기서
    새 색을 만들지 말 것 — 두 페이지의 테마가 어긋나면 딴 사이트처럼 보인다.
@@ -8,7 +8,7 @@
    ============================================================================ */
 
 /* ① 편집기는 화면을 꽉 채우고 스스로 스크롤을 관리한다(body: 세로 flex · overflow:hidden).
-      모아보기는 그냥 아래로 길어지는 문서라 그 규칙을 되돌린다. 글자 선택도 되살린다 —
+      공유마당는 그냥 아래로 길어지는 문서라 그 규칙을 되돌린다. 글자 선택도 되살린다 —
       편집기에서 글자가 안 잡히는 건 마우스를 끄는 일이 죄다 '고르기'라서인데, 여기서는
       제목·지은이를 긁어 옮길 일이 있다. */
 body.browse {
@@ -31,7 +31,7 @@ body.browse {
 .sc-brandlink { text-decoration: none; color: inherit; display: block; }
 /* 편집기에서는 문패 오른쪽에 도구 무리가 붙어 28px을 벌려 뒀지만 여기서는 혼자다 */
 .sc-brandlink #brandBox { margin-right: 0; }
-/* 문패의 h1을 div로 바꿔 달았으므로(이 페이지의 h1은 '모아보기') 크기 규칙을 다시 준다 */
+/* 문패의 h1을 div로 바꿔 달았으므로(이 페이지의 h1은 '공유마당') 크기 규칙을 다시 준다 */
 .brand-word { margin: 0; line-height: 0; font-size: 0; }
 .brand-word svg { height: 18px; width: auto; display: block; }
 
@@ -122,7 +122,7 @@ body.browse {
 /* ---------- 상태 · 더 보기 · 꼬리말 ---------- */
 .sc-status { max-width: 1200px; margin: 0 auto; padding: 40px 24px; text-align: center;
              font-size: 13px; color: var(--muted); line-height: 1.8;
-             /* 안내가 여러 줄일 때가 있어(모아보기 준비 중 등) 줄바꿈을 살린다 */
+             /* 안내가 여러 줄일 때가 있어(공유마당 준비 중 등) 줄바꿈을 살린다 */
              white-space: pre-line; }
 .sc-status.sc-empty { padding: 64px 24px; }
 .sc-status.sc-error { color: var(--danger); }

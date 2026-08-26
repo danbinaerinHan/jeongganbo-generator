@@ -228,7 +228,7 @@
                 gap: 2px; min-width: 46px; padding: 4px 7px 3px; border: 1px solid transparent;
                 border-radius: 7px; background: none; cursor: pointer; font-family: inherit;
                 color: var(--ink); font-size: 15px; line-height: 1; flex: 0 0 auto; }
-  /* 상단바 컨트롤은 거의 다 <button>이지만 모아보기(#btnBrowse)만 진짜 링크다 —
+  /* 상단바 컨트롤은 거의 다 <button>이지만 공유마당(#btnBrowse)만 진짜 링크다 —
      새 탭·주소 복사 같은 브라우저 기본 동작을 살리려고. 밑줄만 걷으면 나머지는 같다. */
   a.topbar-cmd { text-decoration: none; }
   .topbar-cmd .lbl { font-size: 9.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
@@ -291,6 +291,12 @@
   /* 두 무리(문서 나들이 / 앱)를 가르는 가는 선 — 상단바가 gap으로만 무리를 가르는 것과 달리
      세로로는 간격만으론 무리가 안 읽힌다(위아래로 길게 늘어서므로). */
   #appRail .rail-sep { width: 60%; border: none; border-top: 1px solid var(--line); margin: 7px 0; }
+  /* 앱 무리(색상·도움말)는 레일 **맨 아래**에 붙는다 — '이 악보'가 아니라 '앱을 어떻게
+     쓰나'라 손이 자주 가지 않고, 위쪽 무리와 빈 공간으로 갈리면 구분선 없이도 다른 무리임이
+     읽힌다(2026-08-26 사용자 요청). 레일이 넘칠 만큼 낮은 창에서는 auto 마진이 0이 되어
+     그냥 이어 붙는다(스크롤은 그대로). */
+  #appRail .rail-foot { margin-top: auto; display: flex; flex-direction: column;
+                        align-items: center; gap: 3px; }
   /* 레일의 드롭다운(색상)은 **떠서**(fixed) 버튼 왼쪽에 붙는다. absolute로 두면 안 된다 —
      #appRail은 창이 낮을 때를 위해 overflow-y:auto인데, 한 축이 visible이 아니면 다른 축도
      auto가 되어 **상자 밖으로 나간 메뉴가 통째로 잘린다**(2026-08-25 사용자 제보: 색상 메뉴가

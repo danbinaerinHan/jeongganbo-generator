@@ -219,6 +219,18 @@
         <span class="lbl">인쇄</span>
       </button>
     </div>
+    <!-- 설정 패널 토글 — **상단바 오른쪽 끝**에 있다. 오른쪽 레일(앱을 어떻게 쓰나)이
+         아니라 여기인 것은 설정 패널이 담는 것이 이 악보의 문서·레이아웃이기 때문이다
+         (2026-08-26 사용자 확정) — 레일에 잠깐 두었다가 되돌렸으니 다시 내리지 말 것.
+         늘 보인다: 예전엔 접었을 때만 나타났는데(그래서 이름도 '열기') 버튼이 사라졌다
+         나타나면 자리가 흔들리고 '지금 열려 있다'는 것도 안 보였다. 이제 켜짐(.on) 표시가
+         붙는 상시 토글이다. 사이드바 안 ✕(#sidebarToggle)는 닫기 전용으로 그대로 둔다. -->
+    <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
+      data-tip="설정 패널 열기 / 닫기
+· 문서 · 레이아웃 · 보관">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span class="lbl">설정</span>
+    </button>
   </div>
   <!-- 게시된 악보를 주소(#v=…)로 열었을 때 뜨는 알림 줄 — '지금 보고 있는 것이 누구의 것이고,
        여기서 고치면 어떻게 되는지'를 말한다. 읽기 전용으로 잠그는 대신 이 한 줄을 택했다:
@@ -244,7 +256,7 @@
        (2026-08-25 사용자 요청). 가르는 잣대는 **'이 악보'인가 '악보 바깥'인가**다:
        상단바에는 이 악보를 다루는 것만(입력 방식·재생·배율/오선보/총보·새 문서·인쇄),
        레일에는 ① 문서가 드나드는 길(불러오기·저장·PNG·MusicXML·링크·게시)과
-       ② 앱 자체(모아보기·색상·도움말·설정)를 둔다.
+       ② 앱 자체(공유마당·색상·도움말·설정)를 둔다.
        파일 메뉴(⋯)는 없앴다 — 열기 전엔 뭐가 든지 모르는 서랍이라 이름을 '파일'로 바꿔도
        근본은 그대로였다. 세로는 가로와 달리 자리가 남아 접을 까닭이 없다.
        위험한 [전체 초기화]만 레일에 안 두고 설정 › 문서 탭 맨 아래로 갔다(늘 보이는 자리에
@@ -261,8 +273,9 @@
            있든 상관없지만 주인 버튼 옆에 둬야 다음 사람이 찾는다. -->
       <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
       <button type="button" id="btnExport" class="topbar-cmd tip"
-        data-tip="파일로 저장 (.jgb.json)
-· 이 문서를 통째로 내려받습니다">
+        data-tip="저장
+· 문서를 JSON 파일(.jgb.json)로 통째로 내려받습니다
+· 다시 불러오면 그대로 이어서 고칠 수 있습니다">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         <span class="lbl">저장</span>
       </button>
@@ -278,8 +291,9 @@
            예외라서다(CLAUDE.md). 그래서 그 하나만 두 자리에 있다. -->
       <div id="outBoxRail">
         <button type="button" id="outToggle" class="topbar-cmd tip"
-          data-tip="출력 — 인쇄 · PNG · MusicXML
-· 정간보 · 오선보 · 둘을 나란히">
+          data-tip="출력
+· 이 문서를 여러 파일 형태로 골라 출력할 수 있습니다
+· 인쇄 · PNG · MusicXML / 정간보 · 오선보 · 둘을 나란히">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
           <span class="lbl">출력</span>
         </button>
@@ -331,21 +345,25 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
         <span class="lbl">링크</span>
       </button>
+    <hr class="rail-sep">
       <button type="button" id="btnPublish" class="topbar-cmd tip"
-        data-tip="악보 게시
-· 짧은 주소가 생겨 그 주소로 누구나 볼 수 있습니다
-· 올린 뒤에도 같은 주소로 고칠 수 있습니다">
+        data-tip="게시
+· 공유마당에서 사람들과 공유할 수 있습니다
+· 짧은 주소가 생기고, 올린 뒤에도 같은 주소로 고칠 수 있습니다">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>
         <span class="lbl">게시</span>
       </button>
-    <hr class="rail-sep">
       <a id="btnBrowse" class="topbar-cmd tip" href="browse.html"
-      data-tip="모아보기
-· 사람들이 올린 악보를 모아 봅니다
-· 마음에 드는 악보를 그대로 열어 고칠 수 있습니다">
+      data-tip="공유마당
+· 사람들이 공유한 악보를 둘러보고 직접 편집하여 사용할 수 있습니다">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
-      <span class="lbl">모아보기</span>
+      <span class="lbl">공유마당</span>
     </a>
+    <!-- 앱 무리(색상·도움말·설정)는 **레일 맨 아래**에 붙는다(margin-top:auto) — '이 악보'가
+         아니라 '앱을 어떻게 쓰나'라 손이 자주 가지 않는 자리이고, 위쪽 무리와 빈 공간으로
+         갈리면 구분선 없이도 다른 무리임이 읽힌다(2026-08-26 사용자 요청). -->
+    <div class="rail-foot">
+      <hr class="rail-sep">
       <div id="screenBox">
       <button type="button" id="screenToggle" class="topbar-cmd tip"
         data-tip="색상 테마 · 다크 전환
@@ -368,12 +386,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
       <span class="lbl">도움말</span>
     </button>
-      <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
-      data-tip="설정 패널 열기 / 닫기
-· 문서 · 레이아웃 · 보관">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      <span class="lbl">설정</span>
-    </button>
+    </div>
   </nav>
   <aside id="sidebar">
     <div class="side-head">
@@ -1746,7 +1759,7 @@
       <!-- 공개가 기본 — 여기는 '나눠 보는 곳'이라 올리는 이의 보통 뜻이 그쪽이다.
            끄면 주소를 아는 사람만 보는 옛 방식(unlisted)이 된다. -->
       <div class="field">
-        <label class="chk"><input type="checkbox" id="pubPublic" checked> 모아보기 목록에 올리기</label>
+        <label class="chk"><input type="checkbox" id="pubPublic" checked> 공유마당 목록에 올리기</label>
         <div class="hint">끄면 <b>주소를 아는 사람만</b> 볼 수 있습니다(목록에 오르지 않습니다).</div>
       </div>
       <!-- 권리 확인 — 예전 문구는 '남의 채보·편곡을 그대로 올리면'이라 **원곡 저작권 이야기가
