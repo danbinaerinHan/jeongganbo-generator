@@ -24,8 +24,23 @@
 // 조치)이 갖춰져 있어야 하므로, 그 준비가 끝나기 전에는 닫아 둔다.
 // 주의: 이건 화면을 닫는 것이지 서버를 닫는 것이 아니다. 완전히 막으려면
 // list_scores의 실행 권한을 거두어야 한다(server/schema.sql 맨 아래 grant 참고).
+// accounts — 이용자 계정(전자우편 매직 링크)을 열어 둘지. **false면 문을 안 낸다**:
+//   · 오른쪽 레일의 [계정] 버튼이 사라지고
+//   · login.html에 들어와도 '준비 중' 안내만 뜬다
+// 악보를 만들고 올리는 일은 계정과 무관하게 그대로 돌아간다 — 계정은 뺏는 것이 아니라
+// 더 주는 것이라, 이 스위치가 꺼져 있어도 없어지는 기능이 없다.
+//
+// ★ SMTP를 붙이기 전에는 켜지 말 것. 매직 링크는 메일이 안 가면 **아무도 못 들어온다** —
+//   문만 열려 있으면 그건 고장이다. 순서는 (1) 메일 업체 + DNS SPF·DKIM,
+//   (2) Supabase Authentication의 Custom SMTP·Rate Limits·URL Configuration
+//       (Redirect URLs에 https://www.umulsai.com/login.html),
+//   (3) 본인 주소로 받아 **스팸함이 아니라 받은편지함에** 오는지 확인, (4) 여기를 true로.
+//
+// ★ 약관·개인정보처리방침의 개정도 **같은 날에** 나간다. 계정이 없는데 '전자우편을
+//   수집한다'고 적으면 그 자체가 사실과 다르다(policy.html·privacy.html의 【 】 자리).
 window.JGB_CLOUD = {
   url: "https://uszzhreidfdopvgdzzqs.supabase.co",
   key: "sb_publishable_wMhSNubRaoeSchqunxVN2w_9Ib5XpiC",
   browse: true,
+  accounts: false,
 };

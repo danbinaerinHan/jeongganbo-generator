@@ -46,6 +46,30 @@
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   }
 
+  // ---------- 레일의 [계정] ----------
+  // 계정은 게시와 별개 스위치라(JGB_CLOUD.accounts) 서버가 없을 때의 이른 반환보다
+  // **앞에서** 여닫는다. 마크업이 display:none으로 태어나고 여기서만 켜지므로,
+  // 스위치를 안 켠 채 배포해도 없는 문이 보이는 일이 없다.
+  // 배선을 cloud.js에 둔 까닭: 레일 버튼을 서버 설정에 따라 여닫는 자리가 이미 여기다
+  // (btnPublish·btnBrowse). 세션 자체는 js/user-session.js가 혼자 맡는다.
+  (function () {
+    const a = $("btnAccount");
+    if (!a) return;
+    const U = window.jgbUser;
+    if (!U || !U.on) return;                 // 대기 모드 — 숨은 채로 둔다
+    a.style.display = "";
+    // 들어와 있으면 글씨로 알린다. 상단바·레일 버튼은 '기호 + 아래 작은 글씨'가 한 꼴이고
+    // 값이 있는 것은 그 글씨 자리에 **지금 값**을 보여주는 것이 이 앱의 문법이다(배율·입력 방식).
+    U.onChange(function (s) {
+      const lbl = a.querySelector(".lbl");
+      if (lbl) lbl.textContent = s ? "내 계정" : "계정";
+      a.classList.toggle("on", !!s);
+      a.setAttribute("data-tip", s
+        ? "내 계정\n· " + (s.email || "들어와 있습니다")
+        : "계정\n· 전자우편으로 링크를 받아 들어옵니다 (비밀번호 없음)\n· 계정 없이도 악보를 만들고 올리는 일은 그대로 됩니다");
+    });
+  })();
+
   // ---------- 서버가 없을 때 ----------
   // 버튼을 숨겨 '눌렀는데 아무 일도 안 일어나는' 상태를 안 만든다. 주소로 들어온
   // 경우엔 왜 안 열리는지 한 번은 말해 줘야 하므로 알림만 남긴다.

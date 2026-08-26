@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>계정 · 우물사이</title>
+<meta name="description" content="우물사이 계정 — 전자우편으로 링크를 받아 들어옵니다. 비밀번호는 두지 않습니다.">
+<meta name="robots" content="noindex, follow">
+<!-- policy.html·browse.html과 **같은 껍데기**다: 색 변수는 styles.css, 판짜임 되돌리기와
+     맨 윗줄(.sc-top)은 browse.css, 카드와 폼만 login.css.
+
+     ★ 이 페이지가 따로 있는 까닭은 화면 때문만이 아니다. 매직 링크는 Supabase가
+     `redirect_to#access_token=…` 꼴로 **해시에 토큰을 실어** 되돌려 주는데, index.html은
+     해시를 이미 악보 주소로 쓰고 있어(`#v=`·`#s=`·`#va=`) 거기로 되돌리면 두 문법이
+     부딪힌다. 정적 호스팅이라 경로 리라이트(/login)는 못 쓴다 — 게시 주소가 경로가
+     아니라 해시인 것과 같은 사정이다. -->
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/browse.css">
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body class="browse">
+
+<!-- 문패 그림·워드마크는 js/doc-brand.js가 index.html에서 가져와 꽂는다(로고를 두 번
+     박지 않으려는 것). policy.html과 같은 마크업이다. -->
+<div class="sc-top">
+  <a class="sc-brandlink" href="index.html" title="우물사이 — 정간보 편집기로">
+    <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
+      <img id="brandLogo" src="" alt="우물사이 로고" hidden>
+      <div class="brand-txt">
+        <div class="brand-word"></div>
+        <span>정간보 편집기</span>
+      </div>
+    </div>
+  </a>
+  <a class="sc-make" href="index.html">편집기로</a>
+</div>
+
+<main class="lg-wrap">
+
+  <!-- ① 아직 안 들어왔을 때 — 주소를 적는 자리 -->
+  <section class="lg-card" id="lgAsk" style="display:none">
+    <div class="lg-label">우물사이 계정</div>
+    <h1>전자우편으로 들어가기</h1>
+    <!-- 계정 없이도 다 된다는 것을 먼저 적는다. 이 앱은 '설치·계정·서버 없이'를 정체성으로
+         걸고 있어(README·meta·도움말), 로그인 화면이 그 약속을 흔들면 안 된다. 계정은
+         뺏는 것이 아니라 더 주는 것이다. -->
+    <p class="lg-p">악보를 만들고 올리는 데에는 계정이 필요하지 않습니다. 계정은 여러 기기에서
+      이어 쓰고, 올린 악보를 나중에 다시 고칠 수 있게 하는 자리입니다.</p>
+
+    <div class="lg-err" id="lgErr" style="display:none"></div>
+
+    <form id="lgForm" autocomplete="on">
+      <label class="lg-field">
+        <span>전자우편</span>
+        <input type="email" id="lgEmail" autocomplete="email" required
+               placeholder="name@example.com" inputmode="email">
+      </label>
+      <button type="submit" id="lgGo" class="lg-btn lg-primary">메일로 링크 받기</button>
+    </form>
+
+    <!-- 비밀번호가 없다는 것은 안내가 아니라 **약속**이라 카드에 상시로 적어 둔다:
+         '비밀번호 찾기'라는 문제가 아예 없고, 받는 개인정보가 주소 하나뿐이다. -->
+    <p class="lg-note">비밀번호는 두지 않습니다. 메일로 오는 링크를 누르면 그대로 들어옵니다.
+      받는 개인정보는 전자우편 주소 하나입니다 —
+      <a href="privacy.html">개인정보처리방침</a> · <a href="policy.html">이용약관</a></p>
+  </section>
+
+  <!-- ② 메일을 보낸 뒤 — 링크를 기다리는 자리 + 코드로 들어오는 길 -->
+  <section class="lg-card" id="lgSent" style="display:none">
+    <div class="lg-label">메일을 보냈습니다</div>
+    <h1>받은편지함을 확인해 주세요</h1>
+    <p class="lg-p"><span class="lg-sent" id="lgSentTo"></span> 으로 들어오는 링크를 보냈습니다.
+      링크를 누르면 이 페이지로 돌아와 로그인이 끝납니다. 몇 분 안에 안 오면 스팸함도 봐 주세요.</p>
+
+    <div class="lg-err" id="lgErr2" style="display:none"></div>
+
+    <!-- 코드 길을 함께 두는 까닭: 메일 앱이 제 내장 창으로 링크를 열면 세션이 **그쪽
+         브라우저에** 생겨 버려, 정작 악보를 쓰던 창은 안 들어와진 채로 남는다. 그때
+         여섯 자리를 옮겨 적으면 이 창에서 풀린다. -->
+    <form id="lgCodeForm">
+      <label class="lg-field">
+        <span>메일에 적힌 여섯 자리 번호 (링크 대신 써도 됩니다)</span>
+        <input type="text" id="lgCode" class="lg-code" inputmode="numeric"
+               autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="000000">
+      </label>
+      <button type="submit" id="lgCodeGo" class="lg-btn">번호로 들어가기</button>
+    </form>
+
+    <div class="lg-row">
+      <button type="button" class="lg-link" id="lgBack">주소를 잘못 적었습니다</button>
+      <button type="button" class="lg-link" id="lgResend">다시 보내기</button>
+    </div>
+  </section>
+
+  <!-- ③ 들어와 있을 때 -->
+  <section class="lg-card" id="lgIn" style="display:none">
+    <div class="lg-label">우물사이 계정</div>
+    <div class="lg-who">
+      <span class="lg-badge">계정</span>
+      <span class="lg-mail" id="lgWho"></span>
+    </div>
+    <!-- 지금 실제로 되는 것만 적는다. 아직 안 붙은 것(서버 보관함·내 악보 모아 보기)을
+         여기 미리 적으면 그 자리가 곧 거짓말이 된다 — 붙는 단계에 줄을 더할 것. -->
+    <p class="lg-p">이 브라우저에 로그인되어 있습니다.</p>
+    <button type="button" id="lgOut" class="lg-btn">나가기</button>
+    <p class="lg-note">나가도 이 브라우저에 저장된 악보와 임시 저장은 그대로 남습니다.</p>
+  </section>
+
+  <!-- ④ 대기 모드 — 계정 기능이 아직 안 열렸을 때(JGB_CLOUD.accounts !== true).
+       레일의 [계정] 버튼도 함께 숨으므로 여느 때는 여기까지 올 일이 없다. 주소를
+       직접 친 사람에게만 보이는 자리라, 무엇이 없는지 한 줄로만 말한다. -->
+  <section class="lg-card" id="lgOff" style="display:none">
+    <div class="lg-label">준비 중</div>
+    <h1>계정 기능은 아직 열지 않았습니다</h1>
+    <p class="lg-p">계정 없이도 악보를 만들고 올리는 일은 지금 그대로 됩니다.</p>
+    <a class="lg-btn" href="index.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">편집기로</a>
+  </section>
+
+</main>
+
+<footer class="sc-foot">
+  <span class="sc-copy">© 2026 한단비내린</span>
+</footer>
+
+<script src="js/analytics.js"></script>
+<script src="js/doc-brand.js"></script>
+<!-- cloud-config.js가 **먼저** — user-session.js가 그 값을 읽어 설지 물러설지 정한다 -->
+<script src="js/cloud-config.js"></script>
+<script src="js/user-session.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>
