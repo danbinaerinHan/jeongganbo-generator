@@ -229,7 +229,7 @@
     //   숨긴 것을 여느 모드에서 되살리지 않으면 그 탭에서는 영영 안 보인다(열쇠 안내가
     //   그랬다). 아래 네 개는 여느 경로가 다시 정해 주지만 그래도 여기서 함께 되돌린다 —
     //   '숨긴 자리와 되살리는 자리가 같아야' 새 항목을 더할 때 빠뜨리지 않는다.
-    ["pubExisting", "pubForkNote", "pubNew", "pubDelete", "pubKeyNote"].forEach(function (k) {
+    ["pubExisting", "pubForkNote", "pubForkTag", "pubNew", "pubDelete", "pubKeyNote"].forEach(function (k) {
       const el = $(k); if (el) el.style.display = adm ? "none" : "";
     });
     $("pubAdmin").style.display = adm ? "" : "none";
@@ -258,7 +258,9 @@
     $("pubHead").textContent = mine ? "게시한 악보 갱신" : "악보 게시";
     $("pubExisting").style.display = mine ? "" : "none";
     if (mine) $("pubUrl").value = scoreUrl(id);
+    // 남의 악보를 열어 둔 채 올리려는 것 — 제목 옆 붉은 표시와 아래 한 줄이 한 짝이다
     $("pubForkNote").style.display = orphan ? "" : "none";
+    $("pubForkTag").style.display = orphan ? "" : "none";
     $("pubNew").style.display = mine ? "" : "none";
     $("pubDelete").style.display = mine ? "" : "none";
     $("pubGo").textContent = mine ? "갱신" : "게시";
@@ -393,9 +395,18 @@
       return;
     }
     $("cbReport").textContent = "신고";
+    // 출처 — 다른 게시물을 고쳐 만든 악보면 그 사실을 여기서도 말하고 원본으로 가는 길을 준다.
+    // 공유마당 카드에는 '다른 악보에서' 태그가 붙는데 정작 악보를 열었을 때는 안 보였다.
+    const forkOf = meta && meta.fork_of;
+    const org = $("cbOrigin");
+    if (org) {
+      org.style.display = forkOf ? "" : "none";
+      if (forkOf) org.href = scoreUrl(forkOf);
+    }
+    const forkNote = forkOf ? " · 다른 악보를 고쳐 만든 것입니다" : "";
     $("cbText").textContent = mine
-      ? ("내가 게시한 악보입니다" + who + " — 고친 뒤 [파일 › 악보 게시]에서 같은 주소로 갱신할 수 있습니다")
-      : ("공유받은 악보입니다" + who + lic + " — 여기서 고쳐도 원본은 바뀌지 않습니다");
+      ? ("내가 게시한 악보입니다" + who + forkNote + " — 고친 뒤 오른쪽 [게시]에서 같은 주소로 갱신할 수 있습니다")
+      : ("공유받은 악보입니다" + who + lic + forkNote + " — 여기서 고쳐도 원본은 바뀌지 않습니다");
     // 내가 올린 악보를 나에게 신고하라고 할 일은 없다
     const rep = $("cbReport");
     rep.style.display = mine ? "none" : "";
@@ -449,7 +460,7 @@
     const down = meta.hidden_at ? " · 내려간 악보" : "";
     $("cbText").textContent =
       "관리자로 열었습니다 (v" + (meta.ver || 1) + ")" + who + down +
-      " — 고친 뒤 [파일 › 악보 게시]의 [관리자 갱신]으로 같은 주소에 되씁니다";
+      " — 고친 뒤 오른쪽 [게시]의 [관리자 갱신]으로 같은 주소에 되씁니다";
     $("cbReport").style.display = "none";     // 내가 처리하는 자리라 나에게 신고할 일이 없다
     $("cloudBanner").style.display = "";
   }

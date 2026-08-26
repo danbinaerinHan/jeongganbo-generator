@@ -63,7 +63,7 @@
         <div id="betaPop" class="tb-menu beta-pop">
           <div class="bp-title"><b>베타 버전입니다</b></div>
           <p>작업은 이 브라우저에 <b>자동 저장</b>되지만, 브라우저·기기 환경에 따라 <b>저장이 사라질 수 있습니다.</b></p>
-          <p>중요한 작업은 수시로 <b>파일로 저장(.json)</b>으로 내려받아 두세요 — 상단바 <b>⋯ 파일</b> 메뉴에도 있습니다.</p>
+          <p>중요한 작업은 수시로 <b>파일로 저장(.json)</b>으로 내려받아 두세요 — 오른쪽 레일 <b>[저장]</b>에도 있습니다.</p>
           <button type="button" id="betaSaveBtn" class="bp-save">지금 파일로 저장</button>
         </div>
       </div>
@@ -186,7 +186,7 @@
     </div>
     <!-- 오선보 보기 — 정간보를 서양 악보로 바꾼 결과를 화면 아래에 띄운다. '이 악보를 어떻게
          볼지'를 정하는 짝(배율)의 일원이라 여기 둔다(색상은 앱 전체의 겉모습이라 오른쪽 끝
-         무리로 옮겼다). 파일 메뉴의 [오선보 내보내기]와는 하는 일이 다르다
+         무리로 옮겼다). 오른쪽 레일 [출력]의 [MusicXML 파일]과는 하는 일이 다르다
          (보기 ↔ 파일로 내보내기)라 중복이 아니다. -->
     <button type="button" id="btnStaff" class="topbar-cmd tip"
       data-tip="오선보 보기
@@ -249,6 +249,11 @@
     <!-- 신고 — 남이 올린 악보를 보고 있는 바로 이 자리가 '문제가 있다'고 알릴 유일한 자리다.
          누르면 그 악보의 주소가 담긴 편지가 열린다(js/cloud.js가 주소를 채운다). 내가 올린
          악보를 보고 있을 때는 숨긴다. -->
+    <!-- 출처 — 다른 게시물을 고쳐 만든 악보(fork_of)일 때만. 공유마당 카드에는 '다른
+         악보에서' 태그가 붙는데 정작 악보를 열었을 때는 안 보였다(2026-08-26 사용자 지적).
+         누르면 그 원본 게시물로 간다. -->
+    <a id="cbOrigin" class="cb-report" href="#" style="display:none;"
+       title="이 악보의 바탕이 된 원래 게시물을 엽니다">원본 보기</a>
     <a id="cbReport" class="cb-report" href="#" target="_blank" rel="noopener"
        title="저작권 등 문제가 있는 악보를 알려 주세요">신고</a>
     <button type="button" id="cbClose" class="icon-btn" title="닫기">
@@ -1718,7 +1723,15 @@
        그건 앱이 아는 일이다(문서의 pubId + 이 브라우저의 열쇠). 상태 전환은 js/cloud.js. -->
   <div id="pubModal" class="modal-overlay" style="display:none;">
     <div class="modal-box">
-      <h3 id="pubHead">악보 게시</h3>
+      <!-- 제목줄 — 남의 악보를 열어 둔 채로 올리려는 것이면 **제목 옆에 붉게** 표시한다
+           (2026-08-26 사용자 요청). 예전엔 아래쪽 안내(.hint) 한 줄이라 [게시]를 누르기 전에
+           읽힐 자리가 아니었다. 문구에서 '열쇠'라는 말은 걷었다 — 그건 게시할 때 서버가 딱
+           한 번 주고 올린 사람 브라우저에만 남는 수정 토큰을 가리키는 이 리포의 은유인데,
+           처음 보는 사람에게는 무슨 소리인지 알 길이 없다(사용자 제보). -->
+      <div class="pub-head-row">
+        <h3 id="pubHead">악보 게시</h3>
+        <span id="pubForkTag" class="pub-fork-tag" style="display:none;">다른 사람의 악보</span>
+      </div>
       <!-- 이미 올라가 있는 악보일 때만 — 주소를 다시 찾으러 딴 데 가지 않게 -->
       <div class="field" id="pubExisting" style="display:none;">
         <label for="pubUrl">이 악보의 주소</label>
@@ -1727,9 +1740,9 @@
           <button type="button" id="pubCopy" class="pub-copy">복사</button>
         </div>
       </div>
-      <!-- 남의 게시물에서 온 문서(열쇠가 없음) — 왜 '갱신'이 아니라 '게시'인지 미리 말해 준다 -->
+      <!-- 왜 '갱신'이 아니라 '게시'인지 미리 말해 준다. 위 붉은 표시와 한 짝이다. -->
       <div class="hint" id="pubForkNote" style="display:none;">
-        • 이 악보는 다른 사람의 게시물에서 열었습니다. 고칠 열쇠가 없으므로 <b>새 주소로 올라가고</b>, 원래 악보가 출처로 기록됩니다.
+        • 남이 올린 악보를 열어 고친 것이라 <b>원본은 바뀌지 않습니다</b> — 내 것으로 <b>새 주소</b>에 올라가고, 원래 악보가 출처로 남습니다.
       </div>
       <!-- 앱이 못 읽는 자리가 있으면 올리기 전에 한 줄로 알려 준다. **막지는 않는다** —
            무엇을 쓰려던 것인지는 앱이 모르고, 일부러 그렇게 둔 악보일 수도 있다.

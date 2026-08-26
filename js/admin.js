@@ -132,7 +132,7 @@
     // 내려간 악보도 열린다 — 관리자 열기는 admin_get_score를 타므로 hidden을 안 가린다.
     // 무엇 때문에 내렸는지 보려면 열어 봐야 한다.
     const openBtn = '<button type="button" class="ad-btn ad-mini ad-ghost" data-act="open" ' +
-      'title="편집기에서 관리자로 엽니다 — 고친 뒤 [파일 › 악보 게시]에서 갱신할 수 있습니다">열기</button>';
+      'title="편집기에서 관리자로 엽니다 — 고친 뒤 오른쪽 [게시]에서 갱신할 수 있습니다">열기</button>';
 
     const offBtn = s.hidden_at
       ? '<button type="button" class="ad-btn ad-mini ad-ghost" data-act="show">다시 열기</button>'

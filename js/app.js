@@ -1384,7 +1384,7 @@
     });
   }
   $("btnResetContent").addEventListener("click", resetAllContent);
-  $("btnNewDoc").addEventListener("click", startNewDocument);   // 지금은 파일 메뉴 안
+  $("btnNewDoc").addEventListener("click", startNewDocument);   // 상단바 1급 버튼
   // 실행 취소/다시 실행 버튼은 없앴다 — ⌘/Ctrl+Z·⇧Z 단축키로만 한다(문패 옆을 비우려고).
   // 단축키 배선은 아래 '되돌리기' 절에 그대로 있고, 도움말 '단축키' 탭이 안내한다.
 
@@ -8969,9 +8969,9 @@
     const over = pop.getBoundingClientRect().right - (window.innerWidth - 8);
     if (over > 0) pop.style.left = (-over) + "px";
   });
-  // 팝오버의 '지금 파일로 저장' — 파일 메뉴의 저장(#btnExport)을 그대로 실행(팝오버는 클릭 시 닫힘)
+  // 팝오버의 '지금 파일로 저장' — 레일의 [저장](#btnExport)을 그대로 실행(팝오버는 클릭 시 닫힘)
   if ($("betaSaveBtn")) $("betaSaveBtn").addEventListener("click", function () { $("btnExport").click(); });
-  // btnPrint(상단바 1급 버튼)·btnPng/btnExport/btnImport(파일 메뉴)는 이제 상단바에 살고
+  // btnPrint(상단바 1급 버튼)·btnPng/btnExport/btnImport(오른쪽 레일)는 각자 제자리에 살고
   // 여기가 유일한 배선이다. 예전엔 사이드바 '출력' 탭에 진짜 버튼이 있고 상단바 더보기의
   // m* 항목이 그걸 대신 눌러주는 위임 구조였는데, 같은 명령이 두 군데 있는 게 헷갈려
   // 상단바로 일원화했다(사이드바 '보관' 탭엔 임시 저장만 남음).
