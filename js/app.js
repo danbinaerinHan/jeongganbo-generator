@@ -4445,9 +4445,15 @@
       const gridY = fTop + pageTopExtra + (fHb - pageTopExtra - gridTotalH) / 2;
       const bandRight = gridX + gridTotalW;
 
-      // 바깥 테두리: 가로는 격자에 맞추고, 세로는 '페이지 채움' 비율에 따라
+      // 바깥 테두리: '페이지 채움' 비율에 따라 **네 변 모두**
       // 0% = 정간보에 딱 붙는 상자 ~ 100% = 페이지 여백선까지 꽉 찬 상자 사이를 오간다.
-      // 상자 위/아래 y는 제목 칸 세로선도 같이 쓰므로 페이지 스코프에 둔다.
+      // 상자의 네 변은 제목 칸 세로선·밴드 통줄도 같이 쓰므로 페이지 스코프에 둔다.
+      //
+      // ★ 가로는 예전엔 늘 '딱 붙는' 값이었다(gridX ± INNER_PAD). 세로 배율이 먼저 걸리는
+      //   악보에서는 좌우로 종이가 크게 남는데 테두리가 그 폭을 안 쓰고 격자에 달라붙어,
+      //   테두리 안은 숨막히고 종이 가장자리는 휑했다(영산회상 군악 5파트 총보 A4 실측:
+      //   격자 156.3mm에 테두리 166.3mm인데 쓸 수 있는 폭이 189mm — 좌우로 11.4mm씩 놀았다).
+      //   세로가 이미 이 규칙이었으므로 가로만 따라오게 한 것이다.
       const fillT = pageFillPct / 100;
       const hugY = gridY - INNER_PAD, hugBottom = gridY + gridTotalH + INNER_PAD;
       let boxTop = hugY + (fTop - hugY) * fillT;
@@ -4459,8 +4465,13 @@
       if (pageTopExtra > 0)
         boxTop = Math.min(boxTop, gridY - pageTopExtra - INNER_PAD * 0.5);
       const boxBottom = hugBottom + ((frameY + frameH) - hugBottom) * fillT;
-      if (wantFrame) svg.appendChild(rect(gridX - INNER_PAD, boxTop,
-        visibleW + 2 * INNER_PAD, boxBottom - boxTop, T_FRAME));
+      // min/max로 한 번 더 조인다 — 격자가 여백선을 꽉 채운 판에서도 테두리가 **안쪽으로**
+      // 들어와 격자를 자르는 일은 없어야 한다(테두리는 밖으로만 벌어진다).
+      const hugLeft = gridX - INNER_PAD, hugRight = gridX + visibleW + INNER_PAD;
+      const boxLeft = Math.min(hugLeft, hugLeft + (frameX - hugLeft) * fillT);
+      const boxRight = Math.max(hugRight, hugRight + ((frameX + frameW) - hugRight) * fillT);
+      if (wantFrame) svg.appendChild(rect(boxLeft, boxTop,
+        boxRight - boxLeft, boxBottom - boxTop, T_FRAME));
 
       // 편집 하이라이트 자리(내용 아래 레이어) — 인쇄·PNG 저장에는 나오지 않아야 하므로 no-print 표시
       const hi = rect(0, 0, 0, 0, 0, { fill: "#ffe680", "fill-opacity": "0.6", stroke: "none", class: "no-print" });
@@ -4537,7 +4548,7 @@
         const capRight = page.hasTitle ? (bandRight - titleWidth) : capBase;
         // '페이지 채움'이 켜져 있으면 구획 가로선이 왼쪽 테두리까지 닿는다(예시 악보 방식).
         // 0%(꺼짐)면 지금처럼 격자(각과 각을 잇는 범위)까지만 그린다.
-        const capLeft = (wantFrame && pageFillPct > 0) ? (gridX - INNER_PAD) : musicLeft;
+        const capLeft = (wantFrame && pageFillPct > 0) ? boxLeft : musicLeft;
 
         if (wantHeader) svg.appendChild(line(capLeft, bandTop, capRight, bandTop, T_THICK));
 
@@ -5060,7 +5071,9 @@
       // 바깥 테두리를 껐을 땐 기댈 프레임이 없으므로 밴드마다 그 높이만큼만 끊어 긋는다
       // (밴드 사이 빈 공간을 가로지르는 선이 남지 않게).
       if (page.hasTitle && titleGak > 0) {
-        const panelRight = bandRight;
+        // 오른쪽 경계는 바깥 테두리가 겸하므로 제목은 **테두리까지의 폭** 한가운데에 선다.
+        // 테두리가 격자보다 넓어지면(위 boxRight) 글자도 함께 따라가야 칸 가운데에 남는다.
+        const panelRight = wantFrame ? boxRight : bandRight;
         const panelX = bandRight - titleWidth;
         if (wantFrame) {
           svg.appendChild(line(panelX, boxTop, panelX, boxBottom, T_THICK));
