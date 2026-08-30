@@ -77,7 +77,8 @@
   body { -webkit-user-select: none; user-select: none; }
   /* 되살리는 곳: 입력칸(당연히) · 안내문과 도움말(문구를 긁어 옮길 일이 있다) */
   input, textarea,
-  .melody-guide, .hint, .help-pane, #tourBody, .mg-sec, .gak-warn, .warn, .jd-source {
+  .melody-guide, .hint, .help-pane, #tourBody, .mg-sec, .gak-warn, .warn, .jd-source,
+  .lane-off-note {
     -webkit-user-select: text; user-select: text;
   }
   /* 팔레트·악보의 그림을 끌면 브라우저가 '이미지 끌어놓기'를 시작해 유령 미리보기가 따라온다 */
@@ -540,6 +541,12 @@
               background: var(--danger-soft); border: 1px solid var(--danger-line); border-radius: 7px;
               padding: 6px 10px; margin-bottom: 8px; }
   .gak-warn.on { display: block; }
+  /* 곁줄이 꺼져 있을 때만 곁줄 창에 뜨는 한 줄. 잘못이 아니라 '지금 이런 상태다'라는 말이라
+     danger 색을 안 쓴다(그건 각 수가 어긋났을 때 쓰는 .gak-warn 몫). */
+  .lane-off-note { display: none; font-size: 11px; line-height: 1.5; color: var(--muted);
+                   background: var(--soft); border: 1px solid var(--line); border-radius: 7px;
+                   padding: 6px 10px; margin-bottom: 8px; }
+  body.lyrics-lane-off .lane-off-note { display: block; }
   /* 장단 목록의 출처 한 줄 — 늘 보이지만 읽히려고 있는 글이 아니라 밝혀 두려고 있는 글이라
      작고 흐리게. 장단이라는 리듬형 자체는 공유 재산이지만 어느 자료를 보고 옮겼는지는
      적는 것이 맞다(js/jangdan-presets.js 머리말 참고). */

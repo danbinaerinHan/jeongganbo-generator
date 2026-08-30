@@ -451,7 +451,9 @@
     const scoreMode = scoreViewOn();
     const list = scoreMode ? parts : [parts[activePart]];
     const activeCol = scoreMode ? activePart : 0;
+    const shown = lyricsLaneShown();
     const lyOn = list.map(function (p, i) {
+      if (!shown) return false;
       if (i === activeCol) return lyricsLaneOn();
       return String(p.lyrics || "").replace(/[|\s]/g, "") !== "";
     });
@@ -845,7 +847,12 @@
     // 직접 입력은 떠 있는 도구창(.win-open), 에디터는 레일로 고른 패널(.active)
     return !!el && (el.classList.contains("win-open") || el.classList.contains("active"));
   }
-  function lyricsLaneOn() { return lyricsHasContent() || lyricsWinOpen(); }
+  // 설정 › 레이아웃 탭의 [곁줄 표시]. 위 '스위치가 아니라 상태'라는 규칙을 뒤집는 게 아니라
+  // 그 위에 얹힌 **자리 문제**다 — 총보에선 파트마다 곁줄이 붙어 각이 크게 넓어지므로
+  // '이 보기에서는 곁줄 자리를 안 만든다'를 정할 수 있어야 한다(레이아웃 탭이라 보기별).
+  // 끄면 내용이 있어도·창이 열려 있어도 안 그린다(장단 스위치와 같은 규칙) — 글자는 그대로 남는다.
+  function lyricsLaneShown() { const el = $("lyricsLane"); return !el || el.checked; }
+  function lyricsLaneOn() { return lyricsLaneShown() && (lyricsHasContent() || lyricsWinOpen()); }
 
   // 가사는 매 각(정간)마다 붙으므로, 선율과 같은 구조(각 수·정간 수)로 맞춤(내용 보존).
   function reconcileLyrics() {
@@ -4326,6 +4333,8 @@
     document.body.classList.toggle("want-lyrics", wantLyrics);
     // 초록 점(레이어 사용 표시)은 '내용이 있음'만 뜻한다 — 창을 열었다고 켜지면 안 된다
     document.body.classList.toggle("has-lyrics", lyricsHasContent());
+    // 곁줄 창을 열어도 줄이 안 나타나는 까닭을 그 창 안에서 알린다(.lane-off-note)
+    document.body.classList.toggle("lyrics-lane-off", !lyricsLaneShown());
 
     // ---------- 총보 보기 ----------
     // 파트가 여럿이고 악기 관리 창의 [총보]가 켜져 있으면 모든 파트를 한 각 안에 나란히
@@ -5642,13 +5651,18 @@
     // 선율·장단·가사는 구조 변경(각 추가/삭제, 종이 크기 등) 시점에만 서로 맞춰지고
     // (reconcileJangdan/reconcileLyrics) 타이핑 중엔 조용히 어긋난 채로 있을 수 있다 —
     // 다음 구조 변경 때 넘치는 내용이 말없이 잘려나가기 전에 눈에 띄게 알려준다.
-    const lyGakMismatch = wantLyrics && lyParsed && parsed.length !== lyParsed.length;
+    // 곁줄을 숨겨 둔 보기에서도 이 경고는 살아 있어야 한다 — 안 보일 뿐, 구조가 바뀌면
+    // 똑같이 잘려나간다(reconcileLyrics는 표시 여부를 안 본다). 그래서 안 그린 경우에만
+    // 여기서 한 번 더 뜬다.
+    const lyCheck = lyParsed
+      || ((lyricsHasContent() || lyricsWinOpen()) ? parseMelodyOffsets(lyricsFull) : null);
+    const lyGakMismatch = !!lyCheck && parsed.length !== lyCheck.length;
     const jdBeatMismatch = wantJangdan && jdParsed && jdParsed[0] && jdParsed[0].length !== beats;
     const lyWarnEl = $("lyricsGakWarn");
     if (lyWarnEl) {
       lyWarnEl.classList.toggle("on", lyGakMismatch);
       if (lyGakMismatch) lyWarnEl.textContent =
-        `⚠ 선율(${parsed.length}각)과 곁줄(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.`;
+        `⚠ 선율(${parsed.length}각)과 곁줄(${lyCheck.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.`;
     }
     const jdWarnEl = $("jangdanGakWarn");
     if (jdWarnEl) {
@@ -5665,7 +5679,7 @@
       `페이지 <b>${pages.length}장</b> · 정간 한 칸 <b>${cell.toFixed(1)}mm</b>` +
       (scale < 0.999 ? ` · <span style="color:#8a6d3b">종이에 맞춰 <b>${Math.round(scale * 100)}%</b> 축소</span>` : "") +
       (dg.ok ? "" : `<div class="warn">⚠ 대강 분절의 합이 한 각의 정간 수(${beats})와 달라 적용하지 않았습니다.</div>`) +
-      (lyGakMismatch ? `<div class="warn">⚠ 선율(${parsed.length}각)과 가사(${lyParsed.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.</div>` : "") +
+      (lyGakMismatch ? `<div class="warn">⚠ 선율(${parsed.length}각)과 가사(${lyCheck.length}각)의 각 수가 달라요 — 구조를 바꾸면(각 추가/삭제 등) 넘치는 내용이 잘릴 수 있습니다.</div>` : "") +
       (jdBeatMismatch ? `<div class="warn">⚠ 장단의 정간 수(${jdParsed[0].length})가 선율(${beats})과 달라요 — 구조를 바꾸면 넘치는 내용이 잘릴 수 있습니다.</div>` : "");
 
     // 오선보 칸이 열려 있으면 뒤따라 다시 그린다(닫혀 있으면 아무 일도 안 한다).
@@ -6316,7 +6330,7 @@
   // 파트 전환(stashActivePart/hydrateActivePart)과 같은 문법이다.
   const VIEW_LAYOUT_IDS = ["paperSize", "paperW", "paperH", "orientation",
     "gakPerRow", "stackCount", "stackAuto", "sizeScale", "pageFill",
-    "cellSize", "gakGap", "bandGap", "header", "frame"];
+    "cellSize", "gakGap", "bandGap", "header", "frame", "lyricsLane"];
   let viewLayouts = { part: null, score: null };   // null = 아직 그 보기로 안 가 봄
   let layoutView = "part";                          // 지금 컨트롤에 입혀진 프로필
   function grabViewLayout() {
@@ -7920,7 +7934,7 @@
 
   // ---------- 저장 / 불러오기 ----------
   const CTRL_IDS = ["paperSize", "paperW", "paperH", "orientation", "beats", "gakBeats", "gakPerRow", "stackCount", "stackAuto", "gakCount",
-    "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame",
+    "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame", "lyricsLane",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
@@ -8521,7 +8535,7 @@
     $(id).addEventListener("change", onFormChange);
   });
   ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
-   "titleFont", "lyricsFont", "header", "frame", "noteMode", "paperSize", "orientation", "pageNumPos", "gakNumMode",
+   "titleFont", "lyricsFont", "header", "frame", "lyricsLane", "noteMode", "paperSize", "orientation", "pageNumPos", "gakNumMode",
    "gakNameHanja", "scoreView"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
