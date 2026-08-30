@@ -79,6 +79,19 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   요구하는 '신고 수령인 공지'가 여기 있으므로, **신고 받는 주소를 바꿀 땐 js/cloud.js의
   `REPORT_TO`와 browse.html 꼬리말까지 세 곳을 함께** 고쳐야 한다(두 군데서 다르면 안 된다).
   문패는 index.html에서 fetch로 가져와 꽂는다 — 로고를 두 번 박지 않으려고.
+  **논문 심사 동안 앱에 보이는 곳은 익명으로 둔다**(2026-08-30). 만든 이 이름은 `우물사이
+  운영자`, 저작권 한 줄은 `© 2026 우물사이`, 신고 주소는 `report@umulsai.com`이고 도움말
+  꼬리말의 GitHub·LICENSE 링크는 뺐다(링크가 곧 계정이라). 손댄 자리는 `index.html`(사이드바
+  꼬리말·도움말 꼬리말) · `browse.html` · `policy.html`(제1조·제6조 수령인·꼬리말) ·
+  `notices.html` · `js/cloud.js`의 `REPORT_TO`.
+  · **`<meta name="author">`·JSON-LD `author`·`LICENSE`·`README`·`login.html`은 일부러
+    그대로 두었다**(사용자 확정 — 소스를 봐야 보이는 자리라 심사 범위 밖으로 봤다).
+  · **`scores.author`는 서버 데이터라 코드로 못 고친다** — `publish_score`에서만 정해지고
+    `update_score`·`owner_update_score`·`admin_save_score` 어디에도 `p_author`가 없다.
+    공유마당 카드에 뜨는 게시자 이름은 Supabase에서 직접 `update`해야 한다.
+    공유마당 탭을 가르는 열쇠는 `국립국악원 (OMR)`이라(js/browse.js의 `NGC_AUTHOR`)
+    그 밖의 지은이 이름을 바꾸는 것은 탭에 영향이 없다.
+  · 심사가 끝나면 이 커밋을 `git revert`하면 된다.
 - `browse.html` + `css/browse.css` + `js/browse.js` — **공유마당**(공개 악보 목록).
   **UI 표기는 '공유마당'**(2026-08-26 사용자 확정) — 사람들이 악보를 내놓고 가져가는 **자리**를
   가리키는 이름이라 [게시]와 짝이 된다("공유마당에서 사람들과 공유합니다"). 예전 이름은

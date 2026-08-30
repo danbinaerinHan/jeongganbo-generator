@@ -381,7 +381,7 @@
   // 신고 창구 — policy.html에 적힌 곳과 **같은 주소**여야 한다(제103조가 요구하는 '지정·공지된
   // 수령인'이 두 군데서 다르면 안 된다). 편지에 악보 주소를 미리 채워 넣는다 — 신고하는 사람이
   // 무엇을 적어야 하는지 몰라 그냥 닫는 일을 줄인다.
-  const REPORT_TO = "naerin71@kaist.ac.kr";
+  const REPORT_TO = "report@umulsai.com";
   function reportMailto(id, title) {
     const subj = "[우물사이] 악보 신고 (" + id + ")";
     const body = [
