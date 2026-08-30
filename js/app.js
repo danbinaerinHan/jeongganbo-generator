@@ -4981,12 +4981,24 @@
               hit.addEventListener("mouseenter", function () {
                 // 곁줄에서 시작한 드래그가 정간으로 넘어와도 안 잡는다 — 줄은 안 섞인다
                 if (!melSelActive || lyDragFrom || melSelLane !== "mel") return;
+                // ★ **누른 그 칸에 다시 들어오는 것은 '번진' 것이 아니다.** mousedown이
+                //   render()로 악보를 통째로 새로 그리므로 손이 제자리에 있어도 사각형이
+                //   새것으로 바뀌고, 그 뒤 mousemove 하나면(그냥 한 번 누를 때도 딸려온다)
+                //   **제자리에서** mouseenter가 떨어진다. 그것을 드래그로 치면 그냥 누른
+                //   것이 구간 선택으로 굳어 입력 카드가 영영 안 열린다(2026-08-30 사용자 제보:
+                //   "입력을 눌렀는데 파란색으로만 되고 입력 창이 안 뜬다").
+                //   한 번이라도 진짜로 번진 뒤에는 시작 칸으로 되돌아오는 것도 정상적인
+                //   드래그이므로 melSelDidDrag가 켜진 다음에는 그대로 받는다.
                 if (melSelRectFrom) {   // 총보 네모
+                  if (!melSelDidDrag && melSelRectFrom.p === pi
+                      && melSelRectFrom.g === gi && melSelRectFrom.r === ci) return;
                   melSelDidDrag = true;
                   setRectFrom(melSelRectFrom, { p: pi, g: gi, r: ci });
                   render();
                   return;
                 }
+                if (!melSelDidDrag && melSelStart
+                    && melSelStart.gi === gi && melSelStart.ci === ci) return;
                 melSelDidDrag = true;
                 melSelEnd = { gi: gi, ci: ci };
                 render();
@@ -5016,6 +5028,9 @@
               });
               hit.addEventListener("mouseenter", function () {
                 if (!melSelActive || !melSelRectFrom) return;
+                // 누른 그 칸에 제자리로 다시 들어온 것은 번진 게 아니다(위 ★ 참고)
+                if (!melSelDidDrag && melSelRectFrom.p === pIdx
+                    && melSelRectFrom.g === gi && melSelRectFrom.r === ci) return;
                 melSelDidDrag = true;
                 setRectFrom(melSelRectFrom, { p: pIdx, g: gi, r: ci });
                 render();
@@ -5264,6 +5279,10 @@
                 });
                 lyHit.addEventListener("mouseenter", function () {
                   if (!melSelActive || !lyDragFrom) return;
+                  // 누른 그 칸에 제자리로 다시 들어온 것은 번진 게 아니다(위 ★ 참고).
+                  // 곁줄 mousedown은 render를 안 해 지금은 안 생기지만, 다른 길로 악보가
+                  // 다시 그려져도 더블클릭 편집이 안 막히도록 같은 잣대로 걸어 둔다.
+                  if (!melSelDidDrag && lyDragFrom.gi === gi && lyDragFrom.ci === ci) return;
                   if (!melSelDidDrag) beginLySel();
                   melSelDidDrag = true;
                   melSelStart = lyDragFrom; melSelEnd = { gi: gi, ci: ci };
