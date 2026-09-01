@@ -1,0 +1,977 @@
+<!-- 국립국악원에 보내는 제안서. 링크를 받은 사람만 보는 페이지이며 사이트 어디에서도 걸어 두지 않는다.
+     원본과 생성기는 저장소에 없는 제안/ 폴더에 있다(.gitignore). -->
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="웹 정간보 편집기 〈우물사이〉 — 국립국악원에 드리는 소개와 제안">
+<title>우물사이 소개와 제안</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --bg:#ffffff; --surface:#ffffff; --raise:#f7f8f9;
+    --ink:#14161a; --body:#31353b; --muted:#666c74; --faint:#8b9199;
+    --line:#e7e8ea; --rule:#c9ccd0;
+    --accent:#1f3a5c; --accent-ink:#1f3a5c; --accent-weak:#eaf0f6; --accent-line:#b3c3d4;
+    --on-accent:#ffffff;
+    --fill-bg:#fdf1d6; --fill-ink:#7a5a12; --fill-line:#d9b96a;
+    --sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+    --rail:16rem;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1114; --surface:#15181c; --raise:#1a1e23;
+      --ink:#eceef1; --body:#c3c8ce; --muted:#8c939c; --faint:#727982;
+      --line:#24282d; --rule:#3a3f46;
+      --accent:#7ba7d6; --accent-ink:#a9c6e4; --accent-weak:#172230; --accent-line:#33465c;
+      --on-accent:#0f1114;
+      --fill-bg:#3a2f14; --fill-ink:#e9cd8d; --fill-line:#6b5a2c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1114; --surface:#15181c; --raise:#1a1e23;
+    --ink:#eceef1; --body:#c3c8ce; --muted:#8c939c; --faint:#727982;
+    --line:#24282d; --rule:#3a3f46;
+    --accent:#7ba7d6; --accent-ink:#a9c6e4; --accent-weak:#172230; --accent-line:#33465c;
+    --on-accent:#0f1114;
+    --fill-bg:#3a2f14; --fill-ink:#e9cd8d; --fill-line:#6b5a2c;
+  }
+
+  *{box-sizing:border-box}
+  html{font-size:15px}
+  body{
+    margin:0; background:var(--bg); color:var(--body);
+    font-family:var(--sans); font-size:1rem; font-weight:400; line-height:1.65;
+    letter-spacing:-.003em; -webkit-font-smoothing:antialiased; word-break:keep-all;
+  }
+
+  /* ── 껍데기 ─────────────────────────────── */
+  .shell{display:grid; grid-template-columns:var(--rail) minmax(0,1fr); min-height:100vh}
+  .rail{border-right:1px solid var(--line); background:var(--raise)}
+  .rail-in{position:sticky; top:0; display:flex; flex-direction:column; gap:1.5rem;
+           padding:2rem 1.4rem 1.6rem; min-height:100vh}
+  .rail-name{margin:0; font-size:1rem; font-weight:700; color:var(--ink); letter-spacing:-.015em}
+  .rail-name span{display:block; margin-top:.25rem; font-size:.72rem;
+                  font-weight:400; letter-spacing:0; color:var(--muted)}
+  .tabs{display:flex; flex-direction:column; gap:1px; margin-top:-.4rem}
+  .tab-btn{
+    appearance:none; background:none; border:0; cursor:pointer; text-align:left;
+    font-family:var(--sans); font-size:.9rem; font-weight:500; color:var(--muted);
+    padding:.5rem .7rem; border-left:2px solid transparent; letter-spacing:-.01em;
+    transition:color .12s ease;
+  }
+  .tab-btn:hover{color:var(--ink)}
+  .tab-btn[aria-current]{color:var(--on-accent); font-weight:500;
+    border-left-color:var(--tabc,var(--accent)); background:var(--tabc,var(--accent))}
+  .tab-btn:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  .subtabs{
+    display:flex; flex-direction:column; gap:1px;
+    margin:.25rem 0 .35rem .95rem; padding-left:.7rem; border-left:1px solid var(--line);
+  }
+  .subtab{
+    appearance:none; background:none; border:0; cursor:pointer; text-align:left;
+    font-size:.82rem; font-weight:400; color:var(--faint); padding:.3rem .55rem;
+    letter-spacing:-.01em;
+  }
+  .subtab:hover{color:var(--ink)}
+  .subtab.is-current{color:var(--tabc); font-weight:500; background:var(--accent-weak)}
+  .subtab:focus-visible{outline:2px solid var(--tabc); outline-offset:-2px}
+
+  .rail-foot{margin-top:auto; display:flex; flex-direction:column; gap:1rem;
+             padding-top:1.2rem; border-top:1px solid var(--line)}
+  .rail-contact{font-size:.74rem; line-height:1.7; color:var(--muted)}
+  .rail-contact b{display:block; font-size:.82rem; font-weight:700;
+                  color:var(--body); letter-spacing:-.01em; margin-bottom:.2rem}
+  .rail-contact a{color:inherit; text-decoration:none}
+  .rail-contact a:hover{color:var(--accent-ink)}
+
+  .stage{min-width:0; background:var(--bg)}
+  .wrap{max-width:57rem; margin:0 auto; padding:0 3.5rem}
+
+  /* ── 문패 ───────────────────────────────── */
+  .masthead{padding:4.5rem 0 2.6rem; border-bottom:1px solid var(--rule)}
+  .compact .masthead{padding:1.9rem 0 1rem}
+  .compact .masthead .eyebrow,
+  .compact .masthead .lede,
+  .compact .masthead .issued{display:none}
+  .compact .masthead h1{font-size:.95rem; font-weight:500; letter-spacing:-.01em; color:var(--muted); max-width:none}
+  .eyebrow{
+    font-family:var(--sans); font-size:.78rem; font-weight:500; letter-spacing:.02em;
+    color:var(--muted); margin:0 0 1rem;
+  }
+  h1{
+    font-size:clamp(2.05rem,3.4vw,2.7rem); line-height:1.26; font-weight:700;
+    letter-spacing:-.03em; margin:0; color:var(--ink); text-wrap:balance; max-width:22ch;
+  }
+  .subtitle{margin:.85rem 0 0; font-size:1.12rem; font-weight:400; color:var(--muted); letter-spacing:-.01em}
+  .lede{margin:1.3rem 0 0; font-size:1.06rem; line-height:1.7; max-width:38rem; color:var(--body)}
+  .issued{margin:1.6rem 0 0; font-size:.82rem; letter-spacing:0; color:var(--muted)}
+
+  /* ── 본문 ───────────────────────────────── */
+  main{padding:2.8rem 0 6rem}
+  .compact main{padding-top:2.2rem}
+  .panel[hidden]{display:none}
+  .col{max-width:44rem}
+  @counter-style tocnum{system:fixed; symbols:"\2460" "\2461" "\2462" "\2463" "\2464" "\2465"; suffix:" "}
+  /* 번호: 카운터를 조상(.panel/.sub)에 만들어 두고 h2에서 counter-set으로 0으로 되돌린다.
+     h2에서 counter-reset을 쓰면 그 h2의 '형제' 범위에만 사는 새 카운터가 생겨,
+     표(.tablewrap) 때문에 .col이 갈리는 자리마다 하위 번호가 1로 되돌아간다. */
+  .panel, .sub{counter-reset:sec sub}
+  h2:not(.panel-title):not(.sub-name){counter-increment:sec; counter-set:sub 0}
+  h2:not(.panel-title):not(.sub-name){padding-left:1.7em; text-indent:-1.7em}
+  h2:not(.panel-title):not(.sub-name)::before{
+    content:counter(sec) "."; display:inline-block; width:1.7em; text-indent:0;
+    color:var(--tabc,var(--accent)); font-weight:500; font-variant-numeric:tabular-nums;
+  }
+  h3{counter-increment:sub}
+  h3{padding-left:2.6em; text-indent:-2.6em}
+  h3::before{
+    content:counter(sec) "." counter(sub); display:inline-block; width:2.6em; text-indent:0;
+    color:var(--tabc,var(--accent)); font-weight:500; font-variant-numeric:tabular-nums;
+  }
+  h2{
+    font-size:1.4rem; font-weight:700; line-height:1.45; color:var(--ink);
+    letter-spacing:-.024em; margin:5.2rem 0 1.4rem; padding-top:1.5rem;
+    border-top:1px solid var(--rule); text-wrap:balance;
+  }
+  h2:first-child, .col:first-child > h2:first-child{margin-top:0}
+  .brief + .col h2:first-child, .col:first-of-type > h2:first-child{margin-top:2.6rem}
+  h3{
+    font-size:1.08rem; font-weight:700; color:var(--ink); letter-spacing:-.018em;
+    margin:3.4rem 0 .8rem; padding-top:1.05rem; line-height:1.55; text-wrap:balance;
+    background-image:linear-gradient(var(--tabc,var(--accent)) 0 0);
+    background-repeat:no-repeat; background-size:2.1rem 2px; background-position:0 0;
+  }
+  h2 + h3{margin-top:1.8rem}
+  h4{font-size:1rem; font-weight:700; color:var(--ink); letter-spacing:-.015em; margin:1.9rem 0 .55rem}
+  p{margin:0 0 .95rem}
+  strong{font-weight:700; color:var(--ink)}
+  i{font-style:italic}
+  a{color:var(--accent-ink); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:.22em}
+  a:hover{text-decoration-thickness:2px}
+
+  ul,ol{margin:0 0 1.2rem; padding-left:1.25rem}
+  li{margin:0 0 .62rem; line-height:1.68}
+  ol{list-style:none; counter-reset:n; padding-left:0}
+  ol > li{counter-increment:n; padding-left:2rem; position:relative; margin-bottom:.8rem}
+  ol > li::before{
+    content:counter(n) "."; position:absolute; left:0; top:0;
+    font-size:.92rem; font-weight:500; color:var(--muted);
+  }
+  ul.plain{list-style:none; padding-left:0; margin-bottom:1.5rem}
+  ul.plain > li{padding-left:1.05rem; position:relative; margin-bottom:.8rem}
+  ul.plain > li::before{content:""; position:absolute; left:0; top:.85em;
+    width:4px; height:4px; background:var(--accent-line)}
+  .sub-list{margin:.45rem 0 .3rem; padding-left:0; list-style:none;
+            color:var(--muted); font-size:.9rem}
+  .sub-list li{margin:0 0 .15rem; padding-left:0}
+  .sub-list li::before{display:none}
+
+  /* 문서 차례 */
+  .docmap{
+    max-width:44rem; margin:0 0 3.4rem; padding-top:1.2rem; border-top:2px solid var(--ink);
+  }
+  .dm-list{display:grid}
+  .dm-list a{
+    display:grid; grid-template-columns:4.2rem 1fr; gap:1.2rem; align-items:baseline;
+    padding:.62rem 0; border-bottom:1px solid var(--line);
+    text-decoration:none; color:inherit;
+  }
+  .dm-list a:last-child{border-bottom:0; padding-bottom:0}
+  .dm-list .n{
+    font-size:1.02rem; font-weight:700; letter-spacing:-.02em; color:var(--tabc);
+    border-left:3px solid var(--tabc); padding-left:.6rem;
+  }
+  .dm-list .d{font-size:.92rem; line-height:1.6; color:var(--muted)}
+  .dm-list a:hover .d{color:var(--body)}
+  .dm-list a:focus-visible{outline:2px solid var(--tabc); outline-offset:3px}
+
+  /* 요지 */
+  .brief{
+    background:var(--accent-weak); border:1px solid var(--accent-line); border-left:3px solid var(--accent);
+    padding:1.6rem 1.8rem; margin:0 0 3rem; max-width:44rem;
+  }
+  .brief .eyebrow{color:var(--accent-ink); margin-bottom:.75rem}
+  .brief p{margin:0 0 .6rem; font-size:1.04rem; line-height:1.7; color:var(--ink)}
+  .brief p:last-child{margin-bottom:0}
+  .brief .items{
+    font-size:.86rem; letter-spacing:0; color:var(--body);
+    margin-top:1rem; padding-top:.85rem; border-top:1px solid var(--accent-line); line-height:1.9;
+  }
+
+  .toc{list-style:none; counter-reset:t; padding:0; margin:.3rem 0 0}
+  .toc li{
+    counter-increment:t; margin:0; padding:.5rem 0 .5rem 1.75rem; position:relative;
+    border-bottom:1px solid var(--accent-line); font-size:1rem; line-height:1.55;
+  }
+  .toc li:last-child{border-bottom:0; padding-bottom:.15rem}
+  .toc li::before{
+    content:counter(t,tocnum); position:absolute; left:.1rem; top:.5rem;
+    font-size:1.02rem; font-weight:400; color:var(--accent-ink);
+  }
+  .toc a{color:var(--ink); text-decoration:none; font-weight:500}
+  .toc a:hover{color:var(--accent-ink); text-decoration:underline; text-underline-offset:.22em}
+
+  .deliver{
+    margin:1.6rem 0 0; padding:.85rem 1.15rem;
+    background:var(--accent-weak);
+    background:color-mix(in srgb, var(--tabc,var(--accent)) 9%, transparent);
+    border-left:4px solid var(--tabc,var(--accent));
+    font-size:1.04rem; line-height:1.55; font-weight:500; color:var(--ink); max-width:38rem;
+  }
+  .deliver b{
+    display:inline-block; margin:0 0 .45rem; padding:.2em .75em;
+    background:var(--tabc,var(--accent)); color:var(--on-accent);
+    font-size:.72rem; font-weight:700; letter-spacing:.13em; line-height:1.5;
+  }
+  .deliver span{display:block}
+
+  .key{
+    text-decoration:underline; font-weight:inherit; color:var(--ink);
+    text-decoration-color:var(--accent-line);
+    text-decoration-color:color-mix(in srgb, var(--tabc,var(--accent)) 40%, transparent);
+    text-decoration-thickness:1.5px; text-underline-offset:.26em;
+    text-decoration-skip-ink:auto;
+  }
+
+  /* 인용 */
+  blockquote{margin:1.7rem 0; padding:0 0 0 1.4rem; border-left:1px solid var(--rule); color:var(--muted); font-size:.97rem; line-height:1.7}
+  blockquote p{margin:0 0 .45rem}
+  blockquote p:last-child{margin:0}
+  blockquote .src{font-size:.8rem; color:var(--faint); margin-top:.6rem}
+  .voices p{color:var(--ink); font-weight:500}
+  .question{
+    margin:1.8rem 0; padding:1.4rem 1.5rem; background:var(--accent-weak); border:1px solid var(--accent-line);
+    font-size:1.16rem; font-weight:700; color:var(--ink); letter-spacing:-.02em; text-align:center;
+  }
+
+  /* 표 */
+  .tablewrap{overflow-x:auto; margin:0 0 2.4rem; max-width:50rem}
+  table{border-collapse:collapse; width:100%; font-size:.94rem; line-height:1.6}
+  th,td{text-align:left; vertical-align:top; padding:.9rem 1rem; border-bottom:1px solid var(--line)}
+  tbody tr:first-child th, tbody tr:first-child td{border-top:1px solid var(--rule)}
+  th[scope="row"]{
+    font-weight:700; color:var(--ink); white-space:nowrap; width:1%; padding-left:0;
+    font-size:.88rem; letter-spacing:-.012em;
+  }
+  td:last-child{padding-right:0}
+  td.num{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .step th[scope="row"]{font-size:.86rem; font-weight:500; color:var(--accent-ink); letter-spacing:0}
+
+  /* 실태조사 도표 */
+  .survey{margin:1.5rem 0 2rem; max-width:38rem}
+  .stats{
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    background:var(--line); border:1px solid var(--line); margin:0 0 2rem;
+  }
+  .stat{background:var(--bg); padding:1.05rem 1.15rem}
+  .stat .v{
+    margin:0; font-size:2.05rem; font-weight:700; line-height:1.05; letter-spacing:-.035em;
+    color:var(--tabc,var(--accent)); font-variant-numeric:tabular-nums;
+  }
+  .stat .l{margin:.45rem 0 0; font-size:.92rem; line-height:1.5; color:var(--body)}
+  .stat .n{margin:.2rem 0 0; font-size:.8rem; color:var(--faint); font-variant-numeric:tabular-nums}
+  .bars-title{margin:0 0 .8rem; font-size:.94rem; font-weight:700; color:var(--ink)}
+  .bars-title span{font-weight:400; font-size:.82rem; color:var(--faint); margin-left:.4rem}
+  .bars{display:grid; gap:.55rem}
+  .bar-row{display:grid; grid-template-columns:8.6rem 1fr 5.2rem; gap:.85rem; align-items:center}
+  .bar-row .k{font-size:.9rem; color:var(--body); text-align:right; line-height:1.35}
+  .bar-track{display:block; height:13px; background:var(--raise); border:1px solid var(--line)}
+  .bar-fill{
+    display:block; height:100%; background:var(--rule); border-radius:0 4px 4px 0;
+    print-color-adjust:exact; -webkit-print-color-adjust:exact;
+  }
+  .bar-row .v{font-size:.86rem; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.25}
+  .bar-row .v i{display:block; font-style:normal; font-size:.76rem; color:var(--faint)}
+  .bar-row.hi .k{font-weight:700; color:var(--ink)}
+  .bar-row.hi .bar-fill{background:var(--tabc,var(--accent))}
+  .bar-row.hi .v{color:var(--tabc,var(--accent)); font-weight:700}
+  .survey-foot{margin:1.2rem 0 0; font-size:.85rem; color:var(--faint)}
+
+  /* 수치 */
+  .figures{list-style:none; padding:0; margin:0 0 1.6rem; display:grid; gap:0}
+  .figures li{
+    display:grid; grid-template-columns:1fr auto; gap:1.5rem; align-items:baseline;
+    padding:.7rem 0; border-bottom:1px solid var(--line); margin:0; font-size:.97rem;
+  }
+  .figures li:first-child{border-top:1px solid var(--rule)}
+  .figures li:nth-last-child(2){background:var(--accent-weak)}
+  .figures .v{
+    font-size:.9rem; font-weight:500; font-variant-numeric:tabular-nums;
+    white-space:nowrap; color:var(--accent-ink);
+  }
+
+  /* 표시 */
+  .caveat{font-size:.92rem; color:var(--muted); background:var(--raise);
+          border-left:2px solid var(--accent-line); padding:.9rem 1.1rem; margin:1.6rem 0}
+  .closing{margin-top:3rem; padding-top:1.6rem; border-top:1px solid var(--rule); font-size:.97rem}
+  .contact{
+    line-height:1.8; font-size:.96rem; border:1px solid var(--accent-line); background:var(--accent-weak);
+    padding:1.3rem 1.4rem; max-width:24rem;
+  }
+  .contact .who{font-weight:700; font-size:1.05rem; color:var(--ink); letter-spacing:-.02em}
+  .contact .aff{color:var(--muted); font-size:.84rem; margin-bottom:.5rem}
+  .contact a{font-size:.9rem; text-decoration:none;
+             border-bottom:1px solid var(--accent-line)}
+  code{font-family:var(--mono); font-size:.86em; background:var(--accent-weak);
+       color:var(--accent-ink); padding:.08em .38em}
+
+
+  /* ── 항목별 색 ─────────────────────────── */
+  #t-overview,#p-overview,.dm-o{--tabc:#1f3a5c}
+  #t-proposals,#p-proposals,.subtabs,.dm-p{--tabc:#1d4a44}
+  #t-ideas,#p-ideas,.dm-i{--tabc:#43465e}
+  #t-materials,#p-materials,.dm-m{--tabc:#4d4132}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) #t-overview, :root:not([data-theme="light"]) #p-overview,
+    :root:not([data-theme="light"]) .dm-o{--tabc:#7ba7d6}
+    :root:not([data-theme="light"]) #t-proposals, :root:not([data-theme="light"]) #p-proposals,
+    :root:not([data-theme="light"]) .subtabs, :root:not([data-theme="light"]) .dm-p{--tabc:#6dbcae}
+    :root:not([data-theme="light"]) #t-ideas, :root:not([data-theme="light"]) #p-ideas,
+    :root:not([data-theme="light"]) .dm-i{--tabc:#a3a7c8}
+    :root:not([data-theme="light"]) #t-materials, :root:not([data-theme="light"]) #p-materials,
+    :root:not([data-theme="light"]) .dm-m{--tabc:#c0ab8a}
+  }
+  :root[data-theme="dark"] #t-overview, :root[data-theme="dark"] #p-overview, :root[data-theme="dark"] .dm-o{--tabc:#7ba7d6}
+  :root[data-theme="dark"] #t-proposals, :root[data-theme="dark"] #p-proposals,
+  :root[data-theme="dark"] .subtabs, :root[data-theme="dark"] .dm-p{--tabc:#6dbcae}
+  :root[data-theme="dark"] #t-ideas, :root[data-theme="dark"] #p-ideas, :root[data-theme="dark"] .dm-i{--tabc:#a3a7c8}
+  :root[data-theme="dark"] #t-materials, :root[data-theme="dark"] #p-materials, :root[data-theme="dark"] .dm-m{--tabc:#c0ab8a}
+
+  /* ── 항목 머리 ─────────────────────────── */
+  .panel-head{background:none; border:0; padding:0; margin:0 0 3.2rem; max-width:42rem}
+  .panel-title{
+    padding-left:0; text-indent:0;
+    font-size:2.1rem; font-weight:700; line-height:1.2; letter-spacing:-.03em;
+    color:var(--ink); margin:0 0 .55rem; padding:0; border:0;
+  }
+  .panel-head .panel-title:last-child{margin-bottom:0}
+  .panel-head p:last-child{margin:0; font-size:1rem; line-height:1.7; color:var(--muted); max-width:38rem}
+
+  /* 인사말 */
+  .greeting{margin:0 0 3.4rem}
+  .greeting p{font-size:1.04rem; line-height:1.75; margin:0 0 1.1rem}
+  .greeting-note{
+    margin:1.6rem 0 0 !important; padding-top:1.2rem; border-top:1px solid var(--line);
+    font-size:.96rem; color:var(--muted);
+  }
+
+  /* ── 제안 안 세 갈래 ───────────────────── */
+  .sub{scroll-margin-top:1.5rem}
+  .sub + .sub{margin-top:7rem}
+  .sub-head{border-top:3px solid var(--tabc); padding-top:1.1rem; margin:0 0 2.4rem; max-width:44rem}
+  .sub-kicker{margin:0 0 .3rem; font-size:.8rem; font-weight:500; color:var(--tabc);
+              font-variant-numeric:tabular-nums}
+  .sub-name{padding-left:0; text-indent:0; font-size:1.55rem; font-weight:700; letter-spacing:-.03em; color:var(--ink);
+            margin:0 0 .35rem; padding:0; border:0; line-height:1.25}
+  .sub-gloss{margin:0; font-size:.93rem; color:var(--muted)}
+  .nextlinks{
+    display:flex; justify-content:space-between; gap:1rem; margin-top:2.6rem;
+    padding-top:1rem; border-top:1px solid var(--line); max-width:44rem; font-size:.88rem;
+  }
+  .nextlinks a{text-decoration:none; color:var(--tabc); font-weight:500}
+  .nextlinks a:hover{text-decoration:underline; text-underline-offset:.22em}
+
+  /* 전환이 눈에 띄게 */
+  .panel{animation:panelIn .2s ease both}
+  @keyframes panelIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+  /* ── 좁은 화면 ──────────────────────────── */
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr}
+    .rail{border-right:0; border-bottom:1px solid var(--rule); position:sticky; top:0; z-index:10}
+    .rail-in{
+      min-height:0; position:static; flex-direction:row; align-items:center;
+      gap:.2rem; padding:.5rem 1.4rem; overflow-x:auto;
+    }
+    .rail-name, .rail-foot{display:none}
+    .tabs{flex-direction:row; gap:.15rem; margin:0}
+    .tab-btn{
+      border-left:0; border-bottom:2px solid transparent;
+      padding:.5rem .8rem; white-space:nowrap;
+    }
+    .tab-btn[aria-current]{
+      border-left-color:transparent; border-bottom-color:var(--tabc,var(--accent));
+      background:var(--tabc,var(--accent)); color:var(--on-accent);
+    }
+    .subtabs{display:none}
+    .wrap{padding:0 1.4rem}
+    .masthead{padding:2.4rem 0 1.6rem}
+    .compact .masthead{padding:1.4rem 0 .9rem}
+    .panel-title{font-size:1.7rem}
+    .brief, .deliver, .docmap, .survey, .col, .tablewrap, .panel-head{max-width:none}
+  }
+
+  @media (max-width:560px){
+    .stats{grid-template-columns:1fr}
+    .bar-row{grid-template-columns:6.4rem 1fr 4.4rem; gap:.6rem}
+  }
+
+  /* ── 인쇄 ───────────────────────────────── */
+  @media print{
+    :root{
+      --bg:#fff; --surface:#fff; --raise:#f7f8f9; --ink:#000; --body:#1a1a1a; --on-accent:#fff;
+      --muted:#444; --faint:#666; --line:#d0d0d0; --rule:#999;
+      --accent:#26405c; --accent-ink:#1e3348; --accent-weak:#f2f4f7; --accent-line:#aab4c2;
+      --fill-bg:transparent; --fill-ink:#7a5a12; --fill-line:#c9ad6a;
+    }
+    body{font-size:10pt; line-height:1.55}
+    h2{margin-top:2.4rem; padding-top:.8rem}
+    h3{margin-top:1.6rem; padding-top:.6rem}
+    .sub + .sub{margin-top:2.6rem}
+    .rail, .no-print, .nextlinks{display:none !important}
+    .panel{animation:none}
+    .panel-head{padding:0; margin-bottom:1.6rem}
+    .deliver{background:none; border-left-width:2px; padding:.4rem 0 .4rem .8rem}
+    .deliver b{background:none; color:var(--accent); padding:0}
+    .compact .masthead{padding:0 0 1.2rem}
+    .compact .masthead .eyebrow, .compact .masthead .lede, .compact .masthead .issued{display:block}
+    .compact .masthead h1{font-size:20pt; font-weight:700; color:var(--ink)}
+    .shell{display:block}
+    .wrap{max-width:none; padding:0}
+    .masthead{padding:0 0 1.2rem; page-break-after:avoid}
+    h1{font-size:20pt}
+    h2,h3,h4{page-break-after:avoid}
+    .brief, table, blockquote, .memo, .contact, .question{page-break-inside:avoid}
+    a{text-decoration:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important; animation:none !important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail no-print">
+    <div class="rail-in">
+      <p class="rail-name">우물사이<span>국립국악원 소개와 제안</span></p>
+      <nav class="tabs" aria-label="문서 항목">
+        <button class="tab-btn" id="t-overview"  aria-controls="p-overview"  aria-current="true">개요</button>
+        <button class="tab-btn" id="t-proposals" aria-controls="p-proposals">제안</button>
+        <div class="subtabs">
+          <button class="subtab" data-target="s-promotion">진흥</button>
+          <button class="subtab" data-target="s-education">교육</button>
+          <button class="subtab" data-target="s-research">연구</button>
+        </div>
+        <button class="tab-btn" id="t-ideas"     aria-controls="p-ideas">구상</button>
+        <button class="tab-btn" id="t-materials" aria-controls="p-materials">자료</button>
+      </nav>
+      <div class="rail-foot">
+        <div class="rail-contact">
+          <b>한단비내린</b>
+          <a href="mailto:naerin71@kaist.ac.kr">naerin71@kaist.ac.kr</a><br>
+          010-4146-5190
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="stage">
+    <div class="wrap">
+      <header class="masthead">
+        <p class="eyebrow">국립국악원에 드리는 소개와 제안</p>
+        <h1>웹 정간보 편집기 〈우물사이〉</h1>
+        <p class="lede">설치도 가입도 없이 브라우저에서 정간보를 쓰고 인쇄하는 무료 편집기입니다. 국립국악원 간행 정악보의 조판 관행을 그대로 재현합니다.</p>
+        <p class="issued">한단비내린 · 한국과학기술원 문화기술대학원 박사과정 · 2026년 9월</p>
+      </header>
+
+<main>
+
+<!-- ══════════ 개요 ══════════ -->
+<section class="panel" id="p-overview" aria-labelledby="t-overview">
+  <header class="panel-head"><h2 class="panel-title">개요</h2><p>이 문서는 네 항목으로 이루어집니다.</p></header>
+  <div class="col">
+    <section class="docmap" aria-label="문서 차례">
+      <div class="dm-list">
+        <a href="#overview" class="dm-o" data-go="t-overview"><span class="n">개요</span><span class="d">〈우물사이〉가 무엇이며 왜 만들었는지, 국립국악원 자료와의 관계</span></a>
+        <a href="#proposals" class="dm-p" data-go="t-proposals"><span class="n">제안</span><span class="d">진흥 · 교육 · 연구 세 갈래. 서로 독립적이므로 해당하는 갈래만 보셔도 무방합니다</span></a>
+        <a href="#ideas" class="dm-i" data-go="t-ideas"><span class="n">구상</span><span class="d">협력이 이루어질 경우 함께 만들어 갈 수 있는 방향</span></a>
+        <a href="#materials" class="dm-m" data-go="t-materials"><span class="n">자료</span><span class="d">열람·송부 가능한 자료, 관련 문서와 연락처</span></a>
+      </div>
+    </section>
+
+    <h2>〈우물사이〉는 무엇인가</h2>
+    <p>〈우물사이〉는 웹 브라우저만으로 정간보를 쓰고 인쇄할 수 있는 편집기입니다. 이름은 정간(井間)의 두 글자, 우물 정(井)과 사이 간(間)을 우리말로 옮긴 것입니다.</p>
+    <ul class="plain">
+      <li><a href="https://www.umulsai.com"><strong>www.umulsai.com</strong></a> — 웹 주소로 접근하여 바로 사용할 수 있습니다.</li>
+      <li>설치·가입·결제가 없습니다.</li>
+      <li>무료이며, 코드는 MIT 라이선스로 공개되어 있습니다.</li>
+    </ul>
+
+    <p>웹 사보 프로그램 〈우물사이〉로는 다음과 같은 일을 할 수 있습니다.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <tbody>
+        <tr><th scope="row">입력</th><td>악보의 정간을 눌러 그 자리에 율명을 적을 수 있습니다. 한글로 입력하여도 한자로 자동 변환되어 ‘황’을 치면 악보에는 ‘黃’으로 나타나며, 청성·배성의 변형 한자(潢·僙)도 적용됩니다.</td></tr>
+        <tr><th scope="row">조판</th><td>격자·대강선·우종서(오른쪽→왼쪽) 진행·세로쓰기 제목 칸 같은 간행 악보의 조판 관행이 자동으로 재현됩니다. 종이 크기와 여백에 맞춰 배율도 저절로 잡히므로, <strong>조판에 손대지 않고 내용만 적을 수 있습니다.</strong></td></tr>
+        <tr><th scope="row">시김새</th><td>국립국악원 간행 정악보에서 채록한 <strong>시김새 84종</strong>을 팔레트에서 골라 붙이거나 직접 적어 삽입할 수 있습니다. 위치와 크기 또한 쉽게 조정할 수 있습니다.</td></tr>
+        <tr><th scope="row">함께 적기</th><td>가사·활 표시·구음을 정간 옆 ‘곁줄’에, 장구 장단을 별도 줄에 나란히 적을 수 있습니다.</td></tr>
+        <tr><th scope="row">총보</th><td>한 곡에 악기를 여럿 두고 총보로 보거나, 악기 하나만 골라 파트보로 볼 수 있습니다.</td></tr>
+        <tr><th scope="row">장단</th><td><strong>정악 17곡</strong>의 곡별 기본 장단 모음에서 골라 넣을 수 있습니다. 정간 수·대강·장단 줄도 함께 적용됩니다.</td></tr>
+        <tr><th scope="row">소리</th><td>기록된 정간보를 소리로 들어 볼 수 있습니다. 시김새는 그 곡의 음계 위에서 해석되고, 장단은 장구 녹음 음원으로 들어볼 수 있습니다.</td></tr>
+        <tr><th scope="row">오선보</th><td>같은 악보를 오선보로 나란히 보고, MusicXML로 내보내 피날레·시벨리우스에서 이어 작업할 수 있습니다.</td></tr>
+        <tr><th scope="row">출력</th><td>인쇄(PDF)와 PNG로 뽑을 수 있습니다. 종이는 A4·A5·B5·레터·정사각·사용자 지정 중에 고를 수 있습니다.</td></tr>
+        <tr><th scope="row">보관</th><td>브라우저에 자동 저장되고, <code>.jgb.json</code> 파일 하나로 내려받아 주고받을 수 있습니다.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col">
+    <h2>기존 작성 방식과의 차이</h2>
+    <p>정간보를 그림이 아니라 <strong>기계가 읽을 수 있는 형식</strong>으로 남길 수 있다는 점입니다.</p>
+    <p>한글 표나 그림 프로그램으로 만든 정간보는 <strong>한 번 완성하고 나면 고치거나 다시 조판하기가 어렵습니다.</strong> 본 도구로 작성한 정간보는 다른 환경에서도 다시 열어 수정하고, 조판을 변경하고, 소리로 확인하고, 오선보로 옮길 수 있습니다.</p>
+
+    <h2>개발 배경</h2>
+    <h3>정간보 작성 실태</h3>
+    <p>국악 전공자·교육자·연주자 <strong>45명</strong> 대상 설문조사 결과 (2026년 7월)</p>
+<div class="survey">
+      <div class="stats">
+        <div class="stat"><p class="v">71.1%</p><p class="l">정간보를 직접 만들거나 옮겨 적는 일이 있다</p><p class="n">45명 중 32명</p></div>
+        <div class="stat"><p class="v">66.7%</p><p class="l">정간보 전용 프로그램을 “처음 들어본다”</p><p class="n">45명 중 30명</p></div>
+      </div>
+
+      <p class="bars-title">그때 쓰는 도구 <span>복수 응답</span></p>
+      <div class="bars">
+        <div class="bar-row"><span class="k">한글(HWP) 표</span><span class="bar-track"><span class="bar-fill" style="width:53.3%"></span></span><span class="v">53.3%<i>24명</i></span></div>
+        <div class="bar-row"><span class="k">손글씨</span><span class="bar-track"><span class="bar-fill" style="width:44.4%"></span></span><span class="v">44.4%<i>20명</i></span></div>
+        <div class="bar-row"><span class="k">그림 프로그램</span><span class="bar-track"><span class="bar-fill" style="width:20.0%"></span></span><span class="v">20.0%<i>9명</i></span></div>
+        <div class="bar-row hi"><span class="k">정간보 전용 프로그램</span><span class="bar-track"><span class="bar-fill" style="width:13.3%"></span></span><span class="v">13.3%<i>6명</i></span></div>
+      </div>
+      <p class="survey-foot">응답자의 93.3%가 국악 경력 10년 이상입니다.</p>
+    </div>
+    <p>정간보 작성은 현장에서 반복되는 업무이나, 이를 지원하는 도구는 부재하거나 인지되지 않은 상태로 보입니다.</p>
+    <p>주관식 응답에서 가장 많이 지적된 어려움은 형식과 서식을 매번 직접 제작해야 한다는 점이었습니다.</p>
+    <blockquote class="voices">
+      <p>“형식을 만드는 데에만 반나절입니다.”</p>
+      <p>“한자 찾는 게 너무 귀찮다(특히 청성·배성 옥타브 표기).”</p>
+      <p>“소박을 굵은 선으로 표시하는 데 한계가 있었다.”</p>
+      <p class="src">— 설문 주관식 응답에서</p>
+    </blockquote>
+
+    <h3>예비 사용성 평가</h3>
+    <p>국악 전공자 <strong>9명</strong>이 난이도가 다른 세 곡(〈새야새야〉·〈태평가〉·〈웃도드리〉)을 이 도구로 사보하는 예비 사용성 평가를 거쳤습니다(2026년 7월).</p>
+    <ul class="plain">
+      <li>시스템 사용성 척도(SUS) <strong>평균 78.1점</strong> — 통용되는 기준선은 68점입니다.</li>
+      <li>기존 방식(손글씨·한글 표)에서 <strong>전환하겠다 — 9명 전원</strong></li>
+      <li>평가에서 나온 지적은 배포판에 반영했습니다(구간 복사·붙여넣기, 빠르기 범위 표기 등).</li>
+    </ul>
+    <p class="caveat">두 조사 모두 편의표집에 따른 예비 조사입니다. 통계적 일반화가 아니라 현장의 실태와 수용 가능성을 보여 주는 지표로 읽어 주시기 바랍니다.</p>
+
+    <h2>운영 방식</h2>
+    <ul class="plain">
+      <li><strong>무료</strong> — 광고나 결제가 없으며, 앞으로도 비영리로 운영할 계획입니다.</li>
+      <li><strong>개인 제작</strong> — 특정 기관이나 기업에 귀속되어 있지 않아 권리 관계가 단순합니다. 코드와 기호 자산의 권리가 한 사람에게 있으며, 이미 공개 라이선스로 배포되고 있습니다.</li>
+      <li><strong>유지 부담 없음</strong> — 서버와 데이터베이스가 없는 정적 웹 문서이므로 파일을 두는 것만으로 동작하며, 운영을 이어 가는 데 별도의 유지 체계가 필요하지 않습니다.</li>
+      <li><strong>의존 없음</strong> — 소스(MIT)와 문서 형식(<code>.jgb.json</code>)이 모두 공개되어 있어, 특정 서비스나 특정 개인에게 의존하지 않고 이 도구와 형식을 사용할 수 있습니다. 작성한 악보는 프로그램이 아니라 파일에 남습니다.</li>
+    </ul>
+
+    <h2>제안자</h2>
+    <p><strong>한단비내린</strong> · 한국과학기술원 문화기술대학원 박사과정<br>
+    <a href="https://www.danbinaerin.com">www.danbinaerin.com</a></p>
+    <ul class="plain">
+      <li>「On the Automatic Recognition of Jeongganbo Music Notation: Dataset and Approach」, <i>ACM Journal on Computing and Cultural Heritage</i> 18(3), 2025 (공저) — 국립국악원이 공개한 정간보 광학악보인식 데이터셋을 다룬 연구입니다.</li>
+      <li>「Six Dragons Fly Again: Reviving 15th-Century Korean Court Music with Transformers and Novel Encoding」, ISMIR 2024 (제1저자)</li>
+      <li>한국문화예술위원회 청년 연구위원 — ‘공유 지식 인프라’를 주제로 하는 연구위원회에 참여하고 있습니다.</li>
+    </ul>
+
+    <h2>국립국악원 자료와의 관계</h2>
+    <p>이 도구는 국립국악원의 간행물과 공개 자료에 여러 곳에서 기대고 있습니다.</p>
+    <ul class="plain">
+      <li><strong>시김새 기호의 자형</strong>은 국립국악원 간행 정악보에 쓰이는 기호를 참고하여 <strong>벡터로 새로 그린 것</strong>입니다. 채록에 쓴 판본은 다음 일곱 종이며, 프로그램의 도움말에도 같은 목록을 밝혀 두었습니다.
+        <ul class="sub-list">
+          <li>『가야금 정악보』·『거문고 정악보』·『피리 정악보』·『해금 정악보』(2015)</li>
+          <li>『대금 정악보』·『아쟁 정악보』(2016) · 『양금 정악보』(2025)</li>
+        </ul></li>
+      <li><strong>장단 모음</strong>은 국립국악원 간행 정악보에 실린 곡별 기본 장단을 그 정간보 그대로 옮긴 것입니다.</li>
+      <li>국립국악원이 공개한 <strong>정악 광학악보인식(OMR) 데이터셋 69곡</strong>을 이 형식으로 변환하여, 프로그램의 ‘공유마당’(<a href="https://umulsai.com/browse.html">umulsai.com/browse.html</a>)에서 누구나 열어 볼 수 있게 두었습니다. 원 데이터셋의 이용 조건(CC BY-NC-SA 4.0)과 출처를 함께 표기하고 있습니다.</li>
+    </ul>
+    <p>위 사용에 조정이 필요한 부분이 있으면 알려 주시기 바랍니다. 즉시 반영하겠습니다.</p>
+  </div>
+</section>
+
+<!-- ══════════ 진흥 ══════════ -->
+
+
+<!-- ══════════ 교육 ══════════ -->
+
+
+<!-- ══════════ 연구 ══════════ -->
+
+
+<section class="panel" id="p-proposals" aria-labelledby="t-proposals" hidden>
+  <header class="panel-head"><h2 class="panel-title">제안</h2></header>
+  <div class="col greeting">
+    <p>안녕하세요. 한국과학기술원 문화기술대학원에서 국악을 대상으로 음악정보학(MIR)을 연구하고 있는 박사과정 한단비내린입니다.</p>
+    <p>국악 작곡가와 연주자들이 작곡에는 피날레를 쓰면서도, 정간보를 적을 일이 생기면 한글(HWP)의 표로 정간을 하나하나 그려 가며 고생하는 모습을 오래 보아 왔습니다. 그것이 아쉬워 정간보 편집기를 만들게 되었습니다.</p>
+    <p>설치 없이 브라우저에서 가볍게 도는 작은 도구입니다만, 한편으로는 정간보의 인코딩과 오선보 변환, 광학악보인식처럼 그동안의 연구에서 얻은 것들을 한자리에 모아 둔 것이기도 합니다. 악보가 데이터로 쌓이면 정간보 자체가 연구의 자료가 됩니다. 그러한 연구로 건너가는 다리가 되었으면 합니다.</p>
+    <p>무엇보다 국립국악원의 정악보를 많이 참고하여 만든 것이라, 국악원 선생님들께 먼저 보여 드리고 함께할 수 있는 일이 있을지 여쭙고 싶었습니다. 용기를 내어 이 문서를 드립니다.</p>
+    <p class="greeting-note">국립국악원에 드리는 제안을 진흥 · 교육 · 연구 세 갈래로 나누어 적었습니다. 세 갈래는 서로 독립적이므로 담당하시는 갈래만 보셔도 무방합니다. 바쁘신 가운데 조금만 시간 내어 살펴봐 주신다면 감사하겠습니다.</p>
+  </div>
+
+  <section class="sub" id="s-promotion">
+    <div class="sub-head"><p class="sub-kicker">1 / 3</p><h2 class="sub-name">진흥</h2><p class="sub-gloss">도구의 보급에 관한 사항</p></div>
+
+  <div class="col">
+    <div class="brief">
+      <p class="eyebrow">제안 항목</p>
+      <ol class="toc">
+        <li><a href="#pr-1">『국악누리』 소개</a></li>
+        <li><a href="#pr-2">정간보 창작 공모</a></li>
+        <li><a href="#pr-3">온라인 채널의 링크 제공</a></li>
+      </ol>
+    </div>
+
+    <h2>배경 — 도구의 인지도</h2>
+    <p>국악 전공자·교육자·연주자 45명을 대상으로 실시한 설문(2026년 7월)에서, 정간보 전용 프로그램을 “처음 들어본다”고 응답한 비율은 66.7%였습니다. 응답자의 93.3%가 국악 경력 10년 이상임을 고려하면, 이는 도구의 선택에 관한 문제라기보다 인지의 공백에 해당합니다. 편의표집에 따른 예비 조사이며, 조사의 개요는 「개요」에 기술하였습니다.</p>
+    <p>도구의 개발과 그 보급은 별개의 과업입니다. 전자는 일단락되어 예비 검증까지 마쳤으나, 후자는 착수되지 않았습니다. 이하의 세 가지는 모두 보급의 경로에 관한 것으로, 국악의 보급을 기능으로 하는 기관과 함께할 때 실효를 가질 수 있으리라 생각하여 제안드립니다.</p>
+
+    <h2>제안 내용</h2>
+
+    <h3 id="pr-1">『국악누리』 소개</h3>
+    <p>국악원의 정기 간행물을 통해 독자에게 소개하는 방안입니다. 별도의 설치나 가입 절차가 없으므로 독자가 기사를 접한 자리에서 곧바로 확인할 수 있으며, 공개 라이선스로 배포되는 도구이므로 특정 상품의 광고에 해당하지 않습니다.</p>
+    <p>소재로는 다음 세 가지를 상정할 수 있습니다. ① 도구의 기능과 사용법, ② 정간보 작성 실태 조사가 드러낸 현장의 요구, ③ 전통 조판의 관행을 자동 규칙으로 옮긴 과정. 기고·인터뷰·취재 등 편집 방향에 따른 어떠한 형태로도 응할 수 있습니다.</p>
+
+    <h3 id="pr-2">정간보 창작 공모</h3>
+    <p>정간보로 작성하는 창작 공모를 국악원에서 시행하시는 경우, 작성 도구와 심사용 열람 페이지의 마련을 함께 검토할 수 있습니다. 응모작이 데이터의 형태로 축적되므로 이후의 활용과 보존에도 이점이 있습니다. 검토 의사가 있으시면 사업의 형태와 세부 사항을 별도로 정리하여 제출하겠습니다.</p>
+
+    <h3 id="pr-3">온라인 채널의 링크 제공</h3>
+    <p>국악원 누리집 및 온라인 교육 채널에서 링크를 제공하는 방안입니다. 별도의 시스템 연계나 서버 자원이 필요하지 않으며, 링크 제공만으로 이용이 가능합니다.</p>
+
+    <h2>제공 가능한 자료</h2>
+    <ul class="plain">
+      <li>화면 갈무리 및 악보 출력 견본</li>
+      <li>원고 — 직접 집필, 취재 응대, 편집부용 자료 제공 가운데 필요한 형태</li>
+      <li>정간보 작성 실태 조사 자료(45명)</li>
+    </ul>
+  </div>
+
+    <div class="nextlinks"><span></span><a href="#s-education">다음 · 교육 →</a></div>
+  </section>
+
+  <section class="sub" id="s-education">
+    <div class="sub-head"><p class="sub-kicker">2 / 3</p><h2 class="sub-name">교육</h2><p class="sub-gloss">교원 연수와 교육 자료 제작에 관한 사항</p></div>
+
+  <div class="col">
+    <div class="brief">
+      <p class="eyebrow">제안 항목</p>
+      <ol class="toc">
+        <li><a href="#ed-1">연수·워크숍</a></li>
+        <li><a href="#ed-2">교재 및 자료 제작</a></li>
+        <li><a href="#ed-3">교육 프로그램 시범 적용</a></li>
+        <li><a href="#ed-4">표준악보집 데이터 제공</a></li>
+      </ol>
+    </div>
+
+    <h2>배경 — 정간보 학습과 자료 제작</h2>
+
+    <h3>위치가 시가를 정하는 원리의 확인</h3>
+    <p>정간보는 음의 길이를 별도의 기호가 아니라 칸 안에서의 위치로 표시합니다. 이 원리는 지면의 악보에서는 설명의 대상에 머무르지만, 본 도구에서는 조작의 대상이 됩니다. 정간을 선택하여 율명을 입력한 뒤 재생하면, 한 칸에 한 음을 둔 경우와 그 칸을 둘로 나눈 경우의 차이를 즉시 청취할 수 있습니다.</p>
+
+    <h3>장단 위에 가락을 얹는 창작</h3>
+    <p>장단을 선택하면 정간 수와 대강이 함께 조정되므로 격자를 구성하는 데 시간이 소요되지 않습니다. 작성한 가락은 소리로 확인하고 인쇄하여 배포할 수 있습니다.</p>
+
+    <h3>자료 제작 부담의 경감</h3>
+    <p>설문의 주관식 응답에서 가장 빈번하게 지적된 어려움은 격자와 서식을 매번 직접 제작해야 한다는 점이었습니다(“형식을 만드는 데에만 반나절입니다”). 격자·대강선·세로쓰기는 자동으로 조판되며, 작성한 악보는 파일로 보존되어 이후 수정하여 재사용할 수 있습니다.</p>
+
+    <h2>사용 환경</h2>
+    <p>연수 참가자가 학교 현장에서 사용하는 경우를 포함하여, 다음과 같은 환경에서 동작합니다.</p>
+    <ul class="plain">
+      <li>별도의 설치 권한이 필요하지 않아 학교 공용 컴퓨터에서도 주소 접속만으로 사용할 수 있습니다.</li>
+      <li>계정 체계가 없어 학생의 개인정보를 수집하지 않습니다.</li>
+      <li>서버와의 통신 없이 브라우저 내에서 조판하므로 저사양 환경에서도 동작합니다.</li>
+    </ul>
+
+    <h2>제안 내용</h2>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <tbody>
+        <tr id="ed-1"><th scope="row">연수·워크숍</th><td>국악 교원 연수의 한 과정(1~2시간)으로 시연과 실습을 진행하는 방안입니다. 진행의 형태와 조건은 국악원의 절차와 협의에 따르겠습니다.</td></tr>
+        <tr id="ed-2"><th scope="row">교재·자료 제작</th><td>국악원이 제작하는 교육 자료의 사보 도구로 활용하는 방안.</td></tr>
+        <tr id="ed-3"><th scope="row">교육 프로그램 시범 적용</th><td>국악원이 운영하는 교육 프로그램의 일부에 시범적으로 적용하여, 활용 가능성과 개선점을 확인하는 방안입니다.</td></tr>
+        <tr id="ed-4"><th scope="row">표준악보집 데이터 제공</th><td>『2022 개정 교육과정 교과서 표준악보집』 등 국악원 발간 교육 악보를 편집 가능한 데이터(<code>.jgb.json</code>)로 함께 제공하는 방안.</td></tr>
+      </tbody>
+    </table>
+  </div>
+    <div class="nextlinks"><a href="#s-promotion">← 이전 · 진흥</a><a href="#s-research">다음 · 연구 →</a></div>
+  </section>
+
+  <section class="sub" id="s-research">
+    <div class="sub-head"><p class="sub-kicker">3 / 3</p><h2 class="sub-name">연구</h2><p class="sub-gloss">표기 체계의 정리에 관한 사항</p></div>
+
+  <div class="col">
+    <div class="brief">
+      <p class="eyebrow">제안 항목</p>
+      <p>간행 정악보 시김새 기호의 <strong>명칭과 권리 관계를 정리하는 작업</strong>을 국악원에서 맡아 주시기를 청합니다.</p>
+    </div>
+
+    <h2 id="rs-1">권리 관계가 정리된 시김새 기호·명칭 체계</h2>
+
+    <h3>문제</h3>
+    <p>제안자는 본 도구를 제작하며 간행 정악보의 시김새 기호를 벡터로 다시 그려 사용하였고, 이에 관하여 국립국악원에 확인을 요청한 바 있습니다. 그때 안내받은 사항은 다음과 같습니다. 정간보의 제작이 외부에 위탁되었고 그 과정에서 시김새 폰트가 구입되어 사용되었으므로 해당 폰트에 대한 권리는 국립국악원에 있지 않으며, 따라서 본 도구의 작업에 대하여 국악원이 문제를 제기할 사안은 아니나, 폰트 제작 주체가 이의를 제기하는 경우에는 국악원이 관여할 수 있는 여지가 없다는 것이었습니다.</p>
+    <p>이 답변은 개인의 이용 가부를 넘어선 국악 데이터에 관련한 사정을 보여 줍니다. <strong>간행 기관 스스로도 자기 간행물에 실린 기호를 자유로이 재사용하거나 배포할 수 없는 상태</strong>라면, 그 기호를 사용하는 모든 작업이 각자 권리의 불확실성을 떠안게 됩니다. 정간보의 시김새 기호는 교과서·교재·연구 자료·데이터셋·사보 도구가 공통으로 사용하는 표기 요소이므로, 이는 개별 이용자의 문제가 아니라 <strong>분야의 기반에 관한 문제</strong>에 해당합니다.</p>
+    <p>정간보를 데이터로 다루는 작업이 증가할수록 이 문제의 비중은 커집니다. 표기 체계가 공개되어 있지 않으면 그 표기를 사용하는 데이터 또한 공개할 수 없기 때문입니다.</p>
+    <p>한편 이 문제는 정간보에 국한되지 않습니다. 자형과 도안의 권리 관계가 공공 지식 기반의 형성을 제약하는 일반적 구조의 한 사례에 해당합니다. 제안자는 한국문화예술위원회 청년 연구위원회에서 ‘공유 지식 인프라’를 주제로 진행 중인 논의에 참여하면서 본 사안을 그 사례의 하나로 검토하고 있습니다. 표기 체계의 공개는 공공 지식 기반에 관한 문제로서 함께 논의될 수 있는 사안으로 생각합니다.</p>
+
+    <h3>제안자의 작업과 그 한계</h3>
+    <p>〈우물사이〉의 시김새 84종은 폰트 파일을 사용하지 않습니다. 간행 정악보의 자형을 참조하여 벡터(SVG)로 새로 제작한 것이며, 코드와 함께 MIT 라이선스로 공개되어 있습니다. 폰트 파일을 포함하지 않는 것을 원칙으로 하여, 로고의 문자 또한 폰트가 아닌 윤곽선으로 처리하였습니다.</p>
+    <p>다만 이 방식으로 권리의 불확실성이 해소되는 것은 아닙니다. 폰트 파일에 의존하지 않으므로 위험은 낮으나, 자형의 유사성을 근거로 한 문제 제기의 여지까지 배제된다고 보기는 어렵습니다. 또한 개인이 각자 새로 제작하는 방식으로는 이러한 불확실성이 이용자마다 반복될 뿐 해소되지 않습니다.</p>
+    <p>이러한 점에서 공개된 표준 판본이 필요하다고 생각합니다.</p>
+
+    <h3>제안</h3>
+    <p>정간보의 시김새 기호에 대하여, <strong>권리 관계가 정리되어 누구나 자유로이 사용할 수 있는 표준 판본을 국립국악원이 제작·배포</strong>해 주실 것을 제안드립니다.</p>
+    <p>이 작업의 주체는 국립국악원이 되는 것이 자연스럽다고 생각합니다. 기호의 자형과 명칭에 관한 권위가 정악보를 간행해 온 기관에 있으며, 명칭이 확인되지 않은 23종의 확정 또한 간행 기관이 아니면 수행하기 어렵기 때문입니다.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <tbody>
+        <tr><th scope="row">기호 원도</th><td>시김새 84종의 벡터 원도. 권리의 귀속과 이용 조건을 명시</td></tr>
+        <tr><th scope="row">명칭</th><td>명칭이 확인되지 않은 23종을 포함한 전체 명칭의 확정</td></tr>
+        <tr><th scope="row">정의서</th><td>기호별 명칭·자형·부착 위치·연주상의 의미·출처 판본을 수록한 표</td></tr>
+        <tr><th scope="row">기계 식별자</th><td>기호별 형식 명칭(코드)의 부여. 데이터의 기술·검색·교환을 위한 최소 표준</td></tr>
+        <tr><th scope="row">배포</th><td>웹 폰트·SVG 세트·정의서를 국악원이 배포</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>제안자가 제작한 원도는 그 출발점으로 제공할 수 있으며, 국악원이 별도로 제작하시는 경우에도 채록의 근거와 형식 명칭 체계는 그대로 활용하실 수 있습니다.</p>
+
+    <h3>역할 분담</h3>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <tbody>
+        <tr><th scope="row">제안자</th><td>84종의 벡터 원도, 채록의 근거가 된 판본 대조표, 형식 명칭 체계, 그리고 해당 체계가 실제 도구에서 작동함을 보이는 실증(배포 중인 편집기)</td></tr>
+        <tr><th scope="row">국립국악원</th><td>명칭의 권위(간행 기관에 의한 확정), 판본 자료, 권리 관계의 정리와 공표, 이를 표준으로 채택한다는 결정</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <h3>기대 효과</h3>
+    <p>국악원이 자기 표기 체계를 자기 권리로 보유하게 됩니다. 교과서·교재·데이터 사업에서 기호를 사용할 때마다 권리 관계를 확인할 필요가 없어지며, 연구자와 개발자가 국악원의 표준을 그대로 인용하여 사용할 수 있게 됩니다.</p>
+
+    <h3>선결 과제 — 명칭이 확인되지 않은 23종</h3>
+    <p>시김새 84종 가운데 23종은 간행 정악보에 사용되면서도 명칭이 확인되지 않아 임시 번호로 두었습니다. 명칭이 없으면 표기에서 해당 기호를 지시할 수단이 없으므로, 명칭의 확정이 형식화에 선행합니다.</p>
+    <p>이는 도구가 확정할 수 있는 사항이 아니라 간행 기관이 확정할 사항입니다. 국악원 연구진의 자문 또는 공동 검토의 자리를 청합니다. 23종의 도판과 출처 판본을 정리한 일람표를 함께 제출할 수 있습니다.</p>
+
+  </div>
+
+    <div class="nextlinks"><a href="#s-education">← 이전 · 교육</a><span></span></div>
+  </section>
+</section>
+
+<!-- ══════════ 구상 ══════════ -->
+<section class="panel" id="p-ideas" aria-labelledby="t-ideas" hidden>
+  <header class="panel-head"><h2 class="panel-title">구상</h2></header>
+  <div class="col">
+    <p>이하의 항목은 대체로 <span class="key">서양음악에서는 이미 갖추어져 널리 쓰이고 있으나, 정간보에는 대응하는 것이 마련되어 있지 않은</span> 것들입니다. 악보를 따라가며 듣는 감상 자료, 가상악기, 주석이 붙은 정본, 악보 말뭉치를 대상으로 하는 계량 연구 따위가 그러합니다. 그 까닭의 하나는 정간보가 데이터의 형태로 축적되지 않았다는 데 있습니다. 이하에서는 〈우물사이〉의 구조 위에서 생각해 볼 수 있는 방향을 정리하였습니다.</p>
+    <p>국악원에서 앞으로 관련 사업이나 연구를 구상하실 때 검토의 대상이 될 수 있도록 미리 소개드립니다. 각 항목 아래의 「과제 예시」에는 하나의 연구과제나 사업이 될 만한 일을 적었습니다. 다만 어느 것도 자료 없이는 성립하지 않으며, 해당 자료를 보유한 기관이 국립국악원이므로 이 자리에 함께 적었습니다.</p>
+
+    <h2>악보와 소리를 잇는 활용</h2>
+
+    <h3>악보를 따라가는 감상</h3>
+    <p>국악원 아카이브의 실연 음원을 정간보와 시간 정렬하여, <span class="key">재생 중 현재 위치가 악보 위에 표시되도록 하는 것</span>입니다. 듣는 사람이 소리와 표기를 동시에 확인하게 됩니다.</p>
+    <p>현재 편집기는 합성음 재생 시 지나는 정간을 표시하는 기능을 갖추고 있으므로, 재생원을 실연 음원으로 대체하고 정렬 정보를 부여하는 형태가 됩니다.</p>
+    <p>서양음악에서는 악보가 흐르며 연주를 따라가는 감상 자료가 방대하게 축적되어 있어, 청자가 소리와 표기를 함께 확인하는 것이 일반적인 감상 방식의 하나가 되었습니다. 정간보에는 그러한 자료가 거의 없습니다. 정간보는 칸 하나가 곧 시간의 단위이므로 정렬의 결과를 표기의 단위에 그대로 대응시킬 수 있으며, 이때 산출되는 정렬 자료는 각(刻)별 시간 배분이나 연주 속도의 변화를 계량적으로 살피는 연구 자료가 되기도 합니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>악보 연동 감상 페이지 · 악보–음원 정렬 데이터셋</span></p>
+
+    <h3>연주 판본의 비교 청취</h3>
+    <p><span class="key">동일 악곡의 복수 연주 — 악기별·연주자별·연대별 — 를 같은 악보 위에서 비교하여 듣는 것</span>입니다.</p>
+    <p>정악은 동일한 골격 선율을 악기마다 달리 실현하므로, 편집기의 총보·파트보 전환은 이미 ‘한 악기만 듣기’와 ‘함께 듣기’의 구조를 갖추고 있습니다. 연대에 따른 실현의 차이를 대조하는 작업은 장기간의 실연 기록을 보유한 기관에서만 가능합니다.</p>
+    <p>서양음악에서는 같은 악곡의 여러 녹음을 나란히 놓고 견주는 일이 비평과 감상의 오랜 관행이며, 근래에는 복수의 연주를 시간 축에서 정렬하여 대조하는 방식도 연구에 쓰이고 있습니다. 정악은 악기마다 같은 골격 선율을 달리 실현하고 그 실현이 시대에 따라 변해 왔으므로 이러한 대조가 특히 긴요하나, 지금까지는 채보와 청취에 의존해 왔습니다. 복수의 연주를 동일한 악보 위에 정렬해 두면 <span class="key">차이가 나타나는 자리를 표기의 단위로 지시할 수 있게 됩니다</span>.</p>
+    <p class="deliver"><b>과제 예시</b><span>악기별·시대별 연주 비교 열람기 · 실현 차이 대조 보고</span></p>
+
+    <h3>해설이 붙은 악보</h3>
+    <p><span class="key">악곡 해설과 주석을 악보의 해당 위치에 결합하여 읽는 감상 자료</span>입니다. 국악원이 축적해 온 해제·해설을 악보와 소리에 붙이면, 글과 표기와 소리를 한자리에서 확인할 수 있는 형태가 됩니다.</p>
+    <p>서양음악에서는 비평 정본과 주석본이 오랜 출판 관행으로 확립되어, 해설이 악보의 특정 마디를 지시하고 독자가 그 자리를 곧바로 확인하는 것이 당연한 일이 되었습니다. 정간보에서 해설과 악보를 한 화면에서 연결하는 형식은 아직 마련되어 있지 않습니다. 해설이 악보의 특정 위치를 지시할 수 있게 되면 <span class="key">글과 악보가 서로를 참조하는 형태</span>가 되어, 해제가 어디에 근거한 서술인지를 독자가 직접 확인할 수 있습니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>주석 정간보 시범판 · 해설–악보 연결 규약</span></p>
+
+    <h3>소리를 통한 악보 접근</h3>
+    <p><span class="key">시각장애·저시력 이용자가 악보를 소리로 탐색할 수 있도록 하는 것</span>입니다.</p>
+    <p>서양 기보에는 점자 악보라는 국제적으로 통용되는 표기 체계가 있고, 악보를 음성과 소리로 옮겨 읽어 주는 도구도 마련되어 있습니다. 정간보에는 그에 대응하는 표기 체계가 마련되어 있지 않습니다. 표기를 청각 정보로 옮기는 방식의 설계가 필요하며, 뒤의 「국악기 가상악기」에서 다루는 시김새의 음향 규칙이 그 전제가 됩니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>정간보 청각 탐색 시제품 · 시각장애 학습자 사용성 평가</span></p>
+
+    <h2>국악기 가상악기</h2>
+    <p>국악원이 보유한 연주 음원을 바탕으로 <span class="key">국악기의 가상악기를 제작하고, 정간보에서 그 음색으로 재생할 수 있게 하는 것</span>입니다.</p>
+    <p>현재의 재생은 사인파 합성이므로 악기의 음색이 반영되지 않습니다. 시김새 84종 가운데 소리로 실현되는 것도 36종에 그치며, 나머지 48종은 떨림·주법·음색을 지시하는 기호여서 현행 합성으로는 재현되지 않습니다.</p>
+    <p>서양 관현악기의 가상악기는 이미 널리 보급되어, 작곡가가 관현악 편성을 미리 들어 보고 고쳐 가며 쓰는 것이 일반적인 창작 절차가 되었습니다. 국악기는 공개적으로 이용할 수 있는 것이 드물어, <span class="key">창작자가 국악 편성을 사전에 청취할 수단이 마땅치 않습니다</span>.</p>
+    <p>가상악기는 대체로 악기의 소리를 음높이·세기·주법별로 나누어 녹음해 두고 이어 붙이는 표본 기반(sample-based) 방식, 이른바 샘플러로 만들어져 왔습니다. 이 방식은 음 하나하나가 뚜렷이 나뉘는 기보에는 잘 맞으나, 국악기에는 두 가지 점에서 어려움이 있습니다. 하나는 음높이가 연속적으로 움직인다는 것입니다. 농현과 요성의 주기적인 흔들림, 퇴성·추성의 활음은 음과 음 사이를 미끄러지는 운동이어서 고정된 음높이의 표본을 이어 붙이는 방식으로는 담기 어렵습니다. 다른 하나는 주법에 따라 음색이 크게 달라진다는 것입니다. 음높이와 세기의 조합만으로는 수록해야 할 경우의 수가 지나치게 늘어납니다. 국내에서 제작된 국악기 가상악기도 대체로 이 방식이어서, 같은 한계를 안고 있습니다.</p>
+    <p>근래에는 음향 합성기의 제어 변수를 신경망이 학습하도록 하는 방식이 널리 연구되고 있습니다. 미분 가능 신호처리(DDSP) 계열이 대표적입니다. 이 방식은 <span class="key">음높이 곡선과 세기 곡선을 입력으로 받아 소리를 만들어 내므로</span>, 시김새처럼 연속적으로 움직이는 표현을 곡선 그대로 넣을 수 있습니다. 학습에 드는 녹음의 분량도 표본 수록에 비해 적습니다. 국악기가 대체로 단선율을 연주하고 음높이의 미세한 굴곡이 표현의 핵심을 이룬다는 점에서, 이 방식이 국악기에 특히 알맞은 대상으로 보입니다.</p>
+    <p>구현은 두 방향으로 생각할 수 있습니다. 하나는 <span class="key">경량화</span>로, 브라우저 안에서 곧바로 울릴 수 있는 크기로 줄이는 것입니다. 설치도 서버도 없이 악보를 적으면서 그 자리에서 소리를 확인할 수 있으므로 편집과 학습에 쓰이는 방향입니다. 다른 하나는 <span class="key">품질의 고도화</span>로, 서버에서 처리하는 것을 전제로 실제 연주에 더 가까운 소리를 얻는 것입니다. 창작과 감상, 아카이브의 활용처럼 음질이 중요한 자리에 쓰입니다. 두 방향은 서로 배타적이지 않아, 같은 모형을 크기를 달리하여 함께 마련할 수도 있습니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>주요 국악기의 신경 합성 음원 모형 · 시김새 음향 규칙 명세 · 학습용 녹음 수록 규격</span></p>
+
+    <h2>자료 간의 연계</h2>
+    <p><span class="key">정간보를 데이터로 다루면 흩어져 있는 자료를 서로 잇는 일이 가능해집니다</span>. 고악보와 현행 악보의 대조, 영인과 판독의 병치, 악보와 원자료의 상호 참조가 그러한 갈래입니다.</p>
+    <p><span class="key">고악보를 현행 악보와 동일한 형식으로 입력하면 둘을 나란히 놓고 견줄 수 있습니다</span>. 시대에 따라 정간 수와 대강의 구조가 달라지는데, 본 편집기는 각마다 정간 수를 달리 지정하고 대강의 분절을 자유로이 설정할 수 있으므로 그 차이를 표기 그대로 옮길 수 있습니다. 서양음악에서는 자필보와 초판본을 디지털 정본으로 만들어 판본 사이를 기계적으로 대조하는 작업이 전집 사업의 일부로 이루어져 왔습니다. 정간보에서도 <span class="key">판독 결과를 기계가 읽을 수 있는 형식으로 갖추면</span> 판본의 차이를 대조할 수 있게 되며, 이는 악곡의 계보를 살피는 연구의 자료가 됩니다.</p>
+    <p>판독에는 그 근거가 함께 제시되어야 합니다. 영인본 이미지와 판독 결과를 한 화면에 병치하는 것은 서양의 디지털 정본 편찬에서 표준적인 형식이며, 광학악보인식으로 산출된 악보를 사람이 확인하고 수정하는 도구와 같은 구조에 해당합니다.</p>
+    <p>악보 파일에 국악원 아카이브의 자료 식별자를 수록하면 <span class="key">악보에서 음원·영상·해제로, 원자료에서 악보로 오갈 수 있습니다</span>. 문서 형식이 공개되어 있어 필드를 더하는 방식으로 접근할 수 있습니다. 서양의 음악 도서관과 아카이브에서는 자료를 지속적인 식별자로 연결하는 설계가 일반화되어 있으며, 악보와 음원과 해제가 서로를 참조하면 <span class="key">개별 자료의 모음이 아니라 연결된 자료군</span>이 됩니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>고악보의 형식 입력본과 현행 악보 대조 · 영인–판독 병치 열람기 · 아카이브 식별자 필드 규격</span></p>
+
+    <h2>현장에서의 활용</h2>
+
+    <h3>공연과의 연계</h3>
+    <p>공연 곡목의 악보를 관객이 미리 보고 들을 수 있는 페이지를 두는 방안, 그리고 <span class="key">공연 중 연주되는 위치를 무대 화면이나 관객의 휴대기기에서 따라볼 수 있게 하는 방안</span>입니다. 정간 단위의 시간 구조와 재생 위치 표시는 이미 갖추어져 있으므로, 실연과의 동기화가 관건이 됩니다.</p>
+    <p>서양음악 공연에서는 가사 자막이 오래전에 자리 잡았고, 근래에는 해설이나 악보를 관객의 기기로 함께 제공하는 시도도 이루어지고 있습니다. 정간보를 그러한 방식으로 활용한 사례는 아직 찾기 어렵습니다. 표기를 실연과 함께 제시하는 방식이 관객의 이해와 감상에 어떤 영향을 미치는지는 확인해 볼 만한 문제입니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>공연 곡목 사전 열람 페이지 · 실연과의 동기화</span></p>
+
+    <h3>전시·상설 콘텐츠</h3>
+    <p>국악박물관 등에서 <span class="key">정간보의 원리를 관람객이 직접 조작하여 확인하는 콘텐츠</span>입니다. 설치가 필요 없는 정적 웹이므로 키오스크 환경에 그대로 올릴 수 있습니다.</p>
+    <p>서양의 음악 박물관에서는 악기와 기보의 원리를 관람객이 직접 조작해 보게 하는 체험형 전시가 오래 쓰여 왔습니다. 위치가 시가를 정한다는 정간보의 원리는 글로 설명하기보다 조작으로 보이기에 적합한 대상입니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>정간보 원리 체험 키오스크</span></p>
+
+    <h3>웹 기반 학습 콘텐츠</h3>
+    <p>율명 익히기, 정간보 읽기, 장단 맞추기, 시김새를 듣고 구별하기 등을 <span class="key">놀이의 형태로 구성한 학습 콘텐츠</span>입니다. 설치와 계정이 필요하지 않으므로 학교와 가정에서 바로 사용할 수 있습니다.</p>
+    <p>서양음악에서는 시창·청음과 악보 읽기를 익히는 학습 도구가 다양하게 보급되어 있어 학습자가 스스로 연습할 수 있습니다. 정간보를 대상으로 한 학습 도구는 아직 많지 않습니다. 학습 콘텐츠는 교육 자료이면서, 이용 기록을 통해 학습의 난점을 확인하는 자료가 되기도 합니다.</p>
+    <p class="deliver"><b>과제 예시</b><span>율명·정간 읽기 모듈 · 장단 맞추기 모듈</span></p>
+
+    <div class="closing">
+        <p>어느 항목이든 자료의 이용 협의와 일정한 인력·기간이 따르므로, <span class="key">연구과제 또는 사업의 형태로 성립하는 것이 착수의 전제</span>가 됩니다.</p>
+    <p>이미 공개되어 있는 도구와 문서 형식, 그리고 지금까지의 작업은 그 출발점으로 제공할 수 있습니다. 무엇을 먼저 다룰지, 어떤 형태와 주체로 수행할지는 국악원의 판단과 절차에 따를 사항이며, 제안자는 그 절차 안에서 참여할 의사가 있습니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 자료 ══════════ -->
+<section class="panel" id="p-materials" aria-labelledby="t-materials" hidden>
+  <header class="panel-head"><h2 class="panel-title">자료</h2><p>직접 열어 보실 수 있는 악보와 화면, 송부 가능한 자료, 관련 문서와 연락처를 모았습니다.</p></header>
+  <div class="col">
+    <h2>열람 가능한 자료</h2>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <tbody>
+        <tr><th scope="row">프로그램</th><td><a href="https://www.umulsai.com">www.umulsai.com</a></td></tr>
+        <tr><th scope="row">공유마당</th><td><a href="https://umulsai.com/browse.html">umulsai.com/browse.html</a> — 국악원 OMR 데이터셋에서 변환한 정악 69곡</td></tr>
+        <tr><th scope="row">예시 · 정악곡</th><td>〈웃도드리〉 — 시김새·구음·장 구분을 포함한 1면</td></tr>
+        <tr><th scope="row">예시 · 교육용</th><td>〈새야새야〉 — 교과서 수록곡</td></tr>
+        <tr><th scope="row">예시 · 총보</th><td>복수 악기를 병기한 총보 — 공유마당의 국악원 OMR 변환본에서 열람</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col">
+    <h2>화면 갈무리</h2>
+    <ol>
+      <li><strong>정악보의 재현</strong> — 국립국악원 간행 정악보와 동일한 조판. 격자·대강선·세로쓰기 제목 칸이 자동으로 조판됩니다.</li>
+      <li><strong>입력 화면</strong> — 악보의 정간을 선택하여 해당 위치에 입력합니다. 팔레트에서 율명과 시김새를 선택합니다.</li>
+      <li><strong>시김새 팔레트</strong> — 국립국악원 간행 정악보에서 채록한 84종.</li>
+      <li><strong>총보</strong> — 복수 악기의 병기. 단일 악기를 선택하여 파트보로 전환할 수 있습니다.</li>
+      <li><strong>오선보 병기</strong> — 동일 악보의 오선보 표시 및 MusicXML 내보내기.</li>
+      <li><strong>출력</strong> — 인쇄 결과.</li>
+    </ol>
+
+    <h2>송부 가능한 자료</h2>
+    <ul class="plain">
+      <li>출력 견본 — 정악곡 1면 / 교육용 1면</li>
+      <li>예시 악보 파일(<code>.jgb.json</code>)</li>
+      <li>정간보 작성 실태 조사 요약(45명)</li>
+      <li>시김새 84종 일람표 — 명칭 미확정 23종 표시</li>
+      <li>시김새 음향 실현 현황표 — 실현 36종, 미실현 48종</li>
+    </ul>
+
+    <h2>관련 문서</h2>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <tbody>
+        <tr><th scope="row">논문</th><td>「정간보 표기의 층위와 사보 프로그램의 구현」 『국악원논문집』 심사 중</td></tr>
+        <tr><th scope="row">기술보고서</th><td class="num">arXiv:2607.24230</td></tr>
+        <tr><th scope="row">소스 스냅샷</th><td class="num">DOI 10.5281/zenodo.21616981</td></tr>
+        <tr><th scope="row">저장소</th><td>github.com/danbinaerinHan/jeongganbo-generator (MIT 라이선스)</td></tr>
+        <tr><th scope="row">제안자 누리집</th><td><a href="https://www.danbinaerin.com">www.danbinaerin.com</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col">
+    <h2>연락처</h2>
+    <div class="contact">
+      <div class="who">한단비내린</div>
+      <div class="aff">한국과학기술원 문화기술대학원 박사과정</div>
+      <div><a href="mailto:naerin71@kaist.ac.kr">naerin71@kaist.ac.kr</a></div>
+      <div><a href="tel:01041465190">010-4146-5190</a></div>
+    </div>
+  </div>
+</section>
+
+</main>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+  var panels = {};
+  tabs.forEach(function(t){ panels[t.id] = document.getElementById(t.getAttribute('aria-controls')); });
+
+  function show(id, push, keepScroll){
+    tabs.forEach(function(t){
+      var on = (t.id === id);
+      if (on) t.setAttribute('aria-current','true'); else t.removeAttribute('aria-current');
+      panels[t.id].hidden = !on;
+    });
+    if (push) { try { history.replaceState(null, '', '#' + id.slice(2)); } catch(e){} }
+    if (id !== 't-proposals') {
+      document.querySelectorAll('.subtab.is-current').forEach(function(b){ b.classList.remove('is-current'); });
+    }
+    document.querySelector('.shell').classList.toggle('compact', id !== 't-overview');
+    if (!keepScroll) window.scrollTo(0, 0);
+  }
+
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ show(t.id, true); });
+    t.addEventListener('keydown', function(e){
+      var i = tabs.indexOf(t), n = null;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') n = tabs[(i + 1) % tabs.length];
+      if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  n = tabs[(i - 1 + tabs.length) % tabs.length];
+      if (n) { e.preventDefault(); n.focus(); show(n.id, true); }
+    });
+  });
+
+  var hash = (location.hash || '').replace('#','');
+  show(hash && document.getElementById('t-' + hash) ? 't-' + hash : 't-overview', false);
+
+  document.querySelectorAll('[data-go]').forEach(function(el){
+    el.addEventListener('click', function(e){ e.preventDefault(); show(el.dataset.go, true); });
+  });
+
+  var subtabs = Array.prototype.slice.call(document.querySelectorAll('.subtab'));
+  function goSub(id){
+    show('t-proposals', true, true);
+    var el = document.getElementById(id);
+    if (!el) return;
+    var soft = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    requestAnimationFrame(function(){ el.scrollIntoView({behavior: soft ? 'smooth' : 'auto', block:'start'}); });
+  }
+  subtabs.forEach(function(b){
+    b.addEventListener('click', function(){ goSub(b.dataset.target); });
+  });
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (!en.isIntersecting) return;
+        subtabs.forEach(function(b){ b.classList.toggle('is-current', b.dataset.target === en.target.id); });
+      });
+    }, {rootMargin:'-15% 0px -70% 0px'});
+    document.querySelectorAll('.sub').forEach(function(el){ io.observe(el); });
+  }
+
+  document.querySelectorAll('.nextlinks a, .toc a').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var el = document.querySelector(a.getAttribute('href'));
+      if (!el) return;
+      e.preventDefault();
+      var soft = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({behavior: soft ? 'smooth' : 'auto', block: 'start'});
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
