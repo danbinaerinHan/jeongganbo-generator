@@ -176,25 +176,6 @@
   .sub-list li{margin:0 0 .15rem; padding-left:0}
   .sub-list li::before{display:none}
 
-  /* 문서 차례 */
-  .docmap{
-    max-width:44rem; margin:0 0 3.4rem; padding-top:1.2rem; border-top:2px solid var(--ink);
-  }
-  .dm-list{display:grid}
-  .dm-list a{
-    display:grid; grid-template-columns:4.2rem 1fr; gap:1.2rem; align-items:baseline;
-    padding:.62rem 0; border-bottom:1px solid var(--line);
-    text-decoration:none; color:inherit;
-  }
-  .dm-list a:last-child{border-bottom:0; padding-bottom:0}
-  .dm-list .n{
-    font-size:1.02rem; font-weight:700; letter-spacing:-.02em; color:var(--tabc);
-    border-left:3px solid var(--tabc); padding-left:.6rem;
-  }
-  .dm-list .d{font-size:.92rem; line-height:1.6; color:var(--muted)}
-  .dm-list a:hover .d{color:var(--body)}
-  .dm-list a:focus-visible{outline:2px solid var(--tabc); outline-offset:3px}
-
   /* 요지 */
   .brief{
     background:var(--accent-weak); border:1px solid var(--accent-line); border-left:3px solid var(--accent);
@@ -327,25 +308,22 @@
 
 
   /* ── 항목별 색 ─────────────────────────── */
-  #t-overview,#p-overview,.dm-o{--tabc:#1f3a5c}
-  #t-proposals,#p-proposals,.subtabs,.dm-p{--tabc:#1d4a44}
-  #t-ideas,#p-ideas,.dm-i{--tabc:#43465e}
-  #t-materials,#p-materials,.dm-m{--tabc:#4d4132}
+  #t-overview,#p-overview{--tabc:#1f3a5c}
+  #t-proposals,#p-proposals,.subtabs{--tabc:#1d4a44}
+  #t-ideas,#p-ideas{--tabc:#43465e}
+  #t-materials,#p-materials{--tabc:#4d4132}
   @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]) #t-overview, :root:not([data-theme="light"]) #p-overview,
-    :root:not([data-theme="light"]) .dm-o{--tabc:#7ba7d6}
+    :root:not([data-theme="light"]) #t-overview, :root:not([data-theme="light"]) #p-overview{--tabc:#7ba7d6}
     :root:not([data-theme="light"]) #t-proposals, :root:not([data-theme="light"]) #p-proposals,
-    :root:not([data-theme="light"]) .subtabs, :root:not([data-theme="light"]) .dm-p{--tabc:#6dbcae}
-    :root:not([data-theme="light"]) #t-ideas, :root:not([data-theme="light"]) #p-ideas,
-    :root:not([data-theme="light"]) .dm-i{--tabc:#a3a7c8}
-    :root:not([data-theme="light"]) #t-materials, :root:not([data-theme="light"]) #p-materials,
-    :root:not([data-theme="light"]) .dm-m{--tabc:#c0ab8a}
+    :root:not([data-theme="light"]) .subtabs{--tabc:#6dbcae}
+    :root:not([data-theme="light"]) #t-ideas, :root:not([data-theme="light"]) #p-ideas{--tabc:#a3a7c8}
+    :root:not([data-theme="light"]) #t-materials, :root:not([data-theme="light"]) #p-materials{--tabc:#c0ab8a}
   }
-  :root[data-theme="dark"] #t-overview, :root[data-theme="dark"] #p-overview, :root[data-theme="dark"] .dm-o{--tabc:#7ba7d6}
+  :root[data-theme="dark"] #t-overview, :root[data-theme="dark"] #p-overview{--tabc:#7ba7d6}
   :root[data-theme="dark"] #t-proposals, :root[data-theme="dark"] #p-proposals,
-  :root[data-theme="dark"] .subtabs, :root[data-theme="dark"] .dm-p{--tabc:#6dbcae}
-  :root[data-theme="dark"] #t-ideas, :root[data-theme="dark"] #p-ideas, :root[data-theme="dark"] .dm-i{--tabc:#a3a7c8}
-  :root[data-theme="dark"] #t-materials, :root[data-theme="dark"] #p-materials, :root[data-theme="dark"] .dm-m{--tabc:#c0ab8a}
+  :root[data-theme="dark"] .subtabs{--tabc:#6dbcae}
+  :root[data-theme="dark"] #t-ideas, :root[data-theme="dark"] #p-ideas{--tabc:#a3a7c8}
+  :root[data-theme="dark"] #t-materials, :root[data-theme="dark"] #p-materials{--tabc:#c0ab8a}
 
   /* ── 항목 머리 ─────────────────────────── */
   .panel-head{background:none; border:0; padding:0; margin:0 0 3.2rem; max-width:42rem}
@@ -408,7 +386,7 @@
     .masthead{padding:2.4rem 0 1.6rem}
     .compact .masthead{padding:1.4rem 0 .9rem}
     .panel-title{font-size:1.7rem}
-    .brief, .deliver, .docmap, .survey, .col, .tablewrap, .panel-head{max-width:none}
+    .brief, .deliver, .survey, .col, .tablewrap, .panel-head{max-width:none}
   }
 
   @media (max-width:560px){
@@ -487,17 +465,7 @@
 
 <!-- ══════════ 개요 ══════════ -->
 <section class="panel" id="p-overview" aria-labelledby="t-overview">
-  <header class="panel-head"><h2 class="panel-title">개요</h2><p>이 문서는 네 항목으로 이루어집니다.</p></header>
   <div class="col">
-    <section class="docmap" aria-label="문서 차례">
-      <div class="dm-list">
-        <a href="#overview" class="dm-o" data-go="t-overview"><span class="n">개요</span><span class="d">〈우물사이〉가 무엇이며 왜 만들었는지, 국립국악원 자료와의 관계</span></a>
-        <a href="#proposals" class="dm-p" data-go="t-proposals"><span class="n">제안</span><span class="d">진흥 · 교육 · 연구 세 갈래. 서로 독립적이므로 해당하는 갈래만 보셔도 무방합니다</span></a>
-        <a href="#ideas" class="dm-i" data-go="t-ideas"><span class="n">구상</span><span class="d">협력이 이루어질 경우 함께 만들어 갈 수 있는 방향</span></a>
-        <a href="#materials" class="dm-m" data-go="t-materials"><span class="n">자료</span><span class="d">열람·송부 가능한 자료, 관련 문서와 연락처</span></a>
-      </div>
-    </section>
-
     <h2>〈우물사이〉는 무엇인가</h2>
     <p>〈우물사이〉는 웹 브라우저만으로 정간보를 쓰고 인쇄할 수 있는 편집기입니다. 이름은 정간(井間)의 두 글자, 우물 정(井)과 사이 간(間)을 우리말로 옮긴 것입니다.</p>
     <ul class="plain">
@@ -940,10 +908,6 @@
 
   var hash = (location.hash || '').replace('#','');
   show(hash && document.getElementById('t-' + hash) ? 't-' + hash : 't-overview', false);
-
-  document.querySelectorAll('[data-go]').forEach(function(el){
-    el.addEventListener('click', function(e){ e.preventDefault(); show(el.dataset.go, true); });
-  });
 
   var subtabs = Array.prototype.slice.call(document.querySelectorAll('.subtab'));
   function goSub(id){
