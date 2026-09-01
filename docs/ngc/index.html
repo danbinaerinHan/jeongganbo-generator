@@ -95,10 +95,15 @@
   /* ── 문패 ───────────────────────────────── */
   .masthead{padding:4.5rem 0 2.6rem; border-bottom:1px solid var(--rule)}
   .compact .masthead{padding:1.9rem 0 1rem}
+  .compact .masthead .addressee,
   .compact .masthead .eyebrow,
   .compact .masthead .lede,
   .compact .masthead .issued{display:none}
   .compact .masthead h1{font-size:.95rem; font-weight:500; letter-spacing:-.01em; color:var(--muted); max-width:none}
+  .addressee{
+    margin:0 0 1.3rem; padding-bottom:1.1rem; border-bottom:1px solid var(--rule);
+    font-size:1.06rem; font-weight:700; color:var(--ink); letter-spacing:-.015em;
+  }
   .eyebrow{
     font-family:var(--sans); font-size:.78rem; font-weight:500; letter-spacing:.02em;
     color:var(--muted); margin:0 0 1rem;
@@ -429,7 +434,7 @@
     .deliver{background:none; border-left-width:2px; padding:.4rem 0 .4rem .8rem}
     .deliver b{background:none; color:var(--accent); padding:0}
     .compact .masthead{padding:0 0 1.2rem}
-    .compact .masthead .eyebrow, .compact .masthead .lede, .compact .masthead .issued{display:block}
+    .compact .masthead .addressee, .compact .masthead .eyebrow, .compact .masthead .lede, .compact .masthead .issued{display:block}
     .compact .masthead h1{font-size:20pt; font-weight:700; color:var(--ink)}
     .shell{display:block}
     .wrap{max-width:none; padding:0}
@@ -471,7 +476,8 @@
   <div class="stage">
     <div class="wrap">
       <header class="masthead">
-        <p class="eyebrow">국립국악원에 드리는 소개와 제안</p>
+        <p class="addressee">국립국악원 귀중</p>
+        <p class="eyebrow">소개와 제안</p>
         <h1>웹 정간보 편집기 〈우물사이〉</h1>
         <p class="lede">설치도 가입도 없이 브라우저에서 정간보를 쓰고 인쇄하는 무료 편집기입니다. 국립국악원 간행 정악보의 조판 관행을 그대로 재현합니다.</p>
         <p class="issued">한단비내린 · 한국과학기술원 문화기술대학원 박사과정 · 2026년 9월</p>
