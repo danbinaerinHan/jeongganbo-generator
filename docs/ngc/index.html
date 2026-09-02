@@ -237,8 +237,8 @@
 
   /* 표 */
   .tablewrap{overflow-x:auto; margin:0 0 2.4rem; max-width:50rem}
-  table{border-collapse:collapse; width:100%; font-size:.94rem; line-height:1.6}
-  th,td{text-align:left; vertical-align:top; padding:.9rem 1rem; border-bottom:1px solid var(--line)}
+  table{border-collapse:collapse; width:100%; font-size:.93rem; line-height:1.55}
+  th,td{text-align:left; vertical-align:top; padding:.7rem 1rem; border-bottom:1px solid var(--line)}
   tbody tr:first-child th, tbody tr:first-child td{border-top:1px solid var(--rule)}
   th[scope="row"]{
     font-weight:700; color:var(--ink); white-space:nowrap; width:1%; padding-left:0;
@@ -479,17 +479,16 @@
   <div class="tablewrap">
     <table>
       <tbody>
-        <tr><th scope="row">입력</th><td>악보의 정간을 눌러 그 자리에 율명을 적을 수 있습니다. 한글로 입력하여도 한자로 자동 변환되어 ‘황’을 치면 악보에는 ‘黃’으로 나타나며, 청성·배성의 변형 한자(潢·僙)도 적용됩니다.</td></tr>
-        <tr><th scope="row">조판</th><td>격자·대강선·우종서(오른쪽→왼쪽) 진행·세로쓰기 제목 칸 같은 간행 악보의 조판 관행이 자동으로 재현됩니다. 종이 크기와 여백에 맞춰 배율도 저절로 잡히므로 격자를 처음부터 그릴 일이 없습니다. 각 너비·정간 크기·간격·테두리·종이 크기와 방향은 <strong>필요에 따라 쉽게 조정할 수 있습니다.</strong></td></tr>
-        <tr><th scope="row">시김새</th><td>국립국악원 간행 정악보에서 채록한 <strong>시김새 84종</strong>을 팔레트에서 골라 붙이거나 직접 적어 삽입할 수 있습니다. 위치와 크기 또한 쉽게 조정할 수 있습니다.</td></tr>
+        <tr><th scope="row">입력</th><td>악보의 정간을 눌러 그 자리에 율명을 적을 수 있습니다. 한글로 치면 한자로 자동 변환되고, 청성·배성의 변형 한자(潢·僙)도 함께 적용됩니다.</td></tr>
+        <tr><th scope="row">조판</th><td>격자·대강선·우종서 진행·세로쓰기 제목 칸 같은 간행 악보의 조판 관행이 자동으로 재현되어, 격자를 처음부터 그릴 일이 없습니다. 각 너비·정간 크기·간격·테두리·종이 크기는 쉽게 조정할 수 있습니다.</td></tr>
+        <tr><th scope="row">시김새</th><td>국립국악원 간행 정악보에서 채록한 <strong>시김새 84종</strong>을 골라 붙이고, 위치와 크기를 조정할 수 있습니다.</td></tr>
         <tr><th scope="row">함께 적기</th><td>가사·활 표시·구음을 정간 옆 ‘곁줄’에, 장구 장단을 별도 줄에 나란히 적을 수 있습니다.</td></tr>
-        <tr><th scope="row">총보</th><td>한 곡에 악기를 여럿 두고 총보로 보거나, 악기 하나만 골라 파트보로 볼 수 있습니다.</td></tr>
-        <tr><th scope="row">장단</th><td>영산회상·가곡·여민락·취타·도드리 등 <strong>정악 악곡 17종</strong>의 기본 장단을 골라 넣을 수 있습니다. 고르면 정간 수·대강·장단 줄이 함께 맞춰집니다.</td></tr>
-        <tr><th scope="row">소리</th><td>기록된 정간보를 소리로 들어 볼 수 있습니다. 시김새는 그 곡의 음계 위에서 해석되고, 장단은 장구 녹음 음원으로 들어볼 수 있습니다.</td></tr>
+        <tr><th scope="row">총보</th><td>한 곡에 악기를 여럿 두어 총보로 보거나, 악기 하나만 골라 파트보로 볼 수 있습니다.</td></tr>
+        <tr><th scope="row">장단</th><td>영산회상·가곡·여민락·취타·도드리 등 <strong>정악 악곡 17종</strong>의 기본 장단을 골라 넣으면 정간 수·대강·장단 줄이 함께 맞춰집니다.</td></tr>
+        <tr><th scope="row">소리</th><td>기록한 대로 들어 볼 수 있습니다. 시김새는 그 곡의 음계 위에서 해석되고, 장단은 장구 녹음 음원으로 울립니다.</td></tr>
         <tr><th scope="row">오선보</th><td>같은 악보를 오선보로 나란히 보고, MusicXML로 내보내 피날레·시벨리우스에서 이어 작업할 수 있습니다.</td></tr>
-        <tr><th scope="row">출력</th><td>인쇄(PDF)와 PNG로 뽑을 수 있습니다. 종이는 A4·A5·B5·레터·정사각·사용자 지정 중에 고를 수 있습니다.</td></tr>
-        <tr><th scope="row">보관</th><td>브라우저에 자동 저장되고, <code>.jgb.json</code> 파일 하나로 내려받아 주고받을 수 있습니다.</td></tr>
-        <tr><th scope="row">공유</th><td>작성한 악보를 ‘공유마당’에 올려 주소 하나로 나눌 수 있습니다. 받는 사람은 설치 없이 그 자리에서 열어 보고 내려받습니다.</td></tr>
+        <tr><th scope="row">출력</th><td>A4·A5·B5·레터·정사각·사용자 지정 가운데 종이를 골라 인쇄(PDF)와 PNG로 뽑을 수 있습니다.</td></tr>
+        <tr><th scope="row">보관·공유</th><td>브라우저에 자동 저장되고 <code>.jgb.json</code> 파일 하나로 주고받을 수 있습니다. ‘공유마당’에 올리면 주소 하나로 나눌 수 있습니다.</td></tr>
       </tbody>
     </table>
   </div>
