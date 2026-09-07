@@ -1,0 +1,29 @@
+# Supabase 무료 플랜은 7일 동안 API 요청·DB 쿼리가 없으면 프로젝트를 일시정지한다
+# (2026-09-07 안내 메일). 정지되면 공유마당이 비어 보이고 게시가 실패하므로,
+# 방문자가 없는 주에도 서버가 '쓰이고 있다'고 보이게 이틀에 한 번 공유마당이 쓰는
+# list_scores RPC를 대신 부른다. 헬스체크 주소만 찌르는 것은 활동으로 안 세는 경우가
+# 있어 DB를 실제로 읽는 RPC를 쓴다.
+#
+# 키는 js/cloud-config.js에 이미 공개돼 있는 publishable 키다(secret 아님).
+# 주소·키를 바꾸면 여기와 js/cloud-config.js 두 곳을 함께 고칠 것.
+#
+# GitHub는 공개 리포에 60일간 커밋이 없으면 예약 작업을 꺼 버린다 — 그때는
+# Actions 탭에서 다시 켜거나 workflow_dispatch로 한 번 손으로 돌리면 된다.
+name: keep-supabase-alive
+
+on:
+  schedule:
+    - cron: "0 3 */2 * *"   # UTC 03:00, 이틀에 한 번 (KST 12:00)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: list_scores RPC 한 번 부르기
+        run: |
+          curl -sf -X POST "https://uszzhreidfdopvgdzzqs.supabase.co/rest/v1/rpc/list_scores" \
+            -H "apikey: sb_publishable_wMhSNubRaoeSchqunxVN2w_9Ib5XpiC" \
+            -H "Content-Type: application/json" \
+            -d '{"p_sort":"recent","p_q":"","p_limit":1,"p_offset":0,"p_author":null,"p_author_not":null}' \
+            -o /dev/null -w "HTTP %{http_code}\n"
