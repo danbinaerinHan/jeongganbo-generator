@@ -1232,10 +1232,6 @@
   body.ribbon-left.palette-collapsed #leftDock,
   body.ribbon-left.palette-collapsed #leftDockResizer { display: none; }
   body.ribbon-left #editorDock { border-top: none; }
-  body:not(.input-direct) .ribbon-pos-btn { display: none; }
-  .ribbon-pos-btn .rp-top { display: none; }
-  body.ribbon-left .ribbon-pos-btn .rp-left { display: none; }
-  body.ribbon-left .ribbon-pos-btn .rp-top { display: block; }
   /* 소형 노트북: 설정은 악보 폭을 추가로 빼앗지 않는 겹침 패널로 표시한다. */
   @media (max-width: 1280px) {
     body.input-direct #appRow { position: relative; }

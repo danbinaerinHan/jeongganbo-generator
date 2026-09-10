@@ -8064,7 +8064,7 @@
              parts: parts, activePart: activePart, viewLayouts: viewLayouts, gakUserSet: gakUserSet,
              daegangAuto: daegangAuto, activeTab: at ? at.getAttribute("data-tab") : "input",
              customTexts: customTexts, palZoom: palZoom, ornPalZoom: ornPalZoom, edFontPx: edFontPx,
-             melInput: inputMode, ribbonPos: ribbonPos, ornAddMap: ornAddMap, ornAddMaps: ornAddMaps,
+             melInput: inputMode, ornAddMap: ornAddMap, ornAddMaps: ornAddMaps,
              symRecent: symRecent,
              tempoBpmUserSet: tempoBpmUserSet, pubId: pubId,
              gakNames: gakNames, gakNameOffs: gakNameOffs, leftDockW: leftDockW };
@@ -8171,7 +8171,7 @@
     // editor여도 직접 입력으로 연다. 되살릴 때 아래 원래 줄로 복원:
     // inputMode = s.melInput === "direct" ? "direct" : "editor";
     inputMode = "direct";
-    ribbonPos = s.ribbonPos === "top" ? "top" : "left";
+    // 옛 ribbonPos(top/left) 설정은 무시하고 왼쪽 탭 패널로 연다.
     leftDockW = typeof s.leftDockW === "number" ? Math.max(LEFTDOCK_MIN, s.leftDockW) : null;
     applyLeftDockW();
     applyInputMode();
@@ -9439,7 +9439,7 @@
       //   도구창을 그대로 둔다 — 안 그러면 Cmd+Z를 누를 때마다 열어둔 창이 율명으로 튄다.
       if (lastAppliedInputMode === "editor") activateDirectPanel("paletteCol");
     }
-    applyRibbonPos();   // 기능바 도킹 위치(위/왼쪽)는 직접 입력에서만 유효 — 모드 바뀔 때 재적용
+    applyPaletteDock();   // 직접 입력은 왼쪽 탭 패널 하나로 통일
     lastAppliedInputMode = inputMode;
   }
   let lastAppliedInputMode = null;   // applyInputMode가 마지막으로 적용한 모드(전환 감지용)
@@ -9462,7 +9462,6 @@
   // 왼쪽 모드에서는 상단 도구줄과 분리한 #leftDock 탭 패널에 팔레트를 도킹한다.
   // dockDirectWins()가 열린 창을 옮기고, 닫히거나 떠 있는 창 모드로 돌아가면
   // 원래 자리(placeholder 주석 노드)로 되돌린다.
-  let ribbonPos = "left";   // "top" | "left" — 직접 입력 기본은 왼쪽 세로 도킹(저장된 문서는 저장값 따름)
   // 왼쪽 도킹 열의 사용자 지정 폭(px). null = 마우스 도구 오른쪽 구분선에 정렬.
   // 손잡이(#leftDockResizer)를 끌면 정해지고, 더블클릭하면 자동으로 돌아간다.
   let leftDockW = null;
@@ -9545,19 +9544,11 @@
       }
     });
   }
-  function applyRibbonPos() {
-    const left = inputMode === "direct" && ribbonPos === "left";
-    document.body.classList.toggle("ribbon-left", left);
-    const btn = $("ribbonPosToggle");
-    if (btn) btn.setAttribute("data-tip",
-      left ? "팔레트를 악보 위에 떠 있는 창으로 전환합니다" : "팔레트를 왼쪽 탭 패널에 붙입니다");
+  function applyPaletteDock() {
+    document.body.classList.toggle("ribbon-left", inputMode === "direct");
     dockDirectWins();
+    applyLeftDockW();
   }
-  $("ribbonPosToggle").addEventListener("click", function () {
-    ribbonPos = ribbonPos === "left" ? "top" : "left";
-    applyRibbonPos();
-    saveState();
-  });
   $("paletteToggle").addEventListener("click", function () {
     exitOrnEditMode();
     activateDirectPanel(document.querySelector(".direct-win.win-open") ? null : lastInputPanel);
