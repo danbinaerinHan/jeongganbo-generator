@@ -745,20 +745,20 @@
                가르면 같은 자리를 두 번 여는 꼴이었다. 에디터 모드는 원래부터 이 꼴이었고
                직접 입력만 갈려 있던 것을 맞춘 것 — 도로 두 버튼으로 나누지 말 것. -->
           <!-- 입력 위치를 구분하는 격자·곁줄·장구·각 이름·텍스트 아이콘. -->
-          <button type="button" id="winToggleYul" class="ribbon-btn win-toggle tip" data-target="paletteCol"
+          <button type="button" id="winToggleYul" aria-label="율명/시김새" class="ribbon-btn win-toggle tip" data-target="paletteCol"
             data-tip="정간 안에 넣는 팔레트를 열고 닫습니다
-· 창 머리의 '율 | 시김새'로 갈아 끼웁니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M12 3v18M4 9h16M4 15h16"/></svg><span>율명/시김새</span></button>
-          <button type="button" id="winToggleLyrics" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
+· 창 머리의 '율 | 시김새'로 갈아 끼웁니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M12 3v18M4 9h16M4 15h16"/></svg><span class="palette-tab-label multiline">율명<br>시김새</span></button>
+          <button type="button" id="winToggleLyrics" aria-label="곁줄" class="ribbon-btn win-toggle tip" data-target="lyricsArea"
             data-tip="곁줄 도구창을 열고 닫습니다
 · 곁줄 = 정간 오른쪽에 붙는 줄. 노랫말·활 기호(뜰·튕김 등)·장구 구음을 적습니다
-· 창을 열면 빈 곁줄이 보입니다 — 그 자리를 눌러 바로 쓰면 됩니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="11" height="18" rx="1"/><path d="M3 9h11M3 15h11M19 5v2m0 4v2m0 4v2"/></svg><span>곁줄</span></button>
+· 창을 열면 빈 곁줄이 보입니다 — 그 자리를 눌러 바로 쓰면 됩니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="11" height="18" rx="1"/><path d="M3 9h11M3 15h11M19 5v2m0 4v2m0 4v2"/></svg><span class="palette-tab-label">곁줄</span></button>
           <!-- 정간 안 → 곁줄 → 장단 → 각 위 → 종이 위 순서. -->
-          <button type="button" id="winToggleJangdan" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
-            data-tip="장단 도구창을 열고 닫습니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4c6 0 6 16 16 16M20 4C10 4 10 20 4 20M4 4v16M20 4v16M4 4h16M4 20h16"/></svg><span>장단</span></button>
-          <button type="button" id="winToggleGakName" class="ribbon-btn win-toggle tip" data-target="gakNameArea"
-            data-tip="각 위에 빠르기(一分・N井)와 각/장 이름(대여음·1장 등)을 붙입니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3h14l-3 4 3 4H5M10 15h9M10 19h6"/></svg><span>빠르기/각/장</span></button>
-          <button type="button" id="winToggleText" class="ribbon-btn win-toggle tip" data-target="textArea"
-            data-tip="텍스트 도구창을 열고 닫습니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h8v12M17 3v18M17 11h5"/></svg><span>텍스트</span></button>
+          <button type="button" id="winToggleJangdan" aria-label="장단" class="ribbon-btn win-toggle tip" data-target="jangdanArea"
+            data-tip="장단 도구창을 열고 닫습니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4c6 0 6 16 16 16M20 4C10 4 10 20 4 20M4 4v16M20 4v16M4 4h16M4 20h16"/></svg><span class="palette-tab-label">장단</span></button>
+          <button type="button" id="winToggleGakName" aria-label="빠르기/각/장" class="ribbon-btn win-toggle tip" data-target="gakNameArea"
+            data-tip="각 위에 빠르기(一分・N井)와 각/장 이름(대여음·1장 등)을 붙입니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V3h14l-3 4 3 4H5M10 15h9M10 19h6"/></svg><span class="palette-tab-label multiline">빠르기<br>각·장</span></button>
+          <button type="button" id="winToggleText" aria-label="텍스트" class="ribbon-btn win-toggle tip" data-target="textArea"
+            data-tip="텍스트 도구창을 열고 닫습니다"><svg class="input-tool-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h8v12M17 3v18M17 11h5"/></svg><span class="palette-tab-label">텍스트</span></button>
         </div>
       </div>
       <!-- ↓ 여기가 기능바가 좁아졌을 때 줄이 바뀌는 자리다(.rb-break). 그냥 두면 flex-wrap이

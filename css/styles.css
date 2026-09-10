@@ -2238,3 +2238,30 @@
     box-shadow: 0 1px 3px rgba(0,0,0,.07);
   }
   #sidebar > .tabs .tab:hover { background: var(--hover); }
+
+  /* 문서·도움말 창도 편집 컨트롤과 같은 모서리·경계를 사용한다. */
+  :is(#newDocModal, #helpModal, #pubModal) .modal-box {
+    border-radius: 12px; border-color: var(--line);
+  }
+  :is(#newDocModal, #helpModal, #pubModal) h3 { font-size: 16px; }
+  :is(#newDocModal, #pubModal) :is(input[type="text"], input[type="number"], input[type="email"], select, textarea) {
+    border-radius: 6px; background-color: var(--soft);
+    border-color: color-mix(in srgb, var(--line) 75%, var(--panel));
+  }
+  :is(#newDocModal, #pubModal) :is(input[type="text"], input[type="number"], input[type="email"], select, textarea):focus {
+    background-color: var(--panel); border-color: var(--accent);
+  }
+  :is(#newDocModal, #pubModal) .btns { gap: 8px; }
+  :is(#newDocModal, #pubModal) .btns button,
+  #newDocModal .at-add, #helpModal .help-foot button { border-radius: 6px; }
+  #helpModal .help-head, #helpModal .help-foot { background: var(--panel); }
+  #helpModal .help-tab { border-radius: 6px; }
+  #helpModal .help-tab.active { background: var(--panel); box-shadow: inset 2px 0 0 var(--accent), 0 1px 2px rgba(0,0,0,.04); }
+  /* 다섯 이름은 같은 두 줄 높이에 놓고, 단어 중간에서는 줄바꿈하지 않는다. */
+  body.ribbon-left #paletteTabs .ribbon-btn { height: 68px; padding-top: 5px; padding-bottom: 5px; }
+  body.ribbon-left #paletteTabs .ribbon-btn .palette-tab-label {
+    display: block; height: 28px; min-height: 28px; line-height: 28px;
+    white-space: nowrap; word-break: normal; overflow-wrap: normal;
+  }
+
+  body.ribbon-left #paletteTabs .ribbon-btn .palette-tab-label.multiline { line-height: 14px; }
