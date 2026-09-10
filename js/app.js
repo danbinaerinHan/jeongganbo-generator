@@ -5001,7 +5001,14 @@
                   return;
                 }
                 if (cellEditInput) commitCellEditor(false);
-                // 기본 동작: 아직 클릭인지 드래그인지 모름 — mouseup에서 판가름한다
+                if (!selectModeOn()) {
+                  if (cursorMode !== "input") return;
+                  clearSel();
+                  if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
+                  else openCellEditor("mel", gi, ci);
+                  return;
+                }
+                // 선택 모드: 아직 클릭인지 드래그인지 모름 — mouseup에서 판가름한다
                 // (다른 칸으로 번지면 드래그로 확정, 안 번기면 그냥 클릭 → 이 칸을 편집)
                 melSelActive = true; melSelDidDrag = false;
                 // 총보는 네모로 고른다 — 파트를 가로질러도 되므로 시작 칸에 파트 번호를 담는다
@@ -5029,7 +5036,7 @@
               });
               hit.addEventListener("mouseenter", function () {
                 // 곁줄에서 시작한 드래그가 정간으로 넘어와도 안 잡는다 — 줄은 안 섞인다
-                if (!melSelActive || lyDragFrom || melSelLane !== "mel") return;
+                if (!selectModeOn() || !melSelActive || lyDragFrom || melSelLane !== "mel") return;
                 // ★ **누른 그 칸에 다시 들어오는 것은 '번진' 것이 아니다.** mousedown이
                 //   render()로 악보를 통째로 새로 그리므로 손이 제자리에 있어도 사각형이
                 //   새것으로 바뀌고, 그 뒤 mousemove 하나면(그냥 한 번 누를 때도 딸려온다)
@@ -5068,6 +5075,14 @@
               hit.addEventListener("mousedown", function (e) {
                 e.preventDefault();
                 if (ornEditMode) { ornSel = null; hideOrnPanel(); render(); return; }
+                if (!selectModeOn()) {
+                  if (cursorMode !== "input") return;
+                  if (cellEditInput) commitCellEditor(false);
+                  switchPart(pIdx);
+                  if (inputMode === "editor") CELL_EDIT.mel.setCursor(gi, ci, true);
+                  else openCellEditor("mel", gi, ci);
+                  return;
+                }
                 melSelActive = true; melSelDidDrag = false; melSelAdd = false;
                 lyDragFrom = null; melSelRanges = [];
                 melSelRectFrom = { p: pIdx, g: gi, r: ci };
@@ -5076,7 +5091,7 @@
                 render();
               });
               hit.addEventListener("mouseenter", function () {
-                if (!melSelActive || !melSelRectFrom) return;
+                if (!selectModeOn() || !melSelActive || !melSelRectFrom) return;
                 // 누른 그 칸에 제자리로 다시 들어온 것은 번진 게 아니다(위 ★ 참고)
                 if (!melSelDidDrag && melSelRectFrom.p === pIdx
                     && melSelRectFrom.g === gi && melSelRectFrom.r === ci) return;
@@ -5321,13 +5336,13 @@
                 //   한 번 누르는 길은 예전과 한 획도 다르지 않다.
                 lyHit.addEventListener("mousedown", function (e) {
                   e.preventDefault();
-                  if (ornEditMode) return;
+                  if (ornEditMode || !selectModeOn()) return;
                   melSelActive = true; melSelDidDrag = false;
                   melSelAdd = (e.metaKey || e.ctrlKey);
                   lyDragFrom = { gi: gi, ci: ci };
                 });
                 lyHit.addEventListener("mouseenter", function () {
-                  if (!melSelActive || !lyDragFrom) return;
+                  if (!selectModeOn() || !melSelActive || !lyDragFrom) return;
                   // 누른 그 칸에 제자리로 다시 들어온 것은 번진 게 아니다(위 ★ 참고).
                   // 곁줄 mousedown은 render를 안 해 지금은 안 생기지만, 다른 길로 악보가
                   // 다시 그려져도 더블클릭 편집이 안 막히도록 같은 잣대로 걸어 둔다.
@@ -8786,7 +8801,19 @@
   let lastInputPanel = "paletteCol";
   function activateDirectPanel(targetId) {
     if (targetId) lastDirectPanel = targetId;
-    if (CURSOR_INPUT_WINS.includes(targetId)) lastInputPanel = targetId;
+    const openingInput = CURSOR_INPUT_WINS.includes(targetId);
+    const resetSelection = openingInput && $("tourLayer").style.display !== "block" && hasSel();
+    if (openingInput) {
+      lastInputPanel = targetId;
+      // 둘러보기의 임시 패널 전환은 작업 모드를 바꾸지 않는다.
+      if ($("tourLayer").style.display !== "block") {
+        cursorMode = "input";
+        cursorStashedWin = null;
+        document.body.classList.remove("pan-mode");
+        melSelActive = false; melSelDidDrag = false; melSelRectFrom = null; melSelClickPart = null;
+        if (resetSelection) clearSel();
+      }
+    }
     // 章·텍스트 창은 여닫이에 따라 악보 위 하이라이트(각/장 이름·빠르기 / 제목·부제·자유텍스트)가
     // 켜지고 꺼지므로, 둘 중 하나라도 열림 상태가 바뀌면 다시 그린다.
     // 곁줄 창은 한 걸음 더 나아가 여닫이가 '빈 곁줄이 보이나'를 정한다(lyricsLaneOn) —
@@ -8802,7 +8829,7 @@
       b.setAttribute("aria-pressed", String(tid === targetId));
     });
     dockDirectWins();   // 기능바 왼쪽 도킹이면 열린 창을 #leftDock 안으로 (아니면 원위치)
-    if (gakBefore !== !!document.querySelector("#gakNameArea.win-open") ||
+    if (resetSelection || gakBefore !== !!document.querySelector("#gakNameArea.win-open") ||
         txtBefore !== !!document.querySelector("#textArea.win-open") ||
         lyBefore !== lyricsLaneOn()) render();
     // 정간 서식 창을 여닫으면 마우스 모드가 따라 바뀐다(selectModeOn) — 버튼 표시도,
@@ -9174,7 +9201,7 @@
   // 대상이 아니다(총보는 네모 선택이 따로 있다).
   let melSelOverTarget = null;   // 같은 칸이면 다시 그리지 않으려고 기억해 둔다
   document.addEventListener("mousemove", function (e) {
-    if (!melSelActive || melSelLane !== "mel" || lyDragFrom || scoreViewOn()) return;
+    if (!selectModeOn() || !melSelActive || melSelLane !== "mel" || lyDragFrom || scoreViewOn()) return;
     // 포인터가 놓인 쪽(page)의 SVG 좌표로 옮긴다
     let svg = null;
     for (let i = 0; i < pageSvgs.length; i++) {
@@ -9523,7 +9550,7 @@
   });
   $("paletteToggle").addEventListener("click", function () {
     exitOrnEditMode();
-    activateDirectPanel(document.querySelector(".direct-win.win-open") ? null : lastDirectPanel);
+    activateDirectPanel(document.querySelector(".direct-win.win-open") ? null : lastInputPanel);
   });
   // 율명 입력 방식 전환 (표 / 건반)
   document.querySelectorAll("#yulModeSeg .seg-btn").forEach(function (b) {
