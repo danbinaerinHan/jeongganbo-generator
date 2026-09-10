@@ -9913,14 +9913,116 @@
   // 표기는 1-2 꼴(대번호-소번호, TOUR_LABELS에서 자동 계산). 칩을 누르면 그 장 첫 단계로.
   // 장 이름·단계 문구는 js/tour-text.js(사람이 직접 고치는 파일)에서 온다 — 여기(TOUR_STEPS)는
   // 구조만: 어디를 비추나(sel·also)·창 열기(prep)·예시 그림(fig)·장 배속(ch)·잇는 열쇠(id).
-  const TOUR_CHAPTERS = ["읽기", "도구", "입력", "저장"];
-  // 첫 안내는 네 단계. 패널·배율·스크롤을 단계마다 바꾸지 않는다.
+  const TOUR_CHAPTERS = (window.TOUR_TEXT && window.TOUR_TEXT.chapters) || ["개요", "입력", "꾸미기", "마무리"];
   const TOUR_STEPS = [
-    { ch: 0, sel: "#sheetArea", id: "quickRead" },
-    { ch: 1, sel: "#melodyRibbon", id: "quickTools" },
-    { ch: 2, sel: "#sheetArea", id: "quickInput",
-      fig: [{ t: "황", cap: "한 정간에 한 음", img: TOUR_CELL_IMGS.one }] },
-    { ch: 3, sel: "#btnExport", id: "quickSave", also: ["#outToggle", "#btnHelp"] }
+    // 본문 규칙(2026-07-24): 각 단계 첫 줄은 '뭘 할 수 있는지' — 여는 위치(기능바 어느 버튼)는
+    // 컷아웃·링이 이미 가리키므로 글로 되풀이하지 않는다. 예외는 장단·가사처럼 창을 연 뒤
+    // 안의 체크를 한 번 더 켜야 하는 경우뿐(그 한 단계는 박스가 못 보여줘서 적는다).
+    // 분량은 단계당 2~4줄 — 세부 문법·응용은 도움말·창의 ? 안내로 위임한다.
+    // 장 구조: 1 개요(기능바·악보·레이아웃) → 2 입력(팔레트 6개 순서대로) → 3 꾸미기(정간 서식)
+    // → 4 마무리(듣기·출력·도움말). 새 단계는 제 장 안에 넣고 ch를 맞출 것.
+    // 에디터 모드 임시 비활성화 — #modeBox가 display:none이라 어차피 자동 건너뛰지만,
+    // 그러면 단계 수(N / length)가 헛돌아서 배열에서 아예 뺀다. 되살릴 때 주석 해제:
+    // { sel: "#modeBox", title: "입력 방식",
+    //   body: "• 직접 입력 — 악보의 정간을 클릭해 그 자리에서 씁니다 (기본)\n• 에디터 — 곡 전체를 텍스트로 한 번에 고칩니다\n• 언제든 서로 바꿀 수 있습니다" },
+    // 첫 단계는 '무슨 도구가 모인 곳인가'만 알리는 개요다 — 팔레트 쓰는 법(직접 타이핑/골라넣기)은
+    // ④ 정간 입력·⑤~⑨ 각 팔레트에서, 정간 서식은 ⑪에서 자세히 다루므로 여기서 되풀이하지 않는다.
+    // 다른 단계에 없는 것(각 삽입/삭제·내용 지우기·글자 크기)만 남긴다.
+    // 첫 장은 '정간보란 무엇인가' — 앱 이야기를 꺼내기 전에 악보 읽는 법부터.
+    // 한 각만 밝혔더니 나머지 악보가 너무 어두워 '이게 정간보'라는 그림이 안 보였다 —
+    // 악보 전체를 밝히고, 정간·대강·각을 짚는 일은 아래 '악보' 단계의 이름표 상자가 맡는다.
+    { ch: 0, sel: "#sheetArea", id: "Jeongganbo",
+      // 글이 정간·각·대강을 말하므로 **바로 이 장에서** 셋을 상자로 짚는다 — 무엇을 가리키는
+      // 말인지 모른 채 넘어가면 뒤가 다 헛돈다. 셋은 각기 다른 각에 있고 색도 다르다.
+      also: [{ union: ".tour-lane-mel", label: "각" },
+             { union: ".tour-lane-dg", label: "대강", labelPos: "side", tone: "b" },
+             { union: ".tour-lane-cell", label: "정간", labelPos: "side", tone: "c" }] },
+    { ch: 0, sel: "#melodyRibbon", id: "ribbon", },
+    { ch: 0, sel: "#sheetArea", id: "sheet", },
+    // 설정 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)과 문서(종이 방향·제목)를
+    // 어디서 바꾸는지부터 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 연다.
+    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab },
+    // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
+    // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. 이미지는 손그림이 아니라 **앱이 실제로
+    // 그린 악보**의 캡처다: 에디터에 "황 | 황 태 | 황태 | 황{미는표} | 황태 -황"을 넣고
+    // 렌더된 페이지 SVG를 정간별로 viewBox 크롭 → canvas로 PNG 데이터 URL화(16px/mm,
+    // 흰 배경, 편집 하이라이트 rect 제거). 렌더 모양이 바뀌면 같은 방법으로 다시 떠서 교체할 것.
+    // 2장 시작 — 입력 그룹 팔레트 6개(律·飾·長·詞·文·章)를 기능바 순서대로 하나씩.
+    // 첫 단계는 율명: 정간 입력 문법과 율명 팔레트를 함께 소개한다(팔레트를 열어 두고).
+    // 구멍은 **악보의 첫 각(정간 줄) 자체**에 — '정간'이 어느 자리를 말하는지, 어디를 눌러
+    // 적는지가 말이 아니라 화면으로 보여야 한다(render가 첫 각 칸에 .tour-lane-mel을 단다).
+    // 악보가 아직 안 그려졌으면 예전처럼 악보 영역 전체로 물러선다.
+    { ch: 1, sel: [{ union: ".tour-lane-mel" }, "#sheetArea"], id: "yul", prep: tourEnsureYulWin,
+      // 율명·시김새는 한 버튼(井)·한 창이라 강조도 하나다 — 창 안의 '율명 | 시김새'
+      // 토글까지 함께 가리켜 '여기서 갈아 끼운다'가 보이게 한다.
+      also: ["#winToggleYul", "#paletteCol .pal-views", "#paletteCol"],
+      fig: [
+        { t: "황", cap: "한 음", img: TOUR_CELL_IMGS.one },
+        { t: "황 태", cap: "분박", img: TOUR_CELL_IMGS.split },
+        { t: "황태", cap: "붙임", img: TOUR_CELL_IMGS.joined },
+        { t: "황{미는표}", cap: "시김새", img: TOUR_CELL_IMGS.orn },
+        { t: "황태 -황", cap: "이음(-)", img: TOUR_CELL_IMGS.tie }
+      ] },
+    // 시김새 3단계 — 팔레트(악기 선택)·숫자 단축키·미세 조정. 정간 입력 바로 다음인 건
+    // 시김새가 선율에 붙는 것이라 '음을 넣었으면 꾸민다'는 차례라서. 캡처 없이 글로만 —
+    // 셋 다 악보 그림이 아니라 조작(어디를 눌러 어떻게 쓰나)에 대한 안내라서.
+    // prep(tourEnsureOrnWin)이 팔레트를 열고 **시김새 보기로 바꿔** 두므로 also의 것들이 실제로 보인다.
+    // 대상은 팔레트 머리줄(.pal-top) — 악기·크기 컨트롤이 다 이 줄에 있어 구멍 하나로 다
+    // 밝아진다. 기능바의 여는 버튼은 also 링으로.
+    { ch: 1, sel: "#paletteCol .pal-top", id: "ornPalette", prep: tourEnsureOrnWin,
+      also: ["#winToggleYul", "#paletteCol .orn-instrument", "#paletteCol .size-ctl"], },
+    { ch: 1, sel: "#paletteCol", id: "ornShortcut", prep: tourEnsureOrnWin,
+      also: ["#ornMapToggle"], },
+    { ch: 1, sel: "#ornEditToggleEd", id: "ornEdit", prep: tourEnsureOrnWin, },
+    // 장단·가사 — '켜면 이렇게 되고 이렇게 쓴다'를 실제 렌더 캡처와 함께.
+    // 정간 입력 다음 순서인 건 실제 작성 차례(선율 → 장단·가사)를 따라가는 것.
+    // 구멍은 켜는 곳(기능바 버튼)에 — 예전엔 악보 전체였는데, 빈 문서 투어에선 장단·가사
+    // 줄이 아직 없어 '어딜 누르라는 건지'가 안 보였다. 결과 모습은 fig 캡처가 보여준다.
+    { ch: 1, sel: "#winToggleLyrics", id: "lyrics",
+      // 곁줄이 정간 어느 쪽에 붙는지·어디를 더블클릭하면 되는지를 악보에서 함께 밝힌다.
+      // .tour-lane-ly는 곁줄 칸에도, 곁줄이 아직 없을 때의 '진입로'(정간 오른쪽 빈 자리)에도
+      // 붙어 있어 두 경우 다 가리킨다.
+      also: [{ union: ".tour-lane-ly" }],
+      fig: [
+        { t: "달", cap: "황 옆에 '달'", img: TOUR_LY_IMGS.dal },
+        { t: "아", cap: "태 옆에 '아'", img: TOUR_LY_IMGS.a }
+      ] },
+    { ch: 1, sel: "#winToggleJangdan", id: "jangdan",
+      // 장단이 이미 켜져 있으면 악보의 **장단 줄**도 함께 밝혀 어디에 생기는지 보이게 한다.
+      // 꺼져 있으면 그 줄이 없으니 rectOfSpec이 null을 주고 조용히 넘어간다.
+      also: [{ union: ".tour-lane-jd" }],
+      fig: [
+        { t: "덩", img: TOUR_JD_IMGS.deong },
+        { t: "기덕", img: TOUR_JD_IMGS.gideok },
+        { t: "더러러러", img: TOUR_JD_IMGS.deureo }
+      ] },
+    // 빠르기 표기·각 이름 — 章 창(입력 그룹). #5 피드백: 빠르기 조절을 못 찾았고, '빠르기'가
+    // 재생 설정(듣는 속도)과 여기(악보에 찍는 표기) 두 곳이라 헷갈렸다. 장단·가사와 같은
+    // 켜는 자리(기능바 버튼)를 가리킨다.
+    { ch: 1, sel: "#winToggleGakName", id: "gakName", },
+    // 텍스트(文) — 팔레트 6개 중 유일하게 투어에 없던 창. 제목·부제 서식이 이리로
+    // 온 뒤(2026-07-24)라 함께 소개한다. 창을 열어 두고(prep) 가리킨다.
+    { ch: 1, sel: "#textArea", id: "text", prep: tourEnsureTextWin,
+      also: ["#winToggleText"] },
+    // 정간 서식 — 창을 열어 둔 채(prep) 배경색·정간·가로줄·초기화 네 구획을 짚는다.
+    // #1 피드백: 각 끝/정간 위아래의 마디선·덧줄(이중선)을 어디서 긋는지 못 찾았다.
+    // 내용(선율~각 이름)을 다 넣은 뒤 '꾸미는' 차례라 章 다음·들어보기 앞에 둔다.
+    { ch: 2, sel: "#cellStyleWin", id: "cellStyle", prep: tourEnsureCellStyleWin,
+      also: ["#winToggleCellStyle"],
+      fig: [
+        { t: "굵게", img: TOUR_BORDER_IMGS.thick },
+        { t: "점선", img: TOUR_BORDER_IMGS.dashed },
+        { t: "이중선", img: TOUR_BORDER_IMGS.double }
+      ] },
+    // 듣기 — 상단바 1급 버튼 셋(재생·정지·재생 설정)인데 예전 투어엔 통째로 빠져 있었다.
+    // 악보 다음에 두는 건 '써 넣었으면 들어본다'는 차례라서(설정·인쇄보다 앞).
+    { ch: 3, sel: "#playBar", id: "play", },
+    // '설정' 단계는 뺐다(2026-07-17) — '레이아웃 잡기'가 이미 사이드바를 통째로 비춰
+    // 겹쳤고, 문서 탭(제목·종이 방향)은 따로 가르칠 만큼 헷갈리지 않다. 보관 탭의
+    // 임시 저장만 아래 '인쇄 · 파일' 단계에 한 줄로 흡수.
+    // 새 문서·인쇄는 상단바에, 나머지 파일 명령은 오른쪽 레일에 — 둘을 함께 짚는다
+    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] },
+    { ch: 3, sel: "#btnHelp", id: "help", }
   ];
   let tourIdx = -1, tourOnEnd = null;
   let tourWorkspace = null;
@@ -9983,7 +10085,13 @@
     }
     $(toggleId).click();
   }
-  function tourEnsureYulWin() { tourEnsureWin("paletteCol", "winToggleYul"); }
+  function tourEnsureYulWin() {
+    tourEnsureWin("paletteCol", "winToggleYul");
+    if (palView !== "yul") {
+      if (!tourTouchedPalView) { tourPrevPalView = palView; tourTouchedPalView = true; }
+      document.querySelector('.pal-view[data-view="yul"]').click();
+    }
+  }
   // 시김새는 같은 창의 다른 **보기**라, 창을 여는 것에 더해 보기까지 시김새로 돌려놔야
   // 안내가 가리키는 악기·단축키·편집 버튼이 실제로 화면에 있다(.orn-only-tool은 시김새
   // 보기에서만 보인다). 원래 보기는 endTour가 tourPrevPalView로 되돌린다.
@@ -10113,7 +10221,7 @@
     $("tourCard").style.display = "";
     $("tourHole").style.display = "";
     const s = TOUR_STEPS[i];
-    $("tourStepNum").textContent = (i + 1) + " / " + TOUR_STEPS.length + " · 처음 시작하기";
+    $("tourStepNum").textContent = (i + 1) + " / " + TOUR_STEPS.length + " · " + TOUR_CHAPTERS[s.ch];
     // 장 칩(현재 장 강조)·전체 진행 바
     document.querySelectorAll("#tourChips button").forEach(function (b, ci) {
       b.classList.toggle("on", ci === s.ch);
@@ -10127,6 +10235,7 @@
     // 아니라 권장 사용법, 연한 강조 배경 상자). innerHTML 대신 노드 조립 —
     // 본문에 황{미는표}·< 같은 문자가 그대로 들어가 이스케이프 사고를 피하려고.
     renderTourBody($("tourBody"), s.body);
+    $("tourContent").scrollTop = 0;
     // 예시 그림(fig 있는 단계만) — {t:입력, cap:설명, img:캡처 데이터 URL} 배열을
     // '입력 칩 ↓ 캡처 이미지 / 설명' 세로 묶음의 가로 그리드(.tf-grid)로 그린다.
     // positionTour보다 먼저 넣어야 카드 높이에 반영된다.
@@ -10166,7 +10275,7 @@
     $("welcomeModal").style.display = "none";
     tourOnEnd = onEnd || null;
     tourWorkspace = {
-      zoom: viewZoom, fit: viewFitMode, focus: document.activeElement,
+      zoom: viewZoom, fit: viewFitMode, focus: document.activeElement, lastPanel: lastDirectPanel,
       scrolls: ["sheetArea", "paletteDockBody", "sidebar", "appRail", "melodyRibbon"].map(function (id) {
         const el = $(id); return el ? { el: el, left: el.scrollLeft, top: el.scrollTop } : null;
       }).filter(Boolean)
@@ -10207,17 +10316,7 @@
     // prep이 도구창(시김새/정간 서식)을 열었었다면 투어 전에 열려 있던 창으로 되돌린다
     // (작업 공간 존중). 도구창은 한 번에 하나만 열리므로 지금 열린 창이 곧 투어가 연 창.
     if (tourTouchedWin) {
-      const cur = document.querySelector(".direct-win.win-open");
-      const curId = cur ? cur.id : null;
-      if (curId && curId !== tourPrevWin) {
-        const cb = document.querySelector('.win-toggle[data-target="' + curId + '"]');
-        if (cb) cb.click();   // 투어가 연 창을 닫는다
-      }
-      if (tourPrevWin) {
-        const btn = document.querySelector('.win-toggle[data-target="' + tourPrevWin + '"]');
-        const pw = $(tourPrevWin);
-        if (btn && pw && !pw.classList.contains("win-open")) btn.click();
-      }
+      activateDirectPanel(tourPrevWin);
       tourTouchedWin = false; tourPrevWin = null;
     }
     // prep이 팔레트를 시김새 보기로 돌렸었다면 원래 보기로 (창 복원과 같은 취지)
@@ -10240,6 +10339,7 @@
     document.body.classList.remove("tour-active");
     const workspace = tourWorkspace; tourWorkspace = null;
     if (workspace) {
+      lastDirectPanel = workspace.lastPanel;
       viewZoom = workspace.zoom; viewFitMode = workspace.fit; applyZoom();
       workspace.scrolls.forEach(function (s) { s.el.scrollLeft = s.left; s.el.scrollTop = s.top; });
       if (workspace.focus && workspace.focus.isConnected) workspace.focus.focus({ preventScroll: true });

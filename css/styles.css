@@ -2135,23 +2135,24 @@
   #tourCard h4 { font-size: 17px; margin-bottom: 12px; }
   .welcome-sub { text-wrap: pretty; }
 
-  /* 첫 둘러보기: 작업 화면과 안내를 분리하고, 네 단계 내내 같은 자리에 둔다. */
+  /* 첫 둘러보기: 작업 화면과 안내를 분리하고, 모든 단계에서 같은 자리에 둔다. */
   body.tour-active { padding-right: 360px; box-sizing: border-box; }
   body.tour-active #tourCard {
     position: fixed; inset: 12px 12px 12px auto; width: 336px; height: auto;
     max-height: none; box-sizing: border-box; transition: none;
   }
-  body.tour-active #tourBody { flex: 0 1 auto; }
+  body.tour-active #tourContent { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+  body.tour-active #tourBody { overflow: visible; }
   body.tour-active #tourCard .tour-btns { margin-top: auto; padding-top: 16px; }
-  body.tour-active #tourFig { flex: 0 1 auto; overflow-y: auto; }
-  body.tour-active #tourFig .tf-grid { display: flex; justify-content: center; }
+  body.tour-active #tourFig { overflow: visible; }
+  body.tour-active #tourFig .tf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   body.tour-active #tourHole { transition: none; }
   @media (max-width: 1100px) {
     body.tour-active { padding-right: 0; padding-bottom: 238px; }
     body.tour-active #tourCard {
       inset: auto 8px 8px 8px; width: auto; height: 222px; max-height: calc(100dvh - 16px);
     }
-    body.tour-active #tourFig { display: none !important; }
+    body.tour-active #tourFig .tf-grid { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
     body.tour-active #tourProgress { margin-bottom: 8px; }
     body.tour-active #tourCard h4 { margin: 4px 0 8px; }
     body.tour-active #tourCard .tour-btns { padding-top: 8px; }
