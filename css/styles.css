@@ -2211,3 +2211,34 @@
     background: var(--panel); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.08);
   }
   @media (prefers-reduced-motion: reduce) { #paletteToggle .palette-chevron { transition: none; } }
+
+  /* 한 값을 조절하거나 한 보기를 선택하는 컨트롤은 같은 바탕 위에 묶는다. */
+  #zoomBar, .stepper-buttons, .cs-seg, #sidebar > .tabs {
+    background: var(--soft); border: 1px solid var(--line); border-radius: 8px;
+    padding: 2px; gap: 2px;
+  }
+  #zoomBar { flex-shrink: 0; }
+  #zoomBar > button { border-radius: 5px; }
+  #zoomBar > .zval { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .stepper-buttons { display: inline-flex; align-items: center; flex: 0 0 auto; }
+  .size-ctl .stepper-buttons button {
+    border: none; background: transparent; border-radius: 4px; box-shadow: none;
+  }
+  .size-ctl .stepper-buttons button + button { border-left: 1px solid var(--line); border-radius: 0 4px 4px 0; }
+  .size-ctl .stepper-buttons button:hover { background: var(--panel); color: var(--accent); }
+  body.ribbon-left #paletteDockBody .size-ctl .stepper-buttons button { height: 24px; }
+  .cs-seg { box-sizing: border-box; }
+  .cs-seg > .cell-style-option {
+    border: 1px solid transparent; background: transparent; border-radius: 5px;
+    color: var(--muted); box-shadow: none;
+  }
+  .cs-seg > .cell-style-option.on {
+    border-color: var(--line); background: var(--panel); color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+  #sidebar > .tabs .tab { border: 1px solid transparent; border-radius: 6px; margin: 0; padding: 7px 4px; }
+  #sidebar > .tabs .tab.active {
+    border-color: var(--line); background: var(--panel); color: var(--ink);
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  }
+  #sidebar > .tabs .tab:hover { background: var(--hover); }
