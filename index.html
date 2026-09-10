@@ -700,7 +700,7 @@
            예전엔 접기(∨) 버튼도 여기 있었는데 없앴다 — 기능바 없이는 어차피 아무것도 못 하는
            모드라 접을 이유가 없었고, 실수로 눌러 도구가 다 사라지는 사고만 났다. 되살리지 말 것. -->
       <div class="ribbon-topctl">
-        <button type="button" id="paletteToggle" aria-controls="leftDock" aria-expanded="false">입력 도구</button>
+        <button type="button" id="paletteToggle" aria-controls="leftDock" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3" width="15" height="14" rx="2"/><path d="M8 3v14"/></svg><span>입력 도구</span><svg class="palette-chevron" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4"/></svg></button>
         <!-- 기능바 도킹 위치(위쪽 가로 / 왼쪽 세로) 전환 — 직접 입력 전용(에디터 모드에선
              기능바가 아래 독에 들어가므로 CSS가 숨김). 아이콘은 '누르면 갈 곳'을 보여준다. -->
         <button type="button" id="ribbonPosToggle" class="icon-btn ribbon-pos-btn tip"
@@ -719,7 +719,7 @@
              (2026-08-26 사용자 확정). -->
       <div class="ribbon-group">
         <div class="rb-cap">마우스</div>
-        <div class="rb-items">
+        <div class="rb-items mouse-mode-tabs">
           <button type="button" id="cursorInput" class="ribbon-btn cursor-btn tip on"
             data-tip="입력 모드
 · 입력 도구를 열고 정간을 클릭해 편집합니다
