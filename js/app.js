@@ -1712,16 +1712,18 @@
     document.body.classList.toggle("pan-mode", mode === "pan");
     // 입력 모드를 벗어나면 **넣는 도구창은 접는다** — 고르거나 화면을 옮기는 중에 입력
     // 팔레트가 떠 있으면 지금 무엇을 하는 모드인지가 흐려진다(2026-08-26 사용자 지적).
-    // 입력으로 돌아오면 접어 둔 그 창을 되살린다 — 다만 그 사이 사용자가 다른 창을 열어
-    // 두었으면 그쪽 뜻이 먼저다(아무것도 안 열려 있을 때만 되살린다).
+    // 입력을 누르면 마지막 입력 도구를 연다. 정간 서식은 입력 도구로 교체한다.
     if (mode !== "input") {
       const open = CURSOR_INPUT_WINS.filter(function (id) {
         const w = $(id); return w && w.classList.contains("win-open");
       })[0];
       if (open) { cursorStashedWin = open; activateDirectPanel(null); }
-    } else if (cursorStashedWin) {
-      const id = cursorStashedWin; cursorStashedWin = null;
-      if (!document.querySelector(".direct-win.win-open")) activateDirectPanel(id);
+    } else if (document.body.classList.contains("input-direct")) {
+      const open = CURSOR_INPUT_WINS.find(function (id) { return $(id).classList.contains("win-open"); });
+      const target = open || cursorStashedWin || lastInputPanel;
+      cursorStashedWin = null;
+      exitOrnEditMode();
+      activateDirectPanel(target);
     }
     refreshCursorBtns();
     // **이동으로 들어가면 골라 둔 구간을 비운다**(2026-08-30 사용자 요청). 화면을 옮기는
@@ -8781,8 +8783,10 @@
   // 에디터 모드의 .dock-panel.active 상태는 건드리지 않는다 — 뜬 창의 표시 여부는
   // .win-open 클래스만으로 결정되므로 두 모드의 상태가 서로 새지 않는다.
   let lastDirectPanel = "paletteCol";
+  let lastInputPanel = "paletteCol";
   function activateDirectPanel(targetId) {
     if (targetId) lastDirectPanel = targetId;
+    if (CURSOR_INPUT_WINS.includes(targetId)) lastInputPanel = targetId;
     // 章·텍스트 창은 여닫이에 따라 악보 위 하이라이트(각/장 이름·빠르기 / 제목·부제·자유텍스트)가
     // 켜지고 꺼지므로, 둘 중 하나라도 열림 상태가 바뀌면 다시 그린다.
     // 곁줄 창은 한 걸음 더 나아가 여닫이가 '빈 곁줄이 보이나'를 정한다(lyricsLaneOn) —
@@ -10275,7 +10279,7 @@
     $("welcomeModal").style.display = "none";
     tourOnEnd = onEnd || null;
     tourWorkspace = {
-      zoom: viewZoom, fit: viewFitMode, focus: document.activeElement, lastPanel: lastDirectPanel,
+      zoom: viewZoom, fit: viewFitMode, focus: document.activeElement, lastPanel: lastDirectPanel, lastInputPanel: lastInputPanel,
       scrolls: ["sheetArea", "paletteDockBody", "sidebar", "appRail", "melodyRibbon"].map(function (id) {
         const el = $(id); return el ? { el: el, left: el.scrollLeft, top: el.scrollTop } : null;
       }).filter(Boolean)
@@ -10340,6 +10344,7 @@
     const workspace = tourWorkspace; tourWorkspace = null;
     if (workspace) {
       lastDirectPanel = workspace.lastPanel;
+      lastInputPanel = workspace.lastInputPanel;
       viewZoom = workspace.zoom; viewFitMode = workspace.fit; applyZoom();
       workspace.scrolls.forEach(function (s) { s.el.scrollLeft = s.left; s.el.scrollTop = s.top; });
       if (workspace.focus && workspace.focus.isConnected) workspace.focus.focus({ preventScroll: true });
