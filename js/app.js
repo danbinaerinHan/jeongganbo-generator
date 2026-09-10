@@ -1508,13 +1508,29 @@
   const NEWDOC_PENDING_KEY = "jgb_newdoc_pending_v1";
   function openNewDocWizard(onCreate) {
     const modal = $("newDocModal");
+    modal.querySelector(".nd-optional").open = false;
     $("ndBeats").value = "12";
     $("ndDaegang").value = "";
     $("ndGakCount").value = "";   // 비워두면 기본 8각 = 한 줄 (placeholder로 안내)
     $("ndTitle").value = "";      // 비워두면 제목 없음
     $("ndTitleLayout").value = "side";
     $("ndSubtitle").value = "";
-    $("ndWantJangdan").checked = false;
+    const presetSelect = $("ndJangdanPreset");
+    presetSelect.value = "";
+    presetSelect.onchange = function () {
+      const p = presetSelect.value !== "" && presetSelect.value !== "blank"
+        ? jangdanPresets()[Number(presetSelect.value)] : null;
+      if (p) {
+        $("ndBeats").value = String(p.beats);
+        $("ndDaegang").value = p.daegang || "";
+      }
+    };
+    // 틀을 직접 수정하면 선택한 장단의 기호를 다른 칸 수에 억지로 넣지 않는다.
+    function useCustomFrame() {
+      if (presetSelect.value !== "") presetSelect.value = "blank";
+    }
+    $("ndBeats").oninput = useCustomFrame;
+    $("ndDaegang").oninput = useCustomFrame;
     // 악기 편성(선택) — 행마다 악기 고르기 + 이름 칸. 비워 두면 악기 구분 없이 시작.
     const ndList = $("ndParts");
     ndList.innerHTML = "";
@@ -1546,7 +1562,9 @@
         title: $("ndTitle").value.trim(),
         titleLayout: $("ndTitleLayout").value,
         subtitle: $("ndSubtitle").value.trim(),
-        wantJangdan: $("ndWantJangdan").checked,
+        wantJangdan: presetSelect.value !== "",
+        jangdanPreset: presetSelect.value !== "" && presetSelect.value !== "blank"
+          ? jangdanPresets()[Number(presetSelect.value)] : null,
         // 악기 편성 — 리로드를 건너 applyNewDocAnswers에 닿아야 하므로 값만 담는다
         parts: Array.from(ndList.children).map(function (row) {
           return { instrument: row.querySelector("select").value,
@@ -1571,7 +1589,13 @@
     $("title").value = a.title;
     $("titleLayout").value = a.titleLayout || "side";
     $("subtitle").value = a.subtitle;
-    $("wantJangdan").checked = a.wantJangdan;
+    $("wantJangdan").checked = !!a.wantJangdan;
+    if (a.wantJangdan && a.jangdanPreset) {
+      $("beats").value = a.jangdanPreset.beats;
+      $("daegang").value = a.jangdanPreset.daegang || "";
+      daegangAuto = a.jangdanPreset.daegang || "";
+      $("jangdan").value = a.jangdanPreset.jangdan;
+    }
     // 악기 편성 — 마법사에서 고른 악기들로 파트를 짠다. 안 골랐으면 지금처럼 파트 1개.
     // 둘 이상이면 총보 보기로 시작 — 여러 악기를 골랐다는 건 총보를 원한다는 뜻이라서.
     if (Array.isArray(a.parts) && a.parts.length) {
@@ -1852,7 +1876,7 @@
   // 잘리거나 남는다. 대신 이미 적어 둔 선율의 정간 수가 달라지는 경우에는 **한 번 묻는다**
   // — 정간 수가 바뀌면 그 선율의 칸 나눔이 통째로 달라지기 때문이다.
   //
-  // 고르는 자리는 장단 창 머리줄 하나뿐이다. 새 문서 마법사에 또 두지 말 것(중복 금지).
+  // 장단 창과 새 문서 창에서 같은 목록을 사용한다.
   function jangdanPresets() {
     return Array.isArray(window.JGB_JANGDAN) ? window.JGB_JANGDAN : [];
   }
@@ -1864,21 +1888,35 @@
     if (!list.length) { sel.closest(".ribbon-select-group").hidden = true; return; }
     // 정간 수를 이름 옆에 적어 둔다 — 고르기 전에 '각이 몇 칸이 되는지'가 보여야
     // 지금 쓰던 곡과 맞는지 알 수 있다.
-    // 모음곡(현악영산회상·가곡…)은 optgroup으로 묶는다 — 곡이 열일곱이라 한 줄로 늘어놓으면
-    // 어느 것이 어느 곡의 악장인지 안 보인다. `group`이 없는 것은 묶지 않고 그대로 세운다.
-    let box = sel, curGroup = null;
+    // 같은 틀은 곡명을 함께 적어 한 항목으로, 목록은 정간 수별로 묶는다.
+    appendJangdanPresetOptions(sel, list);
+    appendJangdanPresetOptions($("ndJangdanPreset"), list);
+  }
+  function appendJangdanPresetOptions(sel, list) {
+    // 같은 정간 수라도 대강이나 타점이 다르면 별도 항목이다.
+    const patterns = new Map();
+    const nameCounts = new Map();
+    list.forEach(p => nameCounts.set(p.name, (nameCounts.get(p.name) || 0) + 1));
     list.forEach(function (p, i) {
-      if (p.group !== curGroup) {
-        curGroup = p.group;
-        if (p.group) {
-          box = document.createElement("optgroup");
-          box.label = p.group;
-          sel.appendChild(box);
-        } else box = sel;
+      const key = JSON.stringify([p.beats, (p.daegang || "").trim().split(/\s+/).filter(Boolean),
+        p.jangdan.split("|").map(c => c.trim().replace(/\s+/g, " "))]);
+      if (!patterns.has(key)) patterns.set(key, { index: i, beats: p.beats, names: [] });
+      const name = nameCounts.get(p.name) > 1 && p.group ? p.group + " " + p.name :
+        p.group === "가곡" ? "가곡 " + p.name : p.name;
+      patterns.get(key).names.push(name);
+    });
+    let box, currentBeats;
+    Array.from(patterns.values()).sort((a, b) => a.beats - b.beats).forEach(function (p) {
+      if (p.beats !== currentBeats) {
+        currentBeats = p.beats;
+        box = document.createElement("optgroup");
+        box.label = p.beats + "정간";
+        sel.appendChild(box);
       }
       const op = document.createElement("option");
-      op.value = String(i);
-      op.textContent = p.name + " (" + p.beats + "정간)";
+      op.value = String(p.index);
+      op.textContent = p.names.join(" · ") + " (" + p.beats + "정간)";
+      op.title = op.textContent;
       box.appendChild(op);
     });
   }
@@ -8116,7 +8154,7 @@
     // editor여도 직접 입력으로 연다. 되살릴 때 아래 원래 줄로 복원:
     // inputMode = s.melInput === "direct" ? "direct" : "editor";
     inputMode = "direct";
-    ribbonPos = s.ribbonPos === "left" ? "left" : "top";
+    ribbonPos = s.ribbonPos === "top" ? "top" : "left";
     leftDockW = typeof s.leftDockW === "number" ? Math.max(LEFTDOCK_MIN, s.leftDockW) : null;
     applyLeftDockW();
     applyInputMode();
@@ -8592,13 +8630,14 @@
 
   // 보기 확대/축소 (화면만, 출력에는 영향 없음) — 시작 배율은 150%
   let viewZoom = 1.5;
+  let viewFitMode = null;
   function applyZoom() {
     $("sheet").style.transform = "scale(" + viewZoom + ")";
     $("zoomVal").textContent = Math.round(viewZoom * 100) + "%";
     // 이동(팬)으로 밀어둔 시트를 새 배율의 여유 범위 안으로 — 커져서 여유가 없어지면 0으로 복귀
     clampSheetShift();
   }
-  function setZoom(v) { viewZoom = Math.max(0.3, Math.min(6, +v.toFixed(2))); applyZoom(); }
+  function setZoom(v) { viewFitMode = null; viewZoom = Math.max(0.3, Math.min(6, +v.toFixed(2))); applyZoom(); }
   $("zoomIn").addEventListener("click", () => setZoom(viewZoom + 0.1));
   $("zoomOut").addEventListener("click", () => setZoom(viewZoom - 0.1));
   // Ctrl/⌘ + − / ＋ 를 브라우저 확대 대신 '보기 배율'(악보 줌)에 연결한다. 종이(SVG)는 높이가
@@ -8617,12 +8656,22 @@
     const cs = getComputedStyle(svg);
     const naturalW = parseFloat(cs.width), naturalH = parseFloat(cs.height);
     const area = $("sheetArea");
-    const padX = 32, padY = 32;   // #sheetArea padding: 16px 사방
+    const areaStyle = getComputedStyle(area);
+    const padX = parseFloat(areaStyle.paddingLeft) + parseFloat(areaStyle.paddingRight);
+    const padY = parseFloat(areaStyle.paddingTop) + parseFloat(areaStyle.paddingBottom);
     const availW = area.clientWidth - padX, availH = area.clientHeight - padY;
+    if (availW <= 0 || availH <= 0 || !naturalW || !naturalH) return;
+    viewFitMode = dim;
     const ratio = dim === "width" ? availW / naturalW : availH / naturalH;
-    viewZoom = Math.max(0.3, Math.min(6, +ratio.toFixed(2)));
+    viewZoom = Math.max(0.3, Math.min(6, Math.floor(ratio * 100) / 100));
     applyZoom();
   }
+  // 맞춤을 선택한 동안만 창·팔레트 크기 변화에 맞춰 배율을 유지한다.
+  let fitResizeFrame = 0;
+  new ResizeObserver(function () {
+    cancelAnimationFrame(fitResizeFrame);
+    fitResizeFrame = requestAnimationFrame(function () { if (viewFitMode) fitZoom(viewFitMode); });
+  }).observe($("sheetArea"));
   $("zoomFitH").addEventListener("click", () => { fitZoom("height"); });
   $("zoomFitW").addEventListener("click", () => { fitZoom("width"); });
   $("zoom100").addEventListener("click", () => setZoom(1));
@@ -8731,7 +8780,9 @@
   // 이미 열린 탭을 다시 누르면 그냥 닫힌다(별도 닫기 버튼 없음).
   // 에디터 모드의 .dock-panel.active 상태는 건드리지 않는다 — 뜬 창의 표시 여부는
   // .win-open 클래스만으로 결정되므로 두 모드의 상태가 서로 새지 않는다.
+  let lastDirectPanel = "paletteCol";
   function activateDirectPanel(targetId) {
+    if (targetId) lastDirectPanel = targetId;
     // 章·텍스트 창은 여닫이에 따라 악보 위 하이라이트(각/장 이름·빠르기 / 제목·부제·자유텍스트)가
     // 켜지고 꺼지므로, 둘 중 하나라도 열림 상태가 바뀌면 다시 그린다.
     // 곁줄 창은 한 걸음 더 나아가 여닫이가 '빈 곁줄이 보이나'를 정한다(lyricsLaneOn) —
@@ -8744,6 +8795,7 @@
       const t = $(tid);
       if (t) t.classList.toggle("win-open", tid === targetId);
       b.classList.toggle("on", tid === targetId);
+      b.setAttribute("aria-pressed", String(tid === targetId));
     });
     dockDirectWins();   // 기능바 왼쪽 도킹이면 열린 창을 #leftDock 안으로 (아니면 원위치)
     if (gakBefore !== !!document.querySelector("#gakNameArea.win-open") ||
@@ -8759,7 +8811,8 @@
       exitOrnEditMode();   // 도구창(율명/시김새/장단/…) 전환 시 미세조정 끔
       const tid = b.getAttribute("data-target");
       const t = $(tid);
-      activateDirectPanel(t && t.classList.contains("win-open") ? null : tid);
+      const docked = document.body.classList.contains("ribbon-left");
+      activateDirectPanel(!docked && t && t.classList.contains("win-open") ? null : tid);
     });
   });
   // 직접 입력 도구창마다 오른쪽 위 닫기(X) 버튼 — 누르면 그 창을 닫는다(한 번에 하나만
@@ -9331,9 +9384,9 @@
     // (리사이저 아래, 탭 내용 위)에 붙인다 — 어느 탭에서든 보이면서 손도 가깝게.
     const ribbon = $("melodyRibbon");
     if (direct) {
-      // #leftDock은 위쪽 배치에선 display:contents(없는 셈), 왼쪽 도킹에선 세로 열이 된다
-      const ld = $("leftDock");
-      if (ribbon.parentNode !== ld) ld.appendChild(ribbon);
+      // 공통 편집 도구는 악보 위에 고정하고, 입력 팔레트와 폭을 공유하지 않는다.
+      const main = $("main");
+      if (ribbon.parentNode !== main) main.prepend(ribbon);
     } else {
       const dock = $("editorDock");
       const dockBody = dock.querySelector(".dock-body");
@@ -9375,8 +9428,8 @@
 
   // ---------- 기능바 도킹 위치 (위쪽 가로 / 왼쪽 세로, 직접 입력 전용) ----------
   // body.ribbon-left 클래스 하나로 CSS가 갈라진다(#main 가로 배치·#leftDock 세로 열).
-  // 왼쪽 도킹에선 도구창(.direct-win)도 악보 위에 띄우는 대신 #leftDock 안(기능바 아래)에
-  // 도킹한다 — dockDirectWins()가 열린 창을 옮기고, 닫히거나 위쪽 배치로 돌아가면
+  // 왼쪽 모드에서는 상단 도구줄과 분리한 #leftDock 탭 패널에 팔레트를 도킹한다.
+  // dockDirectWins()가 열린 창을 옮기고, 닫히거나 떠 있는 창 모드로 돌아가면
   // 원래 자리(placeholder 주석 노드)로 되돌린다.
   let ribbonPos = "left";   // "top" | "left" — 직접 입력 기본은 왼쪽 세로 도킹(저장된 문서는 저장값 따름)
   // 왼쪽 도킹 열의 사용자 지정 폭(px). null = 자동(내용 폭 450px 기준).
@@ -9419,6 +9472,12 @@
     rz.addEventListener("dblclick", function () { leftDockW = null; applyLeftDockW(); saveState(); });
   })();
   const DIRECT_WIN_HOME = new Map();   // 창 → 원래 자리 표시용 주석 노드
+  const inputToolGroup = $("melodyRibbon").querySelector(".win-toggle-group");
+  const inputToolHome = document.createComment("input-tools-home");
+  inputToolGroup.before(inputToolHome);
+  new ResizeObserver(function () {
+    $("main").style.setProperty("--edit-toolbar-height", $("melodyRibbon").offsetHeight + "px");
+  }).observe($("melodyRibbon"));
   document.querySelectorAll(".direct-win").forEach(function (w) {
     const ph = document.createComment("win-home:" + w.id);
     w.parentNode.insertBefore(ph, w);
@@ -9426,10 +9485,17 @@
   });
   function dockDirectWins() {
     const leftMode = document.body.classList.contains("ribbon-left");
+    const anyOpen = !!document.querySelector(".direct-win.win-open");
+    document.body.classList.toggle("palette-collapsed", leftMode && !anyOpen);
+    $("paletteToggle").setAttribute("aria-expanded", String(leftMode && anyOpen));
+    if (leftMode) {
+      if (inputToolGroup.parentNode !== $("paletteTabs")) $("paletteTabs").appendChild(inputToolGroup);
+    } else if (inputToolGroup.parentNode !== inputToolHome.parentNode) {
+      inputToolHome.after(inputToolGroup);
+    }
     document.querySelectorAll(".direct-win").forEach(function (w) {
       if (leftMode && w.classList.contains("win-open")) {
-        // 기능바 안으로 넣는다 — 실제 위치(입력 그룹 바로 아래)는 CSS flex order가 잡는다.
-        if (w.parentNode !== $("melodyRibbon")) $("melodyRibbon").appendChild(w);
+        if (w.parentNode !== $("paletteDockBody")) $("paletteDockBody").appendChild(w);
         // 떠 있을 때 끌어둔 인라인 좌표는 도킹(position:relative)에서 어긋남 유발 — 지운다
         w.style.top = ""; w.style.left = "";
       } else {
@@ -9443,13 +9509,17 @@
     document.body.classList.toggle("ribbon-left", left);
     const btn = $("ribbonPosToggle");
     if (btn) btn.setAttribute("data-tip",
-      left ? "기능바를 위쪽에 가로로 되돌립니다" : "기능바를 왼쪽에 세로로 붙입니다");
+      left ? "팔레트를 악보 위에 떠 있는 창으로 전환합니다" : "팔레트를 왼쪽 탭 패널에 붙입니다");
     dockDirectWins();
   }
   $("ribbonPosToggle").addEventListener("click", function () {
     ribbonPos = ribbonPos === "left" ? "top" : "left";
     applyRibbonPos();
     saveState();
+  });
+  $("paletteToggle").addEventListener("click", function () {
+    exitOrnEditMode();
+    activateDirectPanel(document.querySelector(".direct-win.win-open") ? null : lastDirectPanel);
   });
   // 율명 입력 방식 전환 (표 / 건반)
   document.querySelectorAll("#yulModeSeg .seg-btn").forEach(function (b) {
@@ -9843,122 +9913,17 @@
   // 표기는 1-2 꼴(대번호-소번호, TOUR_LABELS에서 자동 계산). 칩을 누르면 그 장 첫 단계로.
   // 장 이름·단계 문구는 js/tour-text.js(사람이 직접 고치는 파일)에서 온다 — 여기(TOUR_STEPS)는
   // 구조만: 어디를 비추나(sel·also)·창 열기(prep)·예시 그림(fig)·장 배속(ch)·잇는 열쇠(id).
-  const TOUR_CHAPTERS = (window.TOUR_TEXT && window.TOUR_TEXT.chapters) || ["개요", "입력", "꾸미기", "마무리"];
+  const TOUR_CHAPTERS = ["읽기", "도구", "입력", "저장"];
+  // 첫 안내는 네 단계. 패널·배율·스크롤을 단계마다 바꾸지 않는다.
   const TOUR_STEPS = [
-    // 본문 규칙(2026-07-24): 각 단계 첫 줄은 '뭘 할 수 있는지' — 여는 위치(기능바 어느 버튼)는
-    // 컷아웃·링이 이미 가리키므로 글로 되풀이하지 않는다. 예외는 장단·가사처럼 창을 연 뒤
-    // 안의 체크를 한 번 더 켜야 하는 경우뿐(그 한 단계는 박스가 못 보여줘서 적는다).
-    // 분량은 단계당 2~4줄 — 세부 문법·응용은 도움말·창의 ? 안내로 위임한다.
-    // 장 구조: 1 개요(기능바·악보·레이아웃) → 2 입력(팔레트 6개 순서대로) → 3 꾸미기(정간 서식)
-    // → 4 마무리(듣기·출력·도움말). 새 단계는 제 장 안에 넣고 ch를 맞출 것.
-    // 에디터 모드 임시 비활성화 — #modeBox가 display:none이라 어차피 자동 건너뛰지만,
-    // 그러면 단계 수(N / length)가 헛돌아서 배열에서 아예 뺀다. 되살릴 때 주석 해제:
-    // { sel: "#modeBox", title: "입력 방식",
-    //   body: "• 직접 입력 — 악보의 정간을 클릭해 그 자리에서 씁니다 (기본)\n• 에디터 — 곡 전체를 텍스트로 한 번에 고칩니다\n• 언제든 서로 바꿀 수 있습니다" },
-    // 첫 단계는 '무슨 도구가 모인 곳인가'만 알리는 개요다 — 팔레트 쓰는 법(직접 타이핑/골라넣기)은
-    // ④ 정간 입력·⑤~⑨ 각 팔레트에서, 정간 서식은 ⑪에서 자세히 다루므로 여기서 되풀이하지 않는다.
-    // 다른 단계에 없는 것(각 삽입/삭제·내용 지우기·글자 크기)만 남긴다.
-    // 첫 장은 '정간보란 무엇인가' — 앱 이야기를 꺼내기 전에 악보 읽는 법부터.
-    // 한 각만 밝혔더니 나머지 악보가 너무 어두워 '이게 정간보'라는 그림이 안 보였다 —
-    // 악보 전체를 밝히고, 정간·대강·각을 짚는 일은 아래 '악보' 단계의 이름표 상자가 맡는다.
-    { ch: 0, sel: "#sheetArea", id: "Jeongganbo",
-      // 글이 정간·각·대강을 말하므로 **바로 이 장에서** 셋을 상자로 짚는다 — 무엇을 가리키는
-      // 말인지 모른 채 넘어가면 뒤가 다 헛돈다. 셋은 각기 다른 각에 있고 색도 다르다.
-      also: [{ union: ".tour-lane-mel", label: "각" },
-             { union: ".tour-lane-dg", label: "대강", labelPos: "side", tone: "b" },
-             { union: ".tour-lane-cell", label: "정간", labelPos: "side", tone: "c" }] },
-    { ch: 0, sel: "#melodyRibbon", id: "ribbon", },
-    { ch: 0, sel: "#sheetArea", id: "sheet", },
-    // 설정 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)과 문서(종이 방향·제목)를
-    // 어디서 바꾸는지부터 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 연다.
-    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab },
-    // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
-    // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. 이미지는 손그림이 아니라 **앱이 실제로
-    // 그린 악보**의 캡처다: 에디터에 "황 | 황 태 | 황태 | 황{미는표} | 황태 -황"을 넣고
-    // 렌더된 페이지 SVG를 정간별로 viewBox 크롭 → canvas로 PNG 데이터 URL화(16px/mm,
-    // 흰 배경, 편집 하이라이트 rect 제거). 렌더 모양이 바뀌면 같은 방법으로 다시 떠서 교체할 것.
-    // 2장 시작 — 입력 그룹 팔레트 6개(律·飾·長·詞·文·章)를 기능바 순서대로 하나씩.
-    // 첫 단계는 율명: 정간 입력 문법과 율명 팔레트를 함께 소개한다(팔레트를 열어 두고).
-    // 구멍은 **악보의 첫 각(정간 줄) 자체**에 — '정간'이 어느 자리를 말하는지, 어디를 눌러
-    // 적는지가 말이 아니라 화면으로 보여야 한다(render가 첫 각 칸에 .tour-lane-mel을 단다).
-    // 악보가 아직 안 그려졌으면 예전처럼 악보 영역 전체로 물러선다.
-    { ch: 1, sel: [{ union: ".tour-lane-mel" }, "#sheetArea"], id: "yul", prep: tourEnsureYulWin,
-      // 율명·시김새는 한 버튼(井)·한 창이라 강조도 하나다 — 창 안의 '율명 | 시김새'
-      // 토글까지 함께 가리켜 '여기서 갈아 끼운다'가 보이게 한다.
-      also: ["#winToggleYul", "#paletteCol .pal-views", "#paletteCol"],
-      fig: [
-        { t: "황", cap: "한 음", img: TOUR_CELL_IMGS.one },
-        { t: "황 태", cap: "분박", img: TOUR_CELL_IMGS.split },
-        { t: "황태", cap: "붙임", img: TOUR_CELL_IMGS.joined },
-        { t: "황{미는표}", cap: "시김새", img: TOUR_CELL_IMGS.orn },
-        { t: "황태 -황", cap: "이음(-)", img: TOUR_CELL_IMGS.tie }
-      ] },
-    // 시김새 3단계 — 팔레트(악기 선택)·숫자 단축키·미세 조정. 정간 입력 바로 다음인 건
-    // 시김새가 선율에 붙는 것이라 '음을 넣었으면 꾸민다'는 차례라서. 캡처 없이 글로만 —
-    // 셋 다 악보 그림이 아니라 조작(어디를 눌러 어떻게 쓰나)에 대한 안내라서.
-    // prep(tourEnsureOrnWin)이 팔레트를 열고 **시김새 보기로 바꿔** 두므로 also의 것들이 실제로 보인다.
-    // 대상은 팔레트 머리줄(.pal-top) — 악기·크기 컨트롤이 다 이 줄에 있어 구멍 하나로 다
-    // 밝아진다. 기능바의 여는 버튼은 also 링으로.
-    { ch: 1, sel: "#paletteCol .pal-top", id: "ornPalette", prep: tourEnsureOrnWin,
-      also: ["#winToggleYul", "#paletteCol .orn-instrument", "#paletteCol .size-ctl"], },
-    { ch: 1, sel: "#paletteCol", id: "ornShortcut", prep: tourEnsureOrnWin,
-      also: ["#ornMapToggle"], },
-    { ch: 1, sel: "#ornEditToggleEd", id: "ornEdit", prep: tourEnsureOrnWin, },
-    // 장단·가사 — '켜면 이렇게 되고 이렇게 쓴다'를 실제 렌더 캡처와 함께.
-    // 정간 입력 다음 순서인 건 실제 작성 차례(선율 → 장단·가사)를 따라가는 것.
-    // 구멍은 켜는 곳(기능바 버튼)에 — 예전엔 악보 전체였는데, 빈 문서 투어에선 장단·가사
-    // 줄이 아직 없어 '어딜 누르라는 건지'가 안 보였다. 결과 모습은 fig 캡처가 보여준다.
-    { ch: 1, sel: "#winToggleLyrics", id: "lyrics",
-      // 곁줄이 정간 어느 쪽에 붙는지·어디를 더블클릭하면 되는지를 악보에서 함께 밝힌다.
-      // .tour-lane-ly는 곁줄 칸에도, 곁줄이 아직 없을 때의 '진입로'(정간 오른쪽 빈 자리)에도
-      // 붙어 있어 두 경우 다 가리킨다.
-      also: [{ union: ".tour-lane-ly" }],
-      fig: [
-        { t: "달", cap: "황 옆에 '달'", img: TOUR_LY_IMGS.dal },
-        { t: "아", cap: "태 옆에 '아'", img: TOUR_LY_IMGS.a }
-      ] },
-    { ch: 1, sel: "#winToggleJangdan", id: "jangdan",
-      // 장단이 이미 켜져 있으면 악보의 **장단 줄**도 함께 밝혀 어디에 생기는지 보이게 한다.
-      // 꺼져 있으면 그 줄이 없으니 rectOfSpec이 null을 주고 조용히 넘어간다.
-      also: [{ union: ".tour-lane-jd" }],
-      fig: [
-        { t: "덩", img: TOUR_JD_IMGS.deong },
-        { t: "기덕", img: TOUR_JD_IMGS.gideok },
-        { t: "더러러러", img: TOUR_JD_IMGS.deureo }
-      ] },
-    // 빠르기 표기·각 이름 — 章 창(입력 그룹). #5 피드백: 빠르기 조절을 못 찾았고, '빠르기'가
-    // 재생 설정(듣는 속도)과 여기(악보에 찍는 표기) 두 곳이라 헷갈렸다. 장단·가사와 같은
-    // 켜는 자리(기능바 버튼)를 가리킨다.
-    { ch: 1, sel: "#winToggleGakName", id: "gakName", },
-    // 텍스트(文) — 팔레트 6개 중 유일하게 투어에 없던 창. 제목·부제 서식이 이리로
-    // 온 뒤(2026-07-24)라 함께 소개한다. 창을 열어 두고(prep) 가리킨다.
-    { ch: 1, sel: "#textArea", id: "text", prep: tourEnsureTextWin,
-      also: ["#winToggleText"] },
-    // 정간 서식 — 창을 열어 둔 채(prep) 배경색·정간·가로줄·초기화 네 구획을 짚는다.
-    // #1 피드백: 각 끝/정간 위아래의 마디선·덧줄(이중선)을 어디서 긋는지 못 찾았다.
-    // 내용(선율~각 이름)을 다 넣은 뒤 '꾸미는' 차례라 章 다음·들어보기 앞에 둔다.
-    { ch: 2, sel: "#cellStyleWin", id: "cellStyle", prep: tourEnsureCellStyleWin,
-      also: ["#winToggleCellStyle"],
-      fig: [
-        { t: "굵게", img: TOUR_BORDER_IMGS.thick },
-        { t: "점선", img: TOUR_BORDER_IMGS.dashed },
-        { t: "이중선", img: TOUR_BORDER_IMGS.double }
-      ] },
-    // 듣기 — 상단바 1급 버튼 셋(재생·정지·재생 설정)인데 예전 투어엔 통째로 빠져 있었다.
-    // 악보 다음에 두는 건 '써 넣었으면 들어본다'는 차례라서(설정·인쇄보다 앞).
-    { ch: 3, sel: "#playBar", id: "play", },
-    // '설정' 단계는 뺐다(2026-07-17) — '레이아웃 잡기'가 이미 사이드바를 통째로 비춰
-    // 겹쳤고, 문서 탭(제목·종이 방향)은 따로 가르칠 만큼 헷갈리지 않다. 보관 탭의
-    // 임시 저장만 아래 '인쇄 · 파일' 단계에 한 줄로 흡수.
-    // 새 문서·인쇄는 상단바에, 나머지 파일 명령은 오른쪽 레일에 — 둘을 함께 짚는다
-    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] },
-    { ch: 3, sel: "#btnHelp", id: "help", }
+    { ch: 0, sel: "#sheetArea", id: "quickRead" },
+    { ch: 1, sel: "#melodyRibbon", id: "quickTools" },
+    { ch: 2, sel: "#sheetArea", id: "quickInput",
+      fig: [{ t: "황", cap: "한 정간에 한 음", img: TOUR_CELL_IMGS.one }] },
+    { ch: 3, sel: "#btnExport", id: "quickSave", also: ["#outToggle", "#btnHelp"] }
   ];
   let tourIdx = -1, tourOnEnd = null;
-  // 말풍선이 지금 앉아 있는 자리(TOUR_SLOTS의 인덱스). 단계를 넘겨도 이 값을 그대로 들고
-  // 가는 것이 핵심이다 — 자세한 규칙은 positionTour 머리말 참고. 투어를 새로 시작할 때만
-  // null로 되돌린다(startTour).
-  let tourSlot = null;
+  let tourWorkspace = null;
   // 하이라이트 대상 하나를 사각형으로. 세 가지 꼴을 받는다:
   //   "선택자"            — 첫 번째로 잡히는 요소(예전부터의 기본)
   //   { union: "선택자" } — 잡히는 것 **전부를 감싸는** 한 상자. 정간 줄·곁줄 줄처럼 칸이
@@ -10094,9 +10059,12 @@
   function renderTourBody(el, body) {
     el.textContent = "";
     (body || "").split("\n").forEach(function (ln) {
+      ln = ln.trim();
+      if (!ln) return;
       const d = document.createElement("div");
       if (ln.slice(0, 3) === "## ") { d.className = "tour-sub"; ln = ln.slice(3); }
       else if (ln.slice(0, 3) === "!! ") { d.className = "tour-tip"; ln = ln.slice(3); }
+      else if (/^•\s*/.test(ln)) { d.className = "tour-item"; ln = ln.replace(/^•\s*/, ""); }
       ln.split("**").forEach(function (seg, k) {
         if (!seg) return;
         if (k % 2) { const b = document.createElement("b"); b.textContent = seg; d.appendChild(b); }
@@ -10134,117 +10102,18 @@
     hole.style.height = (r.height + pad * 2) + "px";
     // 어둠에 밝은 구멍 뚫기 — 메인 대상 + 보조(also) 대상 모두
     buildSpotlight([{ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 }].concat(alsoRects));
-    placeTourCard({ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 },
-                  alsoRects);
-  }
-  // 말풍선 자리 아홉 곳 — 화면 모서리·변에 붙는 고정 자리다. 화면 크기와 카드 크기로만
-  // 정해지므로 대상이 어디로 가든 자리 자체는 그대로 있다.
-  // ★ 차례가 곧 선호도다(앞이 먼저). 아래줄을 앞에 둔 건 카드 높이가 단계마다 달라지기
-  //   때문 — 아래에 붙여 놓으면 본문이 길어져도 발(버튼줄)이 같은 높이에 남아 [다음]이
-  //   제자리를 지킨다. 위에 붙이면 본문 길이만큼 버튼이 아래위로 뛴다.
-  const TOUR_SLOTS = [
-    { hx: "left", vy: "bottom" }, { hx: "right", vy: "bottom" }, { hx: "center", vy: "bottom" },
-    { hx: "left", vy: "middle" }, { hx: "right", vy: "middle" },
-    { hx: "left", vy: "top" },    { hx: "right", vy: "top" },
-    { hx: "center", vy: "top" },  { hx: "center", vy: "middle" },
-  ];
-  const TOUR_SLOT_M = 8;   // 화면 가장자리에서 띄우는 여백
-  // ★ 세로는 '카드 윗변을 어디에 두나'가 아니라 **'카드 밑변을 어디에 두나'**로 정한다.
-  //    그래서 카드는 어느 줄에 앉든 늘 **위로 자란다** — 본문이 209px이든 753px이든 발
-  //    (버튼줄)이 그 줄의 밑선에 남으므로 [다음] 버튼의 높이가 안 변한다.
-  //    윗변 기준이던 때는 위줄에 앉는 순간 카드가 아래로 자라 [다음]이 254px~780px을
-  //    오르내렸다(2026-08-11 실측). vy 값(bottom/middle/top)은 '줄 이름'이지 붙는 변이 아니다.
-  //    밑선이 카드보다 높으면(아주 긴 카드) 위로 넘칠 수 없으니 화면 위에 붙여 클램프한다.
-  function tourSlotBox(slot, cw, ch) {
-    const m = TOUR_SLOT_M, vw = window.innerWidth, vh = window.innerHeight;
-    const x = slot.hx === "left" ? m : slot.hx === "right" ? vw - cw - m : (vw - cw) / 2;
-    const foot = slot.vy === "bottom" ? vh - m : slot.vy === "middle" ? vh * 0.62 : vh * 0.36;
-    return { x: Math.max(m, x), y: Math.max(m, foot - ch), w: cw, h: ch };
-  }
-  function tourOverlap(a, b) {
-    const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
-    const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
-    return (w > 0 && h > 0) ? w * h : 0;
-  }
-  // 말풍선 앉히기 — **머무는 것이 기본이고 옮기는 것이 예외**다.
-  //
-  // 예전엔 단계마다 '대상 아래 → 위 → 옆'을 새로 계산해 대상을 따라다녔다. 그러면 단계를
-  // 넘길 때마다 카드가 화면을 가로질러 날아가고, 사람은 [다음] 버튼을 마우스로 쫓아다녀야
-  // 한다 — 안내를 읽는 것보다 버튼 찾는 일이 더 힘들어진다(2026-08-11 사용자 지적).
-  //
-  // 그래서 자리를 아홉 곳으로 고정해 두고, 지금 앉은 자리가 '봐줄 만하면' 그냥 둔다.
-  // 옮겨야 할 때도 아무 데로나 가지 않고 **지금 자리에서 가장 가까운** 쓸 만한 자리로 간다.
-  // 가리는 정도는 두 가지로 나눠 센다:
-  //   · also 상자(본문이 '이걸 누르세요'라고 짚는 것) — 가리면 그 단계가 통째로 무의미해지니
-  //     1000배 무겁게 친다. 사실상 절대 안 가린다.
-  //   · 주 대상(hole) — 가리면 아쉽지만 대상이 화면만큼 클 때(악보 전체 등)는 피할 자리가
-  //     아예 없다. 그래서 넓이로만 세고, 카드 넓이의 STAY_TOL(15%)까지는 참고 머문다.
-  const TOUR_STAY_TOL = 0.15;
-  function placeTourCard(holeRect, alsoRects) {
-    const card = $("tourCard");
-    // 크기는 **실수 그대로**(offsetWidth/Height는 정수로 반올림된다) 재야 한다 — 밑변 기준으로
-    // 앉히므로 높이가 1px만 어긋나도 카드 밑선이 그만큼 밀려 [다음] 버튼이 미세하게 떤다.
-    const cr = card.getBoundingClientRect();
-    const cw = cr.width, ch = cr.height;
-    const cardArea = Math.max(1, cw * ch);
-    // 허용치(카드 넓이의 15%) 안쪽 가림은 **0으로 친다**. 이 한 줄이 자리 차례(선호도)를
-    // 살린다 — 안 그러면 아래줄 자리가 주 대상을 2천px²(허용치의 11%)만 스쳐도 위줄 자리에
-    // 밀려, 카드가 화면 위에 붙고 본문 길이만큼 아래로 자란다. 그러면 자리는 안 옮겨도
-    // [다음] 버튼이 세로로 500px씩 뛰어 결국 버튼을 쫓아다니게 된다(2026-08-11 실측).
-    // 아래줄 자리라야 카드가 위로 자라 발이 제자리에 남는다(TOUR_SLOTS 차례 주석 참고).
-    const tol = cardArea * TOUR_STAY_TOL;
-    function cost(box, slot) {
-      let a = 0, h = tourOverlap(box, holeRect);
-      alsoRects.forEach(function (r) { a += tourOverlap(box, r); });
-      // 아래줄이 아닌 자리에 무거운 벌점 — **[다음] 버튼을 제자리에 묶는 것이 이 벌점의 목적**이다.
-      // 카드는 자리 안에서 위로 자라거나 아래로 자란다. 아래줄에 붙으면 카드 밑변이 늘
-      // '화면 아래 8px'이라 본문이 209px이든 753px이든 발(버튼줄)이 같은 높이에 남지만,
-      // 위줄·가운뎃줄에 붙으면 본문 길이만큼 발이 따라 내려간다(실측: 15단계 내내 [다음]이
-      // 매번 다른 높이 — 176px에서 780px까지). 자리를 고정해도 버튼이 움직이면 결국
-      // 버튼을 쫓아다니게 되므로, **위줄·가운뎃줄은 아래줄이 짚는 상자(also)를 가릴 때만** 쓴다.
-      // 벌점을 카드 넓이로 잡은 것이 그 뜻이다 — 주 대상 가림(hole)은 아무리 커도 카드 넓이를
-      // 못 넘으므로, hole 차이만으로는 절대 아래줄을 벗어나지 못한다. 넘어서는 건 1000배로
-      // 세는 also뿐. 즉 '주 대상을 좀 가리더라도 버튼은 제자리'를 고른 것이고, 이건
-      // "최대한 고정, 불가피하면 어쩔 수 없이"라는 사용자 주문 그대로다(2026-08-11).
-      const pen = slot.vy === "bottom" ? 0 : cardArea;
-      return { also: a, hole: h, score: a * 1000 + (h <= tol ? 0 : h) + pen };
-    }
-    const boxes = TOUR_SLOTS.map(function (s) { return tourSlotBox(s, cw, ch); });
-    const costs = boxes.map(function (b, i) { return cost(b, TOUR_SLOTS[i]); });
-    // ① 지금 자리가 '봐줄 만하면' 그대로 — 짚는 상자를 안 가리고, 주 대상도 조금만 가릴 때
-    if (tourSlot != null && costs[tourSlot] &&
-        costs[tourSlot].also === 0 && costs[tourSlot].hole <= tol) {
-      card.style.left = boxes[tourSlot].x + "px";
-      card.style.top = boxes[tourSlot].y + "px";
-      return;
-    }
-    // ② 옮겨야 한다 — 덜 가리는 자리 중에서 **지금 자리와 가장 가까운** 곳으로(움직임 최소화).
-    //    아직 앉은 적이 없으면(투어 첫 단계) 거리는 0으로 두고 위 선호 차례가 정한다.
-    const cur = (tourSlot != null && boxes[tourSlot]) ? boxes[tourSlot] : null;
-    let best = 0;
-    for (let i = 1; i < boxes.length; i++) {
-      const d = costs[i].score - costs[best].score;
-      if (d < -0.5) { best = i; continue; }
-      if (d > 0.5) continue;
-      if (!cur) continue;   // 점수가 같고 기준점도 없으면 앞 차례(선호도)가 이긴다
-      const di = Math.hypot(boxes[i].x - cur.x, boxes[i].y - cur.y);
-      const db = Math.hypot(boxes[best].x - cur.x, boxes[best].y - cur.y);
-      if (di < db) best = i;
-    }
-    tourSlot = best;
-    card.style.left = boxes[best].x + "px";
-    card.style.top = boxes[best].y + "px";
+
   }
   function tourGo(i, dir) {
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
-    if (i >= TOUR_STEPS.length) { showTourFinale(); return; }   // 마지막 '다음' = 완료 축하 화면
+    if (i >= TOUR_STEPS.length) { track("tour_done"); endTour(); return; }   // 마지막 '다음' = 완료 축하 화면
     if (i < 0) { endTour(); return; }
     tourIdx = i;
     $("tourFinale").style.display = "none";   // 뒤로 돌아오면 축하 카드 걷고 단계 카드로
     $("tourCard").style.display = "";
     $("tourHole").style.display = "";
     const s = TOUR_STEPS[i];
-    $("tourStepNum").textContent = TOUR_LABELS[i] + " · " + TOUR_CHAPTERS[s.ch];
+    $("tourStepNum").textContent = (i + 1) + " / " + TOUR_STEPS.length + " · 처음 시작하기";
     // 장 칩(현재 장 강조)·전체 진행 바
     document.querySelectorAll("#tourChips button").forEach(function (b, ci) {
       b.classList.toggle("on", ci === s.ch);
@@ -10281,7 +10150,8 @@
       figEl.appendChild(grid);
     }
     figEl.style.display = s.fig ? "" : "none";
-    $("tourPrev").style.display = i === 0 ? "none" : "";
+    $("tourPrev").style.display = "";
+    $("tourPrev").disabled = i === 0;
     $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
     positionTour();
     // prep이 방금 도구창을 열었다면 이 시점 레이아웃이 아직 낡았을 수 있다(특히 프리뷰
@@ -10290,14 +10160,23 @@
     setTimeout(function () { if (tourIdx === my) positionTour(); }, 60);
   }
   function startTour(onEnd) {
+    if (tourWorkspace) return;
     // 겹침 방지 — 모달(z 500)들이 투어(z 800) 밑에 깔린 채 남지 않게 먼저 닫는다
     $("helpModal").style.display = "none";
     $("welcomeModal").style.display = "none";
     tourOnEnd = onEnd || null;
-    tourSlot = null;   // 자리는 투어를 새로 시작할 때만 다시 고른다(placeTourCard 참고)
+    tourWorkspace = {
+      zoom: viewZoom, fit: viewFitMode, focus: document.activeElement,
+      scrolls: ["sheetArea", "paletteDockBody", "sidebar", "appRail", "melodyRibbon"].map(function (id) {
+        const el = $(id); return el ? { el: el, left: el.scrollLeft, top: el.scrollTop } : null;
+      }).filter(Boolean)
+    };
+    viewFitMode = null;
+    document.body.classList.add("tour-active");
     track("tour_start");
     $("tourLayer").style.display = "block";
     tourGo(0, 1);
+    $("tourNext").focus({ preventScroll: true });
   }
   // 마지막 단계에서 '다음'(완료)을 누르면 — 건너뛰기가 아니라 끝까지 본 사람에게만 —
   // 축하 카드를 띄운다. 전체 어둡게(구멍 0개)·단계 카드 숨김·가운데 축하 카드.
@@ -10358,6 +10237,13 @@
       tourTouchedTab = false; tourPrevTab = null;
     }
     $("tourLayer").style.display = "none";
+    document.body.classList.remove("tour-active");
+    const workspace = tourWorkspace; tourWorkspace = null;
+    if (workspace) {
+      viewZoom = workspace.zoom; viewFitMode = workspace.fit; applyZoom();
+      workspace.scrolls.forEach(function (s) { s.el.scrollLeft = s.left; s.el.scrollTop = s.top; });
+      if (workspace.focus && workspace.focus.isConnected) workspace.focus.focus({ preventScroll: true });
+    }
     const cb = tourOnEnd; tourOnEnd = null;
     if (cb) cb();
   }

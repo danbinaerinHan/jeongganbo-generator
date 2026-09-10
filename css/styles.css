@@ -84,6 +84,7 @@
   /* 팔레트·악보의 그림을 끌면 브라우저가 '이미지 끌어놓기'를 시작해 유령 미리보기가 따라온다 */
   img, svg image { -webkit-user-drag: none; user-drag: none; }
   button, select, input, textarea { transition: border-color .12s ease, background .12s ease; }
+  input[type="range"] { accent-color: var(--accent); cursor: pointer; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
   input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
     outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
@@ -501,12 +502,9 @@
      특이도를 올린다 — 안 그러면 뒤에 오는 .ribbon-btn{display:flex}가 이겨 늘 보인다. */
   #paletteCol .orn-only-tool { display: none; }
   #paletteCol.orn-active .orn-only-tool { display: inline-flex; }
-  /* 율명 전용 설정 묶음(표·건반/조/표기/황음고) — 옅은 상자로 한 덩어리임을 표시.
-     입력·소리·크기 ±는 팔레트 공통이라 이 묶음 밖(첫 줄 오른쪽)에 따로 둔다.
-     간격·패딩은 기본 폭(≈395px)에서 네 컨트롤이 한 줄에 들어가게 빠듯하게. */
-  .yul-tools { display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap;
-               padding: 4px 7px; border: 1px solid var(--line); border-radius: 8px;
-               background: var(--soft); }
+  /* 팔레트 설정은 바깥 상자 없이 간격으로 묶고, 개별 입력 컨트롤의 경계만 남긴다. */
+  .yul-tools { display: inline-flex; align-items: center; gap: 10px 12px; flex-wrap: wrap;
+               padding: 4px 0; min-width: 0; }
   #paletteCol.orn-active .yul-tools { display: none; }   /* 시김새 탭 — 빈 상자만 남지 않게 통째로 */
   .size-ctl .size-lab { font-size: 10px; font-weight: 600; color: var(--muted);
                         white-space: nowrap; margin-right: 2px; }
@@ -723,7 +721,7 @@
   .cb-report { flex: 0 0 auto; font-size: 11.5px; color: var(--muted);
                text-decoration: none; padding: 2px 6px; border-radius: 4px; }
   .cb-report:hover { color: var(--danger); background: var(--danger-soft); }
-  .page { background: var(--panel); box-shadow: 0 4px 24px rgba(0,0,0,.18); }
+  .page { background: var(--panel); box-shadow: 0 2px 5px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.10); }
   .page svg { display: block; height: calc(100vh - 380px); min-height: 300px; width: auto; }
 
   /* 보기 배율·재생 바는 상단바로 옮겨 고정 — 아래 그립은 직접 입력 도구창들이 쓴다 */
@@ -1072,160 +1070,192 @@
   .part-item.active { background: var(--accent-tint); border-radius: 8px; }
   .parts-foot { margin-top: 10px; flex: 0 0 auto; }
 
-  /* ---------- 기능바 왼쪽 세로 도킹 (직접 입력 전용, #ribbonPosToggle로 전환) ----------
-     body.ribbon-left는 JS(applyRibbonPos)가 '직접 입력 + 왼쪽' 조합일 때만 붙인다.
-     #leftDock은 위쪽 배치에선 display:contents(없는 셈)이고, 왼쪽 도킹에서만 진짜
-     세로 열이 되어 기능바(위)와 열린 도구창(아래)을 함께 담는다 — 도구창이 악보 위에
-     떠서 옆으로 넓게 벌어지는 대신 왼쪽 한 줄로 정리된다. */
+  /* ---------- 상단 편집 도구 + 왼쪽 팔레트 탭 ----------
+     ribbon-left 저장값은 탭 패널 모드를 뜻한다. 도구·팔레트는 서로 다른 행에 둔다. */
   #leftDock { display: contents; }
-  body.ribbon-left #main { flex-direction: row; }
-  body.ribbon-left #leftDock {
-    display: flex; flex-direction: column; flex: 0 0 auto;
-    min-height: 0; max-width: 42%; margin-right: 10px;
+  #paletteTabs, #paletteDockBody, #paletteToggle, #leftDockResizer { display: none; }
+  body.ribbon-left #paletteToggle { display: inline-flex; }
+  body.ribbon-left #main {
+    display: grid; grid-template-columns: auto 8px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr); min-height: 0;
   }
-  /* 기능바 — 그룹이 세로로 한 줄로 쌓이고, 열 전체를 채우며 내부에서 스크롤한다.
-     열린 도구창(팔레트)이 이 기능바 '안'으로 들어와(입력 그룹 바로 아래) 함께 스크롤되므로
-     한 몸처럼 보인다. 옆 열로 감기(wrap)는 금지 — 팔레트가 끼면 폭 계산이 깨진다. */
   body.ribbon-left #melodyRibbon {
-    flex: 1 1 auto; min-height: 0; overflow-y: auto;
-    flex-direction: column; flex-wrap: nowrap;
-    width: auto; margin: 0;
-    /* 내용이 길어 스크롤바가 생길 때만 열이 ~15px 넓어지며 널뛰던 것 방지 —
-       스크롤바 자리를 늘 예약(오버레이 스크롤바 환경에선 원래 자리 안 차지해 무해).
-       **both-edges**인 건 한쪽만 예약하면 카드가 왼쪽으로 8px·오른쪽으로 23px 떨어져
-       열 안에서 눈에 띄게 치우쳐 보이기 때문이다(실측). */
-    scrollbar-gutter: stable both-edges;
+    grid-column: 1 / -1; grid-row: 1; min-width: 0; margin: 0; padding: 5px 8px;
+    display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 8px;
+    overflow-x: auto; border: none; border-bottom: 1px solid var(--line);
+    border-radius: 0; background: var(--panel);
   }
-  /* 세로 배치에선 그룹 구분선도 가로줄로 눕힌다 */
-  body.ribbon-left #melodyRibbon .ribbon-sep { width: auto; height: 1px; }
-  body.ribbon-left #editorDock { border-top: none; }
-  /* 입력 그룹(율명·시김새·장단·가사·텍스트 5개)을 3:2로 감싸 중앙정렬 — 한 줄(5개)이
-     열 폭을 넓게 잡던 걸 좁힌다. 버튼 52px×3 + gap 3px×2 = 162px에서 4번째가 다음 줄로. */
-  body.ribbon-left .win-toggle-group { align-items: center; }
-  body.ribbon-left .win-toggle-group .rb-items {
-    /* 한 줄에 3개 = 3*버튼폭(58) + 2*gap(3) = 180. 버튼 폭을 바꾸면 여기도 같이. */
-    flex-wrap: wrap; justify-content: center; max-width: 180px;
+  body.ribbon-left #melodyRibbon > .ribbon-group { flex-direction: row; padding: 0; gap: 6px; }
+  body.ribbon-left #melodyRibbon .rb-cap,
+  body.ribbon-left #melodyRibbon .rb-break,
+  body.ribbon-left #melodyRibbon .rb-selhint,
+  body.ribbon-left #melodyRibbon .win-toggle-sep { display: none; }
+  body.ribbon-left #melodyRibbon .ribbon-slider-group .rb-cap { display: block; padding: 0; font-size: 11px; }
+  body.ribbon-left #melodyRibbon .rb-items { gap: 3px; }
+  body.ribbon-left #melodyRibbon .ribbon-btn {
+    flex-direction: row; width: auto; min-height: 32px; padding: 6px; gap: 5px; font-size: 17px;
   }
+  body.ribbon-left #melodyRibbon .ribbon-btn span { font-size: 12px; }
+  body.ribbon-left #melodyRibbon .ribbon-btn svg { width: 17px; height: 17px; }
+  body.ribbon-left #melodyRibbon .ribbon-sep { height: 24px; align-self: center; margin: 0; }
+  body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 68px; }
+  #paletteToggle {
+    align-items: center; white-space: nowrap; min-height: 32px; padding: 5px 8px;
+    border: 1px solid var(--line); border-radius: 5px; background: var(--panel);
+    color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
+  }
+  #paletteToggle[aria-expanded="true"] { background: var(--accent-soft); border-color: var(--accent); }
+  #paletteToggle:hover { background: var(--hover); }
+  body.ribbon-left #leftDock {
+    grid-column: 1; grid-row: 2; width: clamp(340px, 34vw, 466px);
+    max-width: min(50vw, 600px); min-width: 0; min-height: 0;
+    display: flex; flex-direction: column; background: var(--panel); border-right: 1px solid var(--line);
+  }
+  body.ribbon-left #paletteTabs { display: block; flex: 0 0 auto; min-width: 0; border-bottom: 1px solid var(--line); }
+  body.ribbon-left #paletteTabs .ribbon-group { padding: 0; }
+  body.ribbon-left #paletteTabs .rb-cap { display: none; }
+  body.ribbon-left #paletteTabs .rb-items {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; padding: 0 4px;
+  }
+  body.ribbon-left #paletteTabs .ribbon-btn {
+    width: 100%; min-width: 0; height: 64px; padding: 6px 2px;
+    flex-direction: column; justify-content: flex-start;
+    border: none; border-bottom: 2px solid transparent; border-radius: 0;
+    background: none; gap: 4px; color: var(--muted);
+  }
+  body.ribbon-left #paletteTabs .ribbon-btn span { font-size: 11px; line-height: 14px; font-weight: 600; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; color: inherit; }
+  body.ribbon-left #paletteTabs .input-tool-icon { width: 22px; height: 22px; flex: 0 0 22px; }
+  body.ribbon-left #paletteTabs .ribbon-btn.on { border-bottom-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  body.ribbon-left #paletteTabs .ribbon-btn.on span { color: var(--accent); }
+  body.ribbon-left #paletteTabs .ribbon-btn:hover { background: var(--hover); }
+  body.ribbon-left #paletteTabs .win-toggle.on::after { background: #3f9d63; }
+  body.ribbon-left #paletteDockBody {
+    display: block; flex: 1 1 auto; min-width: 0; min-height: 0; padding: 12px;
+    overflow-y: auto; scrollbar-gutter: stable;
+  }
+  body.ribbon-left #paletteDockBody > .direct-win.win-open {
+    position: relative; top: auto; left: auto; width: 100%; min-width: 0; max-width: 100%;
+    max-height: none; overflow: visible; padding: 0; margin: 0;
+    background: none; border: none; border-radius: 0; box-shadow: none;
+  }
+  body.ribbon-left #paletteDockBody #cellStyleWin { --cs-w: 100%; }
+  body.ribbon-left #paletteDockBody #paletteWrap { overflow-x: auto; }
+  /* 팔레트 외곽과 기호 칸은 같은 규격을 사용한다. 음계 표의 열 관계는 유지한다. */
+  body.ribbon-left #paletteDockBody .palette { box-sizing: border-box; width: 100%; min-width: 0; padding: 8px; border-radius: 6px; }
+  body.ribbon-left #paletteDockBody #notePalette:not(.orn-view) { width: max-content; min-width: 100%; }
+  body.ribbon-left #paletteDockBody .ornrow {
+    grid-template-columns: repeat(auto-fill, 66px); justify-content: center; gap: 4px;
+  }
+  body.ribbon-left #paletteDockBody .ornchip { width: 66px; height: 54px; }
+  body.ribbon-left #paletteDockBody .ornchip .ocap { font-size: 10px; line-height: 1.2; }
+  body.ribbon-left #paletteDockBody #jangdanRow { height: auto; }
+  body.ribbon-left #paletteDockBody #jangdanPaletteWrap { min-width: 0; overflow: visible; }
+  body.ribbon-left #paletteDockBody #jangdanPalette { height: auto; }
+  body.ribbon-left #paletteDockBody #lyricsRow { display: none; }
+  body.ribbon-left #paletteDockBody .tx-add { width: 100%; max-width: none; }
+  body.ribbon-left #paletteDockBody .tx-add input { min-width: 0; }
+  body.ribbon-left #paletteDockBody .melody-head { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  body.ribbon-left #paletteDockBody .mh-right { width: 100%; margin-left: 0; }
 
-  /* --- 왼쪽 도킹 꾸밈(밋밋함 완화) --- */
-  /* 도킹 되돌리기 버튼 — 열 맨 위 **오른쪽 끝**에 붙는 chrome 컨트롤이다.
-     ★ 예전엔 왼쪽 끝에 홀로 놓고 아래에 가로줄을 그었는데, 그 줄이 가를 것이 없었다:
-       바로 아래 그룹 카드가 제 테두리로 이미 구획을 만든다(그래서 .ribbon-sep도 여기선
-       숨긴다 — 같은 까닭이다). 24px짜리 아이콘 하나 밑에 열을 가로지르는 줄이 그어져
-       머리글도 아니고 구분선도 아닌 것이 떠 있었다(2026-08-26 사용자 지적).
-       오른쪽에 두는 건 이 앱에서 '창을 어떻게 놓을까'를 다루는 손잡이가 늘 오른쪽 끝인
-       것과 같다(도구창 머리줄의 ✕·.mh-right). 줄 대신 여백만으로 띄운다. */
-  body.ribbon-left #melodyRibbon > .ribbon-topctl {
-    width: 100%; justify-content: flex-end; gap: 4px;
-    padding: 0 2px; margin-bottom: 4px;
+  body.ribbon-left #paletteDockBody .pal-top,
+  body.ribbon-left #paletteDockBody .pal-head,
+  body.ribbon-left #paletteDockBody .melody-head { flex-wrap: wrap; row-gap: 8px; }
+  body.ribbon-left #paletteDockBody .pal-top { gap: 10px; padding-bottom: 8px; }
+  body.ribbon-left #paletteDockBody .pal-top-right,
+  body.ribbon-left #paletteDockBody .mh-right { flex-wrap: wrap; gap: 8px; min-width: 0; }
+  body.ribbon-left #paletteDockBody .pal-top-right { margin-left: 0; }
+  body.ribbon-left #paletteDockBody .pal-views { gap: 4px; margin-right: 0; }
+  body.ribbon-left #paletteDockBody .pal-view {
+    margin: 0; padding: 5px 9px; font-size: 13px; line-height: 1.3;
+    border: none; border-bottom: 2px solid transparent; border-radius: 0;
+    background: none; transform: none; box-shadow: none;
   }
-  /* 세로 도킹에선 섹션 이름표(.rb-cap)를 강조색 소제목처럼 — 회색 잔글씨보다 구획이 또렷하고
-     밋밋함이 줄어든다. 각 그룹엔 옅은 강조 배경 카드를 깔아 시각 리듬을 준다. */
-  /* ★ **카드 테두리를 빼지 말 것**(2026-08-26 실측 후 되돌림). '바깥 상자와 안쪽 카드가
-     둘 다 테두리를 가지면 상자 속 상자'라는 셈으로 안쪽 선을 걷어 봤는데, 흰 배경만으로는
-     --panel과 --soft의 차이가 너무 옅어 열 전체가 희멀겋게 풀어졌다(사용자 확인).
-     이 앱의 밝은 테마는 색 사이가 촘촘해서(--panel #fff · --soft #faf8f3 · --bg #f4f4f2)
-     구획을 **밝기 차이에 맡길 수 없다** — 선이 있어야 또렷하다. 선이 겹쳐 보이는 문제는
-     바깥 상자 쪽에서 풀 일이지 카드에서 걷을 일이 아니다. */
-  body.ribbon-left #melodyRibbon > .ribbon-group {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-    padding: 5px 8px 7px; margin: 0 2px;
-  }
-  body.ribbon-left #melodyRibbon > .ribbon-group .rb-cap {
-    /* 크기는 위 .rb-cap(10.5px)을 그대로 쓴다 — 여기서 다시 적으면 기능바 글자를 키울 때
-       왼쪽 도킹만 안 커진다(실제로 9.5px로 발이 묶여 있었다). 이 규칙은 색·자간만 맡는다. */
-    color: var(--accent); letter-spacing: .05em; padding-bottom: 4px;
-  }
-  /* 그룹 카드가 이미 구획을 나눠주므로 그 사이 구분선(가로줄)은 지운다 */
-  body.ribbon-left #melodyRibbon > .ribbon-sep { display: none; }
-
-  /* 팔레트를 '입력' 그룹(.win-toggle-group) 바로 아래에 오게 한다 — flex order로 정렬:
-     입력 그룹까지는 기본(order 0), 도구창은 order 2, 그 뒤 그룹들(각 삽입/셀 서식/크기)은
-     order 3으로 밀어 도구창 아래로 보낸다. DOM 순서와 무관하게 JS는 그냥 기능바에 붙인다. */
-  body.ribbon-left #melodyRibbon > .win-toggle-group ~ * { order: 3; }
-  body.ribbon-left #melodyRibbon > .direct-win.win-open { order: 2; }
-  /* ★ **정간 서식 창만은 '정간 편집' 그룹 아래**에 온다 — 그 창을 여는 버튼이 거기 있기
-     때문이다(2026-08-26 사용자 지적). 나머지 창(井傍長章文)은 '입력' 그룹의 것이라 그 바로
-     아래(order 2)가 맞다. 창이 낀 자리 뒤로 크기 그룹과 그 앞 구분선을 함께 민다. */
-  body.ribbon-left #melodyRibbon > #cellStyleWin.win-open { order: 4; }
-  body.ribbon-left #melodyRibbon > .size-sep,
-  body.ribbon-left #melodyRibbon > .ribbon-slider-group { order: 5; }
-  /* 기능바 안에 녹아든 도구창 — 뜬 창의 카드(배경·테두리·그림자·absolute)를 벗겨
-     기능바와 한 구역처럼 보이게 한다.
-     ★ **zoom으로 줄이지 말 것**(2026-08-26에 걷었다). 예전엔 `zoom: 0.85`로 폭을 눌러
-       담았는데(율명 표 450 → 383px), 그러면 **글자까지 통째로 15% 작아진다** — 11px로
-       적은 라벨이 9.35px, 10px짜리는 8.5px로 찍혀 읽기가 어려웠다(사용자 지적).
-       열이 67px 넓어지는 대신 창 안의 글자가 적힌 크기 그대로 나온다. 열이 넓은 게
-       거슬리면 손잡이로 좁히면 되지만, 글자가 작은 것은 손쓸 길이 없다. */
-  body.ribbon-left #melodyRibbon > .direct-win.win-open,
-  body.ribbon-left #melodyRibbon > #paletteCol.win-open {
-    position: relative; top: auto; left: auto;
-    flex: 0 0 auto; width: auto; max-width: none; max-height: none; overflow: visible;
-    background: none; border: none; box-shadow: none; border-radius: 0;
-    padding: 8px 2px 2px; margin: 2px 0 4px;
-  }
-  /* 도킹된 도구창은 폭을 전부 율명 표의 설계 폭(450px)으로 통일 — 어떤 창을 켜도
-     왼쪽 열 너비가 바뀌지 않는다. 기호 6개/줄 규칙은 아래 격자·max-width가 지킨다. */
-  body.ribbon-left #melodyRibbon > #jangdanArea.win-open,
-  body.ribbon-left #melodyRibbon > #lyricsArea.win-open,
-  body.ribbon-left #melodyRibbon > #textArea.win-open,
-  body.ribbon-left #melodyRibbon > #cellStyleWin.win-open,
-  body.ribbon-left #melodyRibbon > #gakNameArea.win-open { width: 450px; }
-  /* 정간 서식 창 속은 원래 258px(--cs-w)에 묶여 있었다 — 도킹된 창은 폭이 열 폭을 따르므로
-     그대로 두면 **열을 넓혀도 내용은 258px에 머물러 오른쪽이 휑하고, 좁히면 넘친다**
-     (2026-08-26 사용자 지적: 열 491px에 내용 258px). 도킹 중에는 창 폭을 그대로 쓴다. */
-  body.ribbon-left #melodyRibbon #cellStyleWin { --cs-w: 100%; }
-  /* 도크 폭 끌기 손잡이 — 왼쪽 도킹에서만 열 사이에 나타난다(더블클릭 = 자동 폭).
-     다른 리사이저(#melodyResizer·#melodySplit)와 같은 언어: 가운데 알약 그립이
-     항상 보이고, 올리면 강조색 — '끌 수 있다'가 눈에 보이게. */
-  #leftDockResizer { display: none; }
-  body.ribbon-left #leftDockResizer {
-    display: flex; align-items: center; justify-content: center;
-    flex: 0 0 10px; align-self: stretch; cursor: col-resize;
-    margin-right: 2px; touch-action: none;
-  }
-  body.ribbon-left #leftDockResizer::before {
-    content: ""; width: 4px; height: 46px; border-radius: 2px;
-    background: var(--line); transition: background .12s ease, height .12s ease;
-  }
-  body.ribbon-left #leftDockResizer:hover::before,
-  body.ribbon-left #leftDockResizer.dragging::before { background: var(--accent); height: 72px; }
-  /* 사용자가 폭을 정한(leftdock-custom) 동안엔 고정 450px 대신 열 폭을 그대로 따른다 —
-     내용이 더 넓으면 율명 표는 #paletteWrap 가로 스크롤로 본다 */
-  body.ribbon-left.leftdock-custom #leftDock { max-width: none; }
-  body.ribbon-left.leftdock-custom #melodyRibbon > #jangdanArea.win-open,
-  body.ribbon-left.leftdock-custom #melodyRibbon > #lyricsArea.win-open,
-  body.ribbon-left.leftdock-custom #melodyRibbon > #textArea.win-open,
-  body.ribbon-left.leftdock-custom #melodyRibbon > #gakNameArea.win-open,
-  body.ribbon-left.leftdock-custom #melodyRibbon > #cellStyleWin.win-open,
-  body.ribbon-left.leftdock-custom #melodyRibbon > #paletteCol.win-open { width: auto; }
-  /* 시김새 격자는 공통 격자(minmax 66px)가 알아서 줄바꿈 — 기본 폭 6개/줄, 폭 따라 가변 */
-  /* 율명 창도 폭 고정(표의 설계 폭 450px) — 팔레트 크기(±)를 키워도 왼쪽 열은 그대로 두고,
-     커진 표는 #paletteWrap 안에서 가로 스크롤로 본다(세로는 열 전체 스크롤에 맡김) */
-  body.ribbon-left #melodyRibbon > #paletteCol.win-open { width: 450px; }
-  body.ribbon-left #melodyRibbon #paletteWrap { overflow-x: auto; }
-  /* 도킹된 창 머리줄 — 열을 좁히면 컨트롤(악기·미세조정·크기±·닫기 ✕)이 서로 겹치는
-     대신 다음 줄로 접히게 한다. 오른쪽 묶음도 자체 줄바꿈 + 남는 폭에서 줄어들 수 있게 */
-  body.ribbon-left #melodyRibbon .pal-top,
-  body.ribbon-left #melodyRibbon .pal-head,
-  body.ribbon-left #melodyRibbon .melody-head { flex-wrap: wrap; row-gap: 5px; }
-  body.ribbon-left #melodyRibbon .pal-top-right,
-  body.ribbon-left #melodyRibbon .mh-right {
-    flex-wrap: wrap; row-gap: 5px; min-width: 0; justify-content: flex-end;
-  }
-  /* 도킹된 창은 제자리에 붙어 있으니 끌기 그립을 숨긴다(끌면 relative 좌표가 어긋남) */
-  body.ribbon-left #melodyRibbon .dock-panel-grip,
-  body.ribbon-left #melodyRibbon .bar-grip { display: none; }
-  /* 도킹으로 창이 #melodyArea 밖(기능바 안)으로 나가면 조상 선택자(#melodyArea.mel-direct …)
-     규칙이 안 걸린다 — 시김새 팔레트 본문과 창 제목('율명'/'시김새'/'셀 서식')만 재적용. */
-  body.ribbon-left #melodyRibbon .pal-col-title {
+  body.ribbon-left #paletteDockBody .pal-view.active { color: var(--ink); border-bottom-color: var(--accent); }
+  body.ribbon-left #paletteDockBody .pal-view:hover { background: var(--hover); }
+  body.ribbon-left #paletteDockBody .pal-tools { margin: 0 0 8px; }
+  body.ribbon-left #paletteDockBody .yul-tools { width: 100%; gap: 8px 10px; }
+  body.ribbon-left #paletteDockBody .yul-tools .tool-inline { flex: 0 0 auto; }
+  body.ribbon-left #paletteDockBody .dock-panel-grip,
+  body.ribbon-left #paletteDockBody .bar-grip { display: none; }
+  body.ribbon-left #paletteDockBody .pal-col-title {
     display: inline-block; padding: 3px 1px 6px; font-size: 15px; font-weight: 700;
-    color: var(--accent); border-bottom: 2.5px solid var(--accent); white-space: nowrap; }
-  /* 도킹 전환 버튼 — 직접 입력에서만 보이고, 아이콘은 '누르면 갈 곳'(왼쪽/위쪽 패널) */
+    color: var(--accent); border-bottom: 2px solid var(--accent); white-space: nowrap;
+  }
+  /* 제목 → 설정 → 팔레트. 설정은 제목의 닫기 버튼 여백과 분리한다. */
+  body.ribbon-left #paletteDockBody .melody-head,
+  body.ribbon-left #paletteDockBody .pal-head { padding-right: 0; margin-bottom: 12px; }
+  body.ribbon-left #paletteDockBody .melody-head { min-height: 30px; gap: 8px; }
+  body.ribbon-left #paletteDockBody .melody-head > .guide-wrap { margin-right: 30px; }
+  body.ribbon-left #paletteDockBody .pal-top { padding-top: 0; padding-bottom: 0; gap: 8px; }
+  body.ribbon-left #paletteDockBody .pal-views { width: 100%; min-height: 30px; padding-right: 30px; box-sizing: border-box; }
+  body.ribbon-left #paletteDockBody .pal-top-right,
+  body.ribbon-left #paletteDockBody .mh-right {
+    display: flex; flex: 0 0 100%; width: 100%; align-items: center;
+    justify-content: flex-start; gap: 8px 12px; padding: 0; font-size: 12px; font-weight: 400;
+  }
+  body.ribbon-left #paletteDockBody .pal-top-right > *,
+  body.ribbon-left #paletteDockBody .mh-right > * { min-height: 30px; box-sizing: border-box; }
+  body.ribbon-left #paletteDockBody .pal-top-right .size-ctl { order: 1; }
+  body.ribbon-left #paletteDockBody .pal-top-right .orn-edit-toggle,
+  body.ribbon-left #paletteDockBody .pal-top-right #ornMapToggle { order: 2; }
+  body.ribbon-left #paletteDockBody .pal-tools { margin: 8px 0 0; }
+  body.ribbon-left #paletteDockBody .yul-tools {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; padding: 0;
+  }
+  body.ribbon-left #paletteDockBody .yul-tools .tool-inline { min-width: 0; min-height: 30px; }
+  body.ribbon-left #paletteDockBody .yul-tools select { flex: 1 1 auto; min-width: 0; width: 0; }
+  body.ribbon-left #paletteDockBody .tool-inline,
+  body.ribbon-left #paletteDockBody .ribbon-select-group,
+  body.ribbon-left #paletteDockBody .size-lab { font-size: 12px; font-weight: 400; gap: 6px; }
+  body.ribbon-left #paletteDockBody .mh-right .ribbon-select-group { flex: 1 1 160px; min-width: 0; max-width: 260px; }
+  body.ribbon-left #paletteDockBody .mh-right .ribbon-select-group select { flex: 1 1 auto; width: 0; min-width: 0; }
+  body.ribbon-left #paletteDockBody .pal-head select,
+  body.ribbon-left #paletteDockBody .mh-right select { height: 30px; box-sizing: border-box; font-size: 12px; }
+  body.ribbon-left #paletteDockBody .pal-head .ribbon-btn {
+    flex-direction: row; width: auto; padding: 4px 8px; gap: 5px; font-size: 15px;
+  }
+  body.ribbon-left #paletteDockBody .pal-head .ribbon-btn span { font-size: 12px; }
+  body.ribbon-left #paletteDockBody .size-ctl button { width: 26px; height: 28px; }
+  body.ribbon-left #paletteDockBody .mh-right .num-unit input { height: 30px; box-sizing: border-box; }
+  body.ribbon-left #paletteDockBody .mh-reset { padding: 4px 8px; font-size: 12px; }
+  body.ribbon-left #paletteDockBody .pal-seg { min-height: 30px; box-sizing: border-box; justify-self: start; }
+  body.ribbon-left #paletteDockBody .direct-win-close { top: 4px; right: 0; }
+  body.ribbon-left #leftDockResizer {
+    grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: center;
+    cursor: col-resize; touch-action: none;
+  }
+  body.ribbon-left #leftDockResizer::before { content: ""; width: 3px; height: 42px; border-radius: 2px; background: var(--line); }
+  body.ribbon-left #leftDockResizer:hover::before,
+  body.ribbon-left #leftDockResizer.dragging::before { background: var(--accent); }
+  body.ribbon-left #sheetCol { grid-column: 3; grid-row: 2; }
+  body.ribbon-left.palette-collapsed #main { grid-template-columns: 0 0 minmax(0, 1fr); }
+  body.ribbon-left.palette-collapsed #leftDock,
+  body.ribbon-left.palette-collapsed #leftDockResizer { display: none; }
+  body.ribbon-left #editorDock { border-top: none; }
   body:not(.input-direct) .ribbon-pos-btn { display: none; }
   .ribbon-pos-btn .rp-top { display: none; }
   body.ribbon-left .ribbon-pos-btn .rp-left { display: none; }
   body.ribbon-left .ribbon-pos-btn .rp-top { display: block; }
+  /* 소형 노트북: 설정은 악보 폭을 추가로 빼앗지 않는 겹침 패널로 표시한다. */
+  @media (max-width: 1280px) {
+    body.input-direct #appRow { position: relative; }
+    body.input-direct #sidebar {
+      position: absolute; right: 64px; top: 0; bottom: 0; z-index: 20;
+      width: 300px; max-width: calc(100% - 80px); box-shadow: -8px 0 24px rgba(0,0,0,.08);
+    }
+    body.ribbon-left #sheetArea { padding: 10px; }
+    body.ribbon-left #melodyRibbon { gap: 5px; }
+    body.ribbon-left #melodyRibbon .ribbon-btn { padding: 5px; }
+  }
+  /* 태블릿 폭에서는 팔레트도 겹쳐 연다. 입력 도구 버튼으로 즉시 접을 수 있다. */
+  @media (max-width: 900px) {
+    body.ribbon-left #main { grid-template-columns: 0 0 minmax(0, 1fr); }
+    body.ribbon-left #leftDock {
+      position: absolute; grid-column: auto; grid-row: auto; top: var(--edit-toolbar-height, 44px); bottom: 0; left: 0;
+      width: 360px; max-width: calc(100% - 44px); z-index: 15; box-shadow: 6px 0 20px rgba(0,0,0,.10);
+    }
+    body.ribbon-left #leftDockResizer { display: none; }
+  }
 
   .melody-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
                  font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--ink);
@@ -1919,7 +1949,7 @@
      text-indent는 블록의 첫 줄에만 걸려서). **굵게**는 showTourStep이 <b>로 조립. */
   #tourCard p { margin: 0 0 12px; font-size: 13px; line-height: 1.8; }
   /* keep-all: 한국어가 단어 중간에서 꺾이지 않게("씁니/다" → 어절 단위) */
-  #tourBody div { padding-left: 1.1em; text-indent: -1.1em; word-break: keep-all; }
+  #tourBody div { padding-left: 0; text-indent: 0; word-break: keep-all; }
   #tourBody div + div { margin-top: 8px; }
   /* 소제목(줄 앞 "## ") — 한 단계 안 글머리표 묶음이 둘일 때의 나눔 머리. 내어쓰기 해제. */
   /* 자간 .09em — 소제목엔 한글이 길게 들어오므로(.help-pane h4와 같은 이유) */
@@ -2071,3 +2101,59 @@
   }
   /* 인쇄용 종이 그릇 — 화면에는 없는 셈이다(인쇄가 끝나면 app.js가 내용을 도로 비운다) */
   #staffSheet { display: none; }
+
+  #newDocModal .nd-optional { margin: 12px 0 16px; border-top: 1px solid var(--line); }
+  #newDocModal .nd-optional summary { padding: 12px 0; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--ink); }
+
+  /* 안내의 문단과 목록: 줄이 접혀도 본문 시작점을 유지한다. */
+  .hint, .melody-guide, .help-pane, .welcome-sub, #tourBody, #tourFinaleBody,
+  .lane-off-note, .cell-style-hint {
+    word-break: keep-all; overflow-wrap: anywhere; line-height: 1.7;
+  }
+  .guide-list { margin: 6px 0 0; padding: 0 0 0 1.25em; list-style: disc; }
+  .guide-list li { padding-left: .15em; margin: 0; }
+  .guide-list li + li { margin-top: 6px; }
+  .guide-list li::marker { color: var(--muted); font-size: .85em; }
+  .guide-paragraph { margin: 0; }
+  .guide-paragraph + .guide-paragraph { margin-top: 6px; }
+  .guide-list + .guide-paragraph { margin-top: 10px; }
+  .melody-guide {
+    width: 300px; max-width: calc(100vw - 24px); box-sizing: border-box;
+    padding: 14px 16px; border-color: var(--line); border-radius: 8px;
+    box-shadow: var(--ui-shadow); font-size: 12px;
+  }
+  .melody-guide b { color: var(--ink); font-size: inherit; letter-spacing: 0; }
+  .melody-guide .mg-sec + .mg-sec { margin-top: 14px; }
+  .melody-guide .guide-paragraph > b:first-child { font-weight: 650; }
+  .help-pane h4 { font-family: inherit; letter-spacing: 0; font-size: 13px; }
+  .help-pane li + li { margin-top: 7px; }
+  #tourBody { font-size: 13px; padding-right: 4px; margin-bottom: 12px; }
+  #tourBody .tour-item, #tourFinaleBody .tour-item { position: relative; padding-left: 1.2em; text-indent: 0; }
+  .tour-item::before { content: "•"; position: absolute; left: .1em; color: var(--muted); }
+  #tourBody div.tour-sub { font-family: inherit; font-size: 12px; letter-spacing: 0; color: var(--ink); }
+  #tourBody div.tour-tip { border: none; border-left: 2px solid var(--line); border-radius: 0; }
+  #tourCard h4 { font-size: 17px; margin-bottom: 12px; }
+  .welcome-sub { text-wrap: pretty; }
+
+  /* 첫 둘러보기: 작업 화면과 안내를 분리하고, 네 단계 내내 같은 자리에 둔다. */
+  body.tour-active { padding-right: 360px; box-sizing: border-box; }
+  body.tour-active #tourCard {
+    position: fixed; inset: 12px 12px 12px auto; width: 336px; height: auto;
+    max-height: none; box-sizing: border-box; transition: none;
+  }
+  body.tour-active #tourBody { flex: 0 1 auto; }
+  body.tour-active #tourCard .tour-btns { margin-top: auto; padding-top: 16px; }
+  body.tour-active #tourFig { flex: 0 1 auto; overflow-y: auto; }
+  body.tour-active #tourFig .tf-grid { display: flex; justify-content: center; }
+  body.tour-active #tourHole { transition: none; }
+  @media (max-width: 1100px) {
+    body.tour-active { padding-right: 0; padding-bottom: 238px; }
+    body.tour-active #tourCard {
+      inset: auto 8px 8px 8px; width: auto; height: 222px; max-height: calc(100dvh - 16px);
+    }
+    body.tour-active #tourFig { display: none !important; }
+    body.tour-active #tourProgress { margin-bottom: 8px; }
+    body.tour-active #tourCard h4 { margin: 4px 0 8px; }
+    body.tour-active #tourCard .tour-btns { padding-top: 8px; }
+    body.tour-active #tourBody { flex: 1 1 auto; margin-bottom: 0; }
+  }
