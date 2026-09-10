@@ -9463,7 +9463,7 @@
   // dockDirectWins()가 열린 창을 옮기고, 닫히거나 떠 있는 창 모드로 돌아가면
   // 원래 자리(placeholder 주석 노드)로 되돌린다.
   let ribbonPos = "left";   // "top" | "left" — 직접 입력 기본은 왼쪽 세로 도킹(저장된 문서는 저장값 따름)
-  // 왼쪽 도킹 열의 사용자 지정 폭(px). null = 자동(내용 폭 450px 기준).
+  // 왼쪽 도킹 열의 사용자 지정 폭(px). null = 마우스 도구 오른쪽 구분선에 정렬.
   // 손잡이(#leftDockResizer)를 끌면 정해지고, 더블클릭하면 자동으로 돌아간다.
   let leftDockW = null;
   const LEFTDOCK_MIN = 240;   // 최소 가로폭 보장
@@ -9475,7 +9475,13 @@
       ld.style.width = leftDockW + "px";
     } else {
       document.body.classList.remove("leftdock-custom");
-      ld.style.width = "";
+      const ribbon = $("melodyRibbon"), divider = $("mouseToolsDivider");
+      const aligned = document.body.classList.contains("ribbon-left") && window.innerWidth > 900;
+      const r = divider.getBoundingClientRect(), main = $("main").getBoundingClientRect();
+      // 8px 너비의 드래그 손잡이 중심을 위쪽 1px 구분선 중심에 맞춘다.
+      // 도구줄을 가로 스크롤해도 기본 폭이 따라 움직이지 않도록 스크롤량을 보정한다.
+      const width = r.left + r.width / 2 + ribbon.scrollLeft - main.left - 4;
+      ld.style.width = aligned && r.width > 0 ? Math.max(LEFTDOCK_MIN, width) + "px" : "";
     }
   }
   (function () {
@@ -9506,9 +9512,13 @@
   const inputToolGroup = $("melodyRibbon").querySelector(".win-toggle-group");
   const inputToolHome = document.createComment("input-tools-home");
   inputToolGroup.before(inputToolHome);
-  new ResizeObserver(function () {
+  const toolbarLayoutObserver = new ResizeObserver(function () {
     $("main").style.setProperty("--edit-toolbar-height", $("melodyRibbon").offsetHeight + "px");
-  }).observe($("melodyRibbon"));
+    applyLeftDockW();
+  });
+  toolbarLayoutObserver.observe($("melodyRibbon"));
+  toolbarLayoutObserver.observe($("melodyRibbon").querySelector(".mouse-mode-tabs"));
+  toolbarLayoutObserver.observe($("melodyRibbon").querySelector(".ribbon-topctl"));
   document.querySelectorAll(".direct-win").forEach(function (w) {
     const ph = document.createComment("win-home:" + w.id);
     w.parentNode.insertBefore(ph, w);
