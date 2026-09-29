@@ -189,6 +189,8 @@
         node = svg.cloneNode(true);
         // 화면 확인용 표시(편집·재생 하이라이트)는 그림에 남기지 않는다 — PNG 저장과 같은 규칙
         node.querySelectorAll(".no-print").forEach(function (n) { n.remove(); });
+        // 율명 서체를 사본에 박는다 — <img>로 읽힌 SVG엔 페이지의 글꼴이 안 따라간다
+        if (window.jgbDoc && window.jgbDoc.embedFonts) window.jgbDoc.embedFonts(node);
         xml = new XMLSerializer().serializeToString(node);
         const img = new Image();
         img.onload = function () {

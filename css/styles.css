@@ -411,11 +411,13 @@
                           padding-bottom: 6px; margin-bottom: 6px; }
   .palette .plabel { flex: 0 0 32px; font-size: 10px; font-weight: 700; color: var(--accent);
                      text-align: center; letter-spacing: .5px; }
-  /* 표 안 글씨체를 전부 하나로 통일(악보 음표 서체 NOTE_FONT와 동일 목록) —
-     헤더(황대태…)만 다른 서체를 쓰면 같은 표 안에서 글씨체가 뒤섞여 보인다. */
+  /* 표 안 글씨체를 전부 하나로 통일(악보 음표 서체와 동일 목록) —
+     헤더(황대태…)만 다른 서체를 쓰면 같은 표 안에서 글씨체가 뒤섞여 보인다.
+     --yul-font는 app.js가 body에 적는 '지금 고른 율명 서체'(#yulFont · js/yul-fonts.js의
+     부분 웹폰트 + 기기 서체 폴백). 팔레트에서 누른 글자와 종이에 찍히는 글자가 같아야 한다. */
   .palette .phead,
   .palette .pi .pch,
-  .palette .pi .pch-cap { font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif; }
+  .palette .pi .pch-cap { font-family: var(--yul-font, "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo","Noto Serif KR",serif); }
   .palette .phead { flex: 0 0 31px; text-align: center; font-size: 11px; font-weight: 700;
                     color: var(--muted); line-height: 1; }
   /* 칸 높이를 글자 내용과 무관하게 고정해야 위아래 행(하배·배·중성·청)의 가로줄이
@@ -450,7 +452,7 @@
   .pkey-b:active { background: #5c5346; }
   .pk-yul { position: absolute; left: 50%; transform: translateX(-50%); bottom: 16px;
             writing-mode: vertical-rl; text-orientation: upright;
-            font-family: "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif;
+            font-family: var(--yul-font, "Kaiti SC","STKaiti","KaiTi","GungSeo","Batang","AppleMyungjo",serif);
             color: #333; pointer-events: none; white-space: nowrap; line-height: 1; }
   .pkey-b .pk-yul { color: #fff; bottom: 12px; }
   .pk-west { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center;

@@ -2265,6 +2265,49 @@
   // 악보 음표용 서체(이미지 글씨와 어울리는 해서·명조 계열)
   const NOTE_FONT = "'Kaiti SC','STKaiti','KaiTi','GungSeo','Batang','AppleMyungjo','Noto Serif KR',serif";
 
+  // ---------- 율명 서체 ----------
+  // 율명 한자 58자 중 34자가 유니코드 확장 A라 기기 서체에 맡기면 **OS마다 글씨가 갈린다** —
+  // 한국어 윈도우의 바탕엔 그 글자들이 없어, 없는 글자만 딴 폰트에서 빌려 와 한 악보 안에서
+  // 굵기·모양이 제각각이 됐다(2026-09-29 사용자 제보). 그래서 율명 글자만 남긴 부분 웹폰트를
+  // 싣는다(js/yul-fonts.js, 생성기 tools/gen-yul-fonts.py). 고르는 칸은 율명 팔레트의
+  // #yulFont(CTRL_IDS — 문서에 저장되어 받은 사람도 같은 글씨로 본다).
+  // · "system"은 예전 그대로(NOTE_FONT) — 맥에서 Kaiti SC를 꼭 쓰고 싶은 사람의 길.
+  // · 부분 폰트에 없는 글자(한글 표기·이음 따위)는 뒤에 붙인 NOTE_FONT로 저절로 넘어간다.
+  const YUL_FONTS = window.JGB_YUL_FONTS || {};
+  Object.keys(YUL_FONTS).forEach(function (k) {
+    try {
+      const ff = new FontFace(YUL_FONTS[k].family, "url(" + YUL_FONTS[k].src + ")");
+      document.fonts.add(ff);
+      ff.load().catch(function () {});
+    } catch (e) {}
+  });
+  function yulFontKey() {
+    const el = $("yulFont");
+    const k = el && el.value;
+    return (k && YUL_FONTS[k]) ? k : "system";
+  }
+  let yulFam = NOTE_FONT;     // render()가 한 번 정해 두고 drawGlyph가 쓴다
+  // 폰트마다 잉크 크기·높이가 달라 Kaiti SC에 맞춘 율명 자리에서 뜨거나 커 보인다 —
+  // 생성기가 재 둔 보정(scale, dy=글자 크기 대비 아래로)을 율명 글자에만 입힌다.
+  let yulAdj = { scale: 1, dy: 0 };
+  function syncYulFont() {
+    const f = YUL_FONTS[yulFontKey()];
+    yulFam = f ? "'" + f.family + "'," + NOTE_FONT : NOTE_FONT;
+    yulAdj = f ? { scale: f.scale || 1, dy: f.dy || 0 } : { scale: 1, dy: 0 };
+    document.body.style.setProperty("--yul-font", yulFam);   // 팔레트·건반(styles.css)
+  }
+  // 악보 SVG를 그림(PNG·공유마당 미리보기)으로 옮길 땐 문서의 글꼴이 안 따라간다 — <img>로
+  // 읽힌 SVG는 바깥 페이지와 따로 놀기 때문. 그래서 떼어 낸 사본에 @font-face를 박아 넣는다.
+  // 인쇄는 화면 그대로라 필요 없다. 기기 서체를 고른 문서는 손대지 않는다.
+  function embedYulFont(node) {
+    const f = YUL_FONTS[yulFontKey()];
+    if (!f || !node) return node;
+    const st = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    st.textContent = "@font-face{font-family:'" + f.family + "';src:url(" + f.src + ") format('woff2')}";
+    node.insertBefore(st, node.firstChild);
+    return node;
+  }
+
   // 폰트가 해당 글자를 실제로 그릴 수 있는지(두부 □ 방지) 캔버스로 검사
   const glyphCache = {};
   let glyphCtx = null, tofuSigs = null;
@@ -2295,7 +2338,9 @@
   function octHanja(base, oct) {
     const m = OCT_HANJA[String(oct)];
     const ch = m && m[base];
-    return (ch && canGlyph(ch)) ? ch : null;
+    // 실어 온 율명 서체는 이 글자들을 다 갖도록 만들어졌다(생성기가 없으면 멈춘다) — 기기
+    // 서체를 캔버스로 재 볼 까닭이 없고, 재면 윈도우에서 멀쩡한 변형자를 점 폴백으로 떨군다.
+    return (ch && (yulFontKey() !== "system" || canGlyph(ch))) ? ch : null;
   }
   // 숫자 → 한자 숫자 표기(만 단위까지). 자릿수 1은 접두어 생략(十, 百 등).
   const HANJA_DIGIT = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
@@ -3897,7 +3942,7 @@
       // 하배/중청 등 접두어가 붙어 여러 글자면 정간 폭에 맞춰 글자 크기를 줄인다
       const fs = (txt.length >= 3 ? size * 0.5 : txt.length === 2 ? size * 0.68 : size) * YUL_SCORE_SCALE;
       const t = el("text", { x: cx, y: cyc + size * 0.34, "text-anchor": "middle",
-        "font-size": fs, "font-family": NOTE_FONT, fill: "#111" });
+        "font-size": fs, "font-family": yulFam, fill: "#111" });
       t.textContent = txt; svg.appendChild(t);
       return;
     }
@@ -3907,12 +3952,12 @@
     const ch = tk.literal != null ? tk.literal
              : (tk.sym != null ? tk.sym : (variant || YUL[tk.base] || tk.base));
     const isNote = tk.base != null && tk.literal == null && tk.sym == null;
-    const fs = isNote ? size * YUL_SCORE_SCALE : size;
+    const fs = isNote ? size * YUL_SCORE_SCALE * yulAdj.scale : size;
     // 이음(-)은 글리프가 베이스라인 쪽에 낮게 찍혀 분박 행 안에서 살짝 아래로 보이므로
     // 기준 오프셋(0.34)보다 약간 위(0.28)에 놓아 세로 중심을 맞춘다
     const yOff = ch === "-" ? 0.28 : 0.34;
-    const t = el("text", { x: cx, y: cyc + size * yOff, "text-anchor": "middle",
-      "font-size": fs, "font-family": NOTE_FONT, fill: noVariant ? "#aaa" : "#111" });
+    const t = el("text", { x: cx, y: cyc + size * yOff + (isNote ? fs * yulAdj.dy : 0), "text-anchor": "middle",
+      "font-size": fs, "font-family": yulFam, fill: noVariant ? "#aaa" : "#111" });
     t.textContent = ch; svg.appendChild(t);
     if (ch === "-") {   // 이음(-) 표시가 짧아 보이지 않도록 가로로만 늘림(세로 굵기는 그대로)
       t.setAttribute("transform", "translate(" + cx + " 0) scale(" + TIE_STRETCH + " 1) translate(" + (-cx) + " 0)");
@@ -4429,6 +4474,7 @@
     const tempoMul = Math.max(0.3, parseFloat($("tempoSize").value) || 1);
     const dg = parseDaegang(daegangTextFor(beats), beats);   // 기본 각의 대강(경고문·둘러보기용)
     noteMode = $("noteMode").value;   // "font" | "hangul"
+    syncYulFont();                    // 율명 서체(drawGlyph·팔레트가 같은 값을 쓴다)
 
     const sizeScale = Math.max(0.3, parseFloat($("sizeScale").value) || 1);
     $("sizeScaleVal").textContent = sizeScale.toFixed(1) + "×";
@@ -5795,6 +5841,7 @@
       if ($("gakNumMode").value === "screen") {
         node.querySelectorAll(".gak-num").forEach(function (n) { n.remove(); });
       }
+      embedYulFont(node);
       const xml = new XMLSerializer().serializeToString(node);
       const svg64 = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(xml)));
       const img = new Image();
@@ -7874,6 +7921,7 @@
           node.querySelectorAll(".gak-num").forEach(function (n) { n.remove(); });
         }
         const r = pageGakRanges[i] || { start: 0, end: 0 };
+        embedYulFont(node);
         return { xml: new XMLSerializer().serializeToString(node), start: r.start, end: r.end };
       });
     } finally {
@@ -8020,7 +8068,7 @@
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame", "lyricsLane",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
-    "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "pageNumPos", "gakNumMode",
+    "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "yulFont", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
     "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffJanggu", "staffPrintSize"];
   const LS_KEY = "jgb_state_v1";
@@ -8425,6 +8473,9 @@
     // 이 문서에 앱이 못 읽는 자리가 몇 **군데**인가(글자 수가 아니라 이어진 덩이 수).
     // 게시 창이 올리기 전에 한 줄로 알려 주는 데 쓴다 — 세는 자는 선율 에디터가 빨간
     // 바탕을 깔 때 쓰는 그 함수 그대로다.
+    // 악보 SVG 사본에 율명 서체를 박아 넣는다(그림으로 옮기기 직전에 — embedYulFont 주석).
+    // 공유마당 미리보기(cloud.js makeThumb)가 PNG 저장과 같은 글씨가 나오게 쓴다.
+    embedFonts: embedYulFont,
     badCount: function () {
       stashActivePart();
       let n = 0;
@@ -8618,13 +8669,15 @@
     $(id).addEventListener("change", onFormChange);
   });
   ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
-   "titleFont", "lyricsFont", "header", "frame", "lyricsLane", "noteMode", "paperSize", "orientation", "pageNumPos", "gakNumMode",
+   "titleFont", "lyricsFont", "header", "frame", "lyricsLane", "noteMode", "yulFont", "paperSize", "orientation", "pageNumPos", "gakNumMode",
    "gakNameHanja", "scoreView"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });
   // 표기 모드가 바뀌면 팔레트도 이미지↔한자로 다시 그림
   $("noteMode").addEventListener("change", buildPalette);
+  // 율명 서체도 — 기기 서체로 돌리면 변형자 가림(octHanja의 canGlyph)이 달라진다
+  $("yulFont").addEventListener("change", function () { syncYulFont(); buildPalette(); });
   // 조(악조) 선택 → 표 팔레트를 그 조의 구성음만으로 다시 그림
   $("joPreset").addEventListener("change", function () { buildPalette(); saveState(); });
   // 악기 선택(시김새·가사 기호 팔레트 우선순위) — 두 군데(직접 입력 창·에디터 팔레트) 셀렉트 동기화

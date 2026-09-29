@@ -1173,6 +1173,16 @@
                     <option value="hangul">한글</option>
                   </select>
                 </label>
+                <!-- 율명 서체 — 악보·팔레트·건반의 율명 글씨. 기기 서체에 맡기면 윈도우에서 확장 A
+                     율명만 딴 폰트로 빠져 굵기가 제각각이라 글자를 실어 온다(js/yul-fonts.js).
+                     문서에 저장된다(CTRL_IDS) — 받은 사람도 같은 글씨로 본다. -->
+                <label class="tool-inline" title="악보에 찍히는 율명 글씨체입니다&#10;• 정해체: 전자정자 정해체(TW-Kai) · SIL OFL 1.1&#10;• 문해체: LXGW WenKai · SIL OFL 1.1&#10;• 기기 서체: 이 컴퓨터에 깔린 서체(OS마다 달라집니다)">서체
+                  <select id="yulFont">
+                    <option value="twkai" selected>정해체</option>
+                    <option value="lxgw">문해체</option>
+                    <option value="system">기기 서체</option>
+                  </select>
+                </label>
                 <label class="tool-inline pitch-tool" title="율명 클릭 소리와 건반, 악보 재생에 함께 적용됩니다">황 음고
                   <select id="pianoBase">
                     <option value="63">E♭4</option>
@@ -2163,6 +2173,7 @@
 <script src="js/staff-glyphs.js"></script>
 <script src="js/staff-view.js"></script>
 <script src="js/musicxml.js"></script>
+<script src="js/yul-fonts.js"></script>
 <script src="js/app.js"></script>
 <!-- 악보 게시 — app.js가 내놓는 window.jgbDoc을 쓰므로 반드시 뒤에. 설정(cloud-config.js)이
      비어 있으면 cloud.js가 스스로 물러나므로 서버 없이도 앱은 예전 그대로 돈다. -->

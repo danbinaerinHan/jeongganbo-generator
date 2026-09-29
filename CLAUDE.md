@@ -121,6 +121,21 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   (2021)의 곡별 기본 장단을 그 정간보 그대로 옮겨 적은 표라 **사람이 직접 고친다**(생성 파일
   아님). 항목: `{ name, beats, daegang, jangdan }` — 장단 줄 문법은 선율과 같다(`|`로 나눈
   칸 하나 = 정간 하나). app.js보다 먼저 로드. 규칙은 아래 '장단 프리셋' 절.
+- `js/yul-fonts.js` (window.JGB_YUL_FONTS) — **율명 서체**(율명 한자 58자만 남긴 부분 웹폰트,
+  woff2 데이터 URL 두 벌 57KB). **생성 파일**(`tools/gen-yul-fonts.py --twkai … --lxgw …`) —
+  직접 수정 금지. 기기 서체에 맡기면 율명 34자(확장 A)·7자(KS X 1001 밖)가 한국어 윈도우의
+  바탕에 없어 그 글자만 딴 폰트로 빠져 **한 악보 안에서 굵기가 제각각**이었다(2026-09-29
+  사용자 제보). 고르는 칸은 율명 팔레트의 `#yulFont`(정해체=TW-Kai 기본 · 문해체=LXGW WenKai
+  · 기기 서체=예전 그대로), CTRL_IDS라 문서에 저장된다. 둘 다 SIL OFL 1.1이고 **글꼴 이름을
+  'JGB Yul …'로 바꿔** 싣는다(예약 글꼴 이름 조항). 폰트 원본은 리포에 없다(받는 곳은 생성기 머리말).
+  · app.js '율명 서체' 절: `syncYulFont()`가 `yulFam`(drawGlyph)과 body의 `--yul-font`(팔레트·
+    건반 CSS)를 **함께** 정한다. 폰트마다 잉크 크기·높이가 달라 생성기가 잰 `scale`·`dy`를
+    율명 글자에만 입힌다(자리 셈은 Kaiti SC 기준이라서 — 안 입히면 문해체가 9% 크게 뜬다).
+  · **그림으로 옮기는 자리는 `embedYulFont(node)`를 거쳐야 한다** — `<img>`로 읽힌 SVG엔
+    페이지의 글꼴이 안 따라가 기기 서체로 떨어진다. PNG 저장·나란히 PNG·공유마당 미리보기
+    (cloud.js는 `jgbDoc.embedFonts`) 세 곳이 쓴다. 새로 SVG를 그림으로 뜨는 자리를 만들면 같이 달 것.
+  · 율명 한자를 늘리거나 바꾸면 **생성기를 다시 돌릴 것**(글자 목록을 app.js의 YUL·OCT_HANJA에서 읽는다).
+  · index.html에서 app.js보다 먼저 로드.
 - `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
   호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
   로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
@@ -1126,8 +1141,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     그 밖 generic serif), 악보 글자라면 치를 값어치가 있는 대가지만 라벨엔 손해뿐이다.
     팔레트 그룹 제목(`.orn-sec b`)이 그래서 2026-08-11에 메타 라벨 어휘(`--mono`+자간)로
     옮겨졌다 — 도움말 절 머리(`.help-pane h4`)와 같은 꼴이라 '절 머리는 앱 어디서나 한 꼴'.
-  - 새 서체를 들이는 선택지는 사실상 없다 — 이 리포는 **폰트 파일을 싣지 않는다**(EBS 워드마크·
-    Bravura 악보 글리프 모두 윤곽선 패스로 구워 쓴다). 악보 서체를 바꾸려면 그 방식이어야 한다.
+  - **율명만은 이제 이 스택이 아니라 실어 온 서체가 먼저다**(`js/yul-fonts.js`, 위 파일 구조 참고) —
+    율명 표·건반은 `var(--yul-font, …)`, 악보는 `yulFam`. 빠르기 미리보기·표기는 그대로 이 스택이다.
+  - 폰트를 싣는 것은 **라이선스가 부분 폰트를 허용할 때만**이다(율명 서체 둘은 OFL). EBS 워드마크·
+    Bravura 악보 글리프는 윤곽선 패스로 구워 쓴다(EBS는 폰트 변형을 막아서).
 - 리본/도구창 버튼 툴팁은 CSS ::after가 아니라 #ribbonTipFloat(JS 위치 계산) 하나를 공유.
 - 세로 flex 도구창 안의 머리줄(.pal-top 등)은 `flex: 0 0 auto` 필수 — 없으면 max-height에
   눌려 짜부라지며 자식 버튼이 삐져나온다.
