@@ -2,7 +2,7 @@
 //
 //   node tools/gen-help-doc.mjs
 //
-// 손으로 적은 목록이 아니라 실제 소스(index.html · js/tour-text.js · js/app.js)에서
+// 손으로 적은 목록이 아니라 실제 소스(editor.html · js/tour-text.js · js/app.js)에서
 // 그때그때 뽑아 쓴다 — 소스를 고치고 다시 돌리면 문서가 따라온다.
 //
 // **문서를 직접 고쳐도 된다.** 문구를 이 문서에서 다듬은 뒤 "이대로 적용해줘"라고 하면
@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const html = readFileSync(join(ROOT, "index.html"), "utf8");
+const html = readFileSync(join(ROOT, "editor.html"), "utf8");
 
 // ── HTML 조각 떼기 ──────────────────────────────────────────────────────────
 // DOM 라이브러리 없이 쓰려고 최소한만: 여는 태그를 찾아 같은 이름의 태그 짝을 세며 끝을 찾는다.
@@ -130,7 +130,7 @@ push("> ✏️ **이 문서를 직접 고쳐도 됩니다.** 여기서 문구를
 push("> 소스에 옮겨 드립니다. 손댄 내용이 날아가지 않게, 생성기는 **문서가 손대진 상태면 멈춥니다**.", ">");
 push("> 소스를 고친 쪽이 최신이라 문서를 새로 뽑고 싶을 때만 아래를 돌리세요.", ">");
 push("> ```bash", "> node tools/gen-help-doc.mjs          # 손댄 문서가 있으면 멈춤", "> node tools/gen-help-doc.mjs --force  # 손댄 걸 버리고 새로", "> ```", "");
-push(`_만든 시각 기준 소스: index.html · js/tour-text.js · js/app.js_`, "");
+push(`_만든 시각 기준 소스: editor.html · js/tour-text.js · js/app.js_`, "");
 push("---", "");
 
 push("## 1. 둘러보기 (투어)", "");
@@ -153,7 +153,7 @@ orderedSteps.forEach((id, i) => {
 push("---", "");
 
 push("## 2. 도움말 창 (상단바 ? 도움말)", "");
-push("**고치는 곳: `index.html`의 `#helpModal`** — 탭마다 `<section class=\"help-pane\" data-help=\"…\">`.", "");
+push("**고치는 곳: `editor.html`의 `#helpModal`** — 탭마다 `<section class=\"help-pane\" data-help=\"…\">`.", "");
 const helpTabs = [["basics", "정간보란?"], ["start", "시작하기"], ["input", "입력 방법"], ["keys", "단축키"]];
 // data-help는 **탭 버튼에도** 붙어 있어 그냥 찾으면 버튼이 잡힌다(글자 한 줄뿐).
 // 본문은 .help-panes 안에 있으므로 거기서부터 찾는다.
@@ -166,7 +166,7 @@ helpTabs.forEach(([key, name]) => {
 push("---", "");
 
 push("## 3. 도구창 안의 ? 안내", "");
-push("**고치는 곳: `index.html`** — 각 `id`의 `<div class=\"melody-guide\">`.", "");
+push("**고치는 곳: `editor.html`** — 각 `id`의 `<div class=\"melody-guide\">`.", "");
 const guides = [
   ["melodyGuide", "선율 입력 (율명/시김새 창)"],
   ["inputModeGuide", "입력 방식 (에디터 / 직접 입력)"],
@@ -183,7 +183,7 @@ guides.forEach(([id, name]) => {
 push("---", "");
 
 push("## 4. 첫 방문 화면", "");
-push("**고치는 곳: `index.html`의 `#welcomeModal` · `#newDocModal`**", "");
+push("**고치는 곳: `editor.html`의 `#welcomeModal` · `#newDocModal`**", "");
 [["welcomeModal", "환영 카드"], ["newDocModal", "새 문서 만들기"]].forEach(([id, name]) => {
   push(`### ${name}  \`#${id}\``, "");
   push(quote(toText(byId(id))), "");
@@ -199,7 +199,7 @@ push("---", "");
 
 const tips = collectAttr("data-tip");
 push(`## 6. 버튼 툴팁 (${tips.length}개)`, "");
-push("**고치는 곳: `index.html`의 `data-tip=\"…\"`** — 버튼 위에 마우스를 올리면 뜨는 말풍선입니다.", "");
+push("**고치는 곳: `editor.html`의 `data-tip=\"…\"`** — 버튼 위에 마우스를 올리면 뜨는 말풍선입니다.", "");
 push("| 버튼 | id | 문구 |", "|---|---|---|");
 tips.forEach((t) => push(`| ${mdCell(t.label)} | \`${t.id}\` | ${mdCell(t.text)} |`));
 push("");
@@ -207,7 +207,7 @@ push("---", "");
 
 const titles = collectAttr("title");
 push(`## 7. 호버 설명 (title, ${titles.length}개)`, "");
-push("**고치는 곳: `index.html`의 `title=\"…\"`** — 브라우저가 띄우는 기본 설명입니다.", "");
+push("**고치는 곳: `editor.html`의 `title=\"…\"`** — 브라우저가 띄우는 기본 설명입니다.", "");
 push("| 요소 | id | 문구 |", "|---|---|---|");
 titles.forEach((t) => push(`| ${mdCell(t.label)} | \`${t.id}\` | ${mdCell(t.text)} |`));
 push("");

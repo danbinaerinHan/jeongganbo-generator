@@ -1,11 +1,11 @@
 // 공적 문서 페이지(policy.html · notices.html)의 문패와 화면 설정.
 //
-// 문패 그림·워드마크는 index.html에서 **한 벌만** 관리한다 — 여기 또 박으면 로고를 바꿀 때
+// 문패 그림·워드마크는 editor.html에서 **한 벌만** 관리한다 — 여기 또 박으면 로고를 바꿀 때
 // 고칠 곳이 늘어난다. 읽는 페이지라 조금 늦게 채워져도 상관없으므로 가져와 꽂는다.
 // 못 가져와도 글 읽기는 그대로다(이름 글씨만 안 보인다).
 (function () {
   "use strict";
-  fetch("index.html").then(function (r) { return r.text(); }).then(function (h) {
+  fetch("editor.html").then(function (r) { return r.text(); }).then(function (h) {
     const doc = new DOMParser().parseFromString(h, "text/html");
     const img = doc.getElementById("brandLogo");
     const word = doc.getElementById("brandWord");

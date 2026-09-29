@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>묻고 제안하기 · 우물사이</title>
+<meta name="description" content="우물사이를 쓰다가 궁금한 점을 찾아보고, 질문과 제안을 남기는 곳입니다.">
+<!-- 공유마당과 같은 껍데기를 쓴다(색 변수는 styles.css, 판짜임 되돌리기·머리말·탭·검색은
+     browse.css). board.css는 글 목록·글 보기·글쓰기 틀만 그린다. -->
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/browse.css">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body class="browse board">
+
+<!-- 맨 윗줄 — 문패는 js/doc-brand.js가 editor.html에서 가져와 꽂는다(로고를 두 번 박지 않으려고) -->
+<div class="sc-top">
+  <a class="sc-brandlink" href="index.html" title="우물사이 — 첫 화면으로">
+    <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
+      <img id="brandLogo" src="" alt="우물사이 로고" hidden>
+      <div class="brand-txt">
+        <div class="brand-word"></div>
+        <span>정간보 편집기</span>
+      </div>
+    </div>
+  </a>
+  <nav class="bd-nav">
+    <a href="browse.html">공유마당</a>
+    <!-- 이름은 js/board.js가 상황에 따라 바꾼다(공유마당의 #scBack과 같은 규칙) -->
+    <a class="sc-make" id="scBack" href="editor.html">악보 만들기</a>
+  </nav>
+</div>
+
+<!-- ① 목록 — 탭 둘: 자주 묻는 질문(운영자가 미리 적어 둔 답) | 질문·제안(게시판) ------>
+<section id="bdList">
+  <header class="sc-head">
+    <h1>묻고 제안하기</h1>
+    <p class="sc-lead">궁금한 점은 먼저 자주 묻는 질문에서 찾아보세요. 답이 없거나, 오류를 찾았거나,
+    있었으면 하는 기능이 있으면 질문·제안에 남겨 주세요.</p>
+
+    <!-- 탭은 해시로도 고른다(""=자주 묻는 질문 · #ask=질문·제안) — 글에서 목록으로 돌아올 때
+         보던 탭으로 돌아오게. -->
+    <div class="sc-tabs">
+      <a class="sc-tab on" data-tab="faq" href="#">자주 묻는 질문</a>
+      <a class="sc-tab" data-tab="ask" href="#ask">질문·제안</a>
+    </div>
+  </header>
+
+  <!-- ①-가 자주 묻는 질문 — **손으로 적는 정적 목록**이다(notices.html의 중단 내역과 같은 규칙).
+       서버에서 가져오지 않는다: 답은 운영자가 다듬어 쓰는 글이고 자주 바뀌지 않는다.
+       항목을 더할 땐 <details> 하나를 복사해 질문(summary)과 답(div)을 바꾸면 된다.
+       ★ 아래 답들은 2026-09-29에 앱의 실제 동작(CLAUDE.md)을 보고 잡은 **초안**이다 — 운영자가
+         읽고 고칠 것. 기능이 바뀌면 여기 답도 함께 고친다(도움말 문구와 같다). -->
+  <div id="bdFaq" class="bd-faq">
+    <details class="bd-faq-item">
+      <summary>설치하거나 가입해야 하나요?</summary>
+      <div>아니요. 브라우저에서 바로 씁니다. 악보를 공유마당에 올릴 때도 가입은 필요 없습니다.</div>
+    </details>
+    <details class="bd-faq-item">
+      <summary>쓰던 악보는 어디에 저장되나요?</summary>
+      <div>지금 쓰는 브라우저에 저절로 저장되어, 창을 닫았다 열어도 이어서 쓸 수 있습니다.
+      다만 브라우저의 방문 기록·사이트 데이터를 지우면 함께 사라집니다. 다른 컴퓨터로 옮기거나 따로
+      보관하려면 오른쪽의 [저장]으로 파일을 내려받고, [불러오기]로 다시 엽니다.</div>
+    </details>
+    <details class="bd-faq-item">
+      <summary>한 정간에 음을 좌우로 나란히 넣으려면 어떻게 쓰나요?</summary>
+      <div>빈칸은 정간을 위아래로 나누고, 붙여 쓴 글자는 그 줄 안에서 좌우로 나뉩니다.
+      예를 들어 <code>황태 중</code>은 윗줄에 황·태가 좌우로, 아랫줄에 중이 놓입니다.
+      정간을 위아래로 나누지 않은 채 좌우로만 나눌 수는 없어서, <code>황태</code>처럼 한 덩이만 쓰면
+      문법 오류로 표시됩니다.</div>
+    </details>
+    <details class="bd-faq-item">
+      <summary>시김새를 붙였더니 음표 옆에 칸이 따로 생깁니다.</summary>
+      <div>시김새는 음표 <b>뒤</b>에 씁니다. <code>황{흘림표}</code>처럼 쓰면 황에 붙고,
+      <code>{흘림표}황</code>처럼 앞에 쓰면 시김새가 제 칸을 따로 차지합니다.</div>
+    </details>
+    <details class="bd-faq-item">
+      <summary>한자로 된 정간보를 복사해 붙여 넣어도 되나요?</summary>
+      <div>됩니다. 율명 칸에 한자 율명을 붙여 넣으면 한글 율명으로 바뀌어 들어갑니다.
+      악보에는 그대로 한자로 그려집니다.</div>
+    </details>
+    <details class="bd-faq-item">
+      <summary>오선보로 볼 수 있나요?</summary>
+      <div>상단바의 오선보 보기로 정간보 옆에 오선보를 띄울 수 있습니다. 오른쪽의 [출력]에서 오선보를
+      인쇄하거나, 다른 악보 프로그램에서 열 수 있는 MusicXML 파일로 내려받을 수 있습니다.</div>
+    </details>
+    <details class="bd-faq-item">
+      <summary>공유마당에 올린 악보를 고치고 싶습니다.</summary>
+      <div>악보를 올린 <b>그 브라우저</b>에서 열어 고친 뒤 다시 [게시]를 누르면 같은 주소의 악보가 바뀝니다.
+      고칠 수 있는 권한은 올린 브라우저에만 남으므로, 다른 브라우저에서 올리면 새 악보로 올라갑니다.</div>
+    </details>
+    <p class="bd-faq-more">찾는 답이 없으면 <a href="#ask">질문·제안</a>에 남겨 주세요.</p>
+  </div>
+
+  <!-- ①-나 질문·제안 — 갈래를 나누지 않는 게시판 하나다(사용자 확정, 2026-09-29) -->
+  <div id="bdAsk" hidden>
+    <div class="sc-head bd-ask-head">
+      <div class="sc-controls">
+        <input type="search" id="bdSearch" class="sc-search" placeholder="제목·내용으로 찾기" autocomplete="off">
+        <div class="sc-sorts">
+          <button type="button" class="sc-sort on" data-sort="recent">최신순</button>
+          <button type="button" class="sc-sort" data-sort="votes">공감순</button>
+          <button type="button" class="sc-sort" data-sort="active">최근 활동</button>
+        </div>
+        <span id="bdCount" class="sc-count"></span>
+        <!-- 이 화면에서 강조색으로 채운 것은 이것 하나다 -->
+        <a class="bd-write" href="#new">글 쓰기</a>
+      </div>
+    </div>
+
+  <div id="bdStatusMsg" class="sc-status" style="display:none;"></div>
+  <ul id="bdRows" class="bd-rows"></ul>
+  <div class="sc-morewrap">
+    <button type="button" id="bdMore" class="sc-more" style="display:none;">더 보기</button>
+  </div>
+  </div>
+</section>
+
+<!-- ② 글 보기 --------------------------------------------------------------->
+<section id="bdView" class="bd-page" hidden>
+  <a class="bd-back" href="#ask">← 목록으로</a>
+  <div id="bdViewMsg" class="sc-status" style="display:none;"></div>
+  <article id="bdPost" class="bd-post" hidden>
+    <h1 id="bdPostTitle"></h1>
+    <div class="bd-meta" id="bdPostMeta"></div>
+    <div class="bd-body" id="bdPostBody"></div>
+    <div class="bd-actions">
+      <button type="button" class="bd-vote" id="bdPostVote"></button>
+      <span class="bd-own" id="bdPostOwn" hidden>
+        <button type="button" class="bd-link" id="bdPostEdit">고치기</button>
+        <button type="button" class="bd-link bd-danger" id="bdPostDel">지우기</button>
+      </span>
+    </div>
+
+    <!-- 운영자에게만 보인다(관리 화면에서 로그인한 같은 탭). 빗장은 서버의 require_admin()이다 —
+         이 칸이 보이는 것은 편의일 뿐이다. -->
+    <div class="bd-staff" id="bdStaff" hidden>
+      <span class="bd-staff-cap">운영</span>
+      <button type="button" class="bd-link bd-danger" id="bdStaffHide">이 글 내리기</button>
+    </div>
+  </article>
+
+  <section id="bdReplies" class="bd-replies" hidden>
+    <h2 id="bdRepliesHead">댓글</h2>
+    <ul id="bdReplyList"></ul>
+    <form id="bdReplyForm" class="bd-form bd-reply-form" autocomplete="off">
+      <textarea id="bdReplyBody" rows="2" maxlength="2000" placeholder="댓글을 적어 주세요" required></textarea>
+      <div class="bd-form-row">
+        <input type="text" id="bdReplyName" maxlength="30" placeholder="이름 (비워 두어도 됩니다)">
+        <label class="bd-staffreply" id="bdStaffReplyWrap" hidden><input type="checkbox" id="bdStaffReply" checked> 운영자 답변으로</label>
+        <button type="submit" class="bd-submit secondary">댓글 달기</button>
+      </div>
+      <p class="bd-err" id="bdReplyErr" hidden></p>
+    </form>
+  </section>
+</section>
+
+<!-- ③ 글쓰기·고치기 -------------------------------------------------------->
+<section id="bdNew" class="bd-page" hidden>
+  <a class="bd-back" href="#ask">← 목록으로</a>
+  <h1 id="bdNewHead">글 쓰기</h1>
+  <form id="bdNewForm" class="bd-form" autocomplete="off">
+
+    <label class="bd-field">제목
+      <input type="text" id="bdNewTitle" maxlength="80" required>
+    </label>
+    <label class="bd-field">내용
+      <textarea id="bdNewBody" rows="7" maxlength="4000" required></textarea>
+    </label>
+    <!-- 오류를 알릴 때 재현에 가장 먼저 필요한 것이 브라우저·화면 크기다. 기본은 끔이고,
+         붙는 글을 그대로 보여 준다(무엇이 올라가는지 모르는 채 보내지 않게). -->
+    <label class="bd-env" id="bdEnvWrap">
+      <input type="checkbox" id="bdEnv">
+      <span>사용 환경을 함께 적기 — 오류를 알릴 때 도움이 됩니다: <code id="bdEnvText"></code></span>
+    </label>
+    <label class="bd-field"><span>이름 <small>(선택)</small></span>
+      <input type="text" id="bdNewName" maxlength="30" placeholder="비워 두어도 됩니다">
+    </label>
+
+    <ul class="bd-notes">
+      <li>올린 글은 누구나 볼 수 있습니다. 전자우편·전화번호 같은 연락처는 적지 마세요.</li>
+      <li>이름 옆의 <code>#네 글자</code>는 지금 쓰는 브라우저를 가리키는 표시로, 같은 이름을 쓰는 다른 사람과 구별해 줍니다.</li>
+      <li>글을 고치거나 지울 수 있는 권한도 이 브라우저에만 남습니다. 브라우저의 사이트 데이터를 지우면 표시가 바뀌고 예전 글은 고칠 수 없습니다.</li>
+    </ul>
+    <div class="bd-form-row bd-form-end">
+      <p class="bd-err" id="bdNewErr" hidden></p>
+      <button type="submit" class="bd-submit" id="bdNewSubmit">올리기</button>
+    </div>
+  </form>
+</section>
+
+<footer class="sc-foot">
+  운영 원칙에 어긋나는 글은 사유를 밝히고 내립니다.
+  권리 침해나 개인정보가 담긴 글은
+  <a href="mailto:report@umulsai.com?subject=%5B%EC%9A%B0%EB%AC%BC%EC%82%AC%EC%9D%B4%5D%20%EA%B2%8C%EC%8B%9C%ED%8C%90%20%EC%8B%A0%EA%B3%A0">report@umulsai.com</a>으로 알려 주세요.
+  <a href="policy.html">이용약관 및 저작권 정책 →</a>
+  <span class="sc-copy">© 2026 우물사이</span>
+</footer>
+
+<script src="js/analytics.js"></script>
+<script src="js/cloud-config.js"></script>
+<script src="js/admin-session.js"></script>
+<script src="js/doc-brand.js"></script>
+<script src="js/board.js"></script>
+</body>
+</html>
