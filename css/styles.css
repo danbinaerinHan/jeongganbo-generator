@@ -2371,6 +2371,13 @@
   #tourLayer.fx-on .tour-ring { opacity: .18; transition: opacity .3s ease; }
   #tourLayer.fx-on .tour-ring.opened .tour-ring-lab { opacity: 0; }   /* 할 말을 다 한 '눌러서 열기'는 되살리지 않는다 */
   #tourFx .fx-num.on { opacity: 1; }
+  /* 카드 발(이전·다음) — 한 줄씩 넘기는 방식이 되어 가장 많이 누르는 버튼이라 크게(2026-09-29 사용자 요청:
+     "너무 작아서 안 보일 듯"). 12.5px·높이 30px → 15px·44px. 모서리는 팝업 안 컨트롤 규칙(6px). */
+  .tour-btns { gap: 8px; align-items: center; }
+  .tour-btns button { min-height: 44px; padding: 0 20px; font-size: 15px; border-radius: 6px; }
+  .tour-btns #tourNext { min-width: 104px; }
+  .tour-btns #tourPrev { min-width: 76px; }
+  .tour-btns #tourSkip { padding: 0 10px; font-size: 14px; }
   /* ── 장 고르기·장 끝 화면(.tour-panel, app.js tourShowPanel) ──
      장마다 큰 카드 하나 — 번호·이름·한 줄 설명·단계 수. 누르면 그 장만 본다.
      강조색은 여전히 [처음부터 전부 보기](= [다음] 자리) 한 점뿐이고, 카드는 테두리만. */
