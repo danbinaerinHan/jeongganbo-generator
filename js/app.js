@@ -10255,6 +10255,12 @@
   let tourOpener = null, tourOpenerStage = false;
   function tourRect(step) {
     if (tourOpenerStage && tourOpener && TOUR_STEPS[tourIdx] === step) return rectOfSpec(tourOpener);
+    // 지금 박자(줄)가 가리키는 자리 — 그 자리가 화면에 없으면 단계의 sel로 물러난다
+    const bs = TOUR_STEPS[tourIdx] === step && TOUR_BEAT_SEL[step.id];
+    if (bs && bs[tourBeat]) {
+      const r = rectOfSpec(bs[tourBeat]);
+      if (r) return r;
+    }
     return rectOfSpec(step.sel);
   }
   // 단계 준비(prep) — 시김새 3단계처럼 '눌러야 하는 버튼'이 접힌 도구창 안에 있으면
@@ -10536,6 +10542,225 @@
       tourPing(moved ? TOUR_MOVE_MS - 60 : 120);
     }
   }
+  // ── 박자(beat) — 한 단계 안에서 글을 한 줄씩 ──
+  // 카드에 글이 한꺼번에 다 떠 있으면 '읽을 게 많다'로 보여 넘겨 버린다(2026-09-29 사용자 지적).
+  // 글을 줄이는 대신 **한 번에 한 줄만 새로 보이게** 한다: [다음]은 먼저 이 단계의 다음 줄을
+  // 펴고, 줄을 다 편 뒤에야 다음 단계로 간다. [이전]은 거꾸로 한 줄씩 접는다.
+  //  · 한 박자 = 본문 한 줄. "## 소제목"은 바로 다음 줄과 한 박자로 묶는다.
+  //  · 편 줄은 흐리게 남고(맥락) 지금 줄만 또렷하다.
+  //  · TOUR_BEAT_SEL[id][박자] — 그 줄이 말하는 자리로 강조가 옮겨 간다(null이면 단계의 sel).
+  //  · 본문을 누르면 남은 줄을 한 번에 편다(빨리 읽는 사람용).
+  //  · 뒤로 돌아온 단계는 다 편 채로 보여 준다.
+  const TOUR_BEAT_SEL = {
+    Jeongganbo: [null, { union: ".tour-lane-mel" }, null],
+    // 줄 차례 = 화면에서 놓인 차례(왼→오른쪽, 위→아래) — 강조가 앞뒤로 튀지 않게(2026-09-29).
+    // 본문(tour-text.js)의 줄 차례를 바꾸면 여기도 함께 바꿀 것.
+    ribbon: ["#paletteToggle", ".mouse-mode-tabs", ".ribbon-group:has(#gakInsertBtn)",
+             ".ribbon-group:has(#rangeClearToggle)", { union: ".ribbon-slider-group" }],
+    sheet: [{ union: ".tour-lane-mel" }, { union: ".tour-lane-mel" }, null],
+    Setting: [null, '.tab[data-tab="doc"]', '.tab[data-tab="layout"]'],
+    yul: ["#paletteCol", "#paletteCol", null, null],
+    ornPalette: [null, "#paletteCol .orn-instrument", "#paletteCol .sym-search", "#paletteCol"],
+    ornShortcut: [null, "#ornMapToggle", null],
+    lyrics: [{ union: ".tour-lane-ly" }, { union: ".tour-lane-ly" }, "#lyricsArea"],
+    play: ["#btnPlay", "#playSettingsToggle", "#playSettingsToggle", "#playSettingsToggle"],
+    files: ["#btnNewDoc", "#btnPrint", "#appRail", null]
+  };
+  let tourBeat = 0, tourBeats = [];
+  function buildTourBeats() {
+    tourBeats = [];
+    let pend = [];
+    Array.from($("tourBody").children).forEach(function (d) {
+      if (d.classList.contains("tour-sub")) { pend.push(d); return; }
+      tourBeats.push(pend.concat([d])); pend = [];
+    });
+    if (pend.length) tourBeats.push(pend);
+    const more = $("tourMore");
+    if (more) more.remove();
+    const m = document.createElement("button");
+    m.type = "button"; m.id = "tourMore";
+    m.addEventListener("click", function (e) { e.stopPropagation(); tourNextBeat(); });
+    $("tourBody").after(m);
+  }
+  // ── 타자(한 글자씩) ──
+  // 줄이 나타날 때 글자가 한 자씩 빠르게 쳐진다(2026-09-29 사용자 요청). 문장 끝(. ! ?)에서
+  // 살짝 쉬어 한 줄 안에서도 문장 단위로 읽힌다. 줄이 차지할 높이는 미리 잡아 두어(min-height)
+  // 치는 동안 아래 줄이 들썩이지 않는다. 치는 중에 [다음]을 누르면 그 줄을 한 번에 다 보인다.
+  const TYPE_MS = 12, TYPE_SENT_PAUSE = 200;
+  let tourTypeTok = 0, tourTyping = null;   // tourTyping = 끝내기 함수(치는 중일 때만)
+  function tourTypeFinish() { if (tourTyping) tourTyping(); }
+  function tourTypeLine(els) {
+    tourTypeFinish();
+    if (tourReduceMotion()) return;
+    const my = ++tourTypeTok;
+    const nodes = [];
+    els.forEach(function (el) {
+      el.style.minHeight = el.offsetHeight + "px";
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let n;
+      while ((n = w.nextNode())) { nodes.push({ n: n, full: Array.from(n.nodeValue), at: 0 }); n.nodeValue = ""; }
+    });
+    let ni = 0;
+    const finish = function () {
+      if (tourTypeTok === my) tourTypeTok++;
+      nodes.forEach(function (x) { x.n.nodeValue = x.full.join(""); });
+      els.forEach(function (el) { el.style.minHeight = ""; });
+      tourTyping = null;
+    };
+    tourTyping = finish;
+    const tick = function () {
+      if (tourTypeTok !== my) return;
+      while (ni < nodes.length && nodes[ni].at >= nodes[ni].full.length) ni++;
+      if (ni >= nodes.length) { finish(); return; }
+      const x = nodes[ni], ch = x.full[x.at++];
+      x.n.nodeValue += ch;
+      const nextCh = x.full[x.at];
+      const sentEnd = /[.!?]/.test(ch) && (nextCh === undefined || nextCh === " ");
+      setTimeout(tick, sentEnd ? TYPE_SENT_PAUSE : TYPE_MS);
+    };
+    setTimeout(tick, 60);
+  }
+  function showTourBeat(b, animate) {
+    tourTypeFinish();
+    const forward = b > tourBeat;
+    tourBeat = Math.max(0, Math.min(b, tourBeats.length - 1));
+    tourBeats.forEach(function (els, k) {
+      els.forEach(function (d) {
+        d.classList.toggle("tb-hide", k > tourBeat);
+        d.classList.toggle("tb-past", k < tourBeat);
+        d.classList.toggle("tb-cur", k === tourBeat);
+        // 나타나기 애니메이션(fill both)이 opacity를 붙잡으므로 지금 줄이 아니면 떼어 흐려지게 한다
+        if (k !== tourBeat) d.classList.remove("tb-in");
+        else if (animate) { d.classList.remove("tb-in"); void d.offsetWidth; d.classList.add("tb-in"); }
+      });
+    });
+    const left = tourBeats.length - 1 - tourBeat;
+    const more = $("tourMore");
+    if (more) {
+      more.style.display = left > 0 ? "" : "none";
+      more.textContent = "다음 줄 ▸  " + (tourBeat + 1) + " / " + tourBeats.length;
+    }
+    const cur = tourBeats[tourBeat] && tourBeats[tourBeat][tourBeats[tourBeat].length - 1];
+    if (cur && animate) {
+      // 지금 줄이 카드 안에서 보이도록(카드만 스크롤 — 화면은 안 움직인다)
+      const box = $("tourContent"), r = cur.getBoundingClientRect(), br = box.getBoundingClientRect();
+      if (r.bottom > br.bottom - 8) box.scrollTop += r.bottom - br.bottom + 40;
+    }
+    const i = tourIdx, n = TOUR_STEPS.length;
+    if ($("tourProgressFill")) $("tourProgressFill").style.width =
+      ((i + (tourBeat + 1) / Math.max(1, tourBeats.length)) / n * 100) + "%";
+    $("tourNext").textContent = (i === n - 1 && left === 0) ? "완료" : "다음";
+    // 맨 앞의 [이전]은 장 고르기로 돌아간다(투어를 끝내지 않게)
+    $("tourPrev").disabled = false;
+    $("tourPrev").style.display = "";
+    if (animate && tourIdx >= 0) positionTour();   // 강조가 이 줄의 자리로 옮겨 간다
+    // 새로 편 줄은 한 글자씩(앞으로 갈 때만 — 되돌아가거나 한꺼번에 펼 땐 곧장)
+    if (animate && (forward || b === 0) && tourBeats[tourBeat] && !tourBeatAll) tourTypeLine(tourBeats[tourBeat]);
+  }
+  // ── 장 고르기(tourScope) ──
+  // 16단계를 다 봐야 한다는 부담에 넘겨 버리는 것을 막으려고, 시작할 때 '무엇부터 알아볼까요?'로
+  // 장을 고르게 한다(2026-09-29). 장을 고르면 그 장만 보고, 끝나면 이어 볼지·다른 장을 고를지·
+  // 시작할지 묻는다. null = 전부 보기(예전 그대로). 이 두 화면(tourPanel)은 단계가 아니라서
+  // tourIdx는 -1이고 강조 구멍 없이 어둠만 깔린다.
+  let tourScope = null, tourPanel = null;
+  function tourChText() { return (window.TOUR_TEXT && window.TOUR_TEXT.chooser) || {}; }
+  function tourChRange(ch) {
+    let first = -1, last = -1;
+    TOUR_STEPS.forEach(function (st, k) { if (st.ch === ch) { if (first < 0) first = k; last = k; } });
+    return { first: first, last: last };
+  }
+  function tourShowPanel(kind) {
+    tourTypeFinish();
+    tourPanel = kind;
+    tourIdx = -1;
+    stopTourDemo();
+    ++tourAnimId; tourGeom = null; tourPosStep = -1;
+    tourOpener = null; tourOpenerStage = false;
+    buildSpotlight([]);
+    $("tourHole").style.display = "none";
+    document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
+    tourApplySnap(tourNeedSnap(null, tourSnap()));   // 창·설정 패널은 닫아 둔다
+    $("tourFig").style.display = "none";
+    const more = $("tourMore"); if (more) more.style.display = "none";
+    const card = $("tourCard");
+    card.classList.add("tour-panel");
+    card.classList.remove("swap-next", "swap-prev"); void card.offsetWidth; card.classList.add("swap-next");
+    const T = tourChText(), body = $("tourBody");
+    body.textContent = "";
+    $("tourContent").scrollTop = 0;
+    const opt = function (ch, onClick, extraCls) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tour-opt" + (extraCls || "");
+      const r = tourChRange(ch);
+      b.innerHTML = '<span class="to-num"></span><span class="to-main"><b></b><small></small></span><span class="to-n"></span>';
+      b.querySelector(".to-num").textContent = ch + 1;
+      b.querySelector("b").textContent = TOUR_CHAPTERS[ch];
+      b.querySelector("small").textContent = (T.desc || [])[ch] || "";
+      b.querySelector(".to-n").textContent = (r.last - r.first + 1) + "단계";
+      // 본문(#tourBody) 클릭은 '남은 줄 다 펴기'라, 거기까지 올라가면 고른 장이 끝 줄에서 열린다
+      b.addEventListener("click", function (e) { e.stopPropagation(); onClick(); });
+      return b;
+    };
+    const sub = document.createElement("div"); sub.className = "tour-panel-sub";
+    body.appendChild(sub);
+    if (kind === "chooser") {
+      $("tourStepNum").textContent = "둘러보기";
+      $("tourTitle").textContent = T.title || "무엇부터 알아볼까요?";
+      sub.textContent = T.sub || "";
+      TOUR_CHAPTERS.forEach(function (_n, ch) {
+        body.appendChild(opt(ch, function () { tourScope = ch; tourGo(tourChRange(ch).first, 1); }));
+      });
+      $("tourNext").textContent = T.all || "처음부터 전부 보기";
+      $("tourPrev").style.display = "none";
+      if ($("tourProgressFill")) $("tourProgressFill").style.width = "0%";
+    } else {
+      const ch = tourScope, name = TOUR_CHAPTERS[ch] || "";
+      $("tourStepNum").textContent = (ch + 1) + "장 · " + name;
+      $("tourTitle").textContent = (T.endTitle || "'{장}' 장을 다 보았습니다").replace("{장}", name);
+      sub.textContent = T.endSub || "";
+      if (ch + 1 < TOUR_CHAPTERS.length) {
+        const nx = opt(ch + 1, function () { tourScope = ch + 1; tourGo(tourChRange(ch + 1).first, 1); });
+        nx.querySelector(".to-n").textContent = (T.next || "이어서 보기") + " ▸";
+        body.appendChild(nx);
+      }
+      const again = document.createElement("button");
+      again.type = "button"; again.className = "tour-opt tour-opt-plain";
+      again.textContent = T.again || "다른 장 고르기";
+      again.addEventListener("click", function (e) { e.stopPropagation(); tourShowPanel("chooser"); });
+      body.appendChild(again);
+      $("tourNext").textContent = T.done || "시작하기";
+      $("tourPrev").style.display = "";
+      $("tourPrev").disabled = false;
+    }
+    document.querySelectorAll("#tourChips button").forEach(function (b, ci) {
+      b.classList.toggle("on", kind === "end" && ci === tourScope);
+    });
+    const bar = $("tourChipBar");
+    if (bar) bar.style.opacity = kind === "chooser" ? "0" : "";
+    if (kind !== "chooser" && tourScope != null) moveTourChipBar(tourScope);
+  }
+  function tourLeavePanel() {
+    tourPanel = null;
+    $("tourCard").classList.remove("tour-panel");
+    $("tourHole").style.display = "";
+    const bar = $("tourChipBar"); if (bar) bar.style.opacity = "";
+  }
+  let tourBeatAll = false;   // 본문 클릭으로 남은 줄을 한꺼번에 펼 때(타자 없이)
+  function tourNextBeat() {
+    if (!tourWorkspace) return;   // 투어가 끝난 뒤(걷히는 중)엔 아무것도 안 한다
+    if (tourTyping) { tourTypeFinish(); return; }   // 치는 중이면 먼저 그 줄을 다 보인다
+    if (tourPanel === "chooser") { tourScope = null; tourGo(0, 1); return; }
+    if (tourPanel === "end") { track("tour_done"); endTour(); return; }
+    if (tourBeat < tourBeats.length - 1) showTourBeat(tourBeat + 1, true);
+    else tourGo(tourIdx + 1, 1);
+  }
+  function tourPrevBeat() {
+    if (!tourWorkspace || tourPanel === "chooser") return;
+    if (tourPanel === "end") { tourGo(tourChRange(tourScope).last, -1); return; }
+    if (tourIdx === 0 && tourBeat === 0 && tourScope == null) { tourShowPanel("chooser"); return; }
+    if (tourBeat > 0) showTourBeat(tourBeat - 1, true);
+    else tourGo(tourIdx - 1, -1);
+  }
   // 무대 재생기 — 단계가 바뀌거나 투어가 끝나면 tourDemoToken이 바뀌어 예약된 동작이 모두 멈춘다.
   let tourDemoToken = 0;
   function tourDemoEl() {
@@ -10657,11 +10882,19 @@
     runFrame(start);
   }
   function tourGo(i, dir) {
+    // 고른 장 밖으로 나가면: 앞쪽이면 장 고르기로, 뒤쪽이면 '장을 다 보았습니다'로
+    if (tourScope != null) {
+      const r = tourChRange(tourScope);
+      if (i > r.last) { tourShowPanel("end"); return; }
+      if (i < r.first) { tourShowPanel("chooser"); return; }
+    }
+    const wasPanel = !!tourPanel;
+    if (tourPanel) tourLeavePanel();
     const from = tourSnap();   // 앞 단계가 남긴 화면 — 여는 버튼을 고르는 기준
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
     if (i >= TOUR_STEPS.length) { track("tour_done"); endTour(); return; }   // 마지막 '다음' = 완료 축하 화면
     if (i < 0) { endTour(); return; }
-    const tourDir = tourIdx < 0 ? 0 : (i >= tourIdx ? 1 : -1);
+    const tourDir = wasPanel ? dir : tourIdx < 0 ? 0 : (i >= tourIdx ? 1 : -1);
     tourIdx = i;
     $("tourFinale").style.display = "none";   // 뒤로 돌아오면 축하 카드 걷고 단계 카드로
     $("tourCard").style.display = "";
@@ -10672,7 +10905,6 @@
     document.querySelectorAll("#tourChips button").forEach(function (b, ci) {
       b.classList.toggle("on", ci === s.ch);
     });
-    if ($("tourProgressFill")) $("tourProgressFill").style.width = ((i + 1) / TOUR_STEPS.length * 100) + "%";
     $("tourTitle").textContent = s.title;
     // 본문은 \n마다 줄(div) 하나 — 통짜 textContent + pre-line이 아니라 줄 단위 블록이라야
     // 긴 글머리표가 접힐 때 둘째 줄이 • 밑이 아니라 글자 밑에 맞는다(내어쓰기, CSS #tourBody div).
@@ -10680,8 +10912,12 @@
     // 한 단계 안에서 글머리표 묶음이 둘일 때 나눔), 줄 앞 "!! "은 팁(.tour-tip — 기능 안내가
     // 아니라 권장 사용법, 연한 강조 배경 상자). innerHTML 대신 노드 조립 —
     // 본문에 황{미는표}·< 같은 문자가 그대로 들어가 이스케이프 사고를 피하려고.
+    tourTypeFinish();
     renderTourBody($("tourBody"), s.body);
     $("tourContent").scrollTop = 0;
+    // 박자 — 앞으로 오면 첫 줄부터, 뒤로 돌아오면 다 편 채로(positionTour 전에 정해야 강조 자리가 맞다)
+    buildTourBeats();
+    tourBeat = tourDir < 0 ? tourBeats.length - 1 : 0;
     // 예시 그림(fig 있는 단계만) — {t:입력, cap:설명, img:캡처 데이터 URL} 배열을
     // '입력 칩 ↓ 캡처 이미지 / 설명' 세로 묶음의 가로 그리드(.tf-grid)로 그린다.
     // positionTour보다 먼저 넣어야 카드 높이에 반영된다.
@@ -10709,8 +10945,8 @@
     figEl.style.display = s.fig && !demoOn ? "" : "none";
     if (demoOn) playTourDemo(s); else stopTourDemo();
     $("tourPrev").style.display = "";
-    $("tourPrev").disabled = i === 0;
-    $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
+    showTourBeat(tourBeat, false);
+    if (tourDir >= 0) tourTypeLine(tourBeats[0] || []);   // 들어오면 첫 줄부터 쳐진다
     // 글 갈아 끼우기 — 번호·제목·본문이 읽는 방향 쪽에서 살짝 밀려 들며 차례로 떠오른다
     // (다음 = 오른쪽에서, 이전 = 왼쪽에서). 첫 단계는 카드째 들어오므로(tour-enter) 건너뛴다.
     const card = $("tourCard");
@@ -10778,7 +11014,8 @@
     layer.classList.remove("tour-leave", "tour-enter");
     layer.style.display = "block";
     void layer.offsetWidth; layer.classList.add("tour-enter");   // 어둠이 내려앉고 카드가 들어온다
-    tourGo(0, 1);
+    tourScope = null;
+    tourShowPanel("chooser");
     $("tourNext").focus({ preventScroll: true });
   }
   // 마지막 단계에서 '다음'(완료)을 누르면 — 건너뛰기가 아니라 끝까지 본 사람에게만 —
@@ -10821,6 +11058,9 @@
     // (CSS .tour-leave) 바로 이어지는 새 문서 창을 누를 수 있다.
     ++tourAnimId; tourGeom = null; tourPosStep = -1;
     stopTourDemo();
+    tourTypeFinish();
+    if (tourPanel) tourLeavePanel();
+    tourScope = null;
     const layer = $("tourLayer");
     layer.classList.remove("tour-enter");
     const hideLayer = function () {
@@ -10842,8 +11082,16 @@
     const cb = tourOnEnd; tourOnEnd = null;
     if (cb) cb();
   }
-  $("tourNext").addEventListener("click", function () { tourGo(tourIdx + 1, 1); });
-  $("tourPrev").addEventListener("click", function () { tourGo(tourIdx - 1, -1); });
+  $("tourNext").addEventListener("click", tourNextBeat);
+  $("tourPrev").addEventListener("click", tourPrevBeat);
+  // 본문을 누르면 남은 줄을 한 번에 편다
+  $("tourBody").addEventListener("click", function () {
+    if (tourIdx < 0) return;
+    tourTypeFinish();
+    if (tourBeat < tourBeats.length - 1) {
+      tourBeatAll = true; showTourBeat(tourBeats.length - 1, true); tourBeatAll = false;
+    }
+  });
   // 장 칩 만들기(한 번) — 누르면 그 장의 첫 단계로 이동(사용 불가 단계면 tourGo가 앞으로 건너뜀)
   (function () {
     const wrap = $("tourChips");
@@ -10854,6 +11102,7 @@
       b.textContent = (ci + 1) + " " + name;
       b.addEventListener("click", function () {
         const first = TOUR_STEPS.findIndex(function (s) { return s.ch === ci; });
+        if (tourScope != null || tourPanel === "chooser") tourScope = ci;   // 장만 보는 중이면 그 장으로 갈아탄다
         if (first >= 0) tourGo(first, 1);
       });
       wrap.appendChild(b);
@@ -10874,9 +11123,17 @@
   }
   $("tourSkip").addEventListener("click", endTour);
   if ($("tourFinaleBtn")) $("tourFinaleBtn").addEventListener("click", endTour);   // 축하 카드 '시작하기'
+  // 화살표로도 넘긴다(→ 다음 줄 · ← 이전 줄). 스페이스·엔터는 포커스가 가 있는 [다음] 버튼이 받는다.
+  document.addEventListener("keydown", function (e) {
+    if ((tourIdx < 0 && !tourPanel) || e.isComposing) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); tourNextBeat(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); tourPrevBeat(); }
+  });
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape") return;
-    if (tourIdx >= 0) { endTour(); return; }
+    if (tourIdx >= 0 || tourPanel) { endTour(); return; }
     if ($("helpModal").style.display !== "none") closeHelpModal();
   });
   window.addEventListener("resize", function () {
