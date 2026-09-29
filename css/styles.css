@@ -2232,6 +2232,63 @@
   .tour-press { animation: tourPress .36s ease-out; }
   @keyframes tourPress { 0% { transform: none; } 35% { transform: scale(.9); background: var(--hover); }
                          100% { transform: none; } }
+  /* ── 움직이는 예시 무대(#tourDemo, app.js playTourDemo) ──
+     카드 맨 위 — 글보다 먼저 눈에 들어오게. 왼쪽이 입력칸(글자가 한 자씩 쳐진다), 오른쪽이
+     그 결과로 그려진 정간(앱이 실제로 그린 캡처라 흰 종이 그대로 — 다크에서도 반전하지 않는다).
+     입력칸은 앱의 폼 칸과 같은 꼴(--panel·--line·6px)이라 '저 칸에 치면 된다'로 읽힌다. */
+  #tourDemo { margin: 2px 0 14px; padding: 12px 12px 8px; border-radius: 8px;
+    background: var(--soft); border: 1px solid var(--line); }
+  #tourDemo .td-stage { display: flex; align-items: center; gap: 7px; min-height: 76px; }
+  #tourDemo .td-left { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  #tourDemo .td-field { display: flex; align-items: center; gap: 0; height: 34px; padding: 0 9px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    transition: box-shadow .3s ease; }
+  #tourDemo .td-field.done { box-shadow: 0 0 0 0 transparent; }
+  #tourDemo .td-lab { flex: 0 0 auto; white-space: nowrap; font-size: 10.5px; font-weight: 700; color: var(--muted); letter-spacing: .06em;
+    margin-right: 8px; padding-right: 8px; border-right: 1px solid var(--line); }
+  #tourDemo .td-text { min-width: 0; overflow: hidden; font-size: 14px; color: var(--ink); white-space: pre; }
+  #tourDemo .td-caret { display: inline-block; width: 1.5px; height: 17px; margin-left: 1px;
+    background: var(--accent); animation: tdBlink 1s steps(1) infinite; }
+  #tourDemo .td-field.done .td-caret { opacity: .35; }
+  @keyframes tdBlink { 50% { opacity: 0; } }
+  #tourDemo .td-act { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+  #tourDemo.no-field .td-act { min-height: 34px; }
+  /* 팔레트 칩·숫자 키 — 나타났다가(tdPop) 한 번 눌린다(.press) */
+  #tourDemo .td-chip, #tourDemo .td-key { display: inline-flex; align-items: center; gap: 5px;
+    height: 28px; padding: 0 10px; border-radius: 6px; font-size: 12px; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line);
+    animation: tdPop .28s cubic-bezier(.2,.7,.2,1) both; }
+  #tourDemo .td-chip img { height: 16px; width: auto; }
+  #tourDemo .td-key { min-width: 28px; justify-content: center; padding: 0 8px; font-family: var(--mono);
+    font-weight: 700; border-bottom-width: 2px; }
+  #tourDemo .td-chip.press, #tourDemo .td-key.press { animation: tdPress .34s ease-out both;
+    background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border-color: var(--accent); }
+  #tourDemo .td-key.press { animation: tdHold .3s ease-out both; }
+  #tourDemo .td-plus { font-size: 11px; color: var(--muted); animation: tdPop .28s ease-out .1s both; }
+  @keyframes tdPop { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes tdPress { 0% { transform: none; } 40% { transform: scale(.92); } 100% { transform: none; } }
+  @keyframes tdHold { to { transform: translateY(1px); } }
+  #tourDemo .td-arrow { flex: 0 0 auto; color: var(--muted); font-size: 13px; }
+  /* 결과 정간 — 두 장을 겹쳐 두고 번갈아 비춘다(교차 페이드) */
+  #tourDemo .td-cell { position: relative; flex: 0 0 auto; width: 100px; height: 76px;
+    display: flex; align-items: center; justify-content: center; }
+  #tourDemo .td-cell img { position: absolute; max-height: 72px; max-width: 100px; width: auto; height: auto;
+    opacity: 0; transform: scale(.96); transition: opacity .35s ease, transform .35s cubic-bezier(.2,.7,.2,1);
+    border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.12); background: #fff; }
+  #tourDemo .td-cell img.on { opacity: 1; transform: none; }
+  /* 숫자 단축키 장면의 '클릭' — 정간 위에 손끝 자리가 한 번 톡 번진다 */
+  #tourDemo .td-cursor { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+    border-radius: 50%; pointer-events: none; opacity: 0; background: color-mix(in srgb, var(--accent) 45%, transparent); }
+  #tourDemo .td-cell.click .td-cursor { animation: tdClick .5s ease-out both; }
+  @keyframes tdClick { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.6); } }
+  #tourDemo .td-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; min-height: 18px; }
+  #tourDemo .td-cap { flex: 1 1 auto; font-size: 12px; color: var(--muted); word-break: keep-all; }
+  #tourDemo .td-cap.in { animation: tdPop .3s ease-out both; }
+  #tourDemo .td-dots { display: flex; gap: 5px; flex: 0 0 auto; }
+  #tourDemo .td-dots button { width: 6px; height: 6px; padding: 0; border: none; border-radius: 3px;
+    background: var(--line); cursor: pointer; transition: width .3s ease, background .3s ease; }
+  #tourDemo .td-dots button.on { width: 16px; background: var(--accent); }
   @media (max-width: 1100px) { #tourLayer { --tour-in-x: 0px; --tour-in-y: 28px; } }
   @media (prefers-reduced-motion: reduce) {
     #tourLayer *, #tourLayer *::after, #tourLayer.tour-enter * { animation: none !important; transition: none !important; }

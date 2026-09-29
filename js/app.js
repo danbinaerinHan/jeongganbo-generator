@@ -10064,6 +10064,43 @@
     dal: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARAAAAC0CAYAAABc8HNZAAAQAElEQVR4AeydBbwVRRTGz30K2B3YLRb6s+MHCqiIigomNqgotiIqNoiKLQYGoGJiCyiCYvDs7sQCu8XArvdf3MfefXvz3bt1P37s293ZmdmZ7+z99sw5Z2br/tU/ISAEhECZCNSZ/gkBISAEykRABFImcComBISAWV0mk7FMRlsmIwwyGWGQyRSPQSajvNJA9BoRAkKgbAREIGVDp4JCQAiIQPQMCAEhUDYCIpCyoavtguq9EACBuvHjx5u7tWrVirSsbdiwYY3X3Xzaz8RMWISHxZgxY7KeTfdk1KhRekY9v+Mwn8m6Ll26mLvV1TVVSNq3b9943c2n/UzMhEV4WHTu3NnljKx9p06d9Ix6fsdhPpNNGSNLNDoRAkJACORGQASSG5ucV3RBCAiBGQiIQGbgoL9CQAiUgYAIpAzQVEQICIEZCIhAZuCgv0JACJSBQMkEUsY9VEQICIGUIiACSalg1S0hEAYCIpAwUNY9hEBKERCBpFSw6lYMEUhhk0QgKRSquiQEwkJABBIW0rqPEEghAiKQFApVXRICYSEgAgkL6Vq/j/qfSgREIKkUqzolBMJBQAQSDs66ixBIJQIikFSKVZ0SAuEgIAIJA2fdQwikFAERSEoFq24JgTAQEIGEgbLuIQRSioAIJKWCVbeEQBgIVJ9AwuiF7iEEhEAkCIhAIoFdNxUC6UBABJIOOaoXQiASBEQgkcCumwqBYhCIfx4RSPxlpBYKgdgiIAKJrWjUMCEQfwREIPGXkVooBGKLgAgktqKp9Yap/0lAQASSBCmpjUIgpgiIQGIqGDVLCCQBARFIEqSkNgqBmCIgAomlYNQoIZAMBEQgyZCTWikEYomACCSWYlGjhEAyEBCBJENOaqUQiCUCMSSQWOKkRgkBIRCAgAgkABQlCQEhUBwCIpDicFIuISAEAhAQgQSAoiQhkFAEQm+2CCR0yHVDIZAeBEQg6ZGleiIEQkdABBI65LqhEEgPAiKQ9Miy1nui/keAgAgkAtB1SyGQFgREIGmRpPohBCJAQAQSAei6pRBICwIikHRIUr0QApEgIAKJBHbdVAikAwERSDrkqF4IgUgQEIFEArtuKgTSgUAaCCQdklAvhEACERCBJFBoarIQiAsCIpC4SELtEAIJREAEEoHQvvjiC5s8ebJNnTo1grvrlkJgJgLNPRKBNBfBMspfeumlttFGG9naa69te+yxh7399ttl1KIiQiB6BEQgEcigbdu2jXedMGGCbbLJJnbttdc2pulACCQFARFIBJLq2rWrzTXXXFl3PuaYY2zs2LFZaToRAnFHQATSDAn99ddfdvjhh9t+++1nF154oT344IP266+/FqwR8thmm22a5Kuvr2+SpoTqIaCam4+ACKQZGP7zzz82ZswYGz16tJ1xxhm266672hJLLGEnnXSS/fbbb3lrJp8/w/bbb+9P0nmCEJg+fboNGjTIeamcffbZdvvtt9tnn32WoB6U3lQRSOmYNZZo2bKlDRgwoPHcPbjiiivszjvvdE8D97///ntW+uqrr26bbrppVppOkoXAo48+aqeeeqpddtlldsIJJzS+UDp37mw33nij+WWerN4Ft1YEEoxL0am9evWyTp06Nck/yyyzNEnzJnz66afeUzvuuOMsk8k4aT/88IO98cYb9v777zvn+pMMBDbeeGNbcsklmzR24sSJtvfee9uKK67oaKxNMiQ4QQTSTOFlMhkbMmRIk1pWXnnlJmnehPfee897alOmTLEDDzzQ1lhjDVtuueWsffv2tv766zvb8OHDjeFSVoFmnqh45RGYb7757JFHHrG55547sPJPPvnEunXr5tjLAjMkMFEEUgGh8dbZa6+9smpafPHFs84xrqJV4Gm54IILHA3Dm+G0006zO+64o8mYGS3k+OOPtyuvvNKbXccxRQAt45lnnrFFFlkkZwvxuE2bNi3n9SRdEIFUSFrbbrttVk3XX3+9DRw40Hr06OFoFRhN0Sp69uxpZ555ZlbeYk6kgRSDUjzyrLrqqoY9JB+JfPnll/FobDNbIQIpEUAMYYSiv/7660YQ2IgRIwztAcOptyqs8BdffLE98MADTbQKbz6OF154YScqlfgQbCpoHJAM5SGiJ554wg455BCyaksIAm3atDHklms4k49cEtJFp5k1SSBOz8v4g+q52GKL2WqrreZ4TAhDx/hJaDpvnKAqIYd27doZQ5xTTjnFIBxC2N28HTp0sHfeecceeughgywY3kAgBx98sGN4g1R4o9XVSVQuZlHsGX5effXVNnToUHv88cft33//LdgMhjOXX355YL75558/MD1piXoqS5AYblaCwIKK+NPPPfdc+/zzzx1y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",
     a: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARAAAAC0CAYAAABc8HNZAAAQAElEQVR4AeydZ5AU1RqGv+WaEHMuc8asZVkiQVlMYEABc14QFcyKwioG0FXXXBhRCrXMEYFCwVSu6Yc5YWEWc85hzVze3pq1u6d7wu5Mp3koeqdP6BOer+ed0yd1l3muf127dp1nZp5jzpw5rhicQiA+Aq2trZ57M3evfvnll/EVqsZz7jLfCPyHAAQg0CECCEiHsHERBCAgAgiIKHBAoAMEuMSsqIBMmDDBzjzzTA4YxH4PjB8/nu9swggUFZCJEydaU1MTBwxivweam5sT9vWhOEUFpE+fPta/f38OGMR+D+y00058YxNGoKiATJo0yWbNmsUBA889EMc9MX369IR9fShOUQEBEQQgAIEwAghIGBn8IQCBogQQkKKIiAABCIQRQEDCyBTwJwgCEGgjgIC0ceAvBCDQAQIISAegcQkEINBGAAFp48BfCECgAwTKFpAO5MElEIBARgkgIBk1LNWCQBQEEJAoKJMHBDJKAAHJqGGpVgIJZLBICEgGjUqVIBAVAQQkKtLkA4EMEkBAMmhUqgSBqAggIFGRrvV8qH8mCSAgmTQrlYJANAQQkGg4kwsEMkkAAcmkWakUBKIhgIBEwZk8IJBRAghIRg1LtSAQBQEEJArK5AGBjBJAQDJqWKoFgSgIVF9AoqgFeUAAArEQQEBiwU6mEMgGAQQkG3akFhCIhQACEgt2MoVAKQSSHwcBSb6NKCEEEksAAUmsaSgYBJJPAAFJvo0oIQQSSwABSaxpar1g1D8NBBCQNFiJMkIgoQQQkIQahmJBIA0EEJA0WIkyQiChBBCQRBqGQkEgHQQQkHTYiVJCIJEEEJBEmoVCQSAdBBCQdNiJUkIgkQQSKCCJ5EShIACBAAIISAAUvCAAgdIIICClcSIWBCAQQAABCYCCFwRSSiDyYiMgkSMnQwhkhwACkh1bUhMIRE4AAYkcORlCIDsEEJDs2LLWa0L9YyCAgMQAnSwhkBUCCEhWLEk9IBADAQQkBuhkCYGsEEBAsmFJagGBWAggILFgJ1MIZIMAApINO1ILCMRCAAGJBTuZQiAbBLIgINmwBLWAQAoJICApNBpFhkBSCCAgSbEE5YBACgkgIFUy2jvvvGNDhw61YcOG2VVXXWUfffRRlXIiWQh0nEBnr0RAOksw5PrXX3/dpk2bZlOnTrWzzjrLtthiCzvwwANtzpw5IVfgDYH0EUBAqmSznXfe2ZZffnlP6rNmzbLevXvbFVdc4fHHAYG0EkBAqmS5xRZbzK6//vrA1MeNG2dvv/12YBieEEgTAQSkitbq27evrbPOOoE5fP7554H+eEZHgJw6TwAB6TzDgin07NkzL1ytk2222SbPH490E3jiiSfslFNOsVGjRtl1111njz/+uP3xxx/prlSR0iMgRQB1Nnj11VfPS2K33XazhRdeOM8fj3QTOPnkk+3SSy+1yy67zEaMGGHbb7+90w92+umn27vvvpvuyoWUHgEJAVMp7xVXXDEvqc033zzPD4/0E9h7773zKvHzzz/bBRdcYOutt56NHTvWWltbLUv/EJAqW7Nbt255OXTv3j3PL2oP8qs8gVNPPdUaGhpCEz7//PNNw/mfffZZaJy0BSAgVbbYggsumJfDGmuskeeHR/oJLLDAAjZ58mQ78cQTQyuj0bf9998/NDxtAQhIlS3277//5uWwyiqr5PnhkQ0CXbp0scsvv9zGjx8fWqGnnnrKsjIKh4CEmrkyAT/99JMnIU0uowPVgySTDs0+1mhMWOV++eWXsKBU+dekgERpoe+//96THf0fHhyZdlx00UW2yy67BNZxmWWWCfRPmycCUmWL/fDDD54c6P/w4Mi0Q48zWkgZVMkll1wyyDt1fghIlU3mb4EEzQupchFIPkYCa665ZmDudXV1gf5p80RAqmyxclogb775prN+ZsyYMbbvvvvaoEGDnAlJTU1N9txzz1lQh2yVi0/yEPAS8LkQEB+QSju//fZbT5Jrr712u1uTjDT9+YwzzrBNNtnEevXqZY2NjTZp0iR79NFH7cknn7S7777bmdk4YMAAZyXva6+91n49J5UngEiXxxQBKY9X2bG//vprzzUvvfSSMyOxX79+pv6QwYMH2zXXXGOlTC566623nD1F/v77b0+aODpOQBs/XXzxxXbQQQeZOrj/97//WV1dnbMIUqKtPowPPvig4xlk/EoEpMIG/ueff+yTTz4xjfXffPPN9umnn3pyUAvj2muvtVdffdXjX6pDw8J//fVXqdGJF0Lgt99+c+ZqrL/++jZ69Gi7/fbbPVssvP/++/bQQw/ZcccdZ2o1ap2L/3E0JOma8kZASjS3xu3nzp1rs2fPtmeffdYee+wxmzJlil155ZXOY8fBBx9s2267rbN4arPNNrM999zTmZGo60rMwhNN80W0ZkYbE2kns6OOOsqam5tt5syZ1rVrV09cHOURePHFF23TTTc17ctS6pWaHNajR4/MTAArtd7F4iEgxQjND9ejg0ZPttxyS9tuu+2csf199tnHhg8fbmeffbbT8fnggw/aG2+8MT92af+1T4iayEceeaSde+65duONN9rDDz/stEw0S1F5ajn4nXfe6eypqgVZirvxxhuXlgGxAglob9pdd93V1MIIjFDAU9PQ6+vr7ddffy0Qq7aCEJAS7K0m7O67715CzP+iaM+P/1xtZxpd0UiLOlaff/55p9msVsUxxxzjtFi22morW2211Vjq34ar4n/VGhw4cKB99dVXgWlr+b1+GBoaGpwO66BIEhH1WQWF1aIfAlKC1bUgTv0Zt9xyi+mxwn+JHjc07Hreeec5Gymr9aBfOr/oqPWwwgorOJ10/jRwV5+A+jmCRrHUz/HFF184j6Ua9VJr8Omnn3b6smRXf8nUYqQ/pI0KAtLGoaS/2ghIjxVqPehGmzFjhmn3dQnGxIkTbeTIke39IH/++acp3J2wNptJbQeouyIpPb/33nvzSn7//fc7m1wH7duiRY933XWXnXPOOZ7rNPzOxthtSBCQNg5l/VX/xY477ujM29BNFnTxyy+/nOetkRcNC+YF4FF1ApoR/Mgjj3jyufDCC53Jeh7PAMdpp51m/i0o77vvvoCYteeFgFTJ5pogFpS0mr+8GyaITHX9Pv7447wMNHKW5xngoX0+jj32WE+IHoXmzZvn8atFBwJSJatrDoE7aQ3H5txHH320MRksRyOaz6Ave9BjS1hpNtpoo7wg9ZvkedaYBwJSisHLjKPmsv8RRrt05zpg9Sij+SNlJkv0ThBYaaWV8q5WKyLPM8RDE/j8QcxQNUNA/HdFBdyahepOpr6+3rR8W3M5cv48yuRIRPOpkbLFF1/ck5kmh5W69mX69Omea+X48ccf9VHTBwJSYfPrhtSN6U52jz32cJzqiNMKW8cx/8+wYcOYlDSfQxT/tTfH4Ycf7slKw/KNjY0evyCHVkLrVQ3+sFyL0u9fS24EpMLWnjp1qjOb1J3soEGD2p2auZpzaPhXnXNBz+e5OHxWjoBm8vpT00K6IUOGmCb4+cPkfuaZZ0yTz3TuPjS5cOWVV3Z7lX2uiW2afaxRngEDBlifPn2cF1NpaNm/CLPsxCO6oLiARFSQLGSjt5BpL0x3XbSOZamllmr30gpcvb0s5zFt2jRnHkLOzWf1CGy44YYWtP5FX1iFHXrooc7KaH2p77nnHjv++OOdL3XQzNX99tuvUwXVIj49UvXv3980G1md7hIrzRWSoGmqQEtLS6fyiOJiBKSClDVb1b8sv6GhIS8HzXzUM3kuQDt4a4Jazs1n9QjoLXFBLQrlqEcaLSvQl1ozUMM6uvUo6m5J6tpyj2JrcTRZTfvElJtu1PERkAoRV4eaOkbdyalZqvUtbj+d65fHf3MedthhRq++6FT30LIELVAM2+y4WO5aiqBJZFHsrK+9SoqVJ+5wBKRCFrj66qtNz7Tu5Ar9gmheiB5vcvF1rX71tBI358dndQgsuuii9sADDzgvgZKYl5qLWh56rCi97yM8Zd0b+tEIml+Su0qbHOXOk/qJgFTAMq+88opdcsklnpSGDh1qhW4ORdZep+5Hmffee8+03kYbEimco3oE6urqTKNgmhWsvVuK5aQWoxbYqa+kWNxSwtVavemmm5wtIH7//Xen412PULonTjrpJGcrS/ewfylpxhEHAekkdc1G9HeoqQPMvwArKBt1rk6YMMETNHfuXNOjz4cffujxx1EdAlrLpJEzjXporYze5aJXT6p1qB8F7U373XffmUbLtN1hNUqhxyFtQqWp9WPHjnX2wNW2AvKvRn6VTBMB6QTN1tZWO+CAA0w3nzuZpZde2vRropaJtjh0h/nPJRZ+AVJHrB5xinW0+dPC3XECyy23nGmBpF6Qfccdd9htt91merPcDjvsYLJnx1POv7Kcx6b8q5Plg4B00B6a2qwvvqalu5Po2bOnvfDCC6befm1Qo8lGamVoD053PPe59hFxP8ooTKJUX1/v7Mspd/oOShxGIEtbUiIgYVYu4K8vt56b9UzsjqbeeT3Xuv3UmtAwbd++fZ0NatxhuXO95lAik3PnPtWxqhaOdjLTc3LOn890E9Cja7pr8F/pEZD/WJR0pqE1zRPwtzw0Iaxfv37OpspBW96pg9Q9gcyfmR5ljjjiCL+349Z7YpS2OvwcD/6kmoC/tZnmyiAgZVhPz8U9evQwdXS6L9NO6dqRPeenTjj39PWcv2Y4arZqzu3/HDdunPNuEr+/3Jr23rt3b+edMuq4lR9HOgmoxZnOkueXGgHJZ5Lno/0vNeSnGaTuQLUa1FEqUXH7m5nTkx40X6DQPiB6NtZ+nP603G69U0bDw3os+uabb9xBnCeQQF1dXV6pll122Ty/tHogIAUspy+7RlM0xKahvlxUNUFvvfVWZ1d1ve4h5+/+1HOu9k11+2mndomE289/vsEGGzivtvT7+93qM9F6Cs0b8LeI/HFxx0egri5fQMrZyCi+kpeWMwISwkkLm9TvcMIJJ3hmmMqt11Pq3SIhl7Z7q6WgvhEJhzwPOeQQ07JynRc69tprLwtaORp0jZaZ6301WoClvOhsDaIUr59/2FbzhOItUeVyR0B8LDVvY8SIEc4S7tyLoiQAjY2NpiXfWkTVrVs331XhTvWNqONVgqTh2vCY3hDNVNS8BK9vuKulpcU0+1WtEk1GUlnDYxMSJQF/q3OttdaKMvuq5lUFAalqeaueuGYdagMZZaTJXJMnTzYJwOjRo00LqeRf7qEZheVOgdairxtuuME0r6Sc/DT0q36SXr16OW+6K+da4laHgH6A3Cl3797d7Uz1OQLiM5/6NyQg2gNCqzYHDx4c25vidONNmTLF9M4ZvaQqqFNWxVc8HSq7msdaAaz4Yf0zuoYjOgLa1T2X26qrruq8fTDnTvsnAhJgQRlcR0BQ5F5qvWiVrvYamT17tqmFpIlsej2mznXoLXg6NNSrl15puFjx1SEbeYHJ1d3kgwAAA2xJREFUMI/AIoss0u6nOUTtjgycICApNKIWddXV5ffup7AqNVFk94+RXs5eoNKpC0JAUmcyCpw2AgsttFB7kdU31e7IwAkCkgEjUoVkE1CLUSVUJ/y6666r08wcCEhmTElFkkogN/dHfVlJLWNHy4WAdJQc11WaQGbTy3WiakQva5VEQLJmUeqTOAJLLLGEafhWWzpYxv4hIBkzKNVJHgFNQtS7Z3J9IckrYcdLhIB0nB1XQqAkAltvvbVpcl9JkVMWCQFJhsEoBQRSSQABSaXZKDQEkkEAAUmGHSgFBFJJAAFJpdkoNASSQSAJApIMEpQCAhAomwACUjYyLoAABHIEEJAcCT4hAIGyCSAgZSPjAggkh0DcJUFA4rYA+UMgxQQQkBQbj6JDIG4CCEjcFiB/CKSYAAKSYuPVetGpf/wEEJD4bUAJIJBaAghIak1HwSEQPwEEJH4bUAIIpJYAApJS01FsCCSBAAKSBCtQBgiklAACklLDUWwIJIEAApIEK1AGCKSUQCoFJKWsKTYEMkcAAcmcSakQBKIjgIBEx5qcIJA5AghI5kxKhSBQgECFgxCQCgMlOQjUEgEEpJasTV0hUGECCEiFgZIcBGqJAAJSS9au9bpS/4oTQEAqjpQEIVA7BBCQ2rE1NYVAxQkgIBVHSoIQqB0CCEit2Jp6QqAKBBCQKkAlSQjUCgEEpFYsTT0hUAUCCEgVoJIkBGqFQG0ISK1Yk3pCIGICCEjEwMkOAlkigIBkyZrUBQIRE0BAIgZOdhBIF4HCpUVACvMhFAIQKEAAASkAhyAIQKAwAQSkMB9CIQCBAgQQkAJwCKp1AtS/GAEEpBghwiEAgVACCEgoGgIgAIFiBBCQYoQIhwAEQgkgIKFoaj2A+kOgOAEEpDgjYkAAAiEEEJAQMHhDAALFCSAgxRkRAwIQCCGAgASCwRMCECiFAAJSCiXiQAACgQQQkEAseEIAAqUQQEBKoUQcCEAgkECAgHjjjRw50gYOHMgBg9jvgSFDhnhvTlyxEygqIC0tLTZjxgwOGMR+D8ycOTP2LwwF8BIoKiDDhw+3MWPGcMAg9ntg1KhR3rsXV+wEigqIjNbc3GwcMIj7Hmhqaor9C1OkADUXXFRAao4IFYYABEomgICUjIqIEICAnwAC4ieCGwIQKJnA/wEAAP//CnvSnwAAAAZJREFUAwCkXzGAOG4IIwAAAABJRU5ErkJggg=="
   };
+  // ── 움직이는 예시(TOUR_DEMOS) ──
+  // 글이 많아 읽히지 않는다는 지적(2026-09-29)으로, fig가 있는 단계엔 카드 맨 위에 작은 무대를
+  // 두고 '무엇을 치면 무엇이 그려지나'를 **직접 보여 준다**: 입력칸에 글자가 한 자씩 쳐지고,
+  // 옆 정간이 그 결과로 바뀐다. 그림은 위의 캡처(앱이 실제로 그린 정간) 그대로라 실제 모양과
+  // 어긋나지 않는다. 장면 하나 = { in: 입력칸 글자, img: 결과 그림 } 에 꾸밈 하나를 더할 수 있다:
+  //   chip: {label, sym}  — 팔레트 칩을 누르는 장면(글자가 한 번에 들어간다)
+  //   key: "1"            — 숫자를 누른 채 음을 클릭하는 장면
+  //   fresh: true         — 앞 글자를 다 지우고 새 칸에 치는 장면(곁줄의 다음 음 등)
+  // 장면마다 밑에 뜨는 한 줄은 tour-text.js의 steps[id].demo(사람이 고치는 문구)에서 온다.
+  // lab은 입력칸 이름표, 입력칸이 없는 장면 묶음(정간 서식)은 in을 비운다.
+  // 동작 줄이기(prefers-reduced-motion)면 무대 대신 예전의 정지 그림(fig)을 보여 준다.
+  const TOUR_DEMOS = {
+    yul: { lab: "정간", frames: [
+      { in: "황", img: TOUR_CELL_IMGS.one },
+      { in: "황 태", img: TOUR_CELL_IMGS.split },
+      { in: "황태", img: TOUR_CELL_IMGS.joined },
+      { in: "황태 -황", img: TOUR_CELL_IMGS.tie }] },
+    ornPalette: { lab: "정간", frames: [
+      { in: "황", img: TOUR_CELL_IMGS.one },
+      { in: "황{미는표}", img: TOUR_CELL_IMGS.orn },
+      { in: "황", img: TOUR_CELL_IMGS.one },
+      { in: "황{미는표}", img: TOUR_CELL_IMGS.orn, chip: { label: "미는표", sym: "push" } }] },
+    ornShortcut: { lab: "정간", frames: [
+      { in: "황", img: TOUR_CELL_IMGS.one },
+      { in: "황{미는표}", img: TOUR_CELL_IMGS.orn, key: "1" }] },
+    lyrics: { lab: "곁줄", frames: [
+      { in: "달", img: TOUR_LY_IMGS.dal, fresh: true },
+      { in: "아", img: TOUR_LY_IMGS.a, fresh: true }] },
+    jangdan: { lab: "장단", frames: [
+      { in: "덩", img: TOUR_JD_IMGS.deong, fresh: true },
+      { in: "기덕", img: TOUR_JD_IMGS.gideok, fresh: true },
+      { in: "더러러러", img: TOUR_JD_IMGS.deureo, fresh: true }] },
+    cellStyle: { frames: [
+      { img: TOUR_BORDER_IMGS.thick, chip: { label: "굵게" } },
+      { img: TOUR_BORDER_IMGS.dashed, chip: { label: "점선" } },
+      { img: TOUR_BORDER_IMGS.double, chip: { label: "이중선" } }] }
+  };
   // 둘러보기 장(章) — 카드 위 칩 줄로 늘 보이는 큰 목차. 단계마다 ch(장 번호 0~)를 달고
   // 표기는 1-2 꼴(대번호-소번호, TOUR_LABELS에서 자동 계산). 칩을 누르면 그 장 첫 단계로.
   // 장 이름·단계 문구는 js/tour-text.js(사람이 직접 고치는 파일)에서 온다 — 여기(TOUR_STEPS)는
@@ -10228,6 +10265,7 @@
     const t = ((window.TOUR_TEXT && window.TOUR_TEXT.steps) || {})[s.id] || {};
     s.title = t.title || s.id;
     s.body = t.body || "";
+    if (TOUR_DEMOS[s.id]) { s.demo = TOUR_DEMOS[s.id]; s.demoCaps = t.demo || []; }
   });
   // 단계 라벨(1-2 꼴) — ch가 바뀔 때 소번호가 1로 돌아간다. 배열 순서에서 한 번만 계산.
   // 건너뛴 단계도 번호를 유지한다(동적 재번호는 '아까 2-3이 지금은 2-2'가 되어 더 헷갈림).
@@ -10498,6 +10536,126 @@
       tourPing(moved ? TOUR_MOVE_MS - 60 : 120);
     }
   }
+  // 무대 재생기 — 단계가 바뀌거나 투어가 끝나면 tourDemoToken이 바뀌어 예약된 동작이 모두 멈춘다.
+  let tourDemoToken = 0;
+  function tourDemoEl() {
+    let el = $("tourDemo");
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = "tourDemo";
+    el.setAttribute("aria-hidden", "true");   // 같은 내용이 본문·정지 그림(fig)에 글로 있다
+    el.innerHTML =
+      '<div class="td-stage">' +
+        '<div class="td-left">' +
+          '<div class="td-field"><span class="td-lab"></span><span class="td-text"></span><i class="td-caret"></i></div>' +
+          '<div class="td-act"></div>' +
+        '</div>' +
+        '<div class="td-arrow">→</div>' +
+        '<div class="td-cell"><img alt=""><img alt=""><i class="td-cursor"></i></div>' +
+      '</div>' +
+      '<div class="td-foot"><div class="td-cap"></div><div class="td-dots"></div></div>';
+    $("tourContent").insertBefore(el, $("tourContent").firstChild);
+    return el;
+  }
+  function stopTourDemo() {
+    ++tourDemoToken;
+    const el = $("tourDemo");
+    if (el) el.style.display = "none";
+  }
+  function playTourDemo(step, startAt) {
+    const my = ++tourDemoToken;
+    const demo = step.demo, frames = demo.frames, caps = step.demoCaps || [];
+    const el = tourDemoEl();
+    el.style.display = "";
+    const q = function (c) { return el.querySelector(c); };
+    const field = q(".td-field"), textEl = q(".td-text"), act = q(".td-act");
+    const imgs = el.querySelectorAll(".td-cell img"), cell = q(".td-cell"), capEl = q(".td-cap");
+    q(".td-lab").textContent = demo.lab || "";
+    field.style.display = demo.lab ? "" : "none";
+    el.classList.toggle("no-field", !demo.lab);
+    let chars = [], front = 0, k = 0;
+    const later = function (ms, fn) { setTimeout(function () { if (tourDemoToken === my) fn(); }, ms); };
+    const setText = function (arr) { chars = arr; textEl.textContent = arr.join(""); };
+    const showImg = function (src, instant) {
+      const back = imgs[1 - front];
+      back.src = src;
+      if (instant) back.style.transition = "none";
+      back.classList.add("on"); imgs[front].classList.remove("on");
+      if (instant) { void back.offsetWidth; back.style.transition = ""; }
+      front = 1 - front;
+    };
+    const showCap = function (i) {
+      capEl.classList.remove("in"); void capEl.offsetWidth;
+      capEl.textContent = caps[i] || ""; capEl.classList.add("in");
+    };
+    // 점 — 장면 차례. 누르면 그 장면으로 건너뛴다(그 뒤로 다시 저절로 흐른다).
+    const dots = q(".td-dots");
+    dots.textContent = "";
+    frames.forEach(function (_f, i) {
+      const d = document.createElement("button");
+      d.type = "button"; d.tabIndex = -1;
+      d.addEventListener("click", function () { jump(i); });
+      dots.appendChild(d);
+    });
+    const markDot = function (i) {
+      dots.querySelectorAll("button").forEach(function (d, j) { d.classList.toggle("on", j === i); });
+    };
+    const HOLD = 1500, TYPE = 130, DEL = 55;
+    // 한 장면 — 글자를 지우고(앞이 같은 만큼은 남긴다) 새로 쳐서 원하는 글자로 만든 뒤 그림을 바꾼다.
+    const runFrame = function (i) {
+      const f = frames[i];
+      k = i; markDot(i); showCap(i);
+      act.textContent = ""; field.classList.remove("done");
+      const target = Array.from(f.in || "");
+      const done = function () {
+        field.classList.add("done");
+        showImg(f.img);
+        later(HOLD + (i === frames.length - 1 ? 900 : 0), function () { runFrame((i + 1) % frames.length); });
+      };
+      if (f.chip || f.key) {
+        // 누르는 장면 — 칩(또는 숫자 키)이 먼저 나타나고, 눌리면 글자가 한 번에 바뀐다
+        const b = document.createElement("span");
+        b.className = f.key ? "td-key" : "td-chip";
+        if (f.chip && f.chip.sym && typeof symURL === "function" && symURL(f.chip.sym)) {
+          const im = document.createElement("img"); im.src = symURL(f.chip.sym); im.alt = "";
+          b.appendChild(im);
+        }
+        b.appendChild(document.createTextNode(f.key || f.chip.label));
+        act.appendChild(b);
+        if (f.key) {
+          const hint = document.createElement("span"); hint.className = "td-plus"; hint.textContent = "+ 클릭";
+          act.appendChild(hint);
+        }
+        later(420, function () { b.classList.add("press"); });
+        if (f.key) later(520, function () { cell.classList.remove("click"); void cell.offsetWidth; cell.classList.add("click"); });
+        later(f.key ? 900 : 640, function () { setText(target); done(); });
+        return;
+      }
+      // 치는 장면
+      let keep = 0;
+      if (!f.fresh) while (keep < chars.length && keep < target.length && chars[keep] === target[keep]) keep++;
+      const del = function () {
+        if (chars.length > keep) { setText(chars.slice(0, -1)); later(DEL, del); return; }
+        type();
+      };
+      const type = function () {
+        if (chars.length < target.length) { setText(target.slice(0, chars.length + 1)); later(TYPE, type); return; }
+        later(260, done);
+      };
+      later(chars.length > keep ? 250 : 120, del);
+    };
+    const jump = function (i) { if (tourDemoToken === my) playTourDemo(step, i); };
+    // 시작 — 처음이면 빈 칸에서 친다(그림은 치고 나서 나타난다). 점을 눌러 건너뛴 경우엔
+    // 바로 앞 장면의 글자·그림을 깔아 두고 그 장면을 친다 — 앞에서 이어지는 것처럼 보이게.
+    const start = startAt || 0;
+    imgs.forEach(function (im) { im.classList.remove("on"); });
+    if (start > 0) {
+      const pf = frames[start - 1];
+      setText(Array.from(pf.in || ""));
+      showImg(pf.img, true);
+    } else setText([]);
+    runFrame(start);
+  }
   function tourGo(i, dir) {
     const from = tourSnap();   // 앞 단계가 남긴 화면 — 여는 버튼을 고르는 기준
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
@@ -10546,7 +10704,10 @@
       });
       figEl.appendChild(grid);
     }
-    figEl.style.display = s.fig ? "" : "none";
+    // 움직이는 예시가 있으면 정지 그림 대신 무대를 띄운다(동작 줄이기면 정지 그림 그대로)
+    const demoOn = !!s.demo && !tourReduceMotion();
+    figEl.style.display = s.fig && !demoOn ? "" : "none";
+    if (demoOn) playTourDemo(s); else stopTourDemo();
     $("tourPrev").style.display = "";
     $("tourPrev").disabled = i === 0;
     $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
@@ -10659,6 +10820,7 @@
     // 끝낼 때도 뚝 끊지 않고 어둠·카드가 함께 걷힌다. 걷히는 동안은 포인터를 안 받아
     // (CSS .tour-leave) 바로 이어지는 새 문서 창을 누를 수 있다.
     ++tourAnimId; tourGeom = null; tourPosStep = -1;
+    stopTourDemo();
     const layer = $("tourLayer");
     layer.classList.remove("tour-enter");
     const hideLayer = function () {
