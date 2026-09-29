@@ -10143,8 +10143,10 @@
     // 컷아웃·링이 이미 가리키므로 글로 되풀이하지 않는다. 예외는 장단·가사처럼 창을 연 뒤
     // 안의 체크를 한 번 더 켜야 하는 경우뿐(그 한 단계는 박스가 못 보여줘서 적는다).
     // 분량은 단계당 2~4줄 — 세부 문법·응용은 도움말·창의 ? 안내로 위임한다.
-    // 장 구조: 1 개요(기능바·악보·레이아웃) → 2 입력(팔레트 6개 순서대로) → 3 꾸미기(정간 서식)
-    // → 4 마무리(듣기·출력·도움말). 새 단계는 제 장 안에 넣고 ch를 맞출 것.
+    // 장 구조(2026-09-29 다시 짬): 1 개요(정간보 → 악보 → 기능바 → 설정) → 2 입력(율명·시김새·
+    // 숫자 단축키·곁줄·장단·빠르기/각/장 — 기능바 입력 탭 순서) → 3 꾸미기(시김새 위치·크기 →
+    // 텍스트·제목·글자 크기 → 정간 서식) → 4 마무리(들어보기·파일). 도움말 단계는 끝 화면 한 줄로
+    // 접었다. '적는 일'은 입력, '모양을 다듬는 일'은 꾸미기 — 새 단계는 이 잣대로 장을 고를 것.
     // 에디터 모드 임시 비활성화 — #modeBox가 display:none이라 어차피 자동 건너뛰지만,
     // 그러면 단계 수(N / length)가 헛돌아서 배열에서 아예 뺀다. 되살릴 때 주석 해제:
     // { sel: "#modeBox", title: "입력 방식",
@@ -10161,8 +10163,9 @@
       also: [{ union: ".tour-lane-mel", label: "각", tone: "a" },
              { union: ".tour-lane-dg", label: "대강", labelPos: "side", tone: "b" },
              { union: ".tour-lane-cell", label: "정간", labelPos: "side", tone: "c" }] },
-    { ch: 0, sel: "#melodyRibbon", id: "ribbon", },
+    // 악보(여기에 적는다)를 도구 이름(기능바)보다 먼저 — 칸을 눌러 적는 법을 알아야 도구가 읽힌다
     { ch: 0, sel: "#sheetArea", id: "sheet", },
+    { ch: 0, sel: "#melodyRibbon", id: "ribbon", },
     // 설정 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)과 문서(종이 방향·제목)를
     // 어디서 바꾸는지부터 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 연다.
     // need — 이 단계가 보여 주려면 열려 있어야 하는 것(설정 패널·도구창·팔레트 보기).
@@ -10201,7 +10204,6 @@
       also: ["#winToggleYul", "#paletteCol .orn-instrument", "#paletteCol .size-ctl"], },
     { ch: 1, sel: "#paletteCol", id: "ornShortcut", need: { win: "paletteCol", view: "orn" },
       also: ["#ornMapToggle"], },
-    { ch: 1, sel: "#ornEditToggleEd", id: "ornEdit", need: { win: "paletteCol", view: "orn" } },
     // 장단·가사 — '켜면 이렇게 되고 이렇게 쓴다'를 실제 렌더 캡처와 함께.
     // 정간 입력 다음 순서인 건 실제 작성 차례(선율 → 장단·가사)를 따라가는 것.
     // 창은 닫힌 채 켜는 버튼부터 비추고 눌러서 연 뒤 창을 가리킨다(need의 두 박자) —
@@ -10230,9 +10232,10 @@
     // 켜는 자리(버튼)를 눌러 창을 연다(need).
     { ch: 1, sel: "#gakNameArea", id: "gakName", need: { win: "gakNameArea" },
       also: ["#winToggleGakName"] },
-    // 텍스트(文) — 팔레트 6개 중 유일하게 투어에 없던 창. 제목·부제 서식이 이리로
-    // 온 뒤(2026-07-24)라 함께 소개한다. 창을 열어 두고(prep) 가리킨다.
-    { ch: 1, sel: "#textArea", id: "text", need: { win: "textArea" },
+    // 3장 꾸미기 — 적은 것의 모양을 다듬는 일. 시김새 위치·크기 → 글자(텍스트·제목·크기) → 정간 서식.
+    { ch: 2, sel: "#ornEditToggleEd", id: "ornEdit", need: { win: "paletteCol", view: "orn" } },
+    // 텍스트(文) — 제목·부제 서식과 악보 글자 크기(기능바 슬라이더)를 함께 다룬다.
+    { ch: 2, sel: "#textArea", id: "text", need: { win: "textArea" },
       also: ["#winToggleText"] },
     // 정간 서식 — 창을 열어 둔 채(prep) 배경색·정간·가로줄·초기화 네 구획을 짚는다.
     // #1 피드백: 각 끝/정간 위아래의 마디선·덧줄(이중선)을 어디서 긋는지 못 찾았다.
@@ -10251,8 +10254,8 @@
     // 겹쳤고, 문서 탭(제목·종이 방향)은 따로 가르칠 만큼 헷갈리지 않다. 보관 탭의
     // 임시 저장만 아래 '인쇄 · 파일' 단계에 한 줄로 흡수.
     // 새 문서·인쇄는 상단바에, 나머지 파일 명령은 오른쪽 레일에 — 둘을 함께 짚는다
-    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] },
-    { ch: 3, sel: "#btnHelp", id: "help", }
+    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] }
+    // 도움말 단계(한 줄뿐)는 끝 화면('다 보았습니다')의 한 줄로 접었다
   ];
   let tourIdx = -1, tourOnEnd = null, tourHideTimer = 0;
   let tourWorkspace = null;
@@ -10641,7 +10644,8 @@
     // 줄 차례 = 화면에서 놓인 차례(왼→오른쪽, 위→아래) — 강조가 앞뒤로 튀지 않게(2026-09-29).
     // 본문(tour-text.js)의 줄 차례를 바꾸면 여기도 함께 바꿀 것.
     ribbon: ["#paletteToggle", ".mouse-mode-tabs", ".ribbon-group:has(#gakInsertBtn)",
-             ".ribbon-group:has(#rangeClearToggle)", { union: ".ribbon-slider-group" }],
+             ".ribbon-group:has(#rangeClearToggle)"],
+    text: [null, null, null, { union: ".ribbon-slider-group" }],
     sheet: [{ union: ".tour-lane-mel" }, null, { union: ".tour-lane-mel" }],
     // 설정의 문서·레이아웃 줄은 그 탭을 눌러 전환한 뒤(TOUR_BEAT_TAB) 탭 **내용**을 비춘다
     Setting: [null, '#sidebar .tabpanel.active', '#sidebar .tabpanel.active'],
@@ -10802,6 +10806,18 @@
       $("tourNext").textContent = T.all || "처음부터 전부 보기";
       $("tourPrev").style.display = "none";
       if ($("tourProgressFill")) $("tourProgressFill").style.width = "0%";
+    } else if (kind === "done") {
+      $("tourStepNum").textContent = "둘러보기";
+      $("tourTitle").textContent = T.doneTitle || "둘러보기를 다 보았습니다";
+      sub.textContent = T.doneSub || "";
+      const again = document.createElement("button");
+      again.type = "button"; again.className = "tour-opt tour-opt-plain";
+      again.textContent = T.again || "다른 장 고르기";
+      again.addEventListener("click", function (e) { e.stopPropagation(); tourShowPanel("chooser"); });
+      body.appendChild(again);
+      $("tourNext").textContent = T.done || "시작하기";
+      $("tourPrev").style.display = ""; $("tourPrev").disabled = false;
+      if ($("tourProgressFill")) $("tourProgressFill").style.width = "100%";
     } else {
       const ch = tourScope, name = TOUR_CHAPTERS[ch] || "";
       $("tourStepNum").textContent = (ch + 1) + "장 · " + name;
@@ -10825,7 +10841,7 @@
       b.classList.toggle("on", kind === "end" && ci === tourScope);
     });
     const bar = $("tourChipBar");
-    if (bar) bar.style.opacity = kind === "chooser" ? "0" : "";
+    if (bar) bar.style.opacity = kind === "end" ? "" : "0";
     if (kind !== "chooser" && tourScope != null) moveTourChipBar(tourScope);
   }
   function tourLeavePanel() {
@@ -11177,13 +11193,14 @@
     if (!tourWorkspace) return;   // 투어가 끝난 뒤(걷히는 중)엔 아무것도 안 한다
     if (tourTyping) { tourTypeFinish(); return; }   // 치는 중이면 먼저 그 줄을 다 보인다
     if (tourPanel === "chooser") { tourScope = null; tourGo(0, 1); return; }
-    if (tourPanel === "end") { track("tour_done"); endTour(); return; }
+    if (tourPanel === "end" || tourPanel === "done") { track("tour_done"); endTour(); return; }
     if (tourBeat < tourBeats.length - 1) showTourBeat(tourBeat + 1, true);
     else tourGo(tourIdx + 1, 1);
   }
   function tourPrevBeat() {
     if (!tourWorkspace || tourPanel === "chooser") return;
     if (tourPanel === "end") { tourGo(tourChRange(tourScope).last, -1); return; }
+    if (tourPanel === "done") { tourGo(TOUR_STEPS.length - 1, -1); return; }
     if (tourIdx === 0 && tourBeat === 0 && tourScope == null) { tourShowPanel("chooser"); return; }
     if (tourBeat > 0) showTourBeat(tourBeat - 1, true);
     else tourGo(tourIdx - 1, -1);
@@ -11374,7 +11391,7 @@
     if (tourPanel) tourLeavePanel();
     const from = tourSnap();   // 앞 단계가 남긴 화면 — 여는 버튼을 고르는 기준
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
-    if (i >= TOUR_STEPS.length) { track("tour_done"); endTour(); return; }   // 마지막 '다음' = 완료 축하 화면
+    if (i >= TOUR_STEPS.length) { tourShowPanel("done"); return; }   // 전부 다 보면 '다 보았습니다' 화면
     if (i < 0) { endTour(); return; }
     const tourDir = wasPanel ? dir : tourIdx < 0 ? 0 : (i >= tourIdx ? 1 : -1);
     tourIdx = i;
@@ -11382,7 +11399,8 @@
     $("tourCard").style.display = "";
     $("tourHole").style.display = "";
     const s = TOUR_STEPS[i];
-    $("tourStepNum").textContent = (i + 1) + " / " + TOUR_STEPS.length + " · " + TOUR_CHAPTERS[s.ch];
+    // 번호는 '장-순번'(2-1) 고정식 — 장을 골라 보는 둘러보기라 전체 몇째보다 장 안의 자리가 맞다
+    $("tourStepNum").textContent = TOUR_LABELS[i] + " · " + TOUR_CHAPTERS[s.ch];
     // 장 칩(현재 장 강조)·전체 진행 바
     document.querySelectorAll("#tourChips button").forEach(function (b, ci) {
       b.classList.toggle("on", ci === s.ch);
