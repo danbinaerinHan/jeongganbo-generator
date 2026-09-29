@@ -1903,8 +1903,13 @@
      outline이 아니라 box-shadow인 건 두 겹을 한 속성으로 그리려는 것(둘 다 자리를 안 먹는다). */
   /* 모서리 6px·여백 3px은 app.js TOUR_RADIUS·TOUR_HOLE_PAD와 짝 — 어둠 구멍(SVG rx)과
      테두리가 같은 사각형이어야 모서리에 어둠이 삐져 보이지 않는다(2026-09-29). */
+  /* 강조는 **선이 아니라 빛**이다(2026-09-29 사용자 지적) — 1.5px 강조색 테두리는 버튼·창의
+     제 테두리와 같은 굵기·비슷한 색이라 'UI 선이 하나 더' 있는 것처럼 읽혀 지저분했다.
+     딱 떨어지는 선은 긋지 않고, 어둠 구멍(가장자리를 흐린 스포트라이트)과 그 둘레의 옅은
+     번짐만으로 자리를 밝힌다. 선을 도로 긋지 말 것. */
   #tourHole { position: absolute; border-radius: 6px; pointer-events: none;
-              box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 4px var(--accent-glow);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent),
+                          0 0 22px 5px color-mix(in srgb, var(--accent) 38%, transparent);
               transition: top .22s ease, left .22s ease, width .22s ease, height .22s ease; }
   /* 카드 폭·글자 크기는 한 묶음 — 본문을 13px로 키우면서 300px에서 넓혔다(줄이 자주
      접혀 목록이 길어 보이는 걸 막는 용). 크기를 더 만지면 폭도 같이 볼 것.
@@ -1981,10 +1986,10 @@
   /* 기본(tone 없음)은 **지금 테마의 강조색**이다 — 버튼·창 위에 얹히는 상자라 테마를 따라야
      한다(2026-09-29: 은청·옥색 테마에서 설정 버튼에 갈색 상자가 얹혀 따로 놀았다).
      흰 종이 위 상자(정간·대강·각)만 tone-a/b/c로 고정색을 쓴다. */
-  .tour-ring { position: absolute; --ring-c: var(--accent);
-               border: 1.5px solid var(--ring-c); border-radius: 6px;
-               background: linear-gradient(155deg, color-mix(in srgb, var(--ring-c) 11%, transparent),
-                                                   color-mix(in srgb, var(--ring-c) 3%, transparent));
+  /* 보조 상자도 선 없이 — 옅게 물든 바탕 + 둘레 번짐. 무엇을 짚는지는 이름표가 말한다. */
+  .tour-ring { position: absolute; --ring-c: var(--accent); border-radius: 6px;
+               background: color-mix(in srgb, var(--ring-c) 7%, transparent);
+               box-shadow: 0 0 12px 2px color-mix(in srgb, var(--ring-c) 34%, transparent);
                pointer-events: none; }
   /* 상자 이름표 — '정간·대강·각'처럼 무엇을 가리키는 상자인지 글로 붙인다. 상자가 서로
      포개질 수 있어 자리를 둘로 나눠 둔다(기본 위, .at-side는 오른쪽 바깥 —
@@ -1993,7 +1998,7 @@
      물건으로 읽혀야 어느 이름이 어느 상자 것인지 눈이 바로 잇는다. 예전엔 .tour-ring에 걸린
      opacity 때문에 글자까지 옅어져 색을 따로 진하게 줘야 했는데, 이제 투명도가 색 안에
      들어 있어(rgba) 그 보정이 필요 없다. */
-  .tour-ring-lab { position: absolute; bottom: 100%; left: -1.5px; margin-bottom: 3px;
+  .tour-ring-lab { position: absolute; bottom: 100%; left: 0; margin-bottom: 4px;
                    padding: 2px 7px; border-radius: 4px; white-space: nowrap;
                    background: var(--ring-c); color: #fff; font-size: 10.5px; font-weight: 700;
                    letter-spacing: .04em; line-height: 1.45; }
@@ -2216,10 +2221,10 @@
     border-radius: inherit;
     box-shadow: 0 0 0 0 var(--accent); }
   #tourHole.ping::after { animation: tourPing .9s cubic-bezier(.2,.7,.3,1) both; }
-  @keyframes tourPing { 0%   { opacity: .55; box-shadow: 0 0 0 1px var(--accent); }
-                        100% { opacity: 0;   box-shadow: 0 0 0 10px var(--accent); } }
+  @keyframes tourPing { 0%   { opacity: .5; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+                        100% { opacity: 0;  box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent); } }
   /* 이름표를 상자 아래 오른쪽 맞춤으로 — 상단바 버튼처럼 위에 자리가 없는 대상용 */
-  .tour-ring-lab.at-below { bottom: auto; top: 100%; left: auto; right: -1.5px; margin: 4px 0 0; }
+  .tour-ring-lab.at-below { bottom: auto; top: 100%; left: auto; right: 0; margin: 5px 0 0; }
   /* 나타나기 애니메이션(fill both)이 opacity를 붙잡고 있어 전환(transition)으론 못 걷는다 — 애니메이션으로 덮는다 */
   .tour-ring.opened .tour-ring-lab { animation: tourFadeOut .3s ease-out both; }
   @keyframes tourFadeOut { from { opacity: 1; } to { opacity: 0; } }

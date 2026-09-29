@@ -1467,7 +1467,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
 - 위의 과거 투어 위치·장 구성 설명보다 이 절이 우선한다.
 - **움직임(2026-09-29)**: 단계를 넘기면 강조 상자·보조 링·어둠 구멍이 앞 자리에서 새 자리로 미끄러지고(app.js `tourAnimateTo` — 셋이 좌표표 `tourGeom` 하나를 나눠 써서 어긋나지 않는다), 새 링은 앞 주 대상 자리에서 자라 나온다. 카드 글은 읽는 방향 쪽에서 차례로 떠오르고(`.swap-next/prev`), 장 칩 바탕(`#tourChipBar`)이 미끄러지며, 도착하면 테두리 빛이 한 번 번진다(`.ping`). 들어올 때·나갈 때도 페이드(`.tour-enter/.tour-leave`). 전부 한 번 흐르는 ease-out이고 튀거나 되풀이되는 움직임은 넣지 않는다. 동작 줄이기(prefers-reduced-motion)면 모두 끈다. rAF가 안 돌아도 끝 자리는 setTimeout이 보장한다.
 - **눌러야 열리는 것은 '여는 법'부터 보여 준다(2026-09-29)**: 단계마다 `need`(설정 패널 `side` · 도구창 `win` · 율/시김새 보기 `view`)를 적고, 그것이 닫혀 있으면 닫힌 채로 여는 버튼부터 비춘 뒤('눌러서 열기' 이름표) 버튼이 눌리는 움직임(`.tour-press`)과 함께 열고 강조를 옮긴다(app.js `tourOpenerFor`·`tourOpenerStage`). 도구창 탭이 접힌 칸 안에 있으면 [입력 도구]부터 누른다. 이름표는 연 뒤 걷힌다(`.opened`). **need에 없는 것은 그 단계에서 닫힌다** — 투어 전 화면은 `tourSnap0`에 떠 두고 endTour가 되돌린다. 새 단계에서 창을 보여 주려면 prep이 아니라 need에 적을 것. 동작 줄이기면 버튼 단계 없이 곧장 연다.
-- **강조 상자 꼴**: 여백은 주 대상 3px·보조 2px, 모서리 6px이고 어둠 구멍(SVG rx)도 같은 값이다(`TOUR_HOLE_PAD`·`TOUR_RING_PAD`·`TOUR_RADIUS` ↔ styles.css). 보조 상자 기본색은 **지금 테마의 강조색**(`--ring-c: var(--accent)`)이고, 흰 종이 위 상자만 `tone-a/b/c` 고정색을 쓴다.
+- **강조 상자 꼴**: **선이 아니라 빛이다** — 강조색 테두리는 버튼·창의 제 테두리와 비슷해 UI 선이 하나 더 있는 것처럼 지저분했다(사용자 지적). 주 대상은 가장자리를 흐린 어둠 구멍(`#tourSpotSoft`, `TOUR_FEATHER`) + 둘레 번짐, 보조 상자는 옅은 바탕 + 번짐뿐이고 무엇인지는 이름표가 말한다. 선을 도로 긋지 말 것. 여백은 주 대상 3px·보조 2px, 모서리 6px이고 어둠 구멍(SVG rx)도 같은 값이다(`TOUR_HOLE_PAD`·`TOUR_RING_PAD`·`TOUR_RADIUS` ↔ styles.css). 보조 상자 기본색은 **지금 테마의 강조색**(`--ring-c: var(--accent)`)이고, 흰 종이 위 상자만 `tone-a/b/c` 고정색을 쓴다.
 
 ## 프리뷰 검증 (.claude/launch.json의 "jgb")
 

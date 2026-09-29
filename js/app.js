@@ -10389,13 +10389,16 @@
     for (let k = have.length; k < holes.length; k++) {
       const rc = document.createElementNS(NS, "rect");
       rc.setAttribute("class", "tour-spot-hole");
-      rc.setAttribute("rx", String(TOUR_RADIUS)); rc.setAttribute("fill", "#000");
+      rc.setAttribute("rx", String(TOUR_RADIUS + TOUR_FEATHER)); rc.setAttribute("fill", "#000");
+      rc.setAttribute("filter", "url(#tourSpotSoft)");
       mask.appendChild(rc);
     }
     const all = mask.querySelectorAll(".tour-spot-hole");
+    // 흐린 가장자리가 대상 안쪽을 어둡게 먹지 않도록 흐림 폭만큼 넓혀 뚫는다
+    const F = TOUR_FEATHER;
     holes.forEach(function (h, k) {
-      all[k].setAttribute("x", h.x); all[k].setAttribute("y", h.y);
-      all[k].setAttribute("width", Math.max(0, h.w)); all[k].setAttribute("height", Math.max(0, h.h));
+      all[k].setAttribute("x", h.x - F); all[k].setAttribute("y", h.y - F);
+      all[k].setAttribute("width", Math.max(0, h.w + F * 2)); all[k].setAttribute("height", Math.max(0, h.h + F * 2));
     });
   }
   // ── 강조 상자 움직임 ──
@@ -10412,6 +10415,7 @@
   // 대상과 테두리 사이 여백 — 넉넉하면 상자가 대상보다 커 보여 지저분했다(2026-09-29).
   // 어둠 구멍도 이 테두리와 같은 사각형·같은 모서리(TOUR_RADIUS, CSS와 짝)로 뚫는다.
   const TOUR_HOLE_PAD = 3, TOUR_RING_PAD = 2, TOUR_RADIUS = 6;
+  const TOUR_FEATHER = 3;   // 어둠 구멍 가장자리 흐림 폭(editor.html #tourSpotSoft와 짝)
   const TOUR_MOVE_MS = 460;
   function tourReduceMotion() {
     try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_e) { return false; }

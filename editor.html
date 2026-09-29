@@ -2143,7 +2143,9 @@
     <!-- 어둠 + 여러 구멍 — 흰 배경(어둠 보임)에 검은 사각형(그 자리 어둠 숨김=밝음)을 app.js가
          메인 대상·보조(also) 대상마다 넣는다. box-shadow는 구멍이 하나뿐이라 이 방식으로 바꿨다. -->
     <svg id="tourSpot" width="100%" height="100%" preserveAspectRatio="none" aria-hidden="true">
-      <defs><mask id="tourSpotMask">
+      <!-- 구멍 가장자리를 살짝 흐린다 — 딱 떨어지는 경계가 또 하나의 선으로 읽히지 않게 -->
+      <defs><filter id="tourSpotSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2.5"/></filter>
+      <mask id="tourSpotMask">
         <rect x="0" y="0" width="100%" height="100%" fill="#fff"></rect>
       </mask></defs>
       <rect x="0" y="0" width="100%" height="100%" fill="#14120e" fill-opacity="0.55" mask="url(#tourSpotMask)"></rect>
