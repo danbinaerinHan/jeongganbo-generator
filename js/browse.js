@@ -192,8 +192,7 @@
       document.querySelectorAll(".sc-tab").forEach(function (o) { o.classList.remove("on"); });
       b.classList.add("on");
       tab = b.getAttribute("data-tab");
-      // 탭마다 안내문이 다르다 — 국악원 탭의 출처·CC BY-NC-SA 표기가 그 안내문에 있다
-      $("scLeadAll").style.display = tab === "all" ? "" : "none";
+      // 국악원 탭에만 안내문이 있다 — 출처·CC BY-NC-SA 표기가 그 안내문에 있다
       $("scLeadNgc").style.display = tab === "ngc" ? "" : "none";
       track("browse_tab", { v: tab });
       load(true);
