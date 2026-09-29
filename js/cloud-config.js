@@ -38,9 +38,16 @@
 //
 // ★ 약관·개인정보처리방침의 개정도 **같은 날에** 나간다. 계정이 없는데 '전자우편을
 //   수집한다'고 적으면 그 자체가 사실과 다르다(policy.html·privacy.html의 【 】 자리).
+// board — 묻고 제안하기(board.html)를 열어 둘지. **false면 '준비 중' 안내만 뜬다.**
+//   켜는 순서: (1) server/schema.sql의 '묻고 제안하기' 절을 SQL Editor에서 실행,
+//   (2) 파일 끝 '빗장 점검' 쿼리가 한 줄도 안 뱉는지 확인, (3) 약관에 게시판 글에 관한
+//   조항을 더한 개정본을 **같은 날에** 내고, (4) 여기를 true로.
+//   남이 쓴 글을 공개로 내보이는 자리라 공유마당과 같은 준비(신고 수령인 공지·내리는 절차)가
+//   갖춰진 뒤에 연다.
 window.JGB_CLOUD = {
   url: "https://uszzhreidfdopvgdzzqs.supabase.co",
   key: "sb_publishable_wMhSNubRaoeSchqunxVN2w_9Ib5XpiC",
   browse: true,
   accounts: false,
+  board: false,
 };

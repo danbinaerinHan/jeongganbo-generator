@@ -12,18 +12,18 @@
 앱 이름(브랜드)은 **우물사이**(Umulsai) — 정간(井間)이 '우물 정(井) 자 사이 칸'이라는 데서 온 이름.
 상단바 맨 왼쪽 #brandBox(로고+이름, 페이지 유일 h1)·탭 제목·meta description·환영 카드에 쓰인다.
 로고 원본은 `assets/Gemini_Generated_Logo.png`(까치+井 붓글씨), 웹용 가공본(투명화·크롭·축소)은
-`assets/brand/`이며 index.html에는 **데이터 URL로 인라인**(파비콘 포함) — 프리뷰 미러가
+`assets/brand/`이며 editor.html에는 **데이터 URL로 인라인**(파비콘 포함) — 프리뷰 미러가
 assets/를 제외해도 보이게. 상단바 로고는 **위쪽 크롭본**(umulsai-top-128: 까치+맨 윗 가로획,
 전체 井은 작게 그리면 새가 안 보임), 파비콘은 전체 로고(favicon-64, 흰 배경).
 상단바 로고가 128px(표시 36px의 ~3.6배)인 건 화질 때문 — 예전 64px 가공본은 dpr 2에서 딱
 1:1인 데다 **잉크 알파가 최대 221(반투명)**이라 흐리고 회색으로 씻겨 보였다. 재가공은
 `python3 tools/regen-top-logo.py`(원본에서 현행 프레이밍을 MSE 탐색으로 되찾아 크롭,
-알파 16단계+팔레트 64색 양자화로 2KB 미만) → 출력 PNG를 base64로 index.html 데이터 URL에
+알파 16단계+팔레트 64색 양자화로 2KB 미만) → 출력 PNG를 base64로 editor.html 데이터 URL에
 교체. 다크모드 로고는 CSS invert(body.dark #brandBox img).
 워드마크(#brandWord)는 **EBS훈민정음 SB를 아웃라인 패스로 뜬 인라인 SVG** — 폰트 파일은
 안 싣는다. EBS 라이선스가 웹 임베딩·BI/CI는 허용하나 폰트 자체의 변형(서브셋 포함)·재배포는
 사전 서면승인 대상이라, '폰트로 만든 로고'인 패스 방식이 그 조항을 안 건드린다(2.6KB, 모든
-OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index.html #brandWord 자리에
+OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 editor.html #brandWord 자리에
 교체(fontTools + ~/Library/Fonts/EBS훈민정음SB.otf 필요, 폰트는 리포에 없음).
 자간은 패스에 구워져 있어 CSS letter-spacing으로 못 벌린다. 잉크 경계로 크롭해서 SVG 아래끝이
 글자 밑선이 아니므로 `transform: translateY(13.66%)`로 내려야 옆 "Umulsai" 글줄과 밑선이 맞는다
@@ -44,11 +44,27 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 
 ## 파일 구조
 
-폴더 정리됨 — 루트엔 진입점 `index.html`(마크업)·`CLAUDE.md`·`.gitignore`만 두고, 나머지는
-기능별 폴더로 묶었다. **index.html이 `css/styles.css`·`js/*.js`를 상대경로로 로드**하므로 파일을
+폴더 정리됨 — 루트엔 페이지(`index.html` 첫 화면 · `editor.html` 편집기 · browse/board/…)와
+`CLAUDE.md`·`.gitignore`만 두고, 나머지는 기능별 폴더로 묶었다.
+**편집기는 `editor.html`이다(2026-09-29까지는 `index.html`이었다).** 이 문서와 코드 주석의 옛 설명에서
+'index.html'로 적힌 편집기 이야기는 전부 editor.html로 바꿔 두었다.
+**editor.html이 `css/styles.css`·`js/*.js`를 상대경로로 로드**하므로 파일을
 옮기면 이 script/link 태그도 같이 고쳐야 한다.
 
-- `index.html` (~950줄, 루트) — 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
+- `index.html` + `css/home.css` + `js/home.js` — **첫 화면**(사이트 루트, 2026-09-29 신설).
+  가운데 문패(井 전체 + 까치 로고 · 워드마크 · 부제) 아래 **문 두 짝**(편집기 | 공유마당) — 칸 전체가
+  링크이고 칸마다 선 그림 하나 + 이름 + 한 줄뿐이다. 윗줄엔 링크(공유마당·묻고 제안하기)만.
+  · **맨 앞의 넘김 스크립트를 지우지 말 것** — 이미 퍼진 주소는 전부 루트를 가리킨다
+    (`#v=` 게시 · `#s=` 옛 링크 · `#va=` 관리자 열기 · `?first=1`). 첫 화면이 이것을 보고
+    `editor.html`로 넘긴다. **주소 형식을 늘리면 app.js `incomingDoc`과 이 정규식을 함께.**
+  · 게시 주소도 그래서 **루트로** 만든다(cloud.js `scoreUrl` — `umulsai.com/#v=…`).
+  · 사용자가 물린 것(되살리지 말 것): 소개 문구 · 공유마당 카드 그림(첫 화면에선 잔글씨 덩어리) ·
+    한쪽에만 있는 목록 · 칸 안의 작은 버튼. 그림은 이모지가 아니라 인라인 SVG 선화.
+  · 로고는 `tools/gen-home-logo.py`(원본 → 2.7KB), 워드마크는 editor.html #brandWord의 **복사본**
+    (fetch로 가져오면 편집기 HTML 190KB를 통째로 받는다) — 워드마크를 다시 뜨면 두 곳을 함께.
+  · 모든 페이지의 문패(`.sc-brandlink`)는 첫 화면으로, [편집기로]·[악보 만들기]는 editor.html로 간다.
+    편집기 안에서는 로고+이름(`#brandBox .brand-home`)이 첫 화면으로 가는 링크다(BETA 단추는 링크 밖).
+- `editor.html` (루트) — **편집기** 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
 - `js/app.js` (8천 줄대) — 단일 IIFE. **섹션 마커로 탐색**: `grep -n "// ----------" js/app.js`
   가 목차 역할을 한다 (렌더/에디터/팔레트/재생/저장/되돌리기 등 30여 섹션).
 - `js/cloud.js` + `js/cloud-config.js` — 악보 게시(서버에 올리고 `#v=<id>` 주소로 열기).
@@ -62,7 +78,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   `notices.html`은 **중단 내역**(신고로 내린 악보의 기록).
   **조문 형식의 공적 문서**다 — 조(條)·항(①)·호(1.)의 층을 지키고, 앱의 다른 글처럼 설명하거나
   설득하지 말 것('오히려 그럴수록…' 같은 논증조 문장은 여기 안 쓴다). 근거는 조문 번호로만 적는다.
-  꼴은 `css/doc.css`, 문패·테마는 `js/doc-brand.js`가 함께 맡는다(index.html에서 로고를 가져와 꽂아
+  꼴은 `css/doc.css`, 문패·테마는 `js/doc-brand.js`가 함께 맡는다(editor.html에서 로고를 가져와 꽂아
   로고를 두 번 박지 않는다).
   **운영자가 남의 악보를 고칠 수 있는 근거는 제5조 제4항부터 제7항까지**다(2026-08-21 개정).
   범위를 '명백한 표기 오류'로 좁히고(입력 형식에 안 맞아 **안 그려지거나 뜻과 다르게 그려지는**
@@ -74,14 +90,14 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   대신 '왜 내려갔는지 공개적으로 확인할 수 있는 자리'를 둔 것이다(약관 제6조 제4항). 삭제 기록을
   남기는 자리이기도 하다. 손으로 `<tr>`을 더하는 정적 표이고 서버에서 가져오지 않는다 — 신고가
   들어와야 쓰이는 페이지라 자동화할 양이 아니고, 사유는 사람이 적어야 하는 말이라서.
-  신고 받는 주소는 `policy.html`·`notices.html`·`js/cloud.js`의 `REPORT_TO`·`browse.html` 꼬리말
-  **네 곳이 같아야** 한다. 저작권법 제102·103조가
+  신고 받는 주소는 `policy.html`·`notices.html`·`js/cloud.js`의 `REPORT_TO`·`browse.html` 꼬리말·
+  `board.html` 꼬리말 **다섯 곳이 같아야** 한다. 저작권법 제102·103조가
   요구하는 '신고 수령인 공지'가 여기 있으므로, **신고 받는 주소를 바꿀 땐 js/cloud.js의
   `REPORT_TO`와 browse.html 꼬리말까지 세 곳을 함께** 고쳐야 한다(두 군데서 다르면 안 된다).
-  문패는 index.html에서 fetch로 가져와 꽂는다 — 로고를 두 번 박지 않으려고.
+  문패는 editor.html에서 fetch로 가져와 꽂는다 — 로고를 두 번 박지 않으려고.
   **논문 심사 동안 앱에 보이는 곳은 익명으로 둔다**(2026-08-30). 만든 이 이름은 `우물사이
   운영자`, 저작권 한 줄은 `© 2026 우물사이`, 신고 주소는 `report@umulsai.com`이고 도움말
-  꼬리말의 GitHub·LICENSE 링크는 뺐다(링크가 곧 계정이라). 손댄 자리는 `index.html`(사이드바
+  꼬리말의 GitHub·LICENSE 링크는 뺐다(링크가 곧 계정이라). 손댄 자리는 `editor.html`(사이드바
   꼬리말·도움말 꼬리말) · `browse.html` · `policy.html`(제1조·제6조 수령인·꼬리말) ·
   `notices.html` · `js/cloud.js`의 `REPORT_TO`.
   · **`<meta name="author">`·JSON-LD `author`·`LICENSE`·`README`·`login.html`은 일부러
@@ -97,9 +113,16 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   가리키는 이름이라 [게시]와 짝이 된다("공유마당에서 사람들과 공유합니다"). 예전 이름은
   '모아보기'였고(그 전엔 '둘러보기'였는데 도움말의 기능 안내 투어와 말이 겹쳐 갈랐다,
   2026-08-04), 그건 '무엇을 하나'(모아서 본다)라 게시와 이어지지 않았다. 파일 이름·식별자(browse·btnBrowse·sc-*)는 그대로 — 이미 배포된 주소를 바꾸지
-  않으려는 것이고, 이 리포는 코드 이름과 표시 이름을 분리하는 관례다(cellStyle*↔'정간 서식'처럼). index.html과
+  않으려는 것이고, 이 리포는 코드 이름과 표시 이름을 분리하는 관례다(cellStyle*↔'정간 서식'처럼). editor.html과
   **별개 문서**라 app.js·기호 데이터(600KB)를 안 싣는다 — 여기선 악보를 그리지 않으므로.
   카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다. 규칙은 아래 '공유마당' 절.
+- `board.html` + `css/board.css` + `js/board.js` — **묻고 제안하기**(2026-09-29 신설). 탭 둘:
+  **자주 묻는 질문**(운영자가 board.html에 `<details>`로 손으로 적는 정적 목록 — 서버 안 씀) |
+  **질문·제안**(공개 게시판 하나, 갈래를 나누지 않는다 — 사용자 확정). 공유마당과 같은
+  '별개 문서'이고 껍데기(browse.css)를 나눠 쓴다. 서버는 `server/schema.sql`의 '묻고 제안하기'
+  절(board_* RPC 여덟 + admin_board_* 셋).
+  **`JGB_CLOUD.board`가 false면 '준비 중'만 뜬다**(기본 false — 켜는 순서는 cloud-config.js 주석).
+  규칙은 `docs/구조-게시.md`의 '묻고 제안하기' 절.
 - `admin.html` + `css/admin.css` + `js/admin.js` — **관리 화면**(운영자용). browse.html과 같은
   '별개 문서'라 app.js·기호 데이터를 안 싣는다. 앱 어디에도 이리로 오는 링크가 없고
   `robots noindex`다 — 다만 **숨기는 것은 보안이 아니라 정리**다. 진짜 빗장은 서버에 있다
@@ -109,13 +132,13 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 - `js/staff-core.js` + `js/staff-view.js` + `js/musicxml.js` — **오선보 세 짝**.
   app.js가 `buildStaffScores()`로 만든 재료를 **화면(staff-view)과 파일(musicxml)이 나눠 쓰고**,
   음이름 적기·조표 고르기·음표꼴 같은 밑감은 staff-core가 준다. 셋 다 **app.js를 한 줄도 안
-  본다** — 받는 것은 그릇 하나뿐이라 악기가 늘어도 그대로 쓴다. index.html에서 app.js보다
+  본다** — 받는 것은 그릇 하나뿐이라 악기가 늘어도 그대로 쓴다. editor.html에서 app.js보다
   **먼저**, 그리고 staff-core가 셋 중 **맨 앞**에 실려야 한다(staff-glyphs는 staff-view보다 앞).
   예전엔 app.js(mxlPitch)와 staff-view(pitchAt)에 같은 셈이 두 벌이라 1155자리 대조 검사로
   겨우 맞춰 두고 있었다 — staff-core로 합치며 그 대조가 필요 없어졌다. **새 오선보 기능은
   app.js가 아니라 이 셋 중 하나에 붙일 것.**
 - `js/vendor/verovio-toolkit-wasm.js` — 오선보 **화면 조판기**(Verovio 6.2, LGPL, wasm 내장
-  단일 파일 6.7MB). index.html에 안 실리고 오선보 칸을 열 때 app.js가 지연 로드한다
+  단일 파일 6.7MB). editor.html에 안 실리고 오선보 칸을 열 때 app.js가 지연 로드한다
   (janggu-audio와 같은 수법). 규칙은 아래 '오선보 보기' 절.
 - `js/jangdan-presets.js` (window.JGB_JANGDAN) — **정악 장단 모음**. 국립국악원 『양금정악보』
   (2021)의 곡별 기본 장단을 그 정간보 그대로 옮겨 적은 표라 **사람이 직접 고친다**(생성 파일
@@ -135,7 +158,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     페이지의 글꼴이 안 따라가 기기 서체로 떨어진다. PNG 저장·나란히 PNG·공유마당 미리보기
     (cloud.js는 `jgbDoc.embedFonts`) 세 곳이 쓴다. 새로 SVG를 그림으로 뜨는 자리를 만들면 같이 달 것.
   · 율명 한자를 늘리거나 바꾸면 **생성기를 다시 돌릴 것**(글자 목록을 app.js의 YUL·OCT_HANJA에서 읽는다).
-  · index.html에서 app.js보다 먼저 로드.
+  · editor.html에서 app.js보다 먼저 로드.
 - `js/analytics.js` — 익명 사용 통계 래퍼(쿠키·식별자 없음). app.js는 `track(name, {v})` 안전
   호출만 하고, 전송은 이 파일의 GoatCounter 어댑터가 담당(GOATCOUNTER_CODE 비면 대기 모드,
   로컬/DNT 제외). 검증은 `window.jgbTrack.recent`(메모리 링 20건). app.js보다 먼저 로드.
@@ -147,7 +170,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   `assets/symbol_svgs/{symbols,tempo,special}` 세 폴더를 스캔한다(폴더 간 파일명 중복 금지).
   재생성: `node tools/gen-symbols-data.mjs` (리포 루트). 키 = 확장자 없는 파일명.
 - `js/janggu-audio.js` (window.JANGGU_AUDIO) — 장구 구음 **소리**(mp3 데이터 URL). 위 그림
-  데이터와 달리 **index.html이 미리 싣지 않는다** — [재생]을 눌러야 쓰이므로 app.js의
+  데이터와 달리 **editor.html이 미리 싣지 않는다** — [재생]을 눌러야 쓰이므로 app.js의
   `loadJangguAudio()`가 첫 재생 때 `<script>`로 붙인다(그래도 데이터 URL이라 경로·CORS를 안 탄다).
   원본은 `장구단음/<구음>_<세기>.wav`(git 미추적, 12MB) — 그대로는 못 쓴다. **앞에 무음이
   0.2초** 붙어 있어 박에 맞춰 울리면 그만큼 늦고, 4초짜리 파일이 스무 개다. 재생성은
@@ -187,7 +210,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - 팔레트 차례는 사전 순서가 아니라 `LYRIC_ORDER`·`JANGGU_ORDER`가 정한다(무엇이 있나 ≠
     어떤 차례로 보여주나). `LEGACY_ALIAS`는 옛 토큰 호환 **읽기 전용** — 새로 늘리지 말 것.
   - app.js는 옛 이름(`ORN_LIST`·`ATT_SYM_SCALE`·`LYRIC_SYMS`·`JANGGU_NAMES` 등)으로 이 사전을
-    받아 쓰는 얇은 층만 남았다(`SYM_REG`). 그래서 index.html에서 **app.js보다 먼저 로드**해야 한다.
+    받아 쓰는 얇은 층만 남았다(`SYM_REG`). 그래서 editor.html에서 **app.js보다 먼저 로드**해야 한다.
   - 이름이 같은 짝이 둘 있는데 성격이 다르다: 선율 `fermata`↔가사줄 `늘임표`는 **같은
     그림**이 두 키로 등록된 것(바이트까지 동일 — 전체 103항목 중 유일한 그림 공유,
     2026-07-27 실측)이고, `sigimsae-00`↔`뜰`은 이름만 같고 **그림이 다르다**.
@@ -250,7 +273,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 - `tools/edit-local-scores.mjs` (+ `tools/local-edit-bridge.js`) — **손에 있는 .jgb.json을
   편집기에서 열고 그 파일에 바로 되쓰는 로컬 전용 서버**. 국악원 OMR 변환본 69곡을 원본
   정악보와 대조해 고치려고 만들었다(`node tools/edit-local-scores.mjs`, 127.0.0.1:4175).
-  · **index.html은 한 글자도 안 고친다** — 서버가 정적 파일을 내주면서 브리지 스크립트
+  · **editor.html은 한 글자도 안 고친다** — 서버가 정적 파일을 내주면서 브리지 스크립트
     한 줄만 끼워 넣는다. 브리지도 app.js를 안 만지고 `window.jgbDoc`(state·adopt) 창구만
     쓴다(js/cloud.js가 게시를 붙인 것과 같은 규칙). 이 도구는 손에서만 쓰는 것이라 배포본에
     실릴 까닭이 없다.
@@ -443,7 +466,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     여기 남기는 것은 **그 문서를 안 읽고도 깨뜨릴 수 있는 약속** 셋뿐이다:
     · `js/cloud.js`는 **app.js를 한 줄도 안 고친다** — `window.jgbDoc`(state·adopt·
       hasSavedWork·title·pubId·setPubId) 여섯 개가 창구이고 그 밖으로 손을 뻗지 말 것.
-      index.html에서 app.js **뒤에** 싣고, `js/admin-session.js`는 cloud.js보다 **먼저** 싣는다.
+      editor.html에서 app.js **뒤에** 싣고, `js/admin-session.js`는 cloud.js보다 **먼저** 싣는다.
     · **수정 토큰을 문서에 넣지 말 것.** 문서에 실리는 것은 게시물 id뿐이고(`pubId`,
       collectState/applyState) 토큰은 localStorage(`jgb_published_v1`)에만 산다 — 그래서
       .jgb.json·공유 링크를 남에게 줘도 수정 권한이 안 넘어간다.
@@ -459,7 +482,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
       아무도 못 들어오므로 문만 열려 있으면 그건 고장이다. **약관·개인정보처리방침의
       개정도 같은 날에** 나간다(계정이 없는데 '전자우편을 수집한다'고 적으면 사실과 다르다).
     · **`js/user-session.js`와 `js/admin-session.js`를 합치지 말 것** — 사는 곳
-      (localStorage↔sessionStorage)·드는 길·여는 문이 셋 다 다르다. index.html에서
+      (localStorage↔sessionStorage)·드는 길·여는 문이 셋 다 다르다. editor.html에서
       user-session.js는 **cloud.js보다 먼저** 싣는다(레일 [계정]을 cloud.js가 여닫는다).
     · **이용자가 로그인하기 시작하면 '`authenticated` ≈ 관리자일 수도 있는 사람'이라는
       옛 전제가 깨진다.** 2026-08-26에 전수 점검을 마쳤고(표 정책 0개 · 함수마다
@@ -479,7 +502,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     레이아웃 설정의 결과 보고라 '레이아웃' 탭 맨 위로 옮겼다.
 - **사이드바 설명문(.hint)은 항목 이름 옆 ? 안에 접힌다**(app.js `foldSidebarHints`,
   css `.hint-btn`/`.hint.folded`). 값보다 설명이 길어 무엇을 정하는 자리인지가 안 보였다.
-  마크업은 그대로 두고(**문구는 index.html의 제자리에서 고친다**) JS가 손잡이만 붙이므로,
+  마크업은 그대로 두고(**문구는 editor.html의 제자리에서 고친다**) JS가 손잡이만 붙이므로,
   사이드바에 `.hint`를 새로 더하면 배선 없이 같이 접힌다.
   - 붙일 자리는 '이 설명이 누구 것인가'로 정한다: 제 `.field`의 이름표(`:scope > label`) →
     이름표 없는 칸은 바로 위 묶음 머리글(`.sec`). 둘 다 없으면 **접지 않고 그대로 보인다**
@@ -604,10 +627,14 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   ① 문서가 드나드는 길 — 불러오기·저장·**출력**·링크
   ② 사람들과 — **게시·공유마당**(내 악보를 그 자리에 올리기 / 그 자리에 가 보기. 짝이라
      붙여 놓는다 — 사용자 요청)
-  ③ **레일 맨 아래(.rail-foot, margin-top:auto)** — **계정**·색상·도움말. 손이 자주 가지
+  ③ **레일 맨 아래(.rail-foot, margin-top:auto)** — **계정**·색상·**묻고 제안**·도움말. 손이 자주 가지
      않는 것들이라 빈 공간으로 갈라 두면 구분선 없이도 다른 무리임이 읽힌다. 계정이
      여기인 것은 그것이 '이 악보'가 아니라 **앱을 쓰는 나**에 관한 것이라서다 — 게시·
      공유마당 옆(②)이 아닌 까닭이 이것이다(2026-08-26 사용자 확정).
+     **묻고 제안**(#btnBoard → board.html)도 같은 까닭으로 ③이다 — 악보를 나누는 곳이 아니라
+     앱에 대해 묻는 곳이다. 도움말 **바로 위**인 것은 도움말에서 답을 못 찾은 사람이 갈 다음
+     자리라서이고, 도움말 창 꼬리말에도 같은 곳으로 가는 글자 링크(#helpBoardLink)가 있다.
+     둘 다 `JGB_CLOUD.board`가 꺼져 있으면 cloud.js가 숨긴 채 둔다(공유마당 윗줄 링크는 browse.js).
   · **설정(#sidebarOpen)은 레일이 아니라 상단바 오른쪽 끝**이다 — 설정 패널이 담는 것이
     '앱을 어떻게 쓰나'가 아니라 **이 악보의 문서·레이아웃**이기 때문이다(2026-08-26 사용자
     확정). 레일에 잠깐 두었다가 되돌렸으니 다시 내리지 말 것.
@@ -909,7 +936,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   - 그 차이를 `SYM_LANES[*].syntax`(문구)와 `token(ch)`(실제로 들어가는 글자)로 적어 두고,
     `makeSymHint`가 팔레트 맨 위 한 줄로, `symChip`이 툴팁 `→ {덩}`으로 보여 준다.
     `insert()`도 같은 `token()`을 쓰므로 **툴팁에 보이는 글자와 실제 들어가는 글자가 어긋날 수 없다.**
-  - 이 안내는 예전엔 index.html에 하드코딩된 `.orn-syntax-hint` 두 벌이었다(에디터·직접 입력).
+  - 이 안내는 예전엔 editor.html에 하드코딩된 `.orn-syntax-hint` 두 벌이었다(에디터·직접 입력).
     줄마다 문구가 달라야 해서 빌더가 그리게 옮겼으니 **마크업에 도로 박지 말 것.**
 - **정간 칸을 편집하기 시작하면 그 줄의 팔레트로 바꿘다**(`focusDomainPanel`, openCellEditor 맨 위).
   곁줄 칸을 여는데 시김새 창이 열려 있으면 거기서 고른 기호가 그 칸에 안 들어가 헛클릭이 된다
@@ -1074,7 +1101,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
     theme-crystal 등)는 옛 이름 그대로 — 저장값 호환 때문이니 표시 이름에 맞춰 갈지 말 것.
     테마(`jgb_theme_v1`)·다크(`jgb_dark_v1`)는 앱 설정(localStorage)이라 문서 상태에 안 들어가고,
     `?first=1`도 안 지운다. 다크 규칙이 CSS에서 테마보다 뒤라 늘 이긴다(테마는 라이트 색조만).
-    테마를 늘릴 땐 styles.css `body.theme-*` + index.html #screenPop 항목 + app.js `THEMES`
+    테마를 늘릴 땐 styles.css `body.theme-*` + editor.html #screenPop 항목 + app.js `THEMES`
     세 곳을 함께. danger 계열은 세 테마 공통이라 테마 블록에 다시 안 적는다.
   - `@media print`는 항상 라이트로 강제 — 그 블록의 선택자에 `body.theme-*`도 함께 적어야
     한다(:root보다 명시도가 높아 빼먹으면 인쇄에 테마 색이 샌다).
@@ -1363,7 +1390,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   · **화면과 파일은 같은 재료·같은 셈을 본다** — 재료는 `buildStaffScores()`, 셈은
     staff-core의 `JG`·`timeSig`·`beatGroups`·`writeAs`·`fifthsFor`·`CLEF`다.
     어느 한쪽(그리기 또는 내보내기)에 같은 판단을 다시 적지 말 것.
-  · index.html 로드 순서: staff-core가 셋 중 **맨 앞**, staff-glyphs는 staff-view보다 앞,
+  · editor.html 로드 순서: staff-core가 셋 중 **맨 앞**, staff-glyphs는 staff-view보다 앞,
     넷 다 **app.js보다 먼저**. verovio는 안 싣고 칸을 열 때 지연 로드한다.
   · 오선보를 그리는 것은 `scheduleStaff()` **한 곳**뿐이다(열려 있을 때만·120ms 뒤) —
     render()는 글자 한 자에도 불리므로 그 절 밖에서 직접 그리지 말 것.
@@ -1441,7 +1468,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
 - iCloud 폴더라 프리뷰 서버 프로세스가 직접 못 읽음 — launch.json은 /tmp/jgb-mirror-wt를
   서빙하고, 파일 수정 후엔 Bash에서 rsync로 미러 갱신 + 리로드해야 반영됨:
   `rsync -a --delete --exclude .git --exclude .claude --exclude paper --exclude references --exclude _보관 "<워크트리>/" /tmp/jgb-mirror-wt/`
-  (paper/ 안 일부 한글 파일명이 rsync에서 Illegal byte sequence를 내므로 반드시 제외. 앱은 index.html·
+  (paper/ 안 일부 한글 파일명이 rsync에서 Illegal byte sequence를 내므로 반드시 제외. 앱은 editor.html·
   css/·js/ 만 있으면 돌아가므로 references/·_보관/·assets/·tools/는 제외해도 무방)
 - 첫 로드에 새 문서 모달이 뜸 → `document.getElementById('ndCancel').click()`.
   localStorage가 완전히 비어 있으면 대신 환영 카드(#welcomeModal)가 뜸 → `#wcSkip` 클릭.
@@ -1462,7 +1489,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 index
   `document.elementFromPoint(x,y)`로 그 좌표의 최상단 요소를 얻어 **거기에** 이벤트를 쏠 것
   (각/장 이름 드래그가 이걸로 한 번 가짜 통과했다 — bdfed51에서 수정).
 - 프리뷰 브라우저가 js/css를 강하게 캐시해 rsync 후에도 옛 코드가 돌 수 있다
-  (performance 리소스의 transferSize 0 = 캐시). 미러의 index.html에만 `?v=타임스탬프`를
+  (performance 리소스의 transferSize 0 = 캐시). 미러의 editor.html에만 `?v=타임스탬프`를
   sed로 찍는 게 확실: rsync 후
   `sed -i '' -e 's|src="js/app.js"|src="js/app.js?v=STAMP|' …` (원본엔 안 찍음).
 - 테스트 후 `localStorage.clear()`로 원상복구(키: jgb_state_v1, jgb_guide_seen_v1, jgb_welcome_v1).

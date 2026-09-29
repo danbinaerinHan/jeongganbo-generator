@@ -175,6 +175,8 @@
               flex: 0 0 auto; }
   /* 로고는 위쪽 크롭본(까치+맨 윗 가로획, 가로로 긴 비율) — 높이만 정하고 폭은 비율대로 */
   #brandBox img { height: 36px; width: auto; display: block; }
+  /* 로고+이름을 감싼 첫 화면 링크 — #brandBox의 flex 짜임(가운데 맞춤·9px 간격)을 그대로 물려받는다 */
+  #brandBox .brand-home { display: flex; align-items: center; gap: 9px; color: inherit; text-decoration: none; }
   .brand-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
   /* 이름은 EBS훈민정음 SB를 아웃라인 패스로 뜬 SVG(index.html에 인라인) — 해례본 판본체라
      로고의 井 격자와 한 결이고, 폰트 설치 여부와 무관하게 모든 OS에서 똑같이 나온다.
@@ -1832,6 +1834,10 @@
                       border-radius: 0; padding: 7px 14px; font-size: 12px; font-weight: 600;
                       cursor: pointer; font-family: inherit; }
   .help-foot button:hover { opacity: .9; }
+  /* 도움말에서 답을 못 찾았을 때 갈 곳(묻고 제안하기) — [둘러보기] 바로 왼쪽에 글자 링크로만.
+     채운 버튼은 [둘러보기] 하나여야 한다(화면당 강조 한 점). */
+  .help-board { margin-left: auto; font-size: 12px; color: var(--accent); text-decoration: none; }
+  .help-board:hover { text-decoration: underline; text-underline-offset: 2px; }
 
   /* 환영 카드 — 진짜 첫 방문에만 한 번. 버튼 3개가 세로로 쌓인 작은 카드.
      가운데 정렬이 아니라 왼쪽 정렬이다: 글이 왼쪽 한 축에서 시작해야 '읽고 고르는 화면'으로

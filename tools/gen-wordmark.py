@@ -10,7 +10,7 @@
 
 쓰는 법:
   python3 tools/gen-wordmark.py          # 화면에 SVG 출력
-  결과를 index.html의 #brandWord 자리에 붙여넣는다(수동 — 어쩌다 한 번 하는 일이라
+  결과를 editor.html의 #brandWord 자리(+ 첫 화면 index.html .hm-word의 복사본)에 붙여넣는다(수동 — 어쩌다 한 번 하는 일이라
   자동 주입까지 만들 이유가 없다).
 
 필요한 것: fontTools, 그리고 ~/Library/Fonts/EBS훈민정음SB.otf
