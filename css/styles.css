@@ -2283,6 +2283,10 @@
     opacity: 0; transform: scale(.96); transition: opacity .35s ease, transform .35s cubic-bezier(.2,.7,.2,1);
     border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.12); background: #fff; }
   #tourDemo .td-cell img.on { opacity: 1; transform: none; }
+  /* 세로쓰기 결과(빠르기·각 이름)는 길쭉해서 키 큰 상자에 담는다 — 72px 높이면 글자가 알아볼 수 없이 작다 */
+  #tourDemo.tall .td-stage { min-height: 150px; }
+  #tourDemo.tall .td-cell { width: 76px; height: 150px; }
+  #tourDemo.tall .td-cell img { max-height: 150px; max-width: 76px; }
   /* 숫자 단축키 장면의 '클릭' — 정간 위에 손끝 자리가 한 번 톡 번진다 */
   #tourDemo .td-cursor { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
     border-radius: 50%; pointer-events: none; opacity: 0; background: color-mix(in srgb, var(--accent) 45%, transparent); }
@@ -2311,6 +2315,43 @@
   #tourMore { display: block; margin: 14px 0 4px; padding: 0; border: none; background: none;
     font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; letter-spacing: .02em; }
   #tourMore:hover { color: var(--ink); }
+  /* ── 악보 위 연출(#tourFx, app.js tourReadPath) — '읽는 법' 줄에서 읽는 길을 긋는다 ── */
+  #tourFx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible;
+    transition: opacity .4s ease; }
+  #tourFx.fade { opacity: 0; }
+  #tourFx .fx-path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round;
+    stroke-linejoin: round; opacity: .75; }
+  #tourFx .fx-dot { fill: var(--accent); stroke: #fff; stroke-width: 2;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+  #tourFx .fx-jump { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 2 5;
+    stroke-linecap: round; opacity: 0; transition: opacity .25s ease; }
+  #tourFx .fx-jump.on { opacity: .55; }
+  /* 번호는 칸 한가운데 — 선 위에 구슬처럼. 흰 테두리(paint-order)로 선 위에서도 읽힌다 */
+  #tourFx .fx-num { font: 700 11px var(--mono); fill: var(--accent); text-anchor: middle; opacity: 0;
+    transition: opacity .2s ease; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+  /* '악보' 단계 장면들(tourFxInput·Copy·Undo) — 가짜 율명·선택 상자·입력 카드·단축키 배지 */
+  #tourFx .fx-note { opacity: 0; transition: opacity .25s ease; }
+  #tourFx .fx-note text { fill: #111; }
+  #tourFx .fx-note.on { opacity: 1; }
+  #tourFx .fx-sel { fill: rgba(91,141,239,.22); stroke: #3a6fd8; stroke-width: 1.5; opacity: 0;
+    transition: opacity .2s ease, height .22s ease; }
+  #tourFx .fx-sel.on { opacity: 1; }
+  #tourFx .fx-badge, #tourFx .fx-card { opacity: 0; transform: translateY(4px); transform-box: fill-box;
+    transition: opacity .2s ease, transform .2s ease; }
+  #tourFx .fx-badge.on, #tourFx .fx-card.on { opacity: 1; transform: none; }
+  #tourFx .fx-badge rect, #tourFx .fx-card rect { fill: var(--panel); stroke: var(--line);
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.12)); }
+  #tourFx .fx-badge text { font: 700 12px var(--mono); fill: var(--ink); }
+  #tourFx .fx-card rect { stroke: var(--accent); }
+  #tourFx .fx-card text { font-size: 15px; fill: var(--ink); }
+  #tourFx .fx-ripple { fill: color-mix(in srgb, var(--accent) 45%, transparent); opacity: 0; }
+  #tourFx .fx-ripple.go { animation: fxRipple .5s ease-out both; }
+  @keyframes fxRipple { 0% { opacity: .9; r: 4; } 100% { opacity: 0; r: 22; } }
+  /* 길을 긋는 동안 정간·대강·각 상자는 뒤로 물러난다 */
+  /* (나타나기 애니메이션의 fill이 opacity를 붙잡으므로 애니메이션째 끈다) */
+  #tourLayer.fx-on .tour-ring, #tourLayer.fx-on .tour-ring .tour-ring-lab { animation: none; }
+  #tourLayer.fx-on .tour-ring { opacity: .18; transition: opacity .3s ease; }
+  #tourFx .fx-num.on { opacity: 1; }
   /* ── 장 고르기·장 끝 화면(.tour-panel, app.js tourShowPanel) ──
      장마다 큰 카드 하나 — 번호·이름·한 줄 설명·단계 수. 누르면 그 장만 본다.
      강조색은 여전히 [처음부터 전부 보기](= [다음] 자리) 한 점뿐이고, 카드는 테두리만. */
