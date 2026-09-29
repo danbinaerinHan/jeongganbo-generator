@@ -1463,7 +1463,8 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
 - 시작할 때 배율·맞춤 모드·스크롤을 보관하고 완료/건너뛰기/Esc에서 복원한다. 완료하면 별도 축하 화면 없이 작업으로 돌아간다.
 - 위의 과거 투어 위치·장 구성 설명보다 이 절이 우선한다.
 - **움직임(2026-09-29)**: 단계를 넘기면 강조 상자·보조 링·어둠 구멍이 앞 자리에서 새 자리로 미끄러지고(app.js `tourAnimateTo` — 셋이 좌표표 `tourGeom` 하나를 나눠 써서 어긋나지 않는다), 새 링은 앞 주 대상 자리에서 자라 나온다. 카드 글은 읽는 방향 쪽에서 차례로 떠오르고(`.swap-next/prev`), 장 칩 바탕(`#tourChipBar`)이 미끄러지며, 도착하면 테두리 빛이 한 번 번진다(`.ping`). 들어올 때·나갈 때도 페이드(`.tour-enter/.tour-leave`). 전부 한 번 흐르는 ease-out이고 튀거나 되풀이되는 움직임은 넣지 않는다. 동작 줄이기(prefers-reduced-motion)면 모두 끈다. rAF가 안 돌아도 끝 자리는 setTimeout이 보장한다.
-- **설정 단계는 '여는 법'부터 보여 준다(2026-09-29)**: 패널이 닫힌 채 상단바 [설정] 버튼을 먼저 비추고('눌러서 열기' 이름표), 잠시 뒤 버튼이 눌리는 움직임(`.tour-press`)과 함께 패널이 열리며 강조가 패널로 옮겨 간다(단계의 `opener`·`side`, app.js `tourOpenerStage`). **설정 단계 밖에서는 패널이 닫혀 있다**(`stepAvailable`의 `tourSetSide(false)`) — 투어 전 상태는 `tourSideWas`에 적어 두고 endTour가 되돌린다. 동작 줄이기면 버튼 단계 없이 곧장 열린 패널을 보여 준다.
+- **눌러야 열리는 것은 '여는 법'부터 보여 준다(2026-09-29)**: 단계마다 `need`(설정 패널 `side` · 도구창 `win` · 율/시김새 보기 `view`)를 적고, 그것이 닫혀 있으면 닫힌 채로 여는 버튼부터 비춘 뒤('눌러서 열기' 이름표) 버튼이 눌리는 움직임(`.tour-press`)과 함께 열고 강조를 옮긴다(app.js `tourOpenerFor`·`tourOpenerStage`). 도구창 탭이 접힌 칸 안에 있으면 [입력 도구]부터 누른다. 이름표는 연 뒤 걷힌다(`.opened`). **need에 없는 것은 그 단계에서 닫힌다** — 투어 전 화면은 `tourSnap0`에 떠 두고 endTour가 되돌린다. 새 단계에서 창을 보여 주려면 prep이 아니라 need에 적을 것. 동작 줄이기면 버튼 단계 없이 곧장 연다.
+- **강조 상자 꼴**: 여백은 주 대상 3px·보조 2px, 모서리 6px이고 어둠 구멍(SVG rx)도 같은 값이다(`TOUR_HOLE_PAD`·`TOUR_RING_PAD`·`TOUR_RADIUS` ↔ styles.css). 보조 상자 기본색은 **지금 테마의 강조색**(`--ring-c: var(--accent)`)이고, 흰 종이 위 상자만 `tone-a/b/c` 고정색을 쓴다.
 
 ## 프리뷰 검증 (.claude/launch.json의 "jgb")
 

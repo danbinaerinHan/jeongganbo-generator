@@ -10079,20 +10079,17 @@
     { ch: 0, sel: "#sheetArea", id: "Jeongganbo",
       // 글이 정간·각·대강을 말하므로 **바로 이 장에서** 셋을 상자로 짚는다 — 무엇을 가리키는
       // 말인지 모른 채 넘어가면 뒤가 다 헛돈다. 셋은 각기 다른 각에 있고 색도 다르다.
-      also: [{ union: ".tour-lane-mel", label: "각" },
+      also: [{ union: ".tour-lane-mel", label: "각", tone: "a" },
              { union: ".tour-lane-dg", label: "대강", labelPos: "side", tone: "b" },
              { union: ".tour-lane-cell", label: "정간", labelPos: "side", tone: "c" }] },
     { ch: 0, sel: "#melodyRibbon", id: "ribbon", },
     { ch: 0, sel: "#sheetArea", id: "sheet", },
     // 설정 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)과 문서(종이 방향·제목)를
     // 어디서 바꾸는지부터 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 연다.
-    // 설정 패널은 기본이 닫힘이라 **여는 법부터** 보여 준다(2026-09-29 사용자 요청): 닫힌 채로
-    // 상단바 [설정] 버튼을 먼저 비추고(opener), 잠시 뒤 그 버튼을 눌러 패널을 연 다음 강조가
-    // 패널로 옮겨 간다. 버튼엔 '눌러서 열기' 이름표가 남는다. 이 단계 밖에서는 패널이 닫힌다
-    // (side 표시가 없는 단계 — stepAvailable).
-    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab, side: true,
-      opener: "#sidebarOpen",
-      also: [{ union: "#sidebarOpen", label: "눌러서 열기", labelPos: "below" }] },
+    // need — 이 단계가 보여 주려면 열려 있어야 하는 것(설정 패널·도구창·팔레트 보기).
+    // 눌러야 열리는 것은 **닫힌 채로 여는 버튼부터** 비추고 그 버튼을 눌러 연다(tourGo의
+    // 두 박자). need에 없는 것은 그 단계에서 닫힌다 — 아래 'need' 절 참고.
+    { ch: 0, sel: "#sidebar", id: "Setting", need: { side: true } },
     // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
     // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. 이미지는 손그림이 아니라 **앱이 실제로
     // 그린 악보**의 캡처다: 에디터에 "황 | 황 태 | 황태 | 황{미는표} | 황태 -황"을 넣고
@@ -10103,7 +10100,8 @@
     // 구멍은 **악보의 첫 각(정간 줄) 자체**에 — '정간'이 어느 자리를 말하는지, 어디를 눌러
     // 적는지가 말이 아니라 화면으로 보여야 한다(render가 첫 각 칸에 .tour-lane-mel을 단다).
     // 악보가 아직 안 그려졌으면 예전처럼 악보 영역 전체로 물러선다.
-    { ch: 1, sel: [{ union: ".tour-lane-mel" }, "#sheetArea"], id: "yul", prep: tourEnsureYulWin,
+    { ch: 1, sel: [{ union: ".tour-lane-mel" }, "#sheetArea"], id: "yul",
+      need: { win: "paletteCol", view: "yul" },
       // 율명·시김새는 한 버튼(井)·한 창이라 강조도 하나다 — 창 안의 '율명 | 시김새'
       // 토글까지 함께 가리켜 '여기서 갈아 끼운다'가 보이게 한다.
       also: ["#winToggleYul", "#paletteCol .pal-views", "#paletteCol"],
@@ -10117,31 +10115,32 @@
     // 시김새 3단계 — 팔레트(악기 선택)·숫자 단축키·미세 조정. 정간 입력 바로 다음인 건
     // 시김새가 선율에 붙는 것이라 '음을 넣었으면 꾸민다'는 차례라서. 캡처 없이 글로만 —
     // 셋 다 악보 그림이 아니라 조작(어디를 눌러 어떻게 쓰나)에 대한 안내라서.
-    // prep(tourEnsureOrnWin)이 팔레트를 열고 **시김새 보기로 바꿔** 두므로 also의 것들이 실제로 보인다.
+    // need가 팔레트를 열고 **시김새 보기로 바꿔** 두므로 also의 것들이 실제로 보인다.
     // 대상은 팔레트 머리줄(.pal-top) — 악기·크기 컨트롤이 다 이 줄에 있어 구멍 하나로 다
     // 밝아진다. 기능바의 여는 버튼은 also 링으로.
-    { ch: 1, sel: "#paletteCol .pal-top", id: "ornPalette", prep: tourEnsureOrnWin,
+    { ch: 1, sel: "#paletteCol .pal-top", id: "ornPalette", need: { win: "paletteCol", view: "orn" },
       also: ["#winToggleYul", "#paletteCol .orn-instrument", "#paletteCol .size-ctl"], },
-    { ch: 1, sel: "#paletteCol", id: "ornShortcut", prep: tourEnsureOrnWin,
+    { ch: 1, sel: "#paletteCol", id: "ornShortcut", need: { win: "paletteCol", view: "orn" },
       also: ["#ornMapToggle"], },
-    { ch: 1, sel: "#ornEditToggleEd", id: "ornEdit", prep: tourEnsureOrnWin, },
+    { ch: 1, sel: "#ornEditToggleEd", id: "ornEdit", need: { win: "paletteCol", view: "orn" } },
     // 장단·가사 — '켜면 이렇게 되고 이렇게 쓴다'를 실제 렌더 캡처와 함께.
     // 정간 입력 다음 순서인 건 실제 작성 차례(선율 → 장단·가사)를 따라가는 것.
-    // 구멍은 켜는 곳(기능바 버튼)에 — 예전엔 악보 전체였는데, 빈 문서 투어에선 장단·가사
-    // 줄이 아직 없어 '어딜 누르라는 건지'가 안 보였다. 결과 모습은 fig 캡처가 보여준다.
-    { ch: 1, sel: "#winToggleLyrics", id: "lyrics",
+    // 창은 닫힌 채 켜는 버튼부터 비추고 눌러서 연 뒤 창을 가리킨다(need의 두 박자) —
+    // 예전엔 구멍이 버튼에만 있어 창 안(팔레트·머리줄)을 말하는 본문과 따로 놀았다.
+    // 결과 모습은 fig 캡처가 보여준다.
+    { ch: 1, sel: "#lyricsArea", id: "lyrics", need: { win: "lyricsArea" },
       // 곁줄이 정간 어느 쪽에 붙는지·어디를 더블클릭하면 되는지를 악보에서 함께 밝힌다.
       // .tour-lane-ly는 곁줄 칸에도, 곁줄이 아직 없을 때의 '진입로'(정간 오른쪽 빈 자리)에도
       // 붙어 있어 두 경우 다 가리킨다.
-      also: [{ union: ".tour-lane-ly" }],
+      also: ["#winToggleLyrics", { union: ".tour-lane-ly" }],
       fig: [
         { t: "달", cap: "황 옆에 '달'", img: TOUR_LY_IMGS.dal },
         { t: "아", cap: "태 옆에 '아'", img: TOUR_LY_IMGS.a }
       ] },
-    { ch: 1, sel: "#winToggleJangdan", id: "jangdan",
+    { ch: 1, sel: "#jangdanArea", id: "jangdan", need: { win: "jangdanArea" },
       // 장단이 이미 켜져 있으면 악보의 **장단 줄**도 함께 밝혀 어디에 생기는지 보이게 한다.
       // 꺼져 있으면 그 줄이 없으니 rectOfSpec이 null을 주고 조용히 넘어간다.
-      also: [{ union: ".tour-lane-jd" }],
+      also: ["#winToggleJangdan", { union: ".tour-lane-jd" }],
       fig: [
         { t: "덩", img: TOUR_JD_IMGS.deong },
         { t: "기덕", img: TOUR_JD_IMGS.gideok },
@@ -10149,16 +10148,17 @@
       ] },
     // 빠르기 표기·각 이름 — 章 창(입력 그룹). #5 피드백: 빠르기 조절을 못 찾았고, '빠르기'가
     // 재생 설정(듣는 속도)과 여기(악보에 찍는 표기) 두 곳이라 헷갈렸다. 장단·가사와 같은
-    // 켜는 자리(기능바 버튼)를 가리킨다.
-    { ch: 1, sel: "#winToggleGakName", id: "gakName", },
+    // 켜는 자리(버튼)를 눌러 창을 연다(need).
+    { ch: 1, sel: "#gakNameArea", id: "gakName", need: { win: "gakNameArea" },
+      also: ["#winToggleGakName"] },
     // 텍스트(文) — 팔레트 6개 중 유일하게 투어에 없던 창. 제목·부제 서식이 이리로
     // 온 뒤(2026-07-24)라 함께 소개한다. 창을 열어 두고(prep) 가리킨다.
-    { ch: 1, sel: "#textArea", id: "text", prep: tourEnsureTextWin,
+    { ch: 1, sel: "#textArea", id: "text", need: { win: "textArea" },
       also: ["#winToggleText"] },
     // 정간 서식 — 창을 열어 둔 채(prep) 배경색·정간·가로줄·초기화 네 구획을 짚는다.
     // #1 피드백: 각 끝/정간 위아래의 마디선·덧줄(이중선)을 어디서 긋는지 못 찾았다.
     // 내용(선율~각 이름)을 다 넣은 뒤 '꾸미는' 차례라 章 다음·들어보기 앞에 둔다.
-    { ch: 2, sel: "#cellStyleWin", id: "cellStyle", prep: tourEnsureCellStyleWin,
+    { ch: 2, sel: "#cellStyleWin", id: "cellStyle", need: { win: "cellStyleWin" },
       also: ["#winToggleCellStyle"],
       fig: [
         { t: "굵게", img: TOUR_BORDER_IMGS.thick },
@@ -10203,10 +10203,11 @@
     const r = el.getBoundingClientRect();
     return (r.width || r.height) ? r : null;   // rect 0 = 화면에 없음 → 그 단계는 건너뜀
   }
-  // tourOpenerStage — opener가 있는 단계의 첫 박자(아직 안 열림). 그동안은 여는 버튼을 비춘다.
-  let tourOpenerStage = false;
+  // tourOpener — 지금 단계에서 '눌러서 열' 버튼(없으면 null). tourOpenerStage는 그 첫 박자
+  // (아직 안 누름)이고, 그동안은 주 대상 대신 그 버튼을 비춘다.
+  let tourOpener = null, tourOpenerStage = false;
   function tourRect(step) {
-    if (tourOpenerStage && step.opener && TOUR_STEPS[tourIdx] === step) return rectOfSpec(step.opener);
+    if (tourOpenerStage && tourOpener && TOUR_STEPS[tourIdx] === step) return rectOfSpec(tourOpener);
     return rectOfSpec(step.sel);
   }
   // 단계 준비(prep) — 시김새 3단계처럼 '눌러야 하는 버튼'이 접힌 도구창 안에 있으면
@@ -10228,55 +10229,52 @@
     });
     return out;
   })();
-  let tourPrevWin = null, tourTouchedWin = false;
-  // 도구창 열기(공통) — prep에서 쓰며, 처음 연 시점의 '원래 열려 있던 창'을 기억해 뒀다가
-  // endTour가 복원한다. 대상 창은 전부 .direct-win이라 복원 로직 하나로 충분.
-  function tourEnsureWin(winId, toggleId) {
-    const w = $(winId);
-    if (!w || w.classList.contains("win-open")) return;
-    if (!tourTouchedWin) {
-      const open = document.querySelector(".direct-win.win-open");
-      tourPrevWin = open ? open.id : null;
-      tourTouchedWin = true;
-    }
-    $(toggleId).click();
+  // ── 단계가 필요로 하는 화면(need) ──
+  // 화면 상태는 셋으로 본다: 설정 패널(side) · 열린 도구창(win) · 율/시김새 보기(view).
+  // 단계마다 need에 적힌 것만 열고 **나머지는 닫는다** — 앞 단계에서 연 창이 뒤 단계까지
+  // 남아 있으면 지금 무엇을 가리키는지 흐려진다(2026-09-29 사용자 요청: "그 전이나 그 뒤에는
+  // 닫힌 상태로"). 투어 전 상태는 tourSnap0에 떠 두었다가 endTour가 되돌린다.
+  let tourSnap0 = null;
+  function sidebarIsOpen() { return !document.body.classList.contains("sidebar-collapsed"); }
+  function tourSnap() {
+    const w = document.querySelector(".direct-win.win-open");
+    return { side: sidebarIsOpen(), win: w ? w.id : null, view: palView };
   }
-  function tourEnsureYulWin() {
-    tourEnsureWin("paletteCol", "winToggleYul");
-    if (palView !== "yul") {
-      if (!tourTouchedPalView) { tourPrevPalView = palView; tourTouchedPalView = true; }
-      document.querySelector('.pal-view[data-view="yul"]').click();
-    }
-  }
-  // 시김새는 같은 창의 다른 **보기**라, 창을 여는 것에 더해 보기까지 시김새로 돌려놔야
-  // 안내가 가리키는 악기·단축키·편집 버튼이 실제로 화면에 있다(.orn-only-tool은 시김새
-  // 보기에서만 보인다). 원래 보기는 endTour가 tourPrevPalView로 되돌린다.
-  function tourEnsureOrnWin() {
-    tourEnsureWin("paletteCol", "winToggleYul");
-    if (palView === "orn") return;
-    if (!tourTouchedPalView) { tourPrevPalView = palView; tourTouchedPalView = true; }
-    const b = document.querySelector('.pal-view[data-view="orn"]');
+  function tourSetView(v) {
+    if (!v || palView === v) return;
+    const b = document.querySelector('.pal-view[data-view="' + v + '"]');
     if (b) b.click();
   }
-  let tourPrevPalView = null, tourTouchedPalView = false;
-  function tourEnsureTextWin() { tourEnsureWin("textArea", "winToggleText"); }
-  function tourEnsureCellStyleWin() { tourEnsureWin("cellStyleWin", "winToggleCellStyle"); }
-  // '레이아웃 잡기' 단계용 — 사이드바를 레이아웃 탭으로 돌려 본문이 가리키는 컨트롤이
-  // 실제로 보이게 한다. 시김새 창과 같은 규칙으로 endTour에서 원래 탭 복원.
-  let tourPrevTab = null, tourTouchedTab = false;
-  // 설정 패널 여닫이 — 투어 동안에는 **설정 단계(side)에서만 열리고 나머지 단계에선 닫힌다**.
-  // 투어 전 상태는 tourSideWas에 적어 두었다가 endTour가 되돌린다(기억은 안 건드린다).
-  let tourSideWas = null;
-  function sidebarIsOpen() { return !document.body.classList.contains("sidebar-collapsed"); }
-  function tourSetSide(on) {
-    if (tourSideWas === null) tourSideWas = sidebarIsOpen();
-    if (sidebarIsOpen() !== on) setSidebarOpen(on, false);
+  function tourApplySnap(sn) {
+    if (sidebarIsOpen() !== sn.side) setSidebarOpen(sn.side, false);   // 기억(localStorage)은 안 건드린다
+    const w = document.querySelector(".direct-win.win-open");
+    if ((w ? w.id : null) !== sn.win) activateDirectPanel(sn.win);
+    tourSetView(sn.view);
   }
+  // need를 채운 상태 / 여는 버튼을 누르기 직전 상태(need에 없는 것만 닫고 있는 것은 그대로)
+  function tourNeedSnap(need, cur) {
+    need = need || {};
+    return { side: !!need.side, win: need.win || null, view: need.view || cur.view };
+  }
+  function tourStageSnap(need, from) {
+    need = need || {};
+    return { side: need.side ? from.side : false, win: need.win ? from.win : null, view: from.view };
+  }
+  // from 상태에서 need로 가려면 무엇을 눌러야 하나(없으면 null = 이미 열려 있음).
+  // 도구창 탭은 입력 도구 칸 안에 있어 칸이 접혀 있으면 안 보인다 — 그때는 [입력 도구]부터.
+  function tourOpenerFor(need, from) {
+    if (!need) return null;
+    if (need.side && !from.side) return "#sidebarOpen";
+    if (need.win && from.win !== need.win) {
+      const t = '.win-toggle[data-target="' + need.win + '"]';
+      return rectOfSpec(t) ? t : "#paletteToggle";
+    }
+    if (need.view && from.view !== need.view) return '.pal-view[data-view="' + need.view + '"]';
+    return null;
+  }
+  // 설정 단계는 레이아웃 탭을 보여 준다(본문이 가리키는 컨트롤이 거기 있다). endTour에서 원래 탭 복원.
+  let tourPrevTab = null, tourTouchedTab = false;
   function tourEnsureLayoutTab() {
-    // 설정 패널은 기본이 닫힘이라, 이 단계를 보여주려면 연다(투어가 끝나면 되돌린다).
-    // 예전엔 닫혀 있으면 단계를 통째로 건너뛰었는데(skipIf), 기본이 닫힘이 되면서 첫 방문자가
-    // '악보의 짜임을 어디서 바꾸나'를 영영 못 보게 된다.
-    tourSetSide(true);
     const btn = document.querySelector('.tab[data-tab="layout"]');
     if (!btn || btn.classList.contains("active")) return;
     if (!tourTouchedTab) {
@@ -10286,10 +10284,14 @@
     }
     btn.click();
   }
+  function tourApplyNeed(s) {
+    tourApplySnap(tourNeedSnap(s.need, tourSnap()));
+    if (s.need && s.need.side) tourEnsureLayoutTab();
+    if (s.prep) s.prep();
+  }
   function stepAvailable(i) {
     const s = TOUR_STEPS[i];
-    if (!s.side) tourSetSide(false);   // 설정 단계 밖에서는 패널을 닫아 둔다
-    if (s.prep) { try { s.prep(); } catch (_e) {} }   // 대상 rect 재기 전에 — 닫힌 창이면 rect 0이라 건너뛰어버림
+    try { tourApplyNeed(s); } catch (_e) {}   // 대상 rect 재기 전에 — 닫힌 창이면 rect 0이라 건너뛰어버림
     return !(s.skipIf && s.skipIf()) && !!tourRect(s);
   }
   // 보조 하이라이트 링(step.also) — 컷아웃 구멍은 하나뿐이라, 본문이 가리키는 나머지
@@ -10299,7 +10301,22 @@
   // 어떤 스펙에서 나온 링인지 el._spec에 적어 두고 다시 잴 때 그걸 본다.
   function buildTourRings(step) {
     document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
+    // 여는 버튼 링은 **맨 앞**에 둔다 — 두 박자 사이에 좌표표의 1번 자리를 지켜야 그 링이
+    // 제자리에 머물고, 뒤에 나타나는 링들은 버튼 자리에서 자라 나온다(tourAnimateTo).
+    const specs = [];
+    const openEl = tourOpener && document.querySelector(tourOpener);
+    if (openEl) {
+      specs.push({ union: tourOpener, _opener: true,
+        label: /pal-view/.test(tourOpener) ? "눌러서 바꾸기" : "눌러서 열기",
+        labelPos: "below" });   // 옆에 두면 이웃 탭(곁줄·장단…)을 덮는다
+    }
     (step.also || []).forEach(function (sel) {
+      // 여는 버튼과 같은 것을 가리키는 보조 링은 겹쳐 그리지 않는다
+      const one = typeof sel === "string" ? sel : (sel && sel.union);
+      if (openEl && one && document.querySelector(one) === openEl) return;
+      specs.push(sel);
+    });
+    specs.forEach(function (sel) {
       const d = document.createElement("div");
       // tone — 상자가 여럿일 때 색으로 갈라 준다(기본은 강조색). 정간·대강·각처럼 나란히
       // 놓이는 상자들이 한 색이면 이름표를 일일이 읽어야 한다.
@@ -10323,9 +10340,11 @@
   function tourRingTargets() {
     const out = [];
     document.querySelectorAll(".tour-ring").forEach(function (d) {
-      const r = rectOfSpec(d._spec);   // union·배열 꼴을 받는다(위 rectOfSpec 참고)
+      // 첫 박자(아직 안 누름)엔 여는 버튼 링만 — 나머지는 열린 뒤에야 화면에 있다
+      const r = (tourOpenerStage && !d._spec._opener) ? null : rectOfSpec(d._spec);
       d.style.display = r ? "" : "none";
-      if (r) out.push({ el: d, g: { x: r.left - 4, y: r.top - 4, w: r.width + 8, h: r.height + 8 } });
+      const P = TOUR_RING_PAD;
+      if (r) out.push({ el: d, g: { x: r.left - P, y: r.top - P, w: r.width + P * 2, h: r.height + P * 2 } });
     });
     return out;
   }
@@ -10360,7 +10379,7 @@
     for (let k = have.length; k < holes.length; k++) {
       const rc = document.createElementNS(NS, "rect");
       rc.setAttribute("class", "tour-spot-hole");
-      rc.setAttribute("rx", "8"); rc.setAttribute("fill", "#000");
+      rc.setAttribute("rx", String(TOUR_RADIUS)); rc.setAttribute("fill", "#000");
       mask.appendChild(rc);
     }
     const all = mask.querySelectorAll(".tour-spot-hole");
@@ -10380,6 +10399,9 @@
   //  · 동작 줄이기(prefers-reduced-motion)를 켠 사람에겐 곧장 자리로 간다.
   //  · rAF가 안 도는 환경(백그라운드 탭·프리뷰)에서도 끝 자리는 setTimeout이 보장한다.
   let tourGeom = null, tourAnimId = 0;
+  // 대상과 테두리 사이 여백 — 넉넉하면 상자가 대상보다 커 보여 지저분했다(2026-09-29).
+  // 어둠 구멍도 이 테두리와 같은 사각형·같은 모서리(TOUR_RADIUS, CSS와 짝)로 뚫는다.
+  const TOUR_HOLE_PAD = 3, TOUR_RING_PAD = 2, TOUR_RADIUS = 6;
   const TOUR_MOVE_MS = 460;
   function tourReduceMotion() {
     try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_e) { return false; }
@@ -10450,7 +10472,7 @@
     const fresh = tourPosStep !== tourIdx;
     if (fresh) { tourPosStep = tourIdx; buildTourRings(step); }
     const rings = tourRingTargets();
-    const pad = 6;
+    const pad = TOUR_HOLE_PAD;
     const target = [{ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 }]
       .concat(rings.map(function (rg) { return rg.g; }));
     const moved = tourAnimateTo(target, rings, fresh);
@@ -10463,6 +10485,7 @@
     }
   }
   function tourGo(i, dir) {
+    const from = tourSnap();   // 앞 단계가 남긴 화면 — 여는 버튼을 고르는 기준
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
     if (i >= TOUR_STEPS.length) { track("tour_done"); endTour(); return; }   // 마지막 '다음' = 완료 축하 화면
     if (i < 0) { endTour(); return; }
@@ -10519,22 +10542,34 @@
     card.classList.remove("swap-next", "swap-prev");
     if (tourDir) { void card.offsetWidth; card.classList.add(tourDir > 0 ? "swap-next" : "swap-prev"); }
     moveTourChipBar(s.ch);
-    // 여는 버튼이 있는 단계(설정) — 닫힌 채로 버튼부터 비추고, 도착한 뒤 버튼을 '눌러' 연다.
-    // stepAvailable이 대상을 재려고 이미 열어 두었으므로 여기서 도로 닫고 시작한다.
-    tourOpenerStage = false;
-    if (s.opener && s.side && !tourReduceMotion()) {
+    // 두 박자 — 이 단계가 연 것이 '눌러야 열리는 것'이면 닫힌 채로 여는 버튼부터 비추고,
+    // 도착한 뒤 버튼을 '눌러' 연다. stepAvailable이 대상을 재려고 이미 열어 두었으므로
+    // 누르기 직전 상태(tourStageSnap)로 되돌려 놓고 시작한다.
+    tourOpener = null; tourOpenerStage = false;
+    if (s.need && !tourReduceMotion()) {
+      const stage = tourStageSnap(s.need, from);
+      tourApplySnap(stage);
+      tourOpener = tourOpenerFor(s.need, stage);
+      if (!tourOpener) { try { tourApplyNeed(s); } catch (_e) {} }
+    }
+    if (tourOpener) {
       tourOpenerStage = true;
-      setSidebarOpen(false, false);
       const mine = tourIdx;
       setTimeout(function () {
         if (tourIdx !== mine) return;
-        const btn = document.querySelector(s.opener);
+        const btn = document.querySelector(tourOpener);
         if (btn) { btn.classList.remove("tour-press"); void btn.offsetWidth; btn.classList.add("tour-press"); }
         setTimeout(function () {
           if (tourIdx !== mine) return;
           tourOpenerStage = false;
-          if (s.prep) { try { s.prep(); } catch (_e) {} }
+          try { tourApplyNeed(s); } catch (_e) {}
           positionTour();
+          // 열린 뒤 나타난 링은 옅게 시작해 또렷해진다(첫 박자의 여는 버튼 링은 그대로)
+          document.querySelectorAll(".tour-ring").forEach(function (d) {
+            // 여는 버튼 링은 남기되 이름표는 걷는다 — 할 말을 다 했고, 열린 창·탭 위에 남으면 가린다
+            if (d._spec._opener) { d.classList.add("opened"); return; }
+            d.classList.remove("enter"); void d.offsetWidth; d.classList.add("enter");
+          });
           tourPing(TOUR_MOVE_MS - 60);
           setTimeout(function () { if (tourIdx === mine) positionTour(); }, 60);
         }, 180);
@@ -10563,6 +10598,7 @@
     track("tour_start");
     clearTimeout(tourHideTimer);
     tourIdx = -1; tourGeom = null; tourPosStep = -1;
+    tourSnap0 = tourSnap();
     const layer = $("tourLayer");
     layer.classList.remove("tour-leave", "tour-enter");
     layer.style.display = "block";
@@ -10595,23 +10631,9 @@
     if ($("tourFinale")) $("tourFinale").style.display = "none";
     $("tourCard").style.display = "";
     $("tourHole").style.display = "";
-    // prep이 도구창(시김새/정간 서식)을 열었었다면 투어 전에 열려 있던 창으로 되돌린다
-    // (작업 공간 존중). 도구창은 한 번에 하나만 열리므로 지금 열린 창이 곧 투어가 연 창.
-    if (tourTouchedWin) {
-      activateDirectPanel(tourPrevWin);
-      tourTouchedWin = false; tourPrevWin = null;
-    }
-    // prep이 팔레트를 시김새 보기로 돌렸었다면 원래 보기로 (창 복원과 같은 취지)
-    if (tourTouchedPalView) {
-      const b = document.querySelector('.pal-view[data-view="' + (tourPrevPalView || "yul") + '"]');
-      if (b && !b.classList.contains("active")) b.click();
-      tourTouchedPalView = false; tourPrevPalView = null;
-    }
-    // prep이 사이드바를 잠깐 열었었다면 도로 닫는다(기억은 안 건드린다)
-    if (tourSideWas !== null) {
-      if (sidebarIsOpen() !== tourSideWas) setSidebarOpen(tourSideWas, false);
-      tourSideWas = null;
-    }
+    // 투어 전 화면(설정 패널·도구창·팔레트 보기)으로 되돌린다(작업 공간 존중)
+    tourOpener = null; tourOpenerStage = false;
+    if (tourSnap0) { tourApplySnap(tourSnap0); tourSnap0 = null; }
     // prep이 사이드바 탭을 돌렸었다면 원래 탭으로
     if (tourTouchedTab) {
       if (tourPrevTab) {
