@@ -9714,6 +9714,8 @@
     $("playSettingsToggle").classList.toggle("on");
   });
   document.addEventListener("click", function (e) {
+    // 둘러보기 카드를 누른 것은 '바깥'이 아니다 — 둘러보기가 열어 보여 주는 중이다
+    if (e.target.closest && e.target.closest("#tourLayer")) return;
     if ($("playPop").classList.contains("on") && !$("playPop").contains(e.target) && e.target !== $("playSettingsToggle")) {
       $("playPop").classList.remove("on");
       $("playSettingsToggle").classList.remove("on");
@@ -9756,6 +9758,7 @@
       $(btnId).classList.remove("on");
     });
     document.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("#tourLayer")) return;   // 둘러보기가 열어 둔 메뉴는 카드를 눌러도 안 닫힌다
       if ($(popId).classList.contains("on") && !$(popId).contains(e.target) && !$(btnId).contains(e.target)) {
         $(popId).classList.remove("on");
         $(btnId).classList.remove("on");
@@ -10491,9 +10494,15 @@
     });
     buildSpotlight(g);
   }
+  let tourXfading = false;
   function tourAnimateTo(target, rings, fresh) {
-    const id = ++tourAnimId;
     const prev = tourGeom;
+    // 교차 페이드 중에 같은 자리로 다시 불리면(60ms 뒤 재측정 등) 그대로 두어 끝까지 스며들게 한다
+    if (tourXfading && prev && prev.length === target.length && prev.every(function (f, k) {
+      const t = target[k];
+      return Math.abs(f.x - t.x) + Math.abs(f.y - t.y) + Math.abs(f.w - t.w) + Math.abs(f.h - t.h) < 1;
+    })) { applyTourGeom(target, rings); return true; }
+    const id = ++tourAnimId;
     const from = target.map(function (t, k) {
       if (prev && prev[k] && !(fresh && k > 0)) return prev[k];
       // 새로 나타난 링: 앞 단계 주 대상 자리에서 출발. 첫 단계면 제자리(나타나기만 한다).
@@ -10508,6 +10517,11 @@
       tourGeom = target; applyTourGeom(target, rings);
     };
     if (same || tourReduceMotion() || !window.requestAnimationFrame) { finish(); return false; }
+    // 크기가 크게 다른 곳으로 옮길 때(악보 전체 ↔ 작은 버튼)는 늘이고 줄이지 않고 **제자리에서
+    // 교차로 스며든다** — 커다란 구멍이 확 쪼그라들거나 부풀면 눈이 흔들린다(2026-09-29 사용자 지적).
+    const areaOf = function (g) { return Math.max(1, g.w * g.h); };
+    const ratio = Math.max(areaOf(from[0]), areaOf(target[0])) / Math.min(areaOf(from[0]), areaOf(target[0]));
+    if (prev && ratio > TOUR_XFADE_RATIO) { tourCrossfade(id, prev, target, rings); return true; }
     const t0 = performance.now();
     const cur = from.map(function (f) { return { x: f.x, y: f.y, w: f.w, h: f.h }; });
     tourGeom = cur;   // 도중에 다시 불리면 여기서 이어 간다
@@ -10527,6 +10541,46 @@
     setTimeout(finish, TOUR_MOVE_MS + 120);
     return true;
   }
+  const TOUR_XFADE_RATIO = 5, TOUR_XFADE_MS = 380;
+  function tourCrossfade(id, prev, target, rings) {
+    const mask = document.getElementById("tourSpotMask");
+    const NS = "http://www.w3.org/2000/svg", F = TOUR_FEATHER;
+    // 앞 자리의 구멍을 잠깐 남겨(유령) 흐려지게 하고, 새 자리의 구멍은 옅게 시작해 짙어진다
+    const ghosts = prev.map(function (h) {
+      const rc = document.createElementNS(NS, "rect");
+      rc.setAttribute("class", "tour-spot-ghost");
+      rc.setAttribute("x", h.x - F); rc.setAttribute("y", h.y - F);
+      rc.setAttribute("width", Math.max(0, h.w + F * 2)); rc.setAttribute("height", Math.max(0, h.h + F * 2));
+      rc.setAttribute("rx", String(TOUR_RADIUS + F)); rc.setAttribute("fill", "#000");
+      rc.setAttribute("filter", "url(#tourSpotSoft)");
+      if (mask) mask.appendChild(rc);
+      return rc;
+    });
+    tourGeom = target; applyTourGeom(target, rings);
+    const holes = mask ? mask.querySelectorAll(".tour-spot-hole") : [];
+    const hole = $("tourHole");
+    const setA = function (e) {
+      ghosts.forEach(function (g) { g.setAttribute("fill-opacity", String(1 - e)); });
+      holes.forEach(function (h) { h.setAttribute("fill-opacity", String(e)); });
+      hole.style.opacity = String(e);
+    };
+    const done = function () {
+      ghosts.forEach(function (g) { g.remove(); });
+      holes.forEach(function (h) { h.removeAttribute("fill-opacity"); });
+      hole.style.opacity = "";
+      tourXfading = false;
+    };
+    tourXfading = true;
+    setA(0);
+    const t0 = performance.now();
+    const step = function () {
+      if (id !== tourAnimId) { done(); return; }
+      const p = Math.min(1, (performance.now() - t0) / TOUR_XFADE_MS);
+      setA(tourEase(p));
+      if (p < 1) setTimeout(step, 16); else done();
+    };
+    setTimeout(step, 16);
+  }
   // 도착 표시 — 상자가 제자리에 닿으면 테두리 바깥으로 빛이 한 번 번지고 사라진다.
   // 단계마다 한 번뿐이다(계속 깜빡이면 글을 읽는 눈을 뺏는다).
   function tourPing(delay) {
@@ -10534,7 +10588,7 @@
     const my = tourIdx;
     setTimeout(function () {
       if (tourIdx !== my) return;
-      hole.classList.remove("ping"); void hole.offsetWidth; hole.classList.add("ping");
+      hole.classList.remove("ping", "beacon"); void hole.offsetWidth; hole.classList.add("ping", "beacon");
     }, delay);
   }
   let tourPosStep = -1;
@@ -10549,6 +10603,8 @@
     const pad = TOUR_HOLE_PAD;
     const target = [{ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 }]
       .concat(rings.map(function (rg) { return rg.g; }));
+    // 작은 대상(버튼 하나)은 구멍만으론 눈에 덜 띈다 — 둘레로 잔잔한 물결(비콘)을 몇 번 띄운다
+    $("tourHole").classList.toggle("small", target[0].w < 120 && target[0].h < 80);
     const moved = tourAnimateTo(target, rings, fresh);
     if (fresh) {
       // 링은 자라 나오는 동안 옅게 시작해 도착과 함께 또렷해진다(CSS .tour-ring.enter)
@@ -10579,8 +10635,8 @@
     ornPalette: [null, "#paletteCol .orn-instrument", "#paletteCol .sym-search", "#paletteCol"],
     ornShortcut: [null, "#ornMapToggle", null],
     lyrics: [{ union: ".tour-lane-ly" }, { union: ".tour-lane-ly" }, "#lyricsArea"],
-    play: ["#btnPlay", "#playSettingsToggle", "#playSettingsToggle", "#playSettingsToggle"],
-    files: ["#btnNewDoc", "#btnPrint", "#appRail", null]
+    play: ["#btnPlay", "#playPop", "#playPop", "#playPop"],
+    files: ["#btnNewDoc", "#btnPrint", "#outPop", null]
   };
   let tourBeat = 0, tourBeats = [];
   function buildTourBeats() {
@@ -10669,7 +10725,8 @@
     // 맨 앞의 [이전]은 장 고르기로 돌아간다(투어를 끝내지 않게)
     $("tourPrev").disabled = false;
     $("tourPrev").style.display = "";
-    if (animate && tourIdx >= 0) positionTour();   // 강조가 이 줄의 자리로 옮겨 간다
+    if (tourIdx >= 0) tourMenuSync();   // 이 줄에 딸린 팝업(재생 설정·출력)을 열거나 닫는다
+    if (animate && tourIdx >= 0) { positionTour(); tourPing(TOUR_MOVE_MS - 60); }   // 강조가 이 줄의 자리로 옮겨 간다
     if (tourIdx >= 0) tourFxRun();                  // 이 줄에 딸린 악보 위 연출(없으면 걷기만)
     // 새로 편 줄은 한 글자씩(앞으로 갈 때만 — 되돌아가거나 한꺼번에 펼 땐 곧장)
     if (animate && (forward || b === 0) && tourBeats[tourBeat] && !tourBeatAll) tourTypeLine(tourBeats[tourBeat]);
@@ -10687,7 +10744,7 @@
     return { first: first, last: last };
   }
   function tourShowPanel(kind) {
-    tourTypeFinish(); tourFxStop();
+    tourTypeFinish(); tourFxStop(); ++tourMenuTok; tourMenusClose();
     tourPanel = kind;
     tourIdx = -1;
     stopTourDemo();
@@ -10772,6 +10829,7 @@
   // 동작 줄이기면 다 그어진 길을 한 번에 보여 준다. 다른 줄·단계로 가면 걷힌다(tourFxStop).
   const TOUR_BEAT_FX = {
     Jeongganbo: { 2: tourReadPath },
+    ornPalette: { 1: function () { tourFxInstList(); } },
     sheet: { 0: function () { tourFxInput(); }, 1: function () { tourFxCopy(); }, 2: function () { tourFxUndo(); } }
   };
   let tourFxTok = 0;
@@ -11003,6 +11061,74 @@
       base.forEach(function (n) { fxOn(n, true); }); fxOn(oops, false); fxOn(kz, false); fxOn(ky, false);
     });
   }
+  // ── 줄에 딸린 팝업 메뉴(TOUR_BEAT_MENU) ──
+  // 재생 설정·[출력]처럼 눌러야 뜨는 팝업은 그 줄이 말할 때 **버튼을 눌러 열어** 보인다
+  // (2026-09-29 사용자 요청). 버튼을 먼저 비추고 → 눌리는 움직임 → 팝업이 열리고 → 강조가
+  // 팝업으로 옮겨 간다. 그 줄을 벗어나면(다른 줄·단계·끝) 닫는다. 팝업은 둘러보기 안의 클릭엔
+  // 안 닫히게 해 두었다(재생 설정·wireTopMenu의 바깥 클릭 처리).
+  const TOUR_MENUS = {
+    play: { btn: "#playSettingsToggle", pop: "#playPop" },
+    out: { btn: "#outToggle", pop: "#outPop" }
+  };
+  const TOUR_BEAT_MENU = { play: { 1: "play", 2: "play", 3: "play" }, files: { 2: "out" } };
+  let tourMenuTok = 0;
+  function tourMenuOpen(name) { const m = TOUR_MENUS[name], p = m && document.querySelector(m.pop); return !!(p && p.classList.contains("on")); }
+  function tourMenusClose(except) {
+    Object.keys(TOUR_MENUS).forEach(function (k) {
+      if (k === except || !tourMenuOpen(k)) return;
+      document.querySelector(TOUR_MENUS[k].pop).classList.remove("on");
+      document.querySelector(TOUR_MENUS[k].btn).classList.remove("on");
+    });
+  }
+  // 이 줄에 필요한 팝업을 맞춘다 — 열어야 하면 true(그동안 강조는 버튼에 머문다)
+  function tourMenuSync() {
+    const st = TOUR_STEPS[tourIdx], want = st && TOUR_BEAT_MENU[st.id] && TOUR_BEAT_MENU[st.id][tourBeat];
+    const my = ++tourMenuTok;
+    tourMenusClose(want);
+    if (!want || tourMenuOpen(want)) return false;
+    const m = TOUR_MENUS[want], btn = document.querySelector(m.btn);
+    if (!btn) return false;
+    if (tourReduceMotion()) { btn.click(); return false; }
+    tourOpener = m.btn; tourOpenerStage = true;   // 첫 박자: 버튼을 비춘다(tourRect가 본다)
+    setTimeout(function () {
+      if (tourMenuTok !== my) return;
+      btn.classList.remove("tour-press"); void btn.offsetWidth; btn.classList.add("tour-press");
+      setTimeout(function () {
+        if (tourMenuTok !== my) return;
+        if (!tourMenuOpen(want)) btn.click();
+        tourOpenerStage = false;
+        positionTour(); tourPing(TOUR_MOVE_MS - 60);
+        setTimeout(function () { if (tourMenuTok === my) positionTour(); }, 60);
+      }, 180);
+    }, TOUR_MOVE_MS + 350);
+    return true;
+  }
+  // ④ 악기별 정렬 — 악기 칸 아래로 목록을 **그림으로** 펼쳐 차례로 훑는다(진짜 select를 열면
+  // 브라우저마다 다르게 굴고, 고르면 문서의 악기 설정이 바뀐다 — 여기선 보여 주기만)
+  function tourFxInstList() {
+    const selEl = document.querySelector("#paletteCol .orn-instrument");
+    if (!selEl) return;
+    const r = selEl.getBoundingClientRect();
+    if (!r.width) {   // 시김새 보기가 아직 열리는 중(눌러서 바꾸기)이면 칸이 보일 때까지 잠깐 기다린다
+      const my = tourFxTok, tries = (tourFxInstList.tries = (tourFxInstList.tries || 0) + 1);
+      if (tries < 12) setTimeout(function () { if (tourFxTok === my) tourFxInstList(); }, 250);
+      return;
+    }
+    tourFxInstList.tries = 0;
+    const opts = Array.from(selEl.options).map(function (o) { return o.textContent; });
+    const fx = tourFxMake();
+    const W = Math.max(r.width, 96), H = 26, x = r.left, y = r.bottom + 4;
+    const box = fx.mk("g", { "class": "fx-list" });
+    fx.mk("rect", { x: x, y: y, width: W, height: H * opts.length + 8, rx: 6, "class": "fx-list-bg" }, box);
+    const hi = fx.mk("rect", { x: x + 4, y: y + 4, width: W - 8, height: H, rx: 4, "class": "fx-list-hi" }, box);
+    opts.forEach(function (t, k) {
+      fx.mk("text", { x: x + 12, y: y + 4 + H * k + 17 }, box).textContent = t;
+    });
+    const to = function (k) { hi.setAttribute("y", y + 4 + H * k); };
+    const steps = [[0, function () { fxOn(box, true); to(0); }]];
+    for (let k = 1; k < opts.length; k++) steps.push([300 + k * 330, (function (kk) { return function () { to(kk); }; })(k)]);
+    tourFxLoop(fx, steps, 300 + opts.length * 330 + 900, function () { fxOn(box, false); to(0); });
+  }
   function tourNextBeat() {
     if (!tourWorkspace) return;   // 투어가 끝난 뒤(걷히는 중)엔 아무것도 안 한다
     if (tourTyping) { tourTypeFinish(); return; }   // 치는 중이면 먼저 그 줄을 다 보인다
@@ -11171,7 +11297,7 @@
     // 한 단계 안에서 글머리표 묶음이 둘일 때 나눔), 줄 앞 "!! "은 팁(.tour-tip — 기능 안내가
     // 아니라 권장 사용법, 연한 강조 배경 상자). innerHTML 대신 노드 조립 —
     // 본문에 황{미는표}·< 같은 문자가 그대로 들어가 이스케이프 사고를 피하려고.
-    tourTypeFinish(); tourFxStop();
+    tourTypeFinish(); tourFxStop(); ++tourMenuTok; tourMenusClose();
     renderTourBody($("tourBody"), s.body);
     $("tourContent").scrollTop = 0;
     // 박자 — 앞으로 오면 첫 줄부터, 뒤로 돌아오면 다 편 채로(positionTour 전에 정해야 강조 자리가 맞다)
@@ -11317,7 +11443,7 @@
     // (CSS .tour-leave) 바로 이어지는 새 문서 창을 누를 수 있다.
     ++tourAnimId; tourGeom = null; tourPosStep = -1;
     stopTourDemo();
-    tourTypeFinish(); tourFxStop();
+    tourTypeFinish(); tourFxStop(); ++tourMenuTok; tourMenusClose();
     if (tourPanel) tourLeavePanel();
     tourScope = null;
     const layer = $("tourLayer");

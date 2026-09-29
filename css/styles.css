@@ -2227,6 +2227,13 @@
     border-radius: inherit;
     box-shadow: 0 0 0 0 var(--accent); }
   #tourHole.ping::after { animation: tourPing .9s cubic-bezier(.2,.7,.3,1) both; }
+  /* 작은 대상의 비콘 — 도착 뒤 둘레로 물결이 세 번 퍼진다(계속 깜빡이지 않게 세 번에서 멈춘다) */
+  #tourHole::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    opacity: 0; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  #tourHole.small { border-radius: 8px; }
+  #tourHole.small.beacon::before { animation: tourBeacon 1.5s ease-out .5s 3 both; }
+  @keyframes tourBeacon { 0% { opacity: .9; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+                          100% { opacity: 0; box-shadow: 0 0 0 16px color-mix(in srgb, var(--accent) 0%, transparent); } }
   @keyframes tourPing { 0%   { opacity: .5; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
                         100% { opacity: 0;  box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent); } }
   /* 이름표를 상자 아래 오른쪽 맞춤으로 — 상단바 버튼처럼 위에 자리가 없는 대상용 */
@@ -2347,10 +2354,18 @@
   #tourFx .fx-ripple { fill: color-mix(in srgb, var(--accent) 45%, transparent); opacity: 0; }
   #tourFx .fx-ripple.go { animation: fxRipple .5s ease-out both; }
   @keyframes fxRipple { 0% { opacity: .9; r: 4; } 100% { opacity: 0; r: 22; } }
+  /* 악기 목록(tourFxInstList) — 그림으로 펼친 드롭다운 */
+  #tourFx .fx-list { opacity: 0; transform: translateY(-4px); transform-box: fill-box;
+    transition: opacity .25s ease, transform .25s ease; }
+  #tourFx .fx-list.on { opacity: 1; transform: none; }
+  #tourFx .fx-list-bg { fill: var(--panel); stroke: var(--line); filter: drop-shadow(0 4px 12px rgba(0,0,0,.14)); }
+  #tourFx .fx-list-hi { fill: color-mix(in srgb, var(--accent) 16%, transparent); transition: y .22s ease; }
+  #tourFx .fx-list text { font-size: 13px; fill: var(--ink); }
   /* 길을 긋는 동안 정간·대강·각 상자는 뒤로 물러난다 */
   /* (나타나기 애니메이션의 fill이 opacity를 붙잡으므로 애니메이션째 끈다) */
   #tourLayer.fx-on .tour-ring, #tourLayer.fx-on .tour-ring .tour-ring-lab { animation: none; }
   #tourLayer.fx-on .tour-ring { opacity: .18; transition: opacity .3s ease; }
+  #tourLayer.fx-on .tour-ring.opened .tour-ring-lab { opacity: 0; }   /* 할 말을 다 한 '눌러서 열기'는 되살리지 않는다 */
   #tourFx .fx-num.on { opacity: 1; }
   /* ── 장 고르기·장 끝 화면(.tour-panel, app.js tourShowPanel) ──
      장마다 큰 카드 하나 — 번호·이름·한 줄 설명·단계 수. 누르면 그 장만 본다.
