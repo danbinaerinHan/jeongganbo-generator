@@ -32,23 +32,149 @@
   // 그래서 고를 수 있는 박자표는 사실상 아랫수 하나로 정해진다: 마디 총 길이가 정간 수로
   // 이미 정해져 있으므로 윗수를 따로 고르면 마디 길이가 어긋나 악보 프로그램이 마디를
   // 다시 짠다. 나눠떨어지지 않으면(5정간 각을 2분음표로 세는 등) 조용히 자동으로 물러난다.
-  const TIME_TYPES = [2, 4, 8, 16];   // 고를 수 있는 아랫수 — index.html #staffTime과 같은 목록
+  const TIME_TYPES = [2, 4, 8, 16, "q", "dq", "na"];   // 고를 수 있는 아랫수 — index.html #staffTime과 같은 목록
+  // **아랫수를 숫자 대신 음표로 적는 박자표**("4 / ♩." 꼴) — q = 4분음표, dq = 점4분음표.
+  // 정간 하나를 그 음표로 두면 **윗수가 곧 정간 수**가 된다(12정간 각 = 12 / ♩.) —
+  // 정간보를 세던 그대로 오선보가 읽힌다. MusicXML 4.0 <time symbol="note|dotted-note">가
+  // 이 표기이고, 거기서도 <beats>/<beat-type>은 **숫자로 된 같은 길이**(12/8 ↔ 4 / ♩.)를
+  // 적는다. 그래서 여기서도 beats·type은 숫자 값 그대로 두고 **보이는 것만** symbol·top·note로
+  // 따로 싣는다 — 마디 길이를 세는 쪽은 아무것도 안 바뀐다.
+  //   q  → beats/4, symbol "note",        보이는 윗수 = beats
+  //   dq → beats/8, symbol "dotted-note", 보이는 윗수 = beats / 3
+  const NOTE_TYPES = {
+    q:  { len: DIV,         num: 4, per: 1, symbol: "note",        note: "quarter", dot: false },
+    dq: { len: DIV * 3 / 2, num: 8, per: 3, symbol: "dotted-note", note: "quarter", dot: true }
+  };
   function autoType(unit) { return unit === "plain" ? 4 : 8; }
+  // **음표 자동(na)** — 음표로 적되 ♩인지 ♩.인지는 정간 단위가 정한다: 4분음표 단위면 ♩,
+  // 그 밖(점4분음표·8분음표)이면 ♩.(3분박 흐름이라). 그 마디가 그 음표로 안 나눠떨어지면
+  // 다른 음표를 쓰고, 둘 다 안 되면 숫자 자동으로 물러난다(q·dq를 직접 고른 것과 같은 규칙).
+  // 마디마다 따로 고르므로 한 곡에 ♩와 ♩.가 섞일 수 있다(각 길이가 다른 곡).
+  function noteAuto(unit, beats) {
+    const order = unit === "plain" ? ["q", "dq"] : ["dq", "q"];
+    for (let i = 0; i < order.length; i++) if (timeTop(unit, beats, order[i]) != null) return order[i];
+    return null;
+  }
+  function typeLen(type) {
+    return NOTE_TYPES[type] ? NOTE_TYPES[type].len : DIV * 4 / type;
+  }
   // 윗수 = 마디 총 길이 ÷ 아랫수 음표 하나의 길이. 정수가 아니면 그 아랫수로는 못 적는다.
+  // 음표 아랫수(q·dq)면 **보이는 윗수**를 돌려준다(12정간 각을 dq로 → 12).
   function timeTop(unit, beats, type) {
+    if (type === "na") {
+      const t = noteAuto(JG[unit] ? unit : "dotted", beats);
+      return t ? timeTop(unit, beats, t) : null;
+    }
     const total = beats * (JG[unit] || JG.dotted);
-    const one = DIV * 4 / type;
+    const one = typeLen(type);
     return total % one ? null : total / one;
+  }
+  function normType(type) {
+    if (NOTE_TYPES[type] || type === "na") return type;
+    return TIME_TYPES.indexOf(+type) >= 0 ? +type : null;
   }
   function timeSig(unit, beats, type) {
     const u = JG[unit] ? unit : "dotted";
     const beatUnit = u === "eighth" ? "eighth" : "quarter";
     const dot = u === "dotted";
-    const pick = TIME_TYPES.indexOf(+type) >= 0 ? timeTop(u, beats, +type) : null;
-    if (pick != null) return { beats: pick, type: +type, beatUnit: beatUnit, dot: dot };
+    let tp = normType(type);
+    if (tp === "na") tp = noteAuto(u, beats);
+    const pick = tp != null ? timeTop(u, beats, tp) : null;
+    if (pick != null && NOTE_TYPES[tp]) {
+      const n = NOTE_TYPES[tp];
+      return { beats: pick * n.per, type: n.num, beatUnit: beatUnit, dot: dot,
+               symbol: n.symbol, top: pick, note: n.note, noteDot: n.dot };
+    }
+    if (pick != null) return { beats: pick, type: tp, beatUnit: beatUnit, dot: dot, symbol: null, top: pick };
     const t = autoType(u);
-    return { beats: timeTop(u, beats, t), type: t, beatUnit: beatUnit, dot: dot };
+    const b = timeTop(u, beats, t);
+    return { beats: b, type: t, beatUnit: beatUnit, dot: dot, symbol: null, top: b };
   }
+  // 사람에게 보여 줄 글씨 — 항목 이름·안내에 쓴다(3/8 · 4/♩ · 12/♩.).
+  function timeLabel(ts) {
+    if (!ts.symbol) return ts.beats + "/" + ts.type;
+    return ts.top + "/" + (ts.noteDot ? "♩." : "♩");
+  }
+  // ── 음표 아랫수 박자표 그리기 ────────────────────────────────────────
+  // 화면 조판기(Verovio 6.2)는 MusicXML의 time symbol도, MEI의 form="denomsym"도 안 그린다
+  // (2026-09-29 실측 — 둘 다 숫자 12/8로 나온다). 그래서 **그린 뒤에 박자표만 바꿔 끼운다**
+  // (app.js vrvSvg). 대체 경로(staff-view)도 같은 그림을 써야 두 화면이 같은 꼴이라, 그리는
+  // 셈을 여기 한 곳에 둔다. 좌표는 **오선 한 칸 = SP**, top = 오선 맨 윗줄의 y.
+  //   윗수: 숫자 글리프(JGB_STAFF_GLYPHS의 time0~9)를 위쪽 절반 가운데(top + SP)에
+  //   아랫수: 기둥이 위로 선 4분음표(+점) — 아래쪽 절반에 앉는다. 머리는 맨 아랫줄에 걸친다(그보다 위면 기둥이 윗수에 묻혀 기둥 없는 머리처럼 보인다).
+  const TN = { head: 0.52, headRy: 0.44, angle: -20, stem: 0.12, headY: 3.95, tipY: 2.1,
+               dotGap: 0.3, dot: 0.19 };
+  function glyphsOf() { return root.JGB_STAFF_GLYPHS || {}; }
+  function digitsW(str) {
+    const G = glyphsOf();
+    let w = 0;
+    for (let i = 0; i < str.length; i++) w += (G["time" + str[i]] || { w: 0 }).w;
+    return w;
+  }
+  // 아랫수 음표의 폭(칸) — 머리 + (점이면) 틈 + 점
+  function timeNoteW(dot) { return TN.head * 2 + (dot ? TN.dotGap + TN.dot * 2 : 0); }
+  // 박자표 전체가 먹는 폭(칸). symbol이 없으면 숫자 두 줄 중 넓은 쪽.
+  // 음표 아랫수는 **숨 쉴 틈(TN_PAD)을 더 먹는다** — 틈 없이 두면 박자표의 음표가 바로 뒤
+  // 첫 음표와 붙어 가락의 한 음처럼 읽혔다(실측). Verovio 쪽은 표지 숫자('111'·'11')로
+  // 적어 같은 만큼 벌린다(app.js vrvPage — ♩.은 '111' 4칸, ♩은 '11' 2.7칸) — 두 화면의 틈을
+  // 맞춘 값이라 음표마다 따로다(♩이 좁으니 덜 먹는다).
+  const TN_PAD = { q: 1.6, dq: 2.1 };
+  function timeSigW(ts) {
+    const low = ts.symbol ? timeNoteW(ts.noteDot) + TN_PAD[ts.noteDot ? "dq" : "q"] : digitsW(String(ts.type));
+    return Math.max(digitsW(String(ts.top != null ? ts.top : ts.beats)), low);
+  }
+  function r3(v) { return Math.round(v * 1000) / 1000; }
+  // cx = 박자표 가운데. 돌려주는 것은 SVG 조각(fill은 currentColor).
+  function timeSigSvg(ts, cx, top, SP, cls) {
+    const G = glyphsOf();
+    const out = [];
+    const c = cls || "sv-time";
+    const topStr = String(ts.symbol ? ts.top : ts.beats);
+    let x = cx - digitsW(topStr) * SP / 2;
+    for (let i = 0; i < topStr.length; i++) {
+      const g = G["time" + topStr[i]];
+      if (!g) continue;
+      out.push("<path class=\"" + c + "\" data-t=\"" + topStr[i] + "\" transform=\"translate(" + r3(x) +
+               " " + r3(top + SP) + ") scale(" + r3(SP) + ")\" d=\"" + g.d + "\" fill=\"currentColor\"/>");
+      x += g.w * SP;
+    }
+    if (!ts.symbol) {
+      const lowStr = String(ts.type);
+      x = cx - digitsW(lowStr) * SP / 2;
+      for (let i = 0; i < lowStr.length; i++) {
+        const g = G["time" + lowStr[i]];
+        if (!g) continue;
+        out.push("<path class=\"" + c + "\" data-t=\"" + lowStr[i] + "\" transform=\"translate(" + r3(x) +
+                 " " + r3(top + SP * 3) + ") scale(" + r3(SP) + ")\" d=\"" + g.d + "\" fill=\"currentColor\"/>");
+        x += g.w * SP;
+      }
+      return out.join("");
+    }
+    out.push(timeNoteSvg(ts.noteDot, cx, top, SP, c));
+    return out.join("");
+  }
+  // 아랫수 음표만 — Verovio 그림에서는 윗수를 조판기 글리프 그대로 두고 이것만 끼운다.
+  function timeNoteSvg(dot, cx, top, SP, cls) {
+    const out = [];
+    const c = cls || "sv-time";
+    const left = cx - timeNoteW(dot) * SP / 2;
+    const hx = left + TN.head * SP, hy = top + TN.headY * SP;
+    out.push("<g class=\"" + c + "-note\" data-note=\"" + (dot ? "dq" : "q") + "\">");
+    out.push("<ellipse cx=\"" + r3(hx) + "\" cy=\"" + r3(hy) + "\" rx=\"" + r3(TN.head * SP) +
+             "\" ry=\"" + r3(TN.headRy * SP) + "\" transform=\"rotate(" + TN.angle + " " + r3(hx) + " " +
+             r3(hy) + ")\" fill=\"currentColor\"/>");
+    const sx = hx + TN.head * SP - TN.stem * SP / 2;
+    out.push("<rect x=\"" + r3(sx - TN.stem * SP / 2) + "\" y=\"" + r3(top + TN.tipY * SP) + "\" width=\"" +
+             r3(TN.stem * SP) + "\" height=\"" + r3((TN.headY - TN.tipY) * SP) + "\" fill=\"currentColor\"/>");
+    if (dot) {
+      // 점은 칸 안에 — 머리가 맨 아래 칸(넷째 줄과 다섯째 줄 사이)에 걸치므로 그 칸 가운데
+      out.push("<circle cx=\"" + r3(hx + TN.head * SP + TN.dotGap * SP + TN.dot * SP) + "\" cy=\"" +
+               r3(top + SP * 3.5) + "\" r=\"" + r3(TN.dot * SP) + "\" fill=\"currentColor\"/>");
+    }
+    out.push("</g>");
+    return out.join("");
+  }
+
   // 정간 하나가 4분음표의 몇 배인가 — <sound tempo>가 4분음표 기준이라 필요하다.
   function quarterRatio(unit) { return (JG[unit] || JG.dotted) / DIV; }
 
@@ -379,7 +505,7 @@
   root.JGB_STAFF_CORE = {
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF, CLEF_INST: CLEF_INST,
     JANGGU: JANGGU, PERC_POS: PERC_POS,
-    timeSig: timeSig, timeTop: timeTop, TIME_TYPES: TIME_TYPES, quarterRatio: quarterRatio,
+    timeSig: timeSig, timeTop: timeTop, timeLabel: timeLabel, timeSigSvg: timeSigSvg, timeNoteSvg: timeNoteSvg, timeSigW: timeSigW, TIME_TYPES: TIME_TYPES, NOTE_TYPES: NOTE_TYPES, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
     exactValue: exactValue, nearestValue: nearestValue,

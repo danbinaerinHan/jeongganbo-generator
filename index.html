@@ -944,18 +944,27 @@
                다시 짠다). 그래서 같은 길이를 다른 아랫수로 다시 세는 것만 연다(20/8 ↔ 10/4 ↔ 5/2).
                항목 글씨(3/2·6/4…)는 app.js의 updateStaffTimeOptions가 지금 악보에 맞춰 써 넣고,
                그 각으로 못 적는 아랫수는 막는다 — 여기 적어 둔 값은 자리 표시일 뿐이다.
-               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다. -->
+               **문서에 딸린 값**이라 CTRL_IDS에 있고 남에게 악보를 주면 같이 간다.
+               ♩·♩.은 아랫수를 **음표로** 적는 박자표다(4/♩. = 12/8) — 정간 하나를 그 음표로 두면
+               윗수가 곧 정간 수가 된다. 조판기(Verovio)가 이 꼴을 못 그려 app.js의
+               vrvPage가 그린 뒤에 바꿔 끼운다. '음표 자동'(na)은 ♩·♩. 중 하나를 정간 단위가
+               고른다(4분음표 단위면 ♩, 그 밖은 ♩.) — staff-core의 noteAuto. -->
           <label class="staff-unit tip"
             data-tip="박자표를 무엇으로 적을지
 · 자동은 정간 단위가 아랫수를 정합니다(4분음표면 /4, 그 밖은 /8)
 · 마디 길이는 그대로고 세는 단위만 바뀝니다(20/8 ↔ 10/4 ↔ 5/2)
-· 길이가 다른 각도 같은 아랫수로 제 윗수를 갖습니다">박자표
+· 길이가 다른 각도 같은 아랫수로 제 윗수를 갖습니다
+· ♩·♩.은 아랫수를 음표로 적습니다(12/8 → 4/♩.)
+· 음표 자동은 정간 단위에 맞춰 ♩·♩. 중 하나를 고릅니다">박자표
             <select id="staffTime">
               <option value="auto" selected>자동</option>
               <option value="2">─/2</option>
               <option value="4">─/4</option>
               <option value="8">─/8</option>
               <option value="16">─/16</option>
+              <option value="q">─/♩</option>
+              <option value="dq">─/♩.</option>
+              <option value="na">음표 자동</option>
             </select>
           </label>
           <!-- 마디 — **각 하나가 늘 한 마디인 것은 아니다.** 기본은 각 전체가 한 마디지만

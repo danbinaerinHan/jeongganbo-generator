@@ -6787,7 +6787,10 @@
   // 아무도 안 쓰는 표기를 관행대로 10/4로 적을 수 있게 하려는 것이다.
   function staffTimeType() {
     const pick = $("staffTime") && $("staffTime").value;
-    return pick && pick !== "auto" ? parseInt(pick, 10) : null;
+    if (!pick || pick === "auto") return null;
+    // q·dq = 아랫수를 음표로 적는 박자표(4/♩ · 4/♩.) — 셈은 staff-core의 NOTE_TYPES
+    // na = 음표 자동(♩/♩.을 정간 단위가 고른다)
+    return SC.NOTE_TYPES[pick] || pick === "na" ? pick : parseInt(pick, 10);
   }
 
   // 마디를 어디서 끊을까(#staffBar). "gak" = 각 전체가 한 마디(기본, 예전 동작) ·
@@ -6836,14 +6839,26 @@
       Array.prototype.forEach.call(sel.options, function (op) {
         if (op.value === "auto") {
           const a = SC.timeSig(unit, bars[0].beats, null);
-          op.textContent = "자동 (" + a.beats + "/" + a.type + (bars.length > 1 ? " …" : "") + ")";
+          op.textContent = "자동 (" + SC.timeLabel(a) + (bars.length > 1 ? " …" : "") + ")";
           return;
         }
-        const d = parseInt(op.value, 10);
+        if (op.value === "na") {
+          // 마디마다 ♩·♩.을 고르고 못 세면 숫자로 물러나므로 막을 일이 없다
+          const labels = [];
+          bars.forEach(function (b) {
+            const l = SC.timeLabel(SC.timeSig(unit, b.beats, "na"));
+            if (labels.indexOf(l) < 0) labels.push(l);
+          });
+          op.textContent = "음표 자동 (" + labels[0] + (bars.length > 1 ? " …" : "") + ")";
+          return;
+        }
+        const note = SC.NOTE_TYPES[op.value];
+        const d = note ? op.value : parseInt(op.value, 10);
+        const low = note ? (note.dot ? "♩." : "♩") : op.value;
         const tops = bars.map(function (b) { return SC.timeTop(unit, b.beats, d); });
         const okAll = tops.every(function (t) { return t != null; });
-        op.textContent = okAll ? tops[0] + "/" + op.value + (bars.length > 1 ? " …" : "")
-                               : "─/" + op.value + " (안 맞음)";
+        op.textContent = okAll ? tops[0] + "/" + low + (bars.length > 1 ? " …" : "")
+                               : "─/" + low + " (안 맞음)";
         op.disabled = !okAll;
       });
     }
@@ -6851,7 +6866,7 @@
     const bar = $("staffBar");
     if (!bar) return;
     const type = staffTimeType();
-    const sigOf = function (n) { const t = SC.timeSig(unit, n, type); return t.beats + "/" + t.type; };
+    const sigOf = function (n) { return SC.timeLabel(SC.timeSig(unit, n, type)); };
     const dg = dgOf(beats);
     const sigs = (dg || [beats]).map(sigOf);
     // 같은 박자표가 이어지면 한 번만 적고 개수를 붙인다 — 3,3,3,3이 '3/8·3/8·3/8·3/8'이면 길다
@@ -7364,7 +7379,7 @@
     vrvTk.setOptions(Object.assign({}, common,
       { pageWidth: units(width), adjustPageWidth: true, noJustification: true }));
     const xml = window.JGB_MUSICXML.build(scores,
-      { title: $("title").value, subtitle: $("subtitle").value });
+      { title: $("title").value, subtitle: $("subtitle").value, vrv: true });
     if (!vrvTk.loadData(xml)) throw new Error("Verovio가 MusicXML을 읽지 못했습니다");
     const m = vrvTk.renderToSVG(1, {}).match(/^<svg width="([\d.]+)px"/);
     const need = m ? parseFloat(m[1]) : 0;
@@ -7378,9 +7393,53 @@
     vrvTk.redoLayout();
     let html = "";
     const n = vrvTk.getPageCount();
-    for (let i = 1; i <= n; i++) html += vrvTk.renderToSVG(i, {});
+    for (let i = 1; i <= n; i++) html += vrvPage(i);
     grabTimemap();   // 재생 위치를 짚으려면 방금 조판한 이 데이터의 시간표가 필요하다
     return "<div class=\"vrv-out\">" + html + "</div>";
+  }
+
+  // 조판한 쪽 하나를 SVG로 — **그림으로 쓰는 쪽은 전부 여기를 지난다**(화면·범례·인쇄·
+  // 나란히). 재기만 하는 renderToSVG(자연 폭)는 그대로 둔다.
+  // 하는 일은 하나: **아랫수를 음표로 적는 박자표(4/♩ · 4/♩.)를 바꿔 끼운다.** Verovio 6.2는
+  // MusicXML의 time symbol도 MEI의 denomsym도 안 그려서(2026-09-29 실측), 조판용 XML에는
+  // 윗수 = 보이는 수, 아랫수 = 표지 숫자(VRV_MARKS — ♩. = 111, ♩ = 11)로 적어 두고
+  // (js/musicxml.js timeXml) 여기서 그 글리프를 음표로 바꾼다. 윗수는 조판기 글리프 그대로다.
+  // 1의 개수가 음표를 가른다 — '음표 자동'이면 한 곡에 ♩와 ♩.가 섞일 수 있어 마디마다 읽는다.
+  // 음표 그림은 staff-core의 timeNoteSvg — 대체 경로(staff-view)와 같은 그림이다.
+  // 바꿔 끼우는 조건이 좁다: 사람이 ♩·♩.·음표 자동을 골랐고 · 박자표의 아랫줄이 정확히 그
+  // 표지일 때만.
+  // 자동으로 물러난 마디(안 나눠떨어지는 각)는 아랫수가 4나 8이라 숫자 그대로 남는다.
+  // VRV_ONE_W = Leipzig(Verovio 기본 글꼴) 박자표 '1'의 보내는 폭(칸) — 실측 241/180.
+  // 표지가 1로만 되어 있어 아랫줄 가운데를 '1의 개수 × 이 폭'으로 셈한다. 표지를 바꾸면
+  // 이 값도 다시 잴 것.
+  const VRV_ONE_W = 1.339;
+  function vrvPage(i) {
+    const svg = vrvTk.renderToSVG(i, {});
+    const tt = staffTimeType();
+    if (!SC.NOTE_TYPES[tt] && tt !== "na") return svg;
+    const marks = window.JGB_MUSICXML.VRV_MARKS;
+    const dotOf = {};   // 아랫줄 글리프 → 점 있음/없음
+    Object.keys(marks).forEach(function (k) {
+      dotOf[String(marks[k]).split("").map(function (d) { return "E08" + d; }).join(",")] = SC.NOTE_TYPES[k].dot;
+    });
+    return svg.replace(/(<g[^>]*class="meterSig"[^>]*>)([\s\S]*?)(<\/g>)/g,
+      function (all, open, body, close) {
+        const uses = [];
+        const re = /<use xlink:href="#(E08\d)[^"]*" transform="translate\(([-\d.]+),\s*([-\d.]+)\)[^"]*"\s*\/>/g;
+        let m;
+        while ((m = re.exec(body))) uses.push({ id: m[1], x: +m[2], y: +m[3], src: m[0] });
+        if (uses.length < 2) return all;
+        const ys = uses.map(function (u) { return u.y; });
+        const yTop = Math.min.apply(null, ys), yLow = Math.max.apply(null, ys);
+        const lows = uses.filter(function (u) { return u.y === yLow; });
+        const key = lows.map(function (u) { return u.id; }).join(",");
+        if (yLow === yTop || !(key in dotOf)) return all;
+        const SP = (yLow - yTop) / 2;
+        const cx = lows[0].x + lows.length * VRV_ONE_W * SP / 2;
+        lows.forEach(function (u) { body = body.replace(u.src, ""); });
+        return open + body +
+               SC.timeNoteSvg(dotOf[key], cx, yTop - SP, SP, "vrv-time") + close;
+      });
   }
 
   // 장단 범례 — 장구 한 각을 **따로 한 번** 조판해 악보 위에 얹는다(jangguStaffMode "legend").
@@ -7396,8 +7455,8 @@
       pageHeight: 60000, adjustPageHeight: true, adjustPageWidth: true, noJustification: true,
       breaks: "auto", graceFactor: VRV_GRACE, header: "none", footer: "none"
     });
-    if (!vrvTk.loadData(window.JGB_MUSICXML.build([score], {}))) return "";
-    return "<div class=\"vrv-out vrv-legend\">" + vrvTk.renderToSVG(1, {}) + "</div>";
+    if (!vrvTk.loadData(window.JGB_MUSICXML.build([score], { vrv: true }))) return "";
+    return "<div class=\"vrv-out vrv-legend\">" + vrvPage(1) + "</div>";
   }
 
   // ----- 재생 위치 짚기 -----
@@ -7671,7 +7730,8 @@
     // ① 자연 폭 재기 — 화면과 같은 수법(vrvRender 주석)을 loadData에 얹는다.
     vrvTk.setOptions(opts(want, { adjustPageWidth: true, noJustification: true }));
     const xml = window.JGB_MUSICXML.build(scores,
-      { title: $("title").value, subtitle: $("subtitle").value, measStart: measStart });
+      { title: $("title").value, subtitle: $("subtitle").value, measStart: measStart,
+        vrv: true });
     if (!vrvTk.loadData(xml)) return [];
     const m = vrvTk.renderToSVG(1, {}).match(/^<svg width="([\d.]+)px"/);
     const need = m ? parseFloat(m[1]) : 0;
@@ -7690,7 +7750,7 @@
     for (let i = 1; i <= n; i++) {
       // 루트 <svg width="Wpx" height="Hpx">를 종이(mm) 좌표의 상자로 갈아입힌다 —
       // 비율은 pageWidth/Height를 box에서 셈했으니 그대로 맞는다(반올림 오차뿐).
-      const svg = vrvTk.renderToSVG(i, {});
+      const svg = vrvPage(i);
       const mm = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
       if (!mm) continue;
       const W = parseFloat(mm[1]), H = parseFloat(mm[2]);
@@ -7809,8 +7869,8 @@
       pageHeight: 60000, adjustPageHeight: true, adjustPageWidth: true, noJustification: true,
       breaks: "auto", graceFactor: VRV_GRACE, header: "none", footer: "none"
     });
-    if (!vrvTk.loadData(window.JGB_MUSICXML.build([score], {}))) return null;
-    const svg = vrvTk.renderToSVG(1, {});
+    if (!vrvTk.loadData(window.JGB_MUSICXML.build([score], { vrv: true }))) return null;
+    const svg = vrvPage(1);
     const m = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
     if (!m) return null;
     const w = parseFloat(m[1]) / 3.78, h = parseFloat(m[2]) / 3.78;

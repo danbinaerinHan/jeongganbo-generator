@@ -456,6 +456,74 @@ console.log("\n박자표를 사람이 고르면 — 길이는 그대로, 세는 
   app.fields.staffUnit = "dotted";
 }
 
+console.log("\n아랫수를 음표로(4/♩ · 4/♩.) — 숫자는 같은 길이, 보이는 것만 바뀌는가");
+{
+  const MEL12 = Array(12).fill("황").join("|");
+  const durOf = (xml) => parseMeasures(xml).map((m) =>
+    m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+  const C = globalThis.JGB_STAFF_CORE;
+  // 점4분음표 단위 12정간 = 36/8 → ♩.로 세면 12 / ♩. (윗수 = 정간 수)
+  app.fields.staffUnit = "dotted";
+  app.fields.staffTime = "auto";
+  const want = durOf(xmlOf(MEL12, 12));
+  app.fields.staffTime = "dq";
+  const dq = xmlOf(MEL12, 12);
+  ok("♩. → <time symbol=\"dotted-note\"> 36/8 (보이는 것은 12/♩.)",
+     dq.includes('<time symbol="dotted-note"><beats>36</beats><beat-type>8</beat-type></time>'));
+  eq("♩. — 마디 길이는 그대로", durOf(dq), want);
+  eq("♩. 항목 글씨", C.timeLabel(C.timeSig("dotted", 12, "dq")), "12/♩.");
+  // 조판용 XML은 윗수 = 보이는 수, 아랫수 = 표지(111) — app.js vrvPage가 이 '111'을 음표로 바꾼다
+  const vrv = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { vrv: true });
+  ok("조판용은 12/111 (symbol 없음)", vrv.includes("<time><beats>12</beats><beat-type>111</beat-type></time>"));
+  // 4분음표 단위 12정간 = 12/4 → 12 / ♩
+  app.fields.staffUnit = "plain";
+  app.fields.staffTime = "q";
+  const q = xmlOf(MEL12, 12);
+  ok("♩ → <time symbol=\"note\"> 12/4",
+     q.includes('<time symbol="note"><beats>12</beats><beat-type>4</beat-type></time>'));
+  // 4분음표 단위를 ♩.로 세면 12정간 = 8 / ♩. (나눠떨어짐) · 5정간은 못 세어 자동(5/4)
+  app.fields.staffTime = "dq";
+  ok("4분음표 단위 12정간 + ♩. → 8/♩. (24/8)",
+     xmlOf(MEL12, 12).includes('<time symbol="dotted-note"><beats>24</beats><beat-type>8</beat-type>'));
+  const odd = xmlOf(Array(5).fill("황").join("|"), 5);
+  ok("4분음표 단위 5정간 + ♩. → 자동(5/4)으로 물러난다",
+     odd.includes("<time><beats>5</beats><beat-type>4</beat-type></time>"));
+  // 8분음표 단위 5정간을 ♩으로는 못 센다 → 자동(5/8), 조판용에서도 표지 111이 안 나온다
+  app.fields.staffUnit = "eighth";
+  app.fields.staffTime = "q";
+  xmlOf(Array(5).fill("황").join("|"), 5);
+  const oddV = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { vrv: true });
+  ok("물러난 마디는 조판용에서도 숫자 그대로(5/8)",
+     oddV.includes("<time><beats>5</beats><beat-type>8</beat-type></time>"));
+  // 음표 자동(na) — 정간 단위가 ♩·♩.을 고른다. 4분음표 단위면 ♩, 그 밖은 ♩.
+  app.fields.staffTime = "na";
+  app.fields.staffUnit = "plain";
+  ok("음표 자동 + 4분음표 단위 12정간 → 12/♩",
+     xmlOf(MEL12, 12).includes('<time symbol="note"><beats>12</beats><beat-type>4</beat-type>'));
+  app.fields.staffUnit = "dotted";
+  ok("음표 자동 + 점4분음표 단위 12정간 → 12/♩.",
+     xmlOf(MEL12, 12).includes('<time symbol="dotted-note"><beats>36</beats><beat-type>8</beat-type>'));
+  app.fields.staffUnit = "eighth";
+  ok("음표 자동 + 8분음표 단위 12정간 → 4/♩.",
+     xmlOf(MEL12, 12).includes('<time symbol="dotted-note"><beats>12</beats><beat-type>8</beat-type>'));
+  // 8분음표 단위 4정간은 ♩.로 안 나눠떨어져(4/8) 다음 후보 ♩ → 2/♩
+  ok("음표 자동 + 8분음표 단위 4정간 → ♩.이 안 되면 ♩ (2/♩)",
+     xmlOf("황|태|중|임", 4).includes('<time symbol="note"><beats>2</beats><beat-type>4</beat-type>'));
+  // 둘 다 안 되면 숫자 — 8분음표 단위 5정간 = 5/8
+  ok("음표 자동 + 8분음표 단위 5정간 → 숫자(5/8)로 물러난다",
+     xmlOf(Array(5).fill("황").join("|"), 5).includes("<time><beats>5</beats><beat-type>8</beat-type></time>"));
+  // 한 곡에 ♩와 ♩.가 섞이면 조판용 표지도 마디마다 다르다(♩. = 111, ♩ = 11)
+  app.fields.gakBeats = "1:4";
+  xmlOf(MEL12 + "||" + MEL12, 12);
+  const mixV = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { vrv: true });
+  ok("섞인 곡: 첫 각 4정간 = 2/♩(표지 11) · 둘째 각 12정간 = 4/♩.(표지 111)",
+     mixV.includes("<time><beats>2</beats><beat-type>11</beat-type></time>") &&
+     mixV.includes("<time><beats>4</beats><beat-type>111</beat-type></time>"));
+  app.fields.gakBeats = "";
+  app.fields.staffTime = "auto";
+  app.fields.staffUnit = "dotted";
+}
+
 console.log("\n각을 대강마다 마디로 — 끊는 자리를 악보가 정하는가");
 {
   // 각을 어디서 끊을 수 있나는 취향이 아니라 **대강**이 이미 답을 갖고 있다

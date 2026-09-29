@@ -175,6 +175,8 @@
     const tsOf = function (mi) { return C.timeSig(list[0].unit, mBeats(mi), list[0].timeType); };
     const tsInkW = function (mi) {
       const t = tsOf(mi);
+      // 아랫수를 음표로 적는 박자표(4/♩.)는 폭 셈도 그림도 staff-core가 맡는다
+      if (t.symbol) return C.timeSigW(t) * SP;
       return Math.max(digitsW(String(t.beats)), digitsW(String(t.type)));
     };
     // 길이가 바뀌는 마디 앞에는 새 박자표를 적는다(조판 관례이자 MusicXML이 내보내는 것과 같다).
@@ -339,6 +341,7 @@
         // 위아래 숫자를 가운데(cx)에 맞춰 찍는다 — 마디 안에도 같은 함수를 쓴다.
         const drawTime = function (mi, cx) {
           const t = tsOf(mi);
+          if (t.symbol) { out.push(C.timeSigSvg(t, cx, top, SP)); return; }
           [[String(t.beats), top + SP], [String(t.type), top + SP * 3]].forEach(function (pair) {
             let x = cx - digitsW(pair[0]) / 2;
             for (let i = 0; i < pair[0].length; i++) {

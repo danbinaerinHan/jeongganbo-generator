@@ -31,6 +31,30 @@
     });
   }
 
+  // 박자표 한 칸. 아랫수를 음표로 적는 박자표(4/♩.)도 <beats>/<beat-type>은 **숫자로 된 같은
+  // 길이**(12/8)를 적고 symbol로 '음표로 보이라'고만 말한다(MusicXML 4.0 time-symbol) —
+  // 그래서 이 속성을 모르는 프로그램은 조용히 12/8로 읽고, 마디 길이는 어느 쪽이든 같다.
+  //
+  // **화면 조판용(meta.vrv)** 은 따로 적는다. Verovio 6.2는 symbol을 무시하고 숫자로 그리므로
+  // (2026-09-29 실측) app.js가 그린 뒤에 아랫수를 음표로 바꿔 끼우는데, 그러려면 ① 윗수가
+  // 이미 **보이는 수**(4/♩.의 4)여야 하고 ② 바꿔 끼울 자리를 숫자만 보고 알아봐야 한다.
+  // 그래서 윗수 = top, 아랫수 = 표지 VRV_MARKS(♩. = 111, ♩ = 11)로 적는다 — 자동 박자표는
+  // 아랫수가 늘 4나 8이고 고를 수 있는 값에도 없는 수라 곧 표지가 된다. 1의 개수가 음표를
+  // 가른다('음표 자동'이면 한 곡에 둘이 섞일 수 있어서). 여러 자리 수를 쓰는 것은
+  // **자리를 넓히려는 것**이다(♩. 4칸 · ♩ 2.7칸) — 숫자 한두 자리 폭이면 음표가 첫 음표에 바짝 붙어 가락의 한
+  // 음처럼 읽혔다(실측). Verovio는 박자표로
+  // 음 길이를 세지 않아(길이는 <duration>이 정한다) 조판·timemap이 그대로임을 실측했다.
+  // **파일로 나가는 MusicXML에는 이 길을 쓰지 말 것** — 거기선 12/8 + symbol이 표준이다.
+  function timeXml(ts, vrv) {
+    if (vrv && ts.symbol) {
+      return "<time><beats>" + ts.top + "</beats><beat-type>" +
+             VRV_MARKS[ts.noteDot ? "dq" : "q"] + "</beat-type></time>";
+    }
+    return "<time" + (ts.symbol ? " symbol=\"" + ts.symbol + "\"" : "") + "><beats>" + ts.beats +
+           "</beats><beat-type>" + ts.type + "</beat-type></time>";
+  }
+  const VRV_MARKS = { q: 11, dq: 111 };
+
   function build(scores, meta) {
     if (!C) throw new Error("js/staff-core.js가 먼저 실려 있어야 합니다");
     const list = Array.isArray(scores) ? scores : [scores];
@@ -306,8 +330,7 @@
           if (!s.perc) out.push("        <key><fifths>" + s.fifths + "</fifths></key>");
           // 각 하나가 한 마디다 — 박자표는 staff-core가 정한다(화면과 같은 답이라야 한다).
           const ts = C.timeSig(s.unit, mb, s.timeType);
-          out.push("        <time><beats>" + ts.beats +
-                   "</beats><beat-type>" + ts.type + "</beat-type></time>");
+          out.push("        " + timeXml(ts, meta.vrv));
           if (s.perc) {
             // 한 줄짜리 보표 + 타악 자리표. **staff-details가 clef보다 먼저** 와도 규격은
             // 받지만(순서 자유) Verovio는 둘 다 있어야 1선으로 접는다.
@@ -332,8 +355,7 @@
         } else if (mb !== prevMb) {
           // 각 길이가 바뀌는 자리 — 박자표만 다시 적는다(조표·자리표는 그대로다)
           const ts2 = C.timeSig(s.unit, mb, s.timeType);
-          out.push("      <attributes><time><beats>" + ts2.beats +
-                   "</beats><beat-type>" + ts2.type + "</beat-type></time></attributes>");
+          out.push("      <attributes>" + timeXml(ts2, meta.vrv) + "</attributes>");
         }
         prevMb = mb;
         // 마디 몸통 — 장구만 성부가 둘이다(채편 위 · 북편 아래). <backup>으로 시간축을
@@ -355,5 +377,5 @@
     return out.join("\n");
   }
 
-  root.JGB_MUSICXML = { build: build };
+  root.JGB_MUSICXML = { build: build, VRV_MARKS: VRV_MARKS };
 })(typeof window !== "undefined" ? window : globalThis);
