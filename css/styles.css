@@ -2251,6 +2251,10 @@
      입력칸은 앱의 폼 칸과 같은 꼴(--panel·--line·6px)이라 '저 칸에 치면 된다'로 읽힌다. */
   #tourDemo { margin: 2px 0 14px; padding: 12px 12px 8px; border-radius: 8px;
     background: var(--soft); border: 1px solid var(--line); }
+  /* 관련 장면이 아직 안 나온 줄 — 무대는 옅게 멈춰 기다린다 */
+  #tourDemo { transition: opacity .35s ease, filter .35s ease; }
+  #tourDemo.idle { opacity: .45; filter: saturate(.6); }
+  #tourDemo.idle .td-caret { animation: none; opacity: 0; }
   #tourDemo .td-stage { display: flex; align-items: center; gap: 7px; min-height: 76px; }
   #tourDemo .td-left { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
   #tourDemo .td-field { display: flex; align-items: center; gap: 0; height: 34px; padding: 0 9px;
