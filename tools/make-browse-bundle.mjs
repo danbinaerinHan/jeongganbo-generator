@@ -9,7 +9,7 @@
 //  ① 꼴은 browse.html의 것을 그대로 쓴다 — css/styles.css + css/browse.css를 상대경로로 싣고
 //    카드 클래스(.sc-*)도 같다. 여기서 새 색·새 클래스를 만들지 말 것.
 //  ② 문패(#brandBox)는 browse.html에서 **뜯어 온다** — 로고 마크업의 네 번째 사본을 만들지
-//    않으려는 것이다(editor.html → browse.html까지가 이미 두 벌).
+//    않으려는 것이다(index.html → browse.html까지가 이미 두 벌).
 //  ③ 악보는 카드를 누를 때 `<script>`로 불러 localStorage(jgb_state_v1)에 넣고 편집기로 간다.
 //    fetch가 아니라 script인 것은 file://로 열어도 되게 하려는 것이다(CORS를 안 탄다) —
 //    js/janggu-audio.js를 첫 재생 때 script로 붙이는 것과 같은 수법.
@@ -45,7 +45,7 @@ const topStart = browseHtml.indexOf('<div class="sc-top">');
 const topEnd = browseHtml.indexOf("</header>", topStart);
 let topBlock = browseHtml.slice(topStart, browseHtml.indexOf("</div>\n\n<header", topStart) + 6);
 // 상대경로를 한 단계 위로 — 번들이 하위 폴더에 놓이므로
-topBlock = topBlock.replace(/href="(index|editor)\.html"/g, 'href="../../$1.html"');
+topBlock = topBlock.replace(/href="index\.html"/g, 'href="../../index.html"');
 
 // ── 악보 읽기 ──
 if (existsSync(OUT)) rmSync(OUT, { recursive: true });
@@ -139,7 +139,7 @@ ${cards}
         localStorage.setItem("jgb_welcome_v1", "1");   // 환영 카드·새 문서 마법사를 막는다
         localStorage.setItem("jgb_guide_seen_v1", "1");
       } catch (e) { alert("악보를 넣지 못했습니다: " + e.message); return; }
-      location.href = "../../editor.html";
+      location.href = "../../index.html";
     };
     s.onerror = function () { alert("악보 파일을 못 읽었습니다 (docs/" + id + ".js)"); };
     document.head.appendChild(s);
@@ -239,7 +239,7 @@ ${cards}
     btn.disabled = true;
     var fr = document.createElement("iframe");
     fr.style.cssText = "position:fixed;left:-9999px;top:0;width:1200px;height:900px;border:0";
-    fr.src = "../../editor.html";
+    fr.src = "../../index.html";
     document.body.appendChild(fr);
     try {
       await new Promise(function (res, rej) { fr.onload = res; fr.onerror = rej; });

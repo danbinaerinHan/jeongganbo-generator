@@ -10,7 +10,7 @@
      맨 윗줄(.sc-top)은 browse.css, 카드와 폼만 login.css.
 
      ★ 이 페이지가 따로 있는 까닭은 화면 때문만이 아니다. 매직 링크는 Supabase가
-     `redirect_to#access_token=…` 꼴로 **해시에 토큰을 실어** 되돌려 주는데, 편집기(editor.html)는
+     `redirect_to#access_token=…` 꼴로 **해시에 토큰을 실어** 되돌려 주는데, index.html은
      해시를 이미 악보 주소로 쓰고 있어(`#v=`·`#s=`·`#va=`) 거기로 되돌리면 두 문법이
      부딪힌다. 정적 호스팅이라 경로 리라이트(/login)는 못 쓴다 — 게시 주소가 경로가
      아니라 해시인 것과 같은 사정이다. -->
@@ -20,10 +20,10 @@
 </head>
 <body class="browse">
 
-<!-- 문패 그림·워드마크는 js/doc-brand.js가 editor.html에서 가져와 꽂는다(로고를 두 번
+<!-- 문패 그림·워드마크는 js/doc-brand.js가 index.html에서 가져와 꽂는다(로고를 두 번
      박지 않으려는 것). policy.html과 같은 마크업이다. -->
 <div class="sc-top">
-  <a class="sc-brandlink" href="index.html" title="우물사이 — 첫 화면으로">
+  <a class="sc-brandlink" href="index.html" title="우물사이 — 정간보 편집기로">
     <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
       <img id="brandLogo" src="" alt="우물사이 로고" hidden>
       <div class="brand-txt">
@@ -32,7 +32,7 @@
       </div>
     </div>
   </a>
-  <a class="sc-make" href="editor.html">편집기로</a>
+  <a class="sc-make" href="index.html">편집기로</a>
 </div>
 
 <main class="lg-wrap">
@@ -117,7 +117,7 @@
     <div class="lg-label">준비 중</div>
     <h1>계정 기능은 아직 열지 않았습니다</h1>
     <p class="lg-p">계정 없이도 악보를 만들고 올리는 일은 지금 그대로 됩니다.</p>
-    <a class="lg-btn" href="editor.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">편집기로</a>
+    <a class="lg-btn" href="index.html" style="display:block;text-align:center;text-decoration:none;box-sizing:border-box">편집기로</a>
   </section>
 
 </main>

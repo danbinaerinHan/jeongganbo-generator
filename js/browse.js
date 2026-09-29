@@ -1,7 +1,7 @@
 /* ============================================================================
    우물사이 — 공유마당 (browse.html)
    ============================================================================
-   사람들이 공개로 올린 악보를 모아 보여주는 페이지. 편집기(editor.html)와 **다른 문서**다:
+   사람들이 공개로 올린 악보를 모아 보여주는 페이지. 편집기(index.html)와 **다른 문서**다:
    여기서는 악보를 그리지 않으므로 app.js·기호 데이터(600KB)를 안 싣는다. 카드에 보이는
    그림은 올린 사람의 브라우저가 게시할 때 미리 떠 둔 것(서버는 악보를 그릴 줄 모른다).
 
@@ -39,7 +39,7 @@
 
   function editorUrl(id) {
     // 같은 폴더의 편집기로 넘긴다(브라우저가 알아서 절대 주소로 만든다)
-    return "editor.html#v=" + encodeURIComponent(id);
+    return "index.html#v=" + encodeURIComponent(id);
   }
 
   // "3일 전"처럼 — 목록에서는 정확한 시각보다 얼마나 됐는지가 알고 싶은 것이다
@@ -230,7 +230,7 @@
 
   $("scMore").addEventListener("click", function () { load(false); });
 
-  // 편집기로 가는 버튼의 이름 — 가는 곳은 늘 editor.html이지만, 편집 중이던 악보가 있으면
+  // 편집기로 가는 버튼의 이름 — 가는 곳은 늘 index.html이지만, 편집 중이던 악보가 있으면
   // '돌아가기'라고 말해 줘야 누를 생각을 한다. '악보 만들기'만 있으면 하던 작업이 사라질까 봐
   // 안 누르고, 문패를 눌러야 돌아간다는 건 알 길이 없다.
   // 판단 근거는 편집기의 자동 저장 열쇠(app.js의 LS_KEY) 하나뿐이다 — 같은 출처라 그냥 읽힌다.
@@ -249,15 +249,6 @@
     const th = localStorage.getItem("jgb_theme_v1");
     if (th === "crystal") document.body.classList.add("theme-crystal");
     else if (th === "celadon") document.body.classList.add("theme-celadon");
-  } catch (e) {}
-
-  // 묻고 제안하기로 가는 길 — 게시판 스위치가 켜져 있을 때만(board.js의 ON과 같은 판정)
-  if (CFG.url && KEY && CFG.board !== false) $("scBoard").hidden = false;
-
-  // 첫 화면(home.html)의 찾기 칸이 ?q=로 넘겨준다 — 받은 말로 바로 찾는다
-  try {
-    const q0 = (new URLSearchParams(location.search).get("q") || "").trim();
-    if (q0) { q = q0; $("scSearch").value = q0; }
   } catch (e) {}
 
   track("browse_open");

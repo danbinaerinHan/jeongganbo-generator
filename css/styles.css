@@ -175,8 +175,6 @@
               flex: 0 0 auto; }
   /* 로고는 위쪽 크롭본(까치+맨 윗 가로획, 가로로 긴 비율) — 높이만 정하고 폭은 비율대로 */
   #brandBox img { height: 36px; width: auto; display: block; }
-  /* 로고+이름을 감싼 첫 화면 링크 — #brandBox의 flex 짜임(가운데 맞춤·9px 간격)을 그대로 물려받는다 */
-  #brandBox .brand-home { display: flex; align-items: center; gap: 9px; color: inherit; text-decoration: none; }
   .brand-txt { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
   /* 이름은 EBS훈민정음 SB를 아웃라인 패스로 뜬 SVG(index.html에 인라인) — 해례본 판본체라
      로고의 井 격자와 한 결이고, 폰트 설치 여부와 무관하게 모든 OS에서 똑같이 나온다.
@@ -1834,10 +1832,6 @@
                       border-radius: 0; padding: 7px 14px; font-size: 12px; font-weight: 600;
                       cursor: pointer; font-family: inherit; }
   .help-foot button:hover { opacity: .9; }
-  /* 도움말에서 답을 못 찾았을 때 갈 곳(묻고 제안하기) — [둘러보기] 바로 왼쪽에 글자 링크로만.
-     채운 버튼은 [둘러보기] 하나여야 한다(화면당 강조 한 점). */
-  .help-board { margin-left: auto; font-size: 12px; color: var(--accent); text-decoration: none; }
-  .help-board:hover { text-decoration: underline; text-underline-offset: 2px; }
 
   /* 환영 카드 — 진짜 첫 방문에만 한 번. 버튼 3개가 세로로 쌓인 작은 카드.
      가운데 정렬이 아니라 왼쪽 정렬이다: 글이 왼쪽 한 축에서 시작해야 '읽고 고르는 화면'으로
@@ -2161,6 +2155,64 @@
     body.tour-active #tourCard h4 { margin: 4px 0 8px; }
     body.tour-active #tourCard .tour-btns { padding-top: 8px; }
     body.tour-active #tourBody { flex: 1 1 auto; margin-bottom: 0; }
+  }
+
+  /* ── 둘러보기 움직임 (2026-09-29) ──
+     단계가 바뀔 때 무엇도 '뚝' 바뀌지 않게 한다. 움직임은 전부 ease-out 계열의 한 번 흐름이고
+     튀거나(스프링) 되풀이되는 것은 없다 — 예전에 지운 '통통 튀는 팝인'과 다른 점이 이것이다.
+     · 강조 상자·보조 링·어둠 구멍은 app.js tourAnimateTo가 앞 자리에서 새 자리로 옮긴다.
+     · 카드 글은 읽는 방향 쪽에서 밀려 들며 번호 → 제목 → 본문 차례로 떠오른다.
+     · 장 칩 바탕(#tourChipBar)은 한 조각이 옆 장으로 미끄러진다.
+     · 상자가 닿으면 테두리 바깥으로 빛이 한 번 번진다(.ping).
+     동작 줄이기를 켠 사람에겐 맨 아래 규칙이 전부 끈다. */
+  #tourChips { position: relative; }
+  #tourChips button { position: relative; z-index: 1; }
+  #tourChips button.on { background: none; }
+  #tourChipBar { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: var(--hover);
+    box-shadow: inset 0 -2px 0 var(--ink); pointer-events: none;
+    transition: left .42s cubic-bezier(.4,0,.2,1), width .42s cubic-bezier(.4,0,.2,1); }
+  #tourProgress i { transition: width .5s cubic-bezier(.4,0,.2,1); }
+  /* 들어오기 — 어둠이 내려앉고 카드가 옆(좁은 화면은 아래)에서 들어온다 */
+  #tourLayer { --tour-in-x: 28px; --tour-in-y: 0px; }
+  #tourLayer.tour-enter #tourSpot { animation: tourFadeIn .42s ease-out both; }
+  #tourLayer.tour-enter #tourCard { animation: tourCardIn .5s cubic-bezier(.2,.7,.2,1) .06s both; }
+  #tourLayer.tour-enter #tourHole,
+  #tourLayer.tour-enter .tour-ring { animation: tourFadeIn .4s ease-out .18s both; }
+  @keyframes tourFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes tourCardIn { from { opacity: 0; transform: translate(var(--tour-in-x), var(--tour-in-y)); }
+                          to   { opacity: 1; transform: none; } }
+  /* 나가기 — 같은 길을 되짚어 걷힌다. 걷히는 동안은 아래 화면을 누를 수 있다. */
+  #tourLayer.tour-leave { pointer-events: none; }
+  #tourLayer.tour-leave > * { animation: none; transition: opacity .22s ease-in; opacity: 0; }
+  #tourLayer.tour-leave #tourCard { transition: opacity .22s ease-in, transform .22s ease-in;
+    transform: translate(calc(var(--tour-in-x) * .6), calc(var(--tour-in-y) * .6)); }
+  /* 글 갈아 끼우기 */
+  #tourCard { --swap-x: 14px; }
+  #tourCard.swap-prev { --swap-x: -14px; }
+  #tourCard.swap-next #tourStepNum, #tourCard.swap-prev #tourStepNum { animation: tourSwapIn .38s cubic-bezier(.2,.7,.2,1) both; }
+  #tourCard.swap-next #tourTitle,   #tourCard.swap-prev #tourTitle   { animation: tourSwapIn .42s cubic-bezier(.2,.7,.2,1) .04s both; }
+  #tourCard.swap-next #tourContent, #tourCard.swap-prev #tourContent { animation: tourSwapIn .46s cubic-bezier(.2,.7,.2,1) .09s both; }
+  @keyframes tourSwapIn { from { opacity: 0; transform: translateX(var(--swap-x)); }
+                          to   { opacity: 1; transform: none; } }
+  /* 보조 링 — 앞 자리에서 자라 나오는 동안 옅게 시작해 도착과 함께 또렷해진다 */
+  .tour-ring.enter { animation: tourRingIn .46s ease-out both; }
+  .tour-ring.enter .tour-ring-lab { animation: tourFadeIn .3s ease-out .34s both; }
+  @keyframes tourRingIn { from { opacity: .25; } to { opacity: 1; } }
+  /* 도착 표시 — 강조색 빛이 테두리에서 바깥으로 한 번 번지고 사라진다 */
+  #tourHole::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+    box-shadow: 0 0 0 0 var(--accent); }
+  #tourHole.ping::after { animation: tourPing .9s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes tourPing { 0%   { opacity: .55; box-shadow: 0 0 0 1px var(--accent); }
+                        100% { opacity: 0;   box-shadow: 0 0 0 14px var(--accent); } }
+  /* 이름표를 상자 아래 오른쪽 맞춤으로 — 상단바 버튼처럼 위에 자리가 없는 대상용 */
+  .tour-ring-lab.at-below { bottom: auto; top: 100%; left: auto; right: -1.5px; margin: 4px 0 0; }
+  /* 투어가 설정 버튼을 '누르는' 순간 — 실제로 눌린 것처럼 한 번 들어갔다 나온다 */
+  .tour-press { animation: tourPress .36s ease-out; }
+  @keyframes tourPress { 0% { transform: none; } 35% { transform: scale(.9); background: var(--hover); }
+                         100% { transform: none; } }
+  @media (max-width: 1100px) { #tourLayer { --tour-in-x: 0px; --tour-in-y: 28px; } }
+  @media (prefers-reduced-motion: reduce) {
+    #tourLayer *, #tourLayer *::after, #tourLayer.tour-enter * { animation: none !important; transition: none !important; }
   }
 
   /* 편집 컨트롤: 옅은 면과 얇은 경계, 선택된 항목만 한 단계 선명하게. */

@@ -2,7 +2,7 @@
    우물사이 — 악보 게시 (1단계: 계정 없는 익명 게시)
    ============================================================================
    [재생]처럼 눌러야 쓰이는 기능이 아니라 언제든 주소로 들어올 수 있어서
-   editor.html이 app.js **뒤에** 미리 싣는다(window.jgbDoc이 있어야 하므로 뒤).
+   index.html이 app.js **뒤에** 미리 싣는다(window.jgbDoc이 있어야 하므로 뒤).
 
    ── 이 파일이 app.js를 한 줄도 안 고치는 까닭 ──────────────────────────────
    app.js는 4,000줄짜리 단일 IIFE다. 게시 배선을 그 안에 넣으면 문서·렌더·팔레트와
@@ -68,14 +68,6 @@
         ? "내 계정\n· " + (s.email || "들어와 있습니다")
         : "계정\n· 전자우편으로 링크를 받아 들어옵니다 (비밀번호 없음)\n· 계정 없이도 악보를 만들고 올리는 일은 그대로 됩니다");
     });
-  })();
-
-  // ---------- 레일의 [묻고 제안] · 도움말 꼬리말 링크 ----------
-  // 게시판도 제 스위치(JGB_CLOUD.board)가 있어 아래 이른 반환보다 **앞에서** 여닫는다.
-  // 마크업이 display:none으로 태어나므로 스위치를 안 켠 채 배포해도 빈 문이 안 보인다.
-  (function () {
-    if (!ON || CFG.board === false) return;     // board.js의 ON과 같은 판정
-    ["btnBoard", "helpBoardLink"].forEach(function (id) { const e = $(id); if (e) e.style.display = ""; });
   })();
 
   // ---------- 서버가 없을 때 ----------
@@ -168,9 +160,7 @@
     } catch (e) {}
   }
 
-  // 나눠 줄 주소는 **사이트 루트**로 만든다(umulsai.com/#v=…) — 편집기가 editor.html로 옮겨 간
-  // 뒤에도 주소가 짧고 옛 주소와 같은 꼴이다. 루트의 첫 화면(index.html)이 #v=를 보고 편집기로 넘긴다.
-  function scoreUrl(id) { return location.origin + location.pathname.replace(/[^/]*$/, "") + "#v=" + id; }
+  function scoreUrl(id) { return location.origin + location.pathname + "#v=" + id; }
 
   // 자동 복사가 막힌 환경(권한 없음·비보안 출처)에서는 손으로 복사할 수 있게 보여준다
   // — app.js의 링크 복사와 같은 폴백.

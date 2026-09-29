@@ -1,7 +1,7 @@
 /* ============================================================================
    우물사이 — 관리 화면 (admin.html)
    ============================================================================
-   올라온 악보를 훑고, 내리고, 문서를 받아 오는 자리. 편집기(editor.html)·공유마당
+   올라온 악보를 훑고, 내리고, 문서를 받아 오는 자리. 편집기(index.html)·공유마당
    (browse.html)와 **다른 문서**라 app.js도 cloud.js도 안 싣는다 — 여기서는 악보를
    그리지 않으므로(카드의 그림은 올린 사람 브라우저가 게시할 때 떠 둔 것이다).
 
@@ -61,7 +61,7 @@
   //   안 따라간다**(2026-08-21 실측 — 자세한 것은 js/admin-session.js 머리말).
   //   noopener 없는 window.open만 넘어간다. 링크로 되돌리지 말 것.
   function openInEditor(id) {
-    window.open("editor.html#va=" + encodeURIComponent(id), "_blank");
+    window.open("index.html#va=" + encodeURIComponent(id), "_blank");
   }
 
   function copyText(text, okMsg) {

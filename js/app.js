@@ -10086,7 +10086,13 @@
     { ch: 0, sel: "#sheetArea", id: "sheet", },
     // 설정 — 정간 입력법보다 먼저. 악보의 짜임(정간·각 수·배치)과 문서(종이 방향·제목)를
     // 어디서 바꾸는지부터 알아야 내용을 채울 판이 선다. prep이 사이드바를 '레이아웃' 탭으로 연다.
-    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab },
+    // 설정 패널은 기본이 닫힘이라 **여는 법부터** 보여 준다(2026-09-29 사용자 요청): 닫힌 채로
+    // 상단바 [설정] 버튼을 먼저 비추고(opener), 잠시 뒤 그 버튼을 눌러 패널을 연 다음 강조가
+    // 패널로 옮겨 간다. 버튼엔 '눌러서 열기' 이름표가 남는다. 이 단계 밖에서는 패널이 닫힌다
+    // (side 표시가 없는 단계 — stepAvailable).
+    { ch: 0, sel: "#sidebar", id: "Setting", prep: tourEnsureLayoutTab, side: true,
+      opener: "#sidebarOpen",
+      also: [{ union: "#sidebarOpen", label: "눌러서 열기", labelPos: "below" }] },
     // 정간 입력 예시 — '무엇을 치면 무엇이 그려지는지'를 그림(fig)으로. 첫 방문자가 투어만
     // 보고 바로 써 볼 수 있게 악보 단계 바로 다음. 이미지는 손그림이 아니라 **앱이 실제로
     // 그린 악보**의 캡처다: 에디터에 "황 | 황 태 | 황태 | 황{미는표} | 황태 -황"을 넣고
@@ -10169,7 +10175,7 @@
     { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] },
     { ch: 3, sel: "#btnHelp", id: "help", }
   ];
-  let tourIdx = -1, tourOnEnd = null;
+  let tourIdx = -1, tourOnEnd = null, tourHideTimer = 0;
   let tourWorkspace = null;
   // 하이라이트 대상 하나를 사각형으로. 세 가지 꼴을 받는다:
   //   "선택자"            — 첫 번째로 잡히는 요소(예전부터의 기본)
@@ -10197,7 +10203,12 @@
     const r = el.getBoundingClientRect();
     return (r.width || r.height) ? r : null;   // rect 0 = 화면에 없음 → 그 단계는 건너뜀
   }
-  function tourRect(step) { return rectOfSpec(step.sel); }
+  // tourOpenerStage — opener가 있는 단계의 첫 박자(아직 안 열림). 그동안은 여는 버튼을 비춘다.
+  let tourOpenerStage = false;
+  function tourRect(step) {
+    if (tourOpenerStage && step.opener && TOUR_STEPS[tourIdx] === step) return rectOfSpec(step.opener);
+    return rectOfSpec(step.sel);
+  }
   // 단계 준비(prep) — 시김새 3단계처럼 '눌러야 하는 버튼'이 접힌 도구창 안에 있으면
   // 창을 먼저 열어 보여준다. 뭘 열었는지 기억해 뒀다가 endTour에서 원래 창으로 복원.
   // 문구 붙이기 — tour-text.js의 steps[id]에서 title·body를 가져온다. 파일이 빠졌거나
@@ -10253,15 +10264,19 @@
   // '레이아웃 잡기' 단계용 — 사이드바를 레이아웃 탭으로 돌려 본문이 가리키는 컨트롤이
   // 실제로 보이게 한다. 시김새 창과 같은 규칙으로 endTour에서 원래 탭 복원.
   let tourPrevTab = null, tourTouchedTab = false;
-  let tourTouchedSide = false;   // 투어가 설정 단계를 위해 사이드바를 잠깐 열었나
+  // 설정 패널 여닫이 — 투어 동안에는 **설정 단계(side)에서만 열리고 나머지 단계에선 닫힌다**.
+  // 투어 전 상태는 tourSideWas에 적어 두었다가 endTour가 되돌린다(기억은 안 건드린다).
+  let tourSideWas = null;
+  function sidebarIsOpen() { return !document.body.classList.contains("sidebar-collapsed"); }
+  function tourSetSide(on) {
+    if (tourSideWas === null) tourSideWas = sidebarIsOpen();
+    if (sidebarIsOpen() !== on) setSidebarOpen(on, false);
+  }
   function tourEnsureLayoutTab() {
-    // 설정 패널은 기본이 닫힘이라, 이 단계를 보여주려면 잠깐 연다(투어가 끝나면 되돌린다).
+    // 설정 패널은 기본이 닫힘이라, 이 단계를 보여주려면 연다(투어가 끝나면 되돌린다).
     // 예전엔 닫혀 있으면 단계를 통째로 건너뛰었는데(skipIf), 기본이 닫힘이 되면서 첫 방문자가
     // '악보의 짜임을 어디서 바꾸나'를 영영 못 보게 된다.
-    if (document.body.classList.contains("sidebar-collapsed")) {
-      tourTouchedSide = true;
-      setSidebarOpen(true, false);
-    }
+    tourSetSide(true);
     const btn = document.querySelector('.tab[data-tab="layout"]');
     if (!btn || btn.classList.contains("active")) return;
     if (!tourTouchedTab) {
@@ -10273,17 +10288,18 @@
   }
   function stepAvailable(i) {
     const s = TOUR_STEPS[i];
+    if (!s.side) tourSetSide(false);   // 설정 단계 밖에서는 패널을 닫아 둔다
     if (s.prep) { try { s.prep(); } catch (_e) {} }   // 대상 rect 재기 전에 — 닫힌 창이면 rect 0이라 건너뛰어버림
     return !(s.skipIf && s.skipIf()) && !!tourRect(s);
   }
   // 보조 하이라이트 링(step.also) — 컷아웃 구멍은 하나뿐이라, 본문이 가리키는 나머지
-  // '실제 누를 버튼'들엔 살짝 테두리만 두른다(pointer-events 없음, positionTour마다 재계산).
-  function positionTourRings(step) {
+  // '실제 누를 버튼'들엔 살짝 테두리만 두른다(pointer-events 없음).
+  // 링은 **단계가 바뀔 때만 새로 만들고** 같은 단계의 자리 다시 잡기(60ms 뒤·resize)에선
+  // 그대로 둔 채 좌표만 옮긴다 — 매번 새로 만들면 나타나는 움직임이 두 번 재생된다.
+  // 어떤 스펙에서 나온 링인지 el._spec에 적어 두고 다시 잴 때 그걸 본다.
+  function buildTourRings(step) {
     document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
-    const rects = [];
     (step.also || []).forEach(function (sel) {
-      const r = rectOfSpec(sel);   // sel도 union·배열 꼴을 받는다(위 rectOfSpec 참고)
-      if (!r) return;
       const d = document.createElement("div");
       // tone — 상자가 여럿일 때 색으로 갈라 준다(기본은 강조색). 정간·대강·각처럼 나란히
       // 놓이는 상자들이 한 색이면 이름표를 일일이 읽어야 한다.
@@ -10292,19 +10308,26 @@
       // (labelPos: "top" 기본 · "side"=오른쪽 바깥). 정간·대강처럼 상자가 포개질 때 쓴다.
       if (sel && sel.label) {
         const lab = document.createElement("span");
-        lab.className = "tour-ring-lab" + (sel.labelPos === "side" ? " at-side" : "");
+        lab.className = "tour-ring-lab" + (sel.labelPos === "side" ? " at-side"
+          : sel.labelPos === "below" ? " at-below" : "");
         lab.textContent = sel.label;
         d.appendChild(lab);
       }
-      d.style.left = (r.left - 4) + "px";
-      d.style.top = (r.top - 4) + "px";
-      d.style.width = (r.width + 8) + "px";
-      d.style.height = (r.height + 8) + "px";
+      d._spec = sel;
+      d.style.display = "none";
       // 카드보다 '앞'에 끼워야(z 순서) 링이 말풍선 위로 그려지지 않는다
       $("tourLayer").insertBefore(d, $("tourCard"));
-      rects.push({ x: r.left - 4, y: r.top - 4, w: r.width + 8, h: r.height + 8 });
     });
-    return rects;   // 보조 대상 사각형 — 이걸로 #tourSpot 마스크에도 밝은 구멍을 뚫는다
+  }
+  // 지금 링들의 목표 자리 — 대상이 화면에 없으면(rect null) 그 링은 숨긴다.
+  function tourRingTargets() {
+    const out = [];
+    document.querySelectorAll(".tour-ring").forEach(function (d) {
+      const r = rectOfSpec(d._spec);   // union·배열 꼴을 받는다(위 rectOfSpec 참고)
+      d.style.display = r ? "" : "none";
+      if (r) out.push({ el: d, g: { x: r.left - 4, y: r.top - 4, w: r.width + 8, h: r.height + 8 } });
+    });
+    return out;
   }
   // 둘러보기 본문 렌더 — \n마다 div, 줄 앞 "## " 소제목·"!! " 팁, **굵게**.
   // innerHTML 없이 노드로 조립(본문에 황{미는표}·< 같은 문자가 그대로 들어가도 안전).
@@ -10326,41 +10349,124 @@
       el.appendChild(d);
     });
   }
-  // #tourSpot 마스크에 '밝은 구멍'(검은 사각형 = 그 자리 어둠을 뺌)을 다시 그린다.
-  // 흰 배경 rect(마스크의 첫 자식)는 남기고 hole 클래스 사각형만 갈아끼운다.
+  // #tourSpot 마스크의 '밝은 구멍'(검은 사각형 = 그 자리 어둠을 뺌) — 개수만 맞춰 두고
+  // 좌표는 매 프레임 applyTourGeom이 쓴다. 흰 배경 rect(마스크의 첫 자식)는 그대로 둔다.
   function buildSpotlight(holes) {
     const mask = document.getElementById("tourSpotMask");
     if (!mask) return;
-    mask.querySelectorAll(".tour-spot-hole").forEach(function (n) { n.remove(); });
+    const have = mask.querySelectorAll(".tour-spot-hole");
+    for (let k = holes.length; k < have.length; k++) have[k].remove();
     const NS = "http://www.w3.org/2000/svg";
-    holes.forEach(function (h) {
+    for (let k = have.length; k < holes.length; k++) {
       const rc = document.createElementNS(NS, "rect");
       rc.setAttribute("class", "tour-spot-hole");
-      rc.setAttribute("x", h.x); rc.setAttribute("y", h.y);
-      rc.setAttribute("width", h.w); rc.setAttribute("height", h.h);
       rc.setAttribute("rx", "8"); rc.setAttribute("fill", "#000");
       mask.appendChild(rc);
+    }
+    const all = mask.querySelectorAll(".tour-spot-hole");
+    holes.forEach(function (h, k) {
+      all[k].setAttribute("x", h.x); all[k].setAttribute("y", h.y);
+      all[k].setAttribute("width", Math.max(0, h.w)); all[k].setAttribute("height", Math.max(0, h.h));
     });
   }
+  // ── 강조 상자 움직임 ──
+  // 단계를 넘길 때 주 대상 테두리·보조 링·어둠 구멍이 **앞 단계 자리에서 새 자리로
+  // 미끄러져** 간다(예전엔 순간이동이라 눈이 새 자리를 다시 찾아야 했다). 셋이 한 좌표표
+  // (tourGeom: 0번 = 주 대상, 1번부터 = 보조 링)를 나눠 쓰고 한 박자에 같이 움직이므로
+  // 어둠 구멍과 테두리가 어긋나지 않는다.
+  //  · 앞 단계에 없던 링은 **앞 단계의 주 대상 자리에서 자라 나온다** — '방금 보던 곳에서
+  //    여기로'가 눈에 보이게.
+  //  · 도중에 다시 불리면(60ms 뒤 재측정·resize) 지금 그려진 자리에서 새 목표로 이어 간다.
+  //  · 동작 줄이기(prefers-reduced-motion)를 켠 사람에겐 곧장 자리로 간다.
+  //  · rAF가 안 도는 환경(백그라운드 탭·프리뷰)에서도 끝 자리는 setTimeout이 보장한다.
+  let tourGeom = null, tourAnimId = 0;
+  const TOUR_MOVE_MS = 460;
+  function tourReduceMotion() {
+    try { return window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_e) { return false; }
+  }
+  function tourEase(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function applyTourGeom(g, rings) {
+    const hole = $("tourHole");
+    hole.style.left = g[0].x + "px"; hole.style.top = g[0].y + "px";
+    hole.style.width = g[0].w + "px"; hole.style.height = g[0].h + "px";
+    rings.forEach(function (rg, k) {
+      const q = g[k + 1], st = rg.el.style;
+      st.left = q.x + "px"; st.top = q.y + "px"; st.width = q.w + "px"; st.height = q.h + "px";
+    });
+    buildSpotlight(g);
+  }
+  function tourAnimateTo(target, rings, fresh) {
+    const id = ++tourAnimId;
+    const prev = tourGeom;
+    const from = target.map(function (t, k) {
+      if (prev && prev[k] && !(fresh && k > 0)) return prev[k];
+      // 새로 나타난 링: 앞 단계 주 대상 자리에서 출발. 첫 단계면 제자리(나타나기만 한다).
+      return (prev && prev[0]) || t;
+    });
+    const same = from.every(function (f, k) {
+      const t = target[k];
+      return Math.abs(f.x - t.x) + Math.abs(f.y - t.y) + Math.abs(f.w - t.w) + Math.abs(f.h - t.h) < 1;
+    });
+    const finish = function () {
+      if (id !== tourAnimId) return;
+      tourGeom = target; applyTourGeom(target, rings);
+    };
+    if (same || tourReduceMotion() || !window.requestAnimationFrame) { finish(); return false; }
+    const t0 = performance.now();
+    const cur = from.map(function (f) { return { x: f.x, y: f.y, w: f.w, h: f.h }; });
+    tourGeom = cur;   // 도중에 다시 불리면 여기서 이어 간다
+    const frame = function (now) {
+      if (id !== tourAnimId) return;
+      const p = Math.min(1, (now - t0) / TOUR_MOVE_MS), e = tourEase(p);
+      target.forEach(function (t, k) {
+        const f = from[k];
+        cur[k].x = f.x + (t.x - f.x) * e; cur[k].y = f.y + (t.y - f.y) * e;
+        cur[k].w = f.w + (t.w - f.w) * e; cur[k].h = f.h + (t.h - f.h) * e;
+      });
+      applyTourGeom(cur, rings);
+      if (p < 1) requestAnimationFrame(frame); else finish();
+    };
+    applyTourGeom(cur, rings);
+    requestAnimationFrame(frame);
+    setTimeout(finish, TOUR_MOVE_MS + 120);
+    return true;
+  }
+  // 도착 표시 — 상자가 제자리에 닿으면 테두리 바깥으로 빛이 한 번 번지고 사라진다.
+  // 단계마다 한 번뿐이다(계속 깜빡이면 글을 읽는 눈을 뺏는다).
+  function tourPing(delay) {
+    const hole = $("tourHole");
+    const my = tourIdx;
+    setTimeout(function () {
+      if (tourIdx !== my) return;
+      hole.classList.remove("ping"); void hole.offsetWidth; hole.classList.add("ping");
+    }, delay);
+  }
+  let tourPosStep = -1;
   function positionTour() {
     if (tourIdx < 0) return;
-    const r = tourRect(TOUR_STEPS[tourIdx]);
+    const step = TOUR_STEPS[tourIdx];
+    const r = tourRect(step);
     if (!r) { endTour(); return; }
-    const alsoRects = positionTourRings(TOUR_STEPS[tourIdx]);
+    const fresh = tourPosStep !== tourIdx;
+    if (fresh) { tourPosStep = tourIdx; buildTourRings(step); }
+    const rings = tourRingTargets();
     const pad = 6;
-    const hole = $("tourHole");
-    hole.style.left = (r.left - pad) + "px";
-    hole.style.top = (r.top - pad) + "px";
-    hole.style.width = (r.width + pad * 2) + "px";
-    hole.style.height = (r.height + pad * 2) + "px";
-    // 어둠에 밝은 구멍 뚫기 — 메인 대상 + 보조(also) 대상 모두
-    buildSpotlight([{ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 }].concat(alsoRects));
-
+    const target = [{ x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 }]
+      .concat(rings.map(function (rg) { return rg.g; }));
+    const moved = tourAnimateTo(target, rings, fresh);
+    if (fresh) {
+      // 링은 자라 나오는 동안 옅게 시작해 도착과 함께 또렷해진다(CSS .tour-ring.enter)
+      rings.forEach(function (rg) {
+        rg.el.classList.remove("enter"); void rg.el.offsetWidth; rg.el.classList.add("enter");
+      });
+      tourPing(moved ? TOUR_MOVE_MS - 60 : 120);
+    }
   }
   function tourGo(i, dir) {
     while (i >= 0 && i < TOUR_STEPS.length && !stepAvailable(i)) i += dir;
     if (i >= TOUR_STEPS.length) { track("tour_done"); endTour(); return; }   // 마지막 '다음' = 완료 축하 화면
     if (i < 0) { endTour(); return; }
+    const tourDir = tourIdx < 0 ? 0 : (i >= tourIdx ? 1 : -1);
     tourIdx = i;
     $("tourFinale").style.display = "none";   // 뒤로 돌아오면 축하 카드 걷고 단계 카드로
     $("tourCard").style.display = "";
@@ -10407,6 +10513,33 @@
     $("tourPrev").style.display = "";
     $("tourPrev").disabled = i === 0;
     $("tourNext").textContent = i === TOUR_STEPS.length - 1 ? "완료" : "다음";
+    // 글 갈아 끼우기 — 번호·제목·본문이 읽는 방향 쪽에서 살짝 밀려 들며 차례로 떠오른다
+    // (다음 = 오른쪽에서, 이전 = 왼쪽에서). 첫 단계는 카드째 들어오므로(tour-enter) 건너뛴다.
+    const card = $("tourCard");
+    card.classList.remove("swap-next", "swap-prev");
+    if (tourDir) { void card.offsetWidth; card.classList.add(tourDir > 0 ? "swap-next" : "swap-prev"); }
+    moveTourChipBar(s.ch);
+    // 여는 버튼이 있는 단계(설정) — 닫힌 채로 버튼부터 비추고, 도착한 뒤 버튼을 '눌러' 연다.
+    // stepAvailable이 대상을 재려고 이미 열어 두었으므로 여기서 도로 닫고 시작한다.
+    tourOpenerStage = false;
+    if (s.opener && s.side && !tourReduceMotion()) {
+      tourOpenerStage = true;
+      setSidebarOpen(false, false);
+      const mine = tourIdx;
+      setTimeout(function () {
+        if (tourIdx !== mine) return;
+        const btn = document.querySelector(s.opener);
+        if (btn) { btn.classList.remove("tour-press"); void btn.offsetWidth; btn.classList.add("tour-press"); }
+        setTimeout(function () {
+          if (tourIdx !== mine) return;
+          tourOpenerStage = false;
+          if (s.prep) { try { s.prep(); } catch (_e) {} }
+          positionTour();
+          tourPing(TOUR_MOVE_MS - 60);
+          setTimeout(function () { if (tourIdx === mine) positionTour(); }, 60);
+        }, 180);
+      }, TOUR_MOVE_MS + 650);
+    }
     positionTour();
     // prep이 방금 도구창을 열었다면 이 시점 레이아웃이 아직 낡았을 수 있다(특히 프리뷰
     // 환경) — 한 틱 뒤 같은 단계면 한 번 더 자리 잡기. rAF는 프리뷰에서 안 돌아 setTimeout.
@@ -10428,7 +10561,12 @@
     viewFitMode = null;
     document.body.classList.add("tour-active");
     track("tour_start");
-    $("tourLayer").style.display = "block";
+    clearTimeout(tourHideTimer);
+    tourIdx = -1; tourGeom = null; tourPosStep = -1;
+    const layer = $("tourLayer");
+    layer.classList.remove("tour-leave", "tour-enter");
+    layer.style.display = "block";
+    void layer.offsetWidth; layer.classList.add("tour-enter");   // 어둠이 내려앉고 카드가 들어온다
     tourGo(0, 1);
     $("tourNext").focus({ preventScroll: true });
   }
@@ -10457,7 +10595,6 @@
     if ($("tourFinale")) $("tourFinale").style.display = "none";
     $("tourCard").style.display = "";
     $("tourHole").style.display = "";
-    document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
     // prep이 도구창(시김새/정간 서식)을 열었었다면 투어 전에 열려 있던 창으로 되돌린다
     // (작업 공간 존중). 도구창은 한 번에 하나만 열리므로 지금 열린 창이 곧 투어가 연 창.
     if (tourTouchedWin) {
@@ -10471,7 +10608,10 @@
       tourTouchedPalView = false; tourPrevPalView = null;
     }
     // prep이 사이드바를 잠깐 열었었다면 도로 닫는다(기억은 안 건드린다)
-    if (tourTouchedSide) { setSidebarOpen(false, false); tourTouchedSide = false; }
+    if (tourSideWas !== null) {
+      if (sidebarIsOpen() !== tourSideWas) setSidebarOpen(tourSideWas, false);
+      tourSideWas = null;
+    }
     // prep이 사이드바 탭을 돌렸었다면 원래 탭으로
     if (tourTouchedTab) {
       if (tourPrevTab) {
@@ -10480,7 +10620,18 @@
       }
       tourTouchedTab = false; tourPrevTab = null;
     }
-    $("tourLayer").style.display = "none";
+    // 끝낼 때도 뚝 끊지 않고 어둠·카드가 함께 걷힌다. 걷히는 동안은 포인터를 안 받아
+    // (CSS .tour-leave) 바로 이어지는 새 문서 창을 누를 수 있다.
+    ++tourAnimId; tourGeom = null; tourPosStep = -1;
+    const layer = $("tourLayer");
+    layer.classList.remove("tour-enter");
+    const hideLayer = function () {
+      layer.style.display = "none"; layer.classList.remove("tour-leave");
+      document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
+    };
+    clearTimeout(tourHideTimer);
+    if (tourReduceMotion()) hideLayer();
+    else { layer.classList.add("tour-leave"); tourHideTimer = setTimeout(hideLayer, 240); }
     document.body.classList.remove("tour-active");
     const workspace = tourWorkspace; tourWorkspace = null;
     if (workspace) {
@@ -10509,7 +10660,20 @@
       });
       wrap.appendChild(b);
     });
+    // 지금 장을 받치는 바탕 — 칩마다 바탕을 켜고 끄는 대신 한 조각이 옆 장으로 미끄러진다
+    const bar = document.createElement("i");
+    bar.id = "tourChipBar";
+    wrap.appendChild(bar);
   })();
+  function moveTourChipBar(ch) {
+    const bar = $("tourChipBar"), b = document.querySelectorAll("#tourChips button")[ch];
+    if (!bar || !b) return;
+    const first = !bar.style.width;   // 처음 자리는 미끄러지지 않고 곧장 앉는다
+    if (first) bar.style.transition = "none";
+    bar.style.left = b.offsetLeft + "px";
+    bar.style.width = b.offsetWidth + "px";
+    if (first) { void bar.offsetWidth; bar.style.transition = ""; }
+  }
   $("tourSkip").addEventListener("click", endTour);
   if ($("tourFinaleBtn")) $("tourFinaleBtn").addEventListener("click", endTour);   // 축하 카드 '시작하기'
   document.addEventListener("keydown", function (e) {
@@ -10517,7 +10681,10 @@
     if (tourIdx >= 0) { endTour(); return; }
     if ($("helpModal").style.display !== "none") closeHelpModal();
   });
-  window.addEventListener("resize", function () { if (tourIdx >= 0) positionTour(); });
+  window.addEventListener("resize", function () {
+    if (tourIdx < 0) return;
+    positionTour(); moveTourChipBar(TOUR_STEPS[tourIdx].ch);
+  });
 
   // -- 첫 방문 환영 카드 --
   function showWelcome() {
