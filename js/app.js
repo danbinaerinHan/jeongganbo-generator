@@ -6492,6 +6492,12 @@
       if (next === "score") {
         const per = Math.max(1, parseInt(seed.gakPerRow, 10) || 1);
         seed.gakPerRow = String(Math.max(1, Math.round(per / Math.max(1, parts.length))));
+        // 총보의 곁줄 표시는 **기본 끔**(2026-09-29 사용자 요청) — 파트마다 곁줄이 붙어 각이
+        // 크게 넓어지기 때문이다. 사람이 켜면 그 값이 이 보기에 기억된다.
+        seed.lyricsLane = false;
+      } else {
+        // 거꾸로 총보에서 문을 연 문서가 파트보로 처음 갈 때 그 '끔'을 물려받지 않게
+        seed.lyricsLane = CTRL_DEFAULTS.lyricsLane;
       }
       viewLayouts[next] = seed;
     }
@@ -8218,6 +8224,10 @@
       });
     }
     layoutView = scoreViewOn() ? "score" : "part";
+    // 총보 곁줄 표시 기본 끔(syncViewLayout 주석) — 저장분에 **값이 없을 때만** 끈다.
+    // 적혀 있으면 사람이 정한 것이라 그대로 둔다.
+    if (layoutView === "score" && !(s.controls && "lyricsLane" in s.controls)) $("lyricsLane").checked = false;
+    if (viewLayouts.score && !("lyricsLane" in viewLayouts.score)) viewLayouts.score.lyricsLane = false;
     edPage = 0; edRange = null; edLyRange = null;
     gakUserSet = !!s.gakUserSet;
     daegangAuto = s.daegangAuto || "";
