@@ -10256,7 +10256,10 @@
     // 겹쳤고, 문서 탭(제목·종이 방향)은 따로 가르칠 만큼 헷갈리지 않다. 보관 탭의
     // 임시 저장만 아래 '인쇄 · 파일' 단계에 한 줄로 흡수.
     // 새 문서·인쇄는 상단바에, 나머지 파일 명령은 오른쪽 레일에 — 둘을 함께 짚는다
-    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] }
+    { ch: 3, sel: "#outBox", id: "files", also: ["#appRail"] },
+    // 게시·공유마당 — 악보를 사람들과 나누는 자리(레일 ② 무리). 게시 기능이 꺼진 배포에선
+    // 두 버튼이 숨으므로(cloud.js) 대상이 없어 이 단계는 저절로 건너뛴다.
+    { ch: 3, sel: [{ union: "#btnPublish, #btnBrowse" }], id: "share", also: ["#btnPublish", "#btnBrowse"] }
     // 도움말 단계(한 줄뿐)는 끝 화면('다 보았습니다')의 한 줄로 접었다
   ];
   let tourIdx = -1, tourOnEnd = null, tourHideTimer = 0;
@@ -10402,6 +10405,10 @@
         labelPos: "below" });   // 옆에 두면 이웃 탭(곁줄·장단…)을 덮는다
     }
     (step.also || []).forEach(function (sel) {
+      // **한 번에 한 곳만** 밝힌다(2026-09-30 사용자 지적: 여기저기 밝아 정신이 없다). 줄마다 강조가
+      // 제 자리로 옮겨 가므로(TOUR_BEAT_SEL) 늘 떠 있는 보조 링은 군더더기다 — 이름표가 달린 링
+      // (정간·대강·각처럼 링 자체가 설명인 것)만 남긴다. also 목록은 그대로 둬도 그려지지 않는다.
+      if (!(sel && sel.label)) return;
       // 여는 버튼과 같은 것을 가리키는 보조 링은 겹쳐 그리지 않는다
       const one = typeof sel === "string" ? sel : (sel && sel.union);
       if (openEl && one && document.querySelector(one) === openEl) return;
@@ -10432,7 +10439,8 @@
     const out = [];
     document.querySelectorAll(".tour-ring").forEach(function (d) {
       // 첫 박자(아직 안 누름)엔 여는 버튼 링만 — 나머지는 열린 뒤에야 화면에 있다
-      const r = (tourOpenerStage && !d._spec._opener) ? null : rectOfSpec(d._spec);
+      // 여는 버튼 링은 누른 뒤(.opened)엔 할 일을 다 했으므로 걷는다 — 열린 창 하나만 밝게
+      const r = (tourOpenerStage && !d._spec._opener) || d.classList.contains("opened") ? null : rectOfSpec(d._spec);
       d.style.display = r ? "" : "none";
       const P = TOUR_RING_PAD;
       if (r) out.push({ el: d, g: { x: r.left - P, y: r.top - P, w: r.width + P * 2, h: r.height + P * 2 } });
@@ -10651,12 +10659,15 @@
     sheet: [{ union: ".tour-lane-mel" }, null, { union: ".tour-lane-mel" }],
     // 설정의 문서·레이아웃 줄은 그 탭을 눌러 전환한 뒤(TOUR_BEAT_TAB) 탭 **내용**을 비춘다
     Setting: [null, '#sidebar .tabpanel.active', '#sidebar .tabpanel.active'],
-    yul: ["#paletteCol", "#paletteCol", null, null],
+    // 율명 네 줄은 모두 팔레트 — 예시는 카드의 무대가 보여 주므로 악보(첫 각)로 옮겨 가지 않는다
+    yul: ["#paletteCol", "#paletteCol", "#paletteCol", "#paletteCol"],
     ornPalette: [null, "#paletteCol .orn-instrument", "#paletteCol .sym-search", "#paletteCol"],
     ornShortcut: [null, "#ornMapToggle", null],
     lyrics: [{ union: ".tour-lane-ly" }, { union: ".tour-lane-ly" }, "#lyricsArea"],
+    jangdan: [{ union: ".tour-lane-jd" }, null],   // '장단 켜기'는 장단 줄이 생기는 자리(없으면 장단 창)
     play: ["#btnPlay", "#playPop", "#playPop", "#playPop"],
-    files: ["#btnNewDoc", "#btnPrint", "#outPop", null]
+    files: ["#btnNewDoc", "#btnPrint", "#outPop", null],
+    share: ["#btnPublish", "#btnPublish", "#btnBrowse"]
   };
   let tourBeat = 0, tourBeats = [];
   function buildTourBeats() {
@@ -11482,7 +11493,7 @@
           // 열린 뒤 나타난 링은 옅게 시작해 또렷해진다(첫 박자의 여는 버튼 링은 그대로)
           document.querySelectorAll(".tour-ring").forEach(function (d) {
             // 여는 버튼 링은 남기되 이름표는 걷는다 — 할 말을 다 했고, 열린 창·탭 위에 남으면 가린다
-            if (d._spec._opener) { d.classList.add("opened"); return; }
+            if (d._spec._opener) { d.classList.add("opened"); positionTour(); return; }
             d.classList.remove("enter"); void d.offsetWidth; d.classList.add("enter");
           });
           tourPing(TOUR_MOVE_MS - 60);
