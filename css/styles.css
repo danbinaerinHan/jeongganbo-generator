@@ -1048,31 +1048,29 @@
      세로로 아주 길어지면 아래가 화면을 넘을 수 있으나, 그립으로 끌어 옮길 수 있다. */
   body.input-direct #textArea.win-open { max-height: none; overflow: visible; }
 
-  /* ---------- 악기 관리 창 (총보 파트, #partsWin) ----------
-     피날레 Score Manager 자리 — 사이드바 '문서' 탭 [악기 관리…]가 연다. 도구창(.direct-win)이
-     아니라 **독립 창**: 입력 방식과 무관하게 뜨므로 위 body.input-direct 규칙에 얽지 않고
-     .open 클래스 하나로만 여닫는다. 카드꼴·absolute 문법은 도구창(.win-open)과 같게 맞춘다. */
-  .mgr-win { display: none; }
-  .mgr-win.open {
-    display: flex; flex-direction: column; position: absolute; top: 84px; right: 14px; z-index: 7;
-    width: min(430px, calc(100% - 28px)); max-height: 62vh; overflow: auto;
-    background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.18); padding: 10px 12px 12px;
-  }
-  .mgr-win .dock-panel-grip { display: flex; }   /* 그립은 입력 방식과 무관하게 늘 보인다 */
-  .mgr-win .melody-head { flex: 0 0 auto; }      /* 세로 flex 창 머리줄 필수 규칙 */
-  .parts-hint { font-size: 11.5px; color: var(--muted); margin: 2px 0 8px; }
-  /* 한 악기 = 한 줄. **선택자에 input[type=text]를 함께 적어야** 한다 — 위 .tx-item
-     input[type="text"](150px)이 클래스 하나 + 속성이라 `.part-item .part-abbr`(클래스 둘)를
-     이기고, 그러면 약어 칸이 150px로 부풀어 창 오른쪽 끝까지 뻗고 악기·버튼이 통째로 다음
-     줄로 접힌다(2026-08-26 실측: 줄 높이 79px). 남는 폭은 이름 칸만 갖는다. */
-  .tx-item.part-item { flex-wrap: nowrap; gap: 6px; }
-  .part-item input[type="text"].part-name { flex: 1 1 auto; min-width: 56px; width: auto; }
-  .part-item input[type="text"].part-abbr { flex: 0 0 52px; width: 52px; }   /* 총보 둘째 줄부터 붙는 약어 */
-  .part-item .part-inst { flex: 0 0 auto; max-width: 92px; }
+  /* ---------- 악기 편성 목록 (설정 › 곡 탭, #partsList) ----------
+     예전엔 독립 창(#partsWin)이었고 지금은 사이드바 안에 늘 펼쳐져 있다(2026-09-30).
+     사이드바(≈290px)엔 칸 여덟이 한 줄로 안 서서 **악기 하나 = 두 줄**이다 —
+     윗줄 ◉·이름·✕ / 아랫줄 악기·약어·🔊·↑·↓. 아랫줄은 이름 칸 밑으로 들여 세운다.
+     **선택자에 input[type=text]를 함께 적어야** 한다 — .tx-item input[type="text"](150px)과
+     사이드바 폼 공통 규칙(폭 100%)을 이겨야 약어 칸이 제 폭(52px)에 선다. */
+  .tx-item.part-item { flex-direction: column; align-items: stretch; flex-wrap: nowrap;
+                       gap: 5px; padding: 7px 6px; }
+  .part-item .part-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .part-item .part-sub { padding-left: 19px; gap: 4px; }   /* ◉(13px) + gap(6px) — 이름 칸과 왼쪽을 맞춘다 */
+  .part-item input[type="radio"] { flex: 0 0 13px; margin: 0; }
+  .part-item input[type="text"].part-name { flex: 1 1 auto; min-width: 0; width: auto; }
+  .part-item input[type="text"].part-abbr { flex: 0 0 46px; width: 46px; }   /* 총보 둘째 줄부터 붙는 약어 */
+  .part-item select.part-inst { flex: 1 1 auto; min-width: 0; width: auto; }
+  /* 🔊·↑·↓는 같은 26px 정사각 — 아랫줄 폭(≈243px)에서 남는 몫을 악기 칸이 가져야
+     '악기 선택'이 안 잘린다(실측: 버튼이 제 글자 폭이면 악기 칸이 72px로 눌렸다). */
+  .part-item .mel-btn { flex: 0 0 26px; width: 26px; height: 26px; padding: 0;
+                        display: inline-flex; align-items: center; justify-content: center; }
+  .part-item .tx-del { flex: 0 0 auto; }
   /* 지금 편집하는 파트 행 — 색만 살짝, 테두리 반경은 행 안쪽 여백과 맞춘다 */
   .part-item.active { background: var(--accent-tint); border-radius: 8px; }
-  .parts-foot { margin-top: 10px; flex: 0 0 auto; }
+  #partsList .part-item:last-child { border-bottom: none; }
+  .parts-add { margin-top: 8px; }
 
   /* ---------- 상단 편집 도구 + 왼쪽 팔레트 탭 ----------
      ribbon-left 저장값은 탭 패널 모드를 뜻한다. 도구·팔레트는 서로 다른 행에 둔다. */

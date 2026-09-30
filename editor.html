@@ -169,7 +169,7 @@
          버튼 글씨 자리에 지금 보기(총보 또는 활성 파트 이름)가 뜬다 — 배율·입력 방식과 같은
          .topbar-cmd + .tb-menu 문법. 메뉴 항목(총보 ── 파트들)은 JS가 그린다.
          총보 여부의 정본은 숨은 #scoreView 체크박스(문서에 저장, CTRL_IDS라 지우지 말 것) —
-         예전엔 악기 관리 창 머리줄의 체크박스였는데 상단바로 일원화했다(같은 스위치 둘 금지). -->
+         예전엔 악기 관리 창(지금은 설정 › 곡 탭의 목록) 머리줄의 체크박스였는데 상단바로 일원화했다(같은 스위치 둘 금지). -->
     <div id="viewBox" style="display:none;">
       <button type="button" id="viewToggle" class="topbar-cmd tip"
         data-tip="총보 / 파트보 전환
@@ -276,7 +276,7 @@
        ② 앱 자체(공유마당·색상·도움말·설정)를 둔다.
        파일 메뉴(⋯)는 없앴다 — 열기 전엔 뭐가 든지 모르는 서랍이라 이름을 '파일'로 바꿔도
        근본은 그대로였다. 세로는 가로와 달리 자리가 남아 접을 까닭이 없다.
-       위험한 [전체 초기화]만 레일에 안 두고 설정 › 문서 탭 맨 아래로 갔다(늘 보이는 자리에
+       위험한 [전체 초기화]만 레일에 안 두고 설정 › 곡 탭 맨 아래로 갔다(늘 보이는 자리에
        둘 명령이 아니다). 인쇄·새 문서는 상단바의 1급 버튼 그대로 — 그 예외는 CLAUDE.md에
        못 박혀 있다. no-print: 종이에는 악보만. -->
   <nav id="appRail" class="no-print" aria-label="파일 · 앱">
@@ -442,8 +442,8 @@
     </div>
 
     <div class="tabs">
-      <button type="button" class="tab active" data-tab="doc">문서</button>
-      <button type="button" class="tab" data-tab="layout">레이아웃</button>
+      <button type="button" class="tab active" data-tab="doc">곡</button>
+      <button type="button" class="tab" data-tab="layout">종이·배치</button>
       <!-- data-tab은 "out"인 채로 둔다 — 저장된 상태(activeTab)에 이 문자열이 들어 있어서
            바꾸면 '출력' 탭을 보던 사람이 다음 실행에 '문서' 탭으로 튕긴다(applyActiveTab의
            폴백). 라벨만 '보관'으로: 인쇄·PNG·저장·불러오기는 상단바로 갔고 여기 남은 건
@@ -451,8 +451,86 @@
       <button type="button" class="tab" data-tab="out">보관</button>
     </div>
 
-    <!-- ===== 문서 ===== -->
+    <!-- ===== 곡 (data-tab="doc") =====
+         탭은 "무엇을 정하나"로 가른다(2026-09-29): 곡 = 악보의 **내용과 짜임**(총보·파트보가
+         함께 쓰는 값), 종이·배치 = 그것을 **종이에 어떻게 앉히나**(대부분 보기별 — VIEW_LAYOUT_IDS).
+         data-tab 값은 저장된 activeTab과 둘러보기가 읽으므로 이름만 바꾸고 값은 그대로 둔다. -->
     <div class="tabpanel active" data-tab="doc">
+      <div class="sec">곡의 짜임</div>
+      <div class="field">
+        <label for="beats">한 각의 정간 수</label>
+        <input type="number" id="beats" min="1" max="64" value="12">
+        <div class="hint"><ul class="guide-list"><li>각(세로 한 줄) 하나에 들어가는 정간의 수, 곧 <b>한 각의 박 수</b>입니다. 보통 한 각에 한 장단이 들어가므로 장단의 박 수를 따릅니다.</li></ul></div>
+      </div>
+
+      <!-- 각별 예외 — 가곡·수제천·취타처럼 곡 안에서 각 길이가 바뀌는 악보를 위한 칸.
+           대다수 곡은 비워 두면 되므로 '기본값 + 예외'로 두었다(각마다 칸을 만들면
+           50각짜리 곡에서 목록만 50줄이 된다). -->
+      <div class="field">
+        <label for="gakBeats">각별 정간 수 (선택)</label>
+        <input type="text" id="gakBeats" placeholder="예: 1:5, 16:11">
+        <div class="hint"><ul class="guide-list"><li>몇몇 각만 길이가 다를 때 <b>각 번호:정간 수</b>로 적습니다. '1:5, 16:11'이면 1각은 5정간, 16각은 11정간이 되고 나머지는 위에서 정한 수를 씁니다.</li><li>가곡처럼 곡이 각의 한가운데에서 시작해 한 바퀴 돌아 끝나는 악보가 이런 꼴입니다.</li></ul></div>
+      </div>
+
+      <div class="field">
+        <label for="daegang">대강 분절 (선택)</label>
+        <input type="text" id="daegang" placeholder="예: 3 3 3 3">
+        <div class="hint"><ul class="guide-list"><li>각을 굵은 가로선(마디금)으로 나눈 단위를 <b>대강(大綱)</b>이라 합니다. '3 3 3 3'이라 적으면 12박이 3박씩 네 대강으로 나뉩니다.</li><li>숫자의 합이 한 각의 정간 수와 같아야 하며, 비워 두면 박 수에 맞는 대표 패턴이 들어갑니다.</li><li>길이가 다른 각이 있으면 <b>정간 수:분절</b>을 쉼표로 덧붙입니다. '3 3 3 3, 5: 3 2'라면 5정간 각만 3·2로 나뉩니다(안 적은 길이는 대표 패턴).</li></ul></div>
+      </div>
+
+      <div class="field">
+        <label for="gakCount">총 각 수</label>
+        <input type="number" id="gakCount" min="1" max="480" value="8">
+        <div class="hint"><ul class="guide-list"><li>곡 전체의 각 수입니다. 장단 줄은 여기 세지 않습니다(따로 한 각 자리를 차지합니다).</li></ul></div>
+      </div>
+
+      <!-- 제목·부제 — 이 두 칸이 **정본**이고(render·저장이 읽는 곳), 기능바 文 텍스트 창의
+           목록 항목엔 같은 값을 비추는 미러 칸(#titleMirror·#subMirror)이 있어 거기서 고치면
+           이쪽에 써넣는다. 적으면 텍스트 창 목록에 항목이 자동으로 나타난다
+           (render()가 #txTitleItem/#txSubItem 표시 토글). 위치는 악보에서 드래그. -->
+      <div class="sec">제목</div>
+      <div class="field">
+        <label for="title">곡 제목 (선택)</label>
+        <input type="text" id="title" placeholder="예: 언편">
+      </div>
+      <div class="field">
+        <label for="subtitle">부제 (선택)</label>
+        <input type="text" id="subtitle" placeholder="예: (한송정)">
+        <div class="hint"><ul class="guide-list"><li>제목과 부제목은 기능바 <b>文 텍스트</b> 창에서 서식과 위치를 편집할 수 있습니다.</li><li><b>//</b>를 통해 줄바꿈할 수 있습니다.</li></ul></div>
+      </div>
+      <!-- 악기 편성(총보) — 목록을 여기 **늘 펼쳐 둔다**(2026-09-30 사용자 확정). 예전엔
+           [악기 관리…] 버튼이 독립 창(#partsWin)을 띄웠는데, 작업 중에 떠 있는 창이 그것
+           하나만 남아 있었고 누르기 전엔 악기가 몇인지도 안 보였다. 도로 창으로 빼지 말 것.
+           목록은 app.js renderPartsList()가 그린다(악기 하나 = 두 줄 — 사이드바 폭 때문). -->
+      <div class="sec">악기 편성</div>
+      <div class="field">
+        <div id="partsList"></div>
+        <button type="button" id="partAddBtn" class="at-add parts-add">＋ 악기 추가</button>
+        <div class="hint"><ul class="guide-list"><li>◉로 <b>지금 편집할 악기</b>를 고릅니다. 목록 위의 악기가 총보에서 오른쪽 열에 섭니다.</li><li>악기(파트)마다 선율·곁줄·정간 서식이 따로 있고, 레이아웃·장단·각 이름은 모든 악기가 공유합니다.</li><li>🔊를 누르면 재생에서만 그 악기 소리가 빠집니다(악보에는 그대로).</li></ul></div>
+      </div>
+      <!-- 전체 초기화 — 예전엔 파일 메뉴(⋯) 안이었는데 그 메뉴를 없애며 이리로 왔다
+           (2026-08-25). 오른쪽 레일에 두지 않은 건 **늘 보이는 자리에 둘 명령이 아니어서**다
+           (빈도×위험도). 위험하지만 resetAllContent가 confirm()으로 한 번 더 묻고 되돌리기
+           (⌘Z)도 먹어 안전장치가 둘이라, 설정 안쪽 자리면 충분하다. -->
+      <!-- 제 묶음 제목을 둔다 — 이름표 없는 칸의 설명(?)은 바로 위 .sec에 붙으므로(foldSidebarHints),
+           제목이 없으면 이 설명이 '악기 편성' 옆에 두 번째 ?로 붙는다. -->
+      <div class="sec">초기화</div>
+      <div class="field">
+        <button type="button" id="btnResetContent" class="orn-reset danger-btn"
+          title="선율·장단·가사·텍스트·정간 서식을 모두 지웁니다 (레이아웃은 유지)">
+          ⟲ 전체 초기화</button>
+        <div class="hint"><ul class="guide-list"><li>지움: 선율·장단·가사·텍스트·정간 서식</li><li>유지: 종이 방향·정간 크기 등 레이아웃</li><li>한 번 더 물어보고, 되돌리기(⌘Z)도 됩니다.</li></ul></div>
+      </div>
+
+    </div>
+
+    <!-- ===== 종이·배치 (data-tab="layout") ===== -->
+    <div class="tabpanel" data-tab="layout">
+      <!-- 현재 짜임 보고(#readout) — 아래 값들을 바꾸면 각 너비·페이지 장수·A4 맞춤 배율이
+           어떻게 나왔는지 여기서 바로 확인한다. 예전엔 '출력' 탭에 있었는데, 인쇄 결과가
+           아니라 '레이아웃 설정의 결과'라 조절하는 값들 바로 위가 제 집이다. -->
+      <div class="readout" id="readout"></div>
+      <div class="sec">종이</div>
       <!-- 종이 크기 — 사실상 '비율'을 정하는 자리다. 정간보에 A4가 당연하지 않다(전통 악보는
            가로로 긴 첩(帖)이 많고, 교재·논문 삽화는 A5나 정사각이 알맞다). 짧은 곡을 A4에
            담으면 종이가 비어 보이는 문제도 여기서 풀린다.
@@ -486,97 +564,6 @@
         </select>
       </div>
 
-      <!-- 제목·부제 — 이 두 칸이 **정본**이고(render·저장이 읽는 곳), 기능바 文 텍스트 창의
-           목록 항목엔 같은 값을 비추는 미러 칸(#titleMirror·#subMirror)이 있어 거기서 고치면
-           이쪽에 써넣는다. 적으면 텍스트 창 목록에 항목이 자동으로 나타난다
-           (render()가 #txTitleItem/#txSubItem 표시 토글). 위치는 악보에서 드래그. -->
-      <div class="sec">제목</div>
-      <div class="field">
-        <label for="title">곡 제목 (선택)</label>
-        <input type="text" id="title" placeholder="예: 언편">
-      </div>
-      <div class="field">
-        <label for="subtitle">부제 (선택)</label>
-        <input type="text" id="subtitle" placeholder="예: (한송정)">
-        <div class="hint"><ul class="guide-list"><li>제목과 부제목은 기능바 <b>文 텍스트</b> 창에서 서식과 위치를 편집할 수 있습니다.</li><li><b>//</b>를 통해 줄바꿈할 수 있습니다.</li></ul></div>
-      </div>
-      <!-- 악기 편성(총보) — 관리는 별도 창(#partsWin, 피날레 Score Manager 같은 자리)이 맡고
-           여기는 여는 단추만 둔다. 탭 안에서 다 해결하려 들지 말 것(사용자 확정, 2026-08-08). -->
-      <div class="sec">악기 편성</div>
-      <div class="field">
-        <button type="button" id="btnPartsWin" class="orn-reset" style="margin:2px 0 4px;"
-          title="총보의 악기(파트)를 추가·삭제하고, 어느 악기를 편집할지 고릅니다">
-          악기 관리…</button>
-        <div class="hint"><ul class="guide-list"><li>악기(파트)마다 선율·곁줄·정간 서식이 따로 있고, 레이아웃·장단·각 이름은 모든 악기가 공유합니다.</li><li>지금 편집 중인 악기는 창에서 ◉로 고릅니다.</li></ul></div>
-      </div>
-      <div class="sec">번호 표시</div>
-      <div class="field">
-        <label for="pageNumPos">쪽 번호 <small>페이지 아래 여백</small></label>
-        <select id="pageNumPos">
-          <option value="none" selected>표시 안 함</option>
-          <option value="left">아래 왼쪽</option>
-          <option value="center">아래 가운데</option>
-          <option value="right">아래 오른쪽</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="gakNumMode">각 번호 <small>각 아래 옅은 회색 숫자</small></label>
-        <select id="gakNumMode">
-          <option value="none">표시 안 함</option>
-          <option value="screen" selected>화면에만 (인쇄·PNG 제외)</option>
-          <option value="all">화면·출력 모두</option>
-        </select>
-        <div class="hint"><ul class="guide-list"><li>각(마디)의 순서를 각 아래에 작은 회색 숫자로 표시합니다.</li><li>'화면에만'을 고르면 화면에서만 보이고 인쇄·PNG 저장에서는 빠집니다.</li></ul></div>
-      </div>
-
-      <!-- 전체 초기화 — 예전엔 파일 메뉴(⋯) 안이었는데 그 메뉴를 없애며 이리로 왔다
-           (2026-08-25). 오른쪽 레일에 두지 않은 건 **늘 보이는 자리에 둘 명령이 아니어서**다
-           (빈도×위험도). 위험하지만 resetAllContent가 confirm()으로 한 번 더 묻고 되돌리기
-           (⌘Z)도 먹어 안전장치가 둘이라, 설정 안쪽 자리면 충분하다. -->
-      <div class="field">
-        <button type="button" id="btnResetContent" class="orn-reset danger-btn"
-          title="선율·장단·가사·텍스트·정간 서식을 모두 지웁니다 (레이아웃은 유지)">
-          ⟲ 전체 초기화</button>
-        <div class="hint"><ul class="guide-list"><li>지움: 선율·장단·가사·텍스트·정간 서식</li><li>유지: 종이 방향·정간 크기 등 레이아웃</li><li>한 번 더 물어보고, 되돌리기(⌘Z)도 됩니다.</li></ul></div>
-      </div>
-
-    </div>
-
-    <!-- ===== 레이아웃 ===== -->
-    <div class="tabpanel" data-tab="layout">
-      <!-- 현재 짜임 보고(#readout) — 아래 값들을 바꾸면 각 너비·페이지 장수·A4 맞춤 배율이
-           어떻게 나왔는지 여기서 바로 확인한다. 예전엔 '출력' 탭에 있었는데, 인쇄 결과가
-           아니라 '레이아웃 설정의 결과'라 조절하는 값들 바로 위가 제 집이다. -->
-      <div class="readout" id="readout"></div>
-      <div class="field">
-        <label for="beats">한 각의 정간 수</label>
-        <input type="number" id="beats" min="1" max="64" value="12">
-        <div class="hint"><ul class="guide-list"><li>각(세로 한 줄) 하나에 들어가는 정간의 수, 곧 <b>한 각의 박 수</b>입니다. 보통 한 각에 한 장단이 들어가므로 장단의 박 수를 따릅니다.</li></ul></div>
-      </div>
-
-      <!-- 각별 예외 — 가곡·수제천·취타처럼 곡 안에서 각 길이가 바뀌는 악보를 위한 칸.
-           대다수 곡은 비워 두면 되므로 '기본값 + 예외'로 두었다(각마다 칸을 만들면
-           50각짜리 곡에서 목록만 50줄이 된다). -->
-      <div class="field">
-        <label for="gakBeats">각별 정간 수 (선택)</label>
-        <input type="text" id="gakBeats" placeholder="예: 1:5, 16:11">
-        <div class="hint"><ul class="guide-list"><li>몇몇 각만 길이가 다를 때 <b>각 번호:정간 수</b>로 적습니다. '1:5, 16:11'이면 1각은 5정간, 16각은 11정간이 되고 나머지는 위에서 정한 수를 씁니다.</li><li>가곡처럼 곡이 각의 한가운데에서 시작해 한 바퀴 돌아 끝나는 악보가 이런 꼴입니다.</li></ul></div>
-      </div>
-
-      <div class="field">
-        <label for="daegang">대강 분절 (선택)</label>
-        <input type="text" id="daegang" placeholder="예: 3 3 3 3">
-        <div class="hint"><ul class="guide-list"><li>각을 굵은 가로선(마디금)으로 나눈 단위를 <b>대강(大綱)</b>이라 합니다. '3 3 3 3'이라 적으면 12박이 3박씩 네 대강으로 나뉩니다.</li><li>숫자의 합이 한 각의 정간 수와 같아야 하며, 비워 두면 박 수에 맞는 대표 패턴이 들어갑니다.</li><li>길이가 다른 각이 있으면 <b>정간 수:분절</b>을 쉼표로 덧붙입니다. '3 3 3 3, 5: 3 2'라면 5정간 각만 3·2로 나뉩니다(안 적은 길이는 대표 패턴).</li></ul></div>
-      </div>
-
-      <div class="field">
-        <label for="gakCount">총 각 수</label>
-        <input type="number" id="gakCount" min="1" max="480" value="8">
-        <div class="hint"><ul class="guide-list"><li>곡 전체의 각 수입니다. 장단 줄은 여기 세지 않습니다(따로 한 각 자리를 차지합니다).</li></ul></div>
-      </div>
-
-      <!-- 정간·각(내용의 짜임) 위 세 항목과, 그걸 페이지에 어떻게 얹을지(배치) 아래 두
-           항목을 구분선으로 살짝 나눈다 -->
       <div class="sec">배치</div>
       <div class="field">
         <label for="gakPerRow">한 줄에 놓을 각 수</label>
@@ -597,7 +584,10 @@
         <div class="hint"><ul class="guide-list"><li>위에서 만든 줄(단)을 한 페이지에 <b>세로로 최대 몇 개 쌓을지</b>입니다.</li><li><b>자동</b>을 켜면 종이에 들어가는 만큼 알아서 쌓습니다. 보통은 켜 둡니다.</li></ul></div>
       </div>
 
-      <!-- 곁줄 표시 — 레이아웃 탭이라 **보기별로 따로** 저장된다(VIEW_LAYOUT_IDS).
+      <!-- 표시 — 곁줄·테두리는 보기별(VIEW_LAYOUT_IDS), 쪽·각 번호는 두 보기가 함께 쓴다.
+           성격은 달라도 "종이에 무엇을 그릴까"라는 같은 물음이라 한 묶음에 둔다. -->
+      <div class="sec">표시</div>
+      <!-- 곁줄 표시 — 종이·배치 탭이라 **보기별로 따로** 저장된다(VIEW_LAYOUT_IDS).
            총보에서는 파트마다 곁줄이 붙어 각이 크게 넓어지므로 '총보는 끄고 파트보는 켜기'가
            이 칸 하나로 된다. 끄는 것은 자리를 안 만드는 것일 뿐 글자는 그대로 남는다. -->
       <div class="field">
@@ -612,6 +602,25 @@
           <input type="checkbox" id="frame" checked> 바깥 테두리 그리기
         </label>
         <div class="hint"><ul class="guide-list"><li>격자 전체를 감싸는 굵은 사각 테두리입니다.</li><li>끄면 테두리 없이 격자만 남습니다.</li></ul></div>
+      </div>
+
+      <div class="field">
+        <label for="pageNumPos">쪽 번호 <small>페이지 아래 여백</small></label>
+        <select id="pageNumPos">
+          <option value="none" selected>표시 안 함</option>
+          <option value="left">아래 왼쪽</option>
+          <option value="center">아래 가운데</option>
+          <option value="right">아래 오른쪽</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="gakNumMode">각 번호 <small>각 아래 옅은 회색 숫자</small></label>
+        <select id="gakNumMode">
+          <option value="none">표시 안 함</option>
+          <option value="screen" selected>화면에만 (인쇄·PNG 제외)</option>
+          <option value="all">화면·출력 모두</option>
+        </select>
+        <div class="hint"><ul class="guide-list"><li>각(마디)의 순서를 각 아래에 작은 회색 숫자로 표시합니다.</li><li>'화면에만'을 고르면 화면에서만 보이고 인쇄·PNG 저장에서는 빠집니다.</li></ul></div>
       </div>
 
       <div class="sec">크기 · 간격</div>
@@ -685,7 +694,7 @@
          명령은 상단바, 설정·관리는 사이드바로 선을 그은 것. 여기 남은 임시 저장은 목록을
          띄워놓고 고르는 관리 UI라 드롭다운에 못 들어가서 패널에 남는다. -->
     <div class="tabpanel" data-tab="out">
-      <div class="hint"><ul class="guide-list"><li>인쇄·PNG·파일로 저장·불러오기는 <b>상단바</b>에 있습니다 — 인쇄는 버튼으로, 나머지는 ⋯ <b>파일</b> 메뉴 안에.</li><li>작업은 자동 저장되어 새로고침해도 유지됩니다.</li></ul></div>
+      <div class="hint"><ul class="guide-list"><li>인쇄는 <b>상단바</b>, 파일로 저장·불러오기·PNG 같은 출력은 화면 <b>오른쪽 세로 막대</b>에 있습니다.</li><li>작업은 자동 저장되어 새로고침해도 유지됩니다.</li></ul></div>
 
       <div class="sec">임시 저장 (이 컴퓨터)</div>
       <div class="field">
@@ -694,7 +703,7 @@
           <button type="button" id="snapSaveBtn" class="at-add">임시저장</button>
         </div>
         <div id="snapList"></div>
-        <div class="hint"><ul class="guide-list"><li>지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.</li><li>불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.</li><li><b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 상단바 ⋯ <b>파일</b> 메뉴의 ‘파일로 저장’으로 파일을 만들어 전달하세요.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.</li><li>불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.</li><li><b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 오른쪽 세로 막대의 <b>저장</b>으로 파일을 만들어 전달하세요.</li></ul></div>
       </div>
     </div>
     <!-- 저작권 — 사이드바 맨 아래에 상시(어느 탭이든). 화면 UI에만, 악보(인쇄/PNG)엔 안 나온다.
@@ -1488,9 +1497,9 @@
       </div>
       <div class="gak-warn" id="lyricsGakWarn"></div>
       <!-- 곁줄이 지금 보기에서 꺼져 있으면 이 창을 열어도 악보엔 빈 줄이 안 생긴다(장단
-           스위치와 같은 규칙). 스위치는 설정 › 레이아웃 **한 곳뿐**이므로 여기서는 '어디서
+           스위치와 같은 규칙). 스위치는 설정 › 종이·배치 **한 곳뿐**이므로 여기서는 '어디서
            켜나'만 알린다 — 두 번째 스위치를 만들지 말 것. -->
-      <div class="lane-off-note">곁줄이 지금 보기에서 <b>꺼져 있어</b> 악보에 나오지 않습니다. 여기 적은 글자는 그대로 남으며, 설정(⚙) › 레이아웃 › <b>곁줄 표시</b>에서 다시 켤 수 있습니다.</div>
+      <div class="lane-off-note">곁줄이 지금 보기에서 <b>꺼져 있어</b> 악보에 나오지 않습니다. 여기 적은 글자는 그대로 남으며, 설정(⚙) › 종이·배치 › <b>곁줄 표시</b>에서 다시 켤 수 있습니다.</div>
       <!-- 가사 기호 팔레트 — 클릭하면 지금 편집 중인 가사 칸(직접 입력) 또는 커서(에디터)에
            {기호} 토큰이 한 글자처럼 들어가고, 악보엔 그 자리에 이미지로 표시된다.
            속은 시김새·장단과 같은 공용 빌더(buildSymPalette)가 채운다 — 검색·최근·칩 모양이
@@ -1525,7 +1534,7 @@
             <div class="mg-sec"><p class="guide-paragraph"><b>목록</b></p><ul class="guide-list"><li>제목·부제·자유 텍스트가 <b>한 목록에 한 줄씩</b> 놓입니다 — 위 칸에
                 내용을 적고 '추가'를 누르면 줄이 아래로 늘어납니다.</li><li>줄마다 내용·방향·크기·자간을 그 자리에서 고칩니다.</li><li>글씨체는 <b>머리줄</b>에서 제목·자유 텍스트에 한꺼번에 걸립니다.</li></ul></div>
             <div class="mg-sec"><p class="guide-paragraph"><b>제목 · 부제</b></p><ul class="guide-list"><li>곡에 하나뿐이라 목록 <b>맨 위</b>에 고정으로 섭니다 (빠르기/각/장 창의
-                '빠르기' 줄과 같은 규칙).</li><li>내용은 <b>설정 › 문서 탭</b>과 같은 값이며 서로 연동됩니다. 비우면
+                '빠르기' 줄과 같은 규칙).</li><li>내용은 <b>설정 › 곡 탭</b>과 같은 값이며 서로 연동됩니다. 비우면
                 목록에서 사라집니다.</li></ul></div>
             <div class="mg-sec"><p class="guide-paragraph"><b>자유 텍스트</b></p><ul class="guide-list"><li>악보 위에 얹는 자유 텍스트입니다 (대여음 등).</li><li>악보 위에서 직접 끌어 위치를 옮길 수 있습니다.</li></ul></div>
           </div>
@@ -1554,18 +1563,18 @@
           <input type="text" id="textAddInput" placeholder="예: 대여음">
           <button type="button" id="textAddBtn" class="at-add">추가</button>
         </div>
-        <div class="hint"><ul class="guide-list"><li>제목·부제는 <b>설정 › 문서 탭</b>과 같은 값이며, 비우면 목록에서 사라집니다.</li><li>악보 위 글자를 <b>직접 끌어</b> 위치를 옮길 수 있습니다.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>제목·부제는 <b>설정 › 곡 탭</b>과 같은 값이며, 비우면 목록에서 사라집니다.</li><li>악보 위 글자를 <b>직접 끌어</b> 위치를 옮길 수 있습니다.</li></ul></div>
         <!-- 제목·부제 항목 — 곡에 하나뿐이라 목록 맨 위에 고정으로 세운다(#tempoItem과 같은
              규칙). **마크업에서 지우지 말 것**: collectState가 CTRL_IDS를 돌며 $(id).value를
              널 검사 없이 읽어, titleSize 등이 없으면 저장이 통째로 터진다. 내용이 비면
              render()가 style.display로 숨길 뿐이다.
-             내용 칸(#titleMirror)은 설정 › 문서 탭 #title의 양방향 미러 — 정본은 #title이고
+             내용 칸(#titleMirror)은 설정 › 곡 탭 #title의 양방향 미러 — 정본은 #title이고
              (render·저장이 그걸 읽음) 여기서 고치면 그쪽에 써넣는다. #tempoBpmGak ↔ #tempoBpm
              과 같은 방식. 줄모양을 자유 텍스트 항목과 같게 하려고 둔 것이니 정본을 여기로
              옮기지 말 것. -->
         <div id="txTitleItem" class="tx-item">
           <span class="gn-gak">제목</span>
-          <input type="text" id="titleMirror" title="제목 내용 — 설정 › 문서 탭과 같은 값입니다">
+          <input type="text" id="titleMirror" title="제목 내용 — 설정 › 곡 탭과 같은 값입니다">
           <label>방향
             <select id="titleLayout" title="제목 표기 방향">
               <option value="side" selected>세로 칸</option>
@@ -1590,7 +1599,7 @@
         </div>
         <div id="txSubItem" class="tx-item">
           <span class="gn-gak">부제</span>
-          <input type="text" id="subMirror" title="부제 내용 — 설정 › 문서 탭과 같은 값입니다">
+          <input type="text" id="subMirror" title="부제 내용 — 설정 › 곡 탭과 같은 값입니다">
           <label>크기(mm)<input type="number" id="subSize" min="1" max="20" step="0.5" value="5"></label>
           <label>자간(mm)<input type="number" id="subSpacing" min="-5" max="30" step="0.5" value="0"></label>
           <input type="number" id="subOffset" step="1" value="0" hidden>
@@ -1681,30 +1690,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 악기 관리 — 총보의 파트(악기) 목록을 관장하는 창(피날레 Score Manager 같은 자리).
-         사이드바 '문서' 탭 [악기 관리…]가 열고 닫는다. 도구창(.direct-win)이 **아니라** 독립
-         창(.mgr-win): 입력 방식과 무관하게 떠야 하므로 직접 입력 기계(activateDirectPanel·
-         레일 탭·win-toggle)에 얽지 말 것. 목록은 app.js renderPartsList()가 그린다. -->
-    <div id="partsWin" class="mgr-win">
-      <div class="bar-grip dock-panel-grip" title="끌어서 이동">
-        <svg viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>
-      </div>
-      <div class="melody-head">
-        악기 <span class="mh-sub">총보 편성</span>
-        <span class="mh-right">
-          <!-- 총보/파트보 전환은 상단바 보기 메뉴(#viewToggle)가 맡는다 — 여기 다시 두지 말 것 -->
-          <button type="button" id="partsClose" class="icon-btn" title="닫기">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </span>
-      </div>
-      <div class="parts-hint">◉ = 지금 편집하는 악기 · 선율·곁줄·정간 서식은 악기마다 따로, 레이아웃·장단은 공유</div>
-      <div id="partsList"></div>
-      <div class="parts-foot">
-        <button type="button" id="partAddBtn" class="at-add">＋ 악기 추가</button>
-      </div>
-    </div>
   </main>
   </div>
 
@@ -1768,7 +1753,7 @@
         <label>악기 편성 (선택)</label>
         <div id="ndParts"></div>
         <button type="button" id="ndPartAdd" class="at-add" style="margin-top:4px;">＋ 악기 추가</button>
-        <div class="hint"><ul class="guide-list"><li>비워 두면 악기 구분 없이 시작합니다 — 나중에 <b>설정 › 문서 › 악기 관리</b>에서 더할 수 있습니다.</li><li>둘 이상 고르면 <b>총보</b>로 시작하고, 상단바에서 총보/파트보를 오갈 수 있습니다.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>비워 두면 악기 구분 없이 시작합니다 — 나중에 <b>설정 › 곡 › 악기 편성</b>에서 더할 수 있습니다.</li><li>둘 이상 고르면 <b>총보</b>로 시작하고, 상단바에서 총보/파트보를 오갈 수 있습니다.</li></ul></div>
       </div>
       </details>
       <div class="btns">
@@ -1998,8 +1983,8 @@
               <li><b>입력 방식 고르기</b> — 상단바 왼쪽, 문패 옆에서 <b>직접 입력</b>(악보 칸을 클릭해 그 자리에서 입력, 기본)과 <b>에디터</b>(곡 전체를 텍스트로 편집) 중 하나를 고릅니다. 언제든 바꿀 수 있습니다.</li>
               -->
               <li><b>선율 입력</b> — 악보의 정간을 클릭해 입력 카드에 쓰고, 팔레트(율명·시김새)를 열어 클릭으로 넣을 수도 있습니다. 장단·곁줄도 같은 방식입니다.</li>
-              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 <b>보관</b> 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 상단바 ⋯ <b>파일</b> 메뉴의 <b>파일로 저장</b>(.jgb.json)을 쓰면 됩니다.</li>
-              <li><b>인쇄·내보내기</b> — 상단바의 <b>인쇄</b> 버튼으로 인쇄(PDF 저장)하고, ⋯ <b>파일</b> 메뉴에서 PNG 이미지로 내보냅니다.</li>
+              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 <b>보관</b> 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 오른쪽 세로 막대의 <b>저장</b>(.jgb.json)을 쓰면 됩니다.</li>
+              <li><b>인쇄·내보내기</b> — 상단바의 <b>인쇄</b> 버튼으로 인쇄(PDF 저장)하고, 오른쪽 세로 막대의 <b>출력</b>에서 PNG 이미지로 내보냅니다.</li>
             </ol>
             <p>화면 구성이 궁금하면 아래의 <b>둘러보기 다시 시작</b>을 눌러 주요 영역을 하나씩 확인할 수 있습니다.</p>
           </section>

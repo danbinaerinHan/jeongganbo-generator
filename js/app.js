@@ -4431,7 +4431,7 @@
     document.body.classList.toggle("lyrics-lane-off", !lyricsLaneShown());
 
     // ---------- 총보 보기 ----------
-    // 파트가 여럿이고 악기 관리 창의 [총보]가 켜져 있으면 모든 파트를 한 각 안에 나란히
+    // 파트가 여럿이고 총보 보기(상단바 보기 메뉴)가 켜져 있으면 모든 파트를 한 각 안에 나란히
     // 그린다(한 각 = 파트 열 묶음, 목록 위 파트가 오른쪽 — 읽는 방향이 오른쪽→왼쪽이라).
     // 파트보(기본)는 P=1로 아래 전부가 예전과 완전히 같은 경로를 탄다.
     stashActivePart();   // 비활성 파트 내용도 그리므로 parts[]를 먼저 최신으로
@@ -6565,11 +6565,12 @@
     ornInstrument = p.instrument;
   }
 
-  // ---------- 악기 관리 창 (총보 파트 목록, #partsWin) ----------
+  // ---------- 악기 편성 목록 (총보 파트 목록, 설정 › 곡 탭 #partsList) ----------
   // 피날레 Score Manager 같은 자리 — 파트 추가·삭제·이름·악기·순서·'지금 편집할 악기'를
-  // 한 창에서. 사이드바 '문서' 탭 [악기 관리…]가 열고, 입력 방식과 무관하게 뜬다.
+  // 한 목록에서. 예전엔 독립 창(#partsWin)이었는데 설정 › 곡 탭 안으로 들였다(2026-09-30
+  // 사용자 확정 — 작업 중에 떠 있는 창이 이것 하나만 남아 있었다). 도로 창으로 빼지 말 것.
   // 목록 순서 = 나중 총보에서 악기 열이 서는 순서(오른쪽→왼쪽으로 읽으니 위 = 오른쪽).
-  // 부르는 이름: 지은 이름 → 악기 이름 → "파트 N". 관리 창·보기 메뉴·총보 열 이름이 같이 쓴다.
+  // 부르는 이름: 지은 이름 → 악기 이름 → "파트 N". 편성 목록·보기 메뉴·총보 열 이름이 같이 쓴다.
   function partLabel(p, i) {
     return (p.name || "").trim()
       || (p.instrument && p.instrument !== "all" ? p.instrument : "")
@@ -6691,15 +6692,21 @@
       del.title = (parts.length <= 1) ? "마지막 악기는 지울 수 없습니다" : "이 악기 삭제";
       del.disabled = (parts.length <= 1);
       del.addEventListener("click", function () { removePart(i); });
-      row.appendChild(radio); row.appendChild(name); row.appendChild(abbr); row.appendChild(inst);
-      row.appendChild(mute); row.appendChild(up); row.appendChild(down); row.appendChild(del);
+      // 한 악기 = 두 줄. 설정 사이드바(≈290px)에 칸 여덟을 한 줄로 못 세운다 —
+      // 윗줄은 '누구인가'(◉·이름·삭제), 아랫줄은 '무엇을 정하나'(악기·약어·소리·순서).
+      const l1 = document.createElement("div"); l1.className = "part-line";
+      const l2 = document.createElement("div"); l2.className = "part-line part-sub";
+      l1.appendChild(radio); l1.appendChild(name); l1.appendChild(del);
+      l2.appendChild(inst); l2.appendChild(abbr);
+      l2.appendChild(mute); l2.appendChild(up); l2.appendChild(down);
+      row.appendChild(l1); row.appendChild(l2);
       list.appendChild(row);
     });
     updateViewMenu();   // 편성이 바뀌면 상단바 보기 메뉴(노출 여부·이름들)도 따라간다
   }
   // ---------- 보기 전환 메뉴 (상단바 #viewToggle — 총보 / 파트들) ----------
   // 악기가 둘 이상일 때만 보인다. 버튼 글씨 = 지금 보기(총보 또는 활성 파트 이름).
-  // 항목을 누르면 보기와 편집 대상이 한 번에 정해진다 — 관리 창은 편성 관리만 맡는다.
+  // 항목을 누르면 보기와 편집 대상이 한 번에 정해진다 — 편성 목록은 편성 관리만 맡는다.
   function setScoreView(on) {
     const cb = $("scoreView");
     if (cb.checked !== on) {
@@ -6737,14 +6744,10 @@
     });
   }
 
-  $("btnPartsWin").addEventListener("click", function () {
-    const w = $("partsWin");
-    if (w.classList.contains("open")) { w.classList.remove("open"); return; }
-    renderPartsList();
-    w.classList.add("open");
-  });
-  $("partsClose").addEventListener("click", function () { $("partsWin").classList.remove("open"); });
+  // 목록은 설정 › 곡 탭에 늘 펼쳐져 있다(2026-09-30 — 예전 독립 창 #partsWin을 걷었다).
+  // 창을 열 때 그리던 것을 이제 처음부터 그려 둔다. 문서를 들이면 applyState가 다시 그린다.
   $("partAddBtn").addEventListener("click", addPart);
+  renderPartsList();
 
   // ---------- 오선보 재료 만들기 ----------
   // 무엇이 울리나는 realizeMelody가 이미 다 풀어 놓았다(재생과 같은 표 = 사전의 snd).
@@ -8851,7 +8854,6 @@
   attachBarDrag($("lyricsArea"));
   attachBarDrag($("textArea"));
   attachBarDrag($("cellStyleWin"));
-  attachBarDrag($("partsWin"));   // 악기 관리 창 — 독립 창이지만 끌기는 도구창과 같은 문법
   // 모드 탭 전환
   document.querySelectorAll(".tab").forEach(function (btn) {
     btn.addEventListener("click", function () {
