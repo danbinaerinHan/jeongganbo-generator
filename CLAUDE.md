@@ -53,8 +53,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
 
 - `index.html` + `css/home.css` + `js/home.js` — **첫 화면**(사이트 루트, 2026-09-29 신설).
   가운데 문패(井 전체 + 까치 로고 · 워드마크 · 부제) 아래 **문 두 짝**(편집기 | 공유마당) — 칸 전체가
-  링크이고 칸마다 선 그림 하나 + 이름 + 한 줄뿐이다. 윗줄엔 [묻고 제안하기] 링크 하나만
-  (공유마당 링크는 가운데 문과 겹쳐 뺐다 — 되살리지 말 것).
+  링크이고 칸마다 선 그림 하나 + 이름 + 한 줄뿐이다. **[묻고 제안하기]는 두 문 아래 길게 한 줄**
+  (`.hm-bar`, 2026-10-01 — 예전 윗줄 글자 링크는 눈에 안 띄어 없앴다). 윗줄(`.hm-top`)은 이제 없다
+  (공유마당 링크도 가운데 문과 겹쳐 뺐었다 — 되살리지 말 것).
   · **맨 앞의 넘김 스크립트를 지우지 말 것** — 이미 퍼진 주소는 전부 루트를 가리킨다
     (`#v=` 게시 · `#s=` 옛 링크 · `#va=` 관리자 열기 · `?first=1`). 첫 화면이 이것을 보고
     `editor.html`로 넘긴다. **주소 형식을 늘리면 app.js `incomingDoc`과 이 정규식을 함께.**
@@ -121,7 +122,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
   **자주 묻는 질문**(운영자가 board.html에 `<details>`로 손으로 적는 정적 목록 — 서버 안 씀) |
   **질문·제안**(공개 게시판 하나, 갈래를 나누지 않는다 — 사용자 확정). 공유마당과 같은
   '별개 문서'이고 껍데기(browse.css)를 나눠 쓴다. 서버는 `server/schema.sql`의 '묻고 제안하기'
-  절(board_* RPC 여덟 + admin_board_* 셋).
+  절(board_* RPC 여덟 + admin_board_* 셋). 서버에 붙일 땐 **`server/board-setup.sql`**(그 절 + board 권한 줄만
+  떼어 모은 것 — schema.sql 통째로는 아직 없는 계정 3단계 줄에서 멈춘다) → **`server/check-grants.sql`**
+  (빗장 점검, 0행이어야 정상). 둘 다 schema.sql에서 떼어 낸 사본이니 원본(schema.sql)을 고친 뒤 다시 뜰 것.
   **`JGB_CLOUD.board`가 false면 '준비 중'만 뜬다**(기본 false — 켜는 순서는 cloud-config.js 주석).
   규칙은 `docs/구조-게시.md`의 '묻고 제안하기' 절.
 - `admin.html` + `css/admin.css` + `js/admin.js` — **관리 화면**(운영자용). browse.html과 같은

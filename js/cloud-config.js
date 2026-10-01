@@ -49,5 +49,5 @@ window.JGB_CLOUD = {
   key: "sb_publishable_wMhSNubRaoeSchqunxVN2w_9Ib5XpiC",
   browse: true,
   accounts: false,
-  board: false,
+  board: true,
 };
