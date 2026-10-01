@@ -3705,6 +3705,21 @@
     // 무관하게 고정인 것과 같은 규칙(행이 많으면 촘촘해질 뿐 줄어들지 않는다).
     // 여기에 '가사 크기' 슬라이더 배율만 곱한다(여러 글자 행의 넘침 방지 캡은 배율과 무관).
     const fs = Math.min(width * 0.86, cellH * 0.7) * lyricsScaleCur;
+    // 가사 기호 하나의 그리기 상자(bw·bh)와 잉크 높이 — 기호만 쌓을 때와 글자에 섞일 때가 같이 쓴다
+    function lyricSymItem(nm) {
+      const sc = (nm in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[nm] : LYRIC_SYM_SCALE_DEFAULT;
+      const stem = lyricSymStem(nm);
+      const e = SYM_REG.byId[stem];
+      // 세로 박스는 행 높이가 아니라 '정간 높이' 기준 — 글자 크기가 분박 수와
+      // 무관하게 고정인 것과 같은 규칙. 행이 많으면 촘촘해질 뿐 안 줄어든다.
+      const bw = width * 0.95 * sc;
+      // 상자가 세로로 길면(폭의 2.5배쯤) 세로로 긴 기호만 높이를 꽉 채워 둥근 기호보다
+      // 훨씬 커진다. '표'류(세로표 등)는 칸을 가로지르는 게 제 노릇이라 그게 맞지만,
+      // 구음처럼 한 글자로 읽히는 기호는 서로 키가 같아야 한다 — box:"square"를 단
+      // 기호는 장단 줄과 같은 정사각 상자에 넣어, 둥글든 길쭉하든 키를 맞춘다.
+      const bh = (e && e.box === "square") ? bw : cellH * 0.95 * sc;
+      return { stem: stem, bw: bw, bh: bh, ink: Math.min(bh, bw * symAspect(stem)) };
+    }
     const rowH = cellH / rows.length;
     rows.forEach(function (str, i) {
       if (str === "-") return;   // '-'는 자리표 — 자리(행 순서)만 차지하고 그리지는 않는다
@@ -3718,20 +3733,7 @@
       if (symTokens && symTokens.join("") === str) {
         const names = symTokens.map(function (t) { return t.slice(1, -1); });
         if (names.every(function (nm) { return symURL(lyricSymStem(nm)); })) {
-          const items = names.map(function (nm) {
-            const sc = (nm in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[nm] : LYRIC_SYM_SCALE_DEFAULT;
-            const stem = lyricSymStem(nm);
-            const e = SYM_REG.byId[stem];
-            // 세로 박스는 행 높이가 아니라 '정간 높이' 기준 — 글자 크기가 분박 수와
-            // 무관하게 고정인 것과 같은 규칙. 행이 많으면 촘촘해질 뿐 안 줄어든다.
-            const bw = width * 0.95 * sc;
-            // 상자가 세로로 길면(폭의 2.5배쯤) 세로로 긴 기호만 높이를 꽉 채워 둥근 기호보다
-            // 훨씬 커진다. '표'류(세로표 등)는 칸을 가로지르는 게 제 노릇이라 그게 맞지만,
-            // 구음처럼 한 글자로 읽히는 기호는 서로 키가 같아야 한다 — box:"square"를 단
-            // 기호는 장단 줄과 같은 정사각 상자에 넣어, 둥글든 길쭉하든 키를 맞춘다.
-            const bh = (e && e.box === "square") ? bw : cellH * 0.95 * sc;
-            return { stem: stem, bw: bw, bh: bh, ink: Math.min(bh, bw * symAspect(stem)) };
-          });
+          const items = names.map(lyricSymItem);
           const gapY = width * 0.18;   // 기호(잉크) 사이 틈 — 빡붙지 않게 아주 약간만
           const total = items.reduce(function (a, it) { return a + it.ink; }, 0)
             + gapY * (items.length - 1);
@@ -3744,18 +3746,87 @@
           return;
         }
       }
-      // 한 행에 여러 글자('더지' 등)면 옆을 침범하지 않게 맞추되, 글자 크기는 조금만
-      // 줄이고 나머지는 자간 압축(textLength)으로 해결 — 등분 축소보다 글자가 훨씬 크다
-      const len = Array.from(str).length;
-      const rowFs = len > 1 ? Math.min(fs, (width * 1.3) / len) : fs;
-      const t = el("text", { x: x + width / 2, y: centers[i] + rowFs * 0.36, "text-anchor": "middle",
-        "font-size": rowFs, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
-      if (len > 1 && rowFs * len > width * 0.94) {
-        t.setAttribute("textLength", width * 0.94);
-        t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      // 글자(+붙은 기호) 분박. 규칙 셋(2026-10-01 사용자 요청):
+      // ① 한 분박에 글자가 여럿('더지')이면 **아래로** 쌓는다 — 예전엔 가로로 눌러 담아
+      //   글자가 확 작아졌다. 글자 크기는 한 글자일 때 그대로이고, 분박 자리를 넘칠 때만 줄인다.
+      // ② 다만 옆 정간의 그 분박이 **좌우로** 나뉘어 있으면(`황태`) 가로로 따라간다(예전 방식).
+      // ③ 사전에 있는 기호 토큰(`새{뜰}`)은 글자 **오른쪽**에 작게 붙는다(선율의 붙임 시김새처럼).
+      //   기호는 바로 앞 글자에 붙고, 맨 앞의 기호는 첫 글자에 붙는다.
+      //   사전에 없는 토큰은 무엇인지 모르므로 괄호째 글자 한 덩이로 남긴다.
+      const units = [];
+      let pend = [];
+      let last = 0;
+      const pushText = function (txt) {
+        Array.from(txt).forEach(function (ch) {
+          units.push({ text: ch, syms: pend }); pend = [];
+        });
+      };
+      str.replace(SYM_TOKEN_RE, function (tok, off) {
+        const nm = tok.slice(1, -1);
+        if (off > last) pushText(str.slice(last, off));
+        last = off + tok.length;
+        if (symURL(lyricSymStem(nm))) {
+          if (units.length && !pend.length) units[units.length - 1].syms.push(nm);
+          else pend.push(nm);
+        } else {
+          units.push({ text: tok, syms: pend }); pend = [];
+        }
+        return tok;
+      });
+      if (last < str.length) pushText(str.slice(last));
+      if (pend.length && units.length) units[units.length - 1].syms = units[units.length - 1].syms.concat(pend);
+
+      const melRow = (followMel || melRows.length === rows.length) ? melRows[i] : null;
+      const melCols = melRow ? groupRowTokens(tokenizeNotes(melRow).filter(function (tk) {
+        return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
+      })).length : 1;
+      const drawText = function (txt, f, cx, cy, maxW) {
+        const t = el("text", { x: cx, y: cy + f * 0.36, "text-anchor": "middle",
+          "font-size": f, "font-family": family || CJK, "font-weight": 500, fill: "#000" });
+        const n = Array.from(txt).length;
+        if (n > 1 && f * n > maxW) {
+          t.setAttribute("textLength", maxW);
+          t.setAttribute("lengthAdjust", "spacingAndGlyphs");
+        }
+        t.textContent = txt;
+        svg.appendChild(t);
+        return Math.min(f * n, maxW) * 0.92;   // 잉크 폭 어림
+      };
+      // 글자 오른쪽에 붙는 기호 — 여럿이면 세로로 쌓는다
+      const drawAtt = function (syms, f, leftX, cy) {
+        if (!syms.length) return;
+        const sizes = syms.map(function (nm) {
+          const sc = (nm in LYRIC_SYM_SCALE) ? LYRIC_SYM_SCALE[nm] : LYRIC_SYM_SCALE_DEFAULT;
+          return Math.min(f, f * 0.8 * sc / 0.4);
+        });
+        const total = sizes.reduce(function (a, b) { return a + b; }, 0);
+        let yCur = cy - total / 2;
+        syms.forEach(function (nm, k) {
+          const b = sizes[k];
+          drawSymImageRect(svg, lyricSymStem(nm), leftX, yCur, b, b);
+          yCur += b;
+        });
+      };
+
+      if (melCols > 1) {
+        // ② 옆 율명이 좌우로 나뉜 분박 — 글자를 가로로 따라간다(예전 방식)
+        const txt = units.map(function (u) { return u.text; }).join("");
+        const len = Array.from(txt).length;
+        const rowFs = len > 1 ? Math.min(fs, (width * 1.3) / len) : fs;
+        const inkW = drawText(txt, rowFs, x + width / 2, centers[i], width * 0.94);
+        const syms = [].concat.apply([], units.map(function (u) { return u.syms; }));
+        drawAtt(syms, rowFs, x + width / 2 + inkW / 2 + width * 0.04, centers[i]);
+        return;
       }
-      t.textContent = str;
-      svg.appendChild(t);
+      // ① 아래로 쌓기 — 이 분박이 쓸 수 있는 세로 자리를 넘칠 때만 글자를 줄인다
+      const slotH = melRow ? cellH / melRows.length : rowH;
+      const n = units.length;
+      const f = n > 1 ? Math.min(fs, (slotH * 0.98) / n) : fs;
+      units.forEach(function (u, k) {
+        const cy = centers[i] + (k - (n - 1) / 2) * f;
+        const inkW = drawText(u.text, f, x + width / 2, cy, width * 0.94);
+        drawAtt(u.syms, f, x + width / 2 + inkW / 2 + width * 0.04, cy);
+      });
     });
   }
 
