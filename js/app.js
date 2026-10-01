@@ -2454,6 +2454,8 @@
   // 특강표만 원래 크기 유지(사전의 attKeep). 기호별 미세 조정은 사전 at.att.
   const ATT_EXTRA_SCALE = 1.2;
   const ATT_SCALE_KEEP = SYM_REG.attKeep;
+  // 정간에 음이 하나뿐일 때 오른쪽 아래 모서리로 가는 붙임표(drawCell) — 미는표·흘림표
+  const ATT_CORNER = new Set(["push", "flow"]);
   const ATT_SYM_SCALE = SYM_REG.attScale;
   // 한글 이름 → 파일 stem (토큰을 한글로 쓰기 위함). 이름이 중복되면 먼저 나온 것 우선.
   const ORN_KO = {};
@@ -3927,6 +3929,7 @@
         // 무관하게 원문(글자) 등장 순서라 시김새 미세조정(클릭 선택)이 안 어긋난다.
         // 붙임표는 전부 시김새라 크기는 항상 gsBase 기준(율명 크기 배율 미적용).
         if (g.att.length) {
+          const loneNote = nRows === 1 && groups.length === 1 && g.main.sym == null;
           const groupRight = x + colW * (gi + 1);
           const groupLeft = x + colW * gi;
           const saBase = Math.min(gsBase * 0.55, colW * 0.34);
@@ -3934,10 +3937,23 @@
             // 확대는 붙임표(wo류)에만 적용 — 퇴성·추성처럼 붙어오는 것들은 원래 크기 유지
             const scale = (ORN_CAT[tk.sym] === "wo" && !ATT_SCALE_KEEP.has(tk.sym)) ? ATT_EXTRA_SCALE : 1;
             const box = saBase * scale * (ATT_SYM_SCALE[tk.sym] || 1);
-            return { tk: tk, box: box, k: tk.k, left: tk.sym === "len-double" };
+            return { tk: tk, box: box, k: tk.k, left: tk.sym === "len-double",
+              corner: loneNote && ATT_CORNER.has(tk.sym) };
           });
+          // 정간에 음이 하나뿐이면 미는표·흘림표는 음 옆이 아니라 정간 오른쪽 아래 모서리로 간다
+          // (정간보 관행 — 음 하나가 칸을 다 쓰므로 표는 그 끝에 단다). 여럿이면 모서리에서 위로 쌓는다.
+          // 개별 조정값(@크기,좌우,상하)은 drawAdjSym이 이 자리를 기준으로 그대로 얹는다.
+          const corner = items.filter(function (it) { return it.corner; });
+          if (corner.length) {
+            const sa = Math.max.apply(null, corner.map(function (it) { return it.box; }));
+            const ax = groupRight - sa * 0.7;
+            corner.forEach(function (it, ai) {
+              const ay = yTop + cell - sa * 0.7 - (corner.length - 1 - ai) * sa * 1.08;
+              drawAdjSym(svg, it.tk, ax, ay, it.box, cell, gakIdx, cellIdx, pageIdx, it.k);
+            });
+          }
           [false, true].forEach(function (onLeft) {
-            const list = items.filter(function (it) { return it.left === onLeft; });
+            const list = items.filter(function (it) { return !it.corner && it.left === onLeft; });
             if (!list.length) return;
             const sa = Math.max.apply(null, list.map(function (it) { return it.box; }));
             // 커진 크기만큼 글자 쪽 여백을 살짝 더 줌(글자와의 간격 조정)
