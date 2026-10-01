@@ -111,7 +111,11 @@
     const rng=random(seed),small=['look','preen','peek','stretch','doze'];
     for(let i=small.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[small[i],small[j]]=[small[j],small[i]];}
     small.splice(2+Math.floor(rng()*2),0,rng()<.5?'worm':'butterfly');
-    const starts=[18,44,72,102,133,161];
+    // Repeat two short everyday actions; keep dozing and the insect encounter special.
+    const extras=small.filter(id=>['look','preen','peek','stretch'].includes(id));
+    if(extras[0]===small[small.length-1])extras.push(extras.shift());
+    small.push(...extras.slice(0,2));
+    const starts=[12,34,56,78,100,122,144,166];
     const events=small.map((id,i)=>({...byId[id],start:SETTLED+starts[i]+(rng()-.5)*5}));
     return events.sort((a,b)=>a.start-b.start);
   }
