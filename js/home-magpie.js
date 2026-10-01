@@ -207,6 +207,7 @@
       account();cancel();failure = '까치 그림을 불러오지 못했습니다.';wanted = false;
       svg.style.visibility = 'hidden';
       if (fallback) { fallback.style.visibility = ''; fallback.removeAttribute('aria-hidden'); }
+      if (doc.documentElement) doc.documentElement.classList.remove('hm-boot');   // index.html head가 감춰 둔 정지 로고를 되살린다
       if (hello) hello.hidden = true;
       notify();
     }
@@ -331,6 +332,7 @@
       if (dead || failure) return;
       ready=true;draw();svg.style.visibility='';
       if (fallback) {fallback.style.visibility='hidden';fallback.setAttribute('aria-hidden','true');}
+      if (doc.documentElement) doc.documentElement.classList.remove('hm-boot');   // 정지 로고는 이제 인라인으로 숨는다 — 머리 감춤은 할 일을 다 했다
       preloadExtra();schedule();
     }).catch(fail);
     function destroy() {

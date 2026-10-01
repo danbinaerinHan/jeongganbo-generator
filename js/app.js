@@ -12024,4 +12024,6 @@
   // 악보를 받아 온 사람(공유 링크·게시물)에게는 환영 카드도 띄우지 않는다 — 어떤 선택을 해도
   // 새 문서 마법사로 수렴해 방금 받은 악보를 덮기 때문이다. 카드는 다음에 그냥 들어올 때 뜬다.
   if (firstVisit && !incomingDoc) showWelcome();
+  // 이제 지금 모양이 다 섰다 — editor.html head가 감춰 둔 #appRow를 보인다(jgb-boot).
+  document.documentElement.classList.remove("jgb-boot");
 })();

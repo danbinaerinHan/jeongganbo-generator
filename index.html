@@ -14,6 +14,16 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ★ 움직이는 까치가 준비될 때까지 정지 로고를 감춘다(2026-10-02 사용자 제보: 새로 켠 크롬에서
+     옛 로고가 잠깐 보였다가 바뀐다). js/home-magpie.js가 스프라이트를 다 받은 뒤에야 정지 로고를
+     SVG로 갈아 끼우는데, 캐시가 빈 첫 방문엔 그 사이가 길었다. 자리는 그대로 두고(visibility)
+     준비되면 home-magpie.js가 걷는다. 실패하거나 늦으면(2.5초) 정지 로고를 그대로 보인다 —
+     JS가 꺼진 브라우저에선 이 클래스가 안 붙으므로 처음부터 정지 로고다. -->
+<script>
+document.documentElement.classList.add("hm-boot");
+setTimeout(function () { document.documentElement.classList.remove("hm-boot"); }, 2500);
+</script>
+<style>html.hm-boot body.home .hm-logo { visibility: hidden; }</style>
 <title>우물사이 — 정간보 편집기</title>
 <meta name="description" content="정간보를 브라우저에서 쓰고, 들어 보고, 오선보로 옮기고, 사람들과 나누는 곳입니다.">
 <!-- 첫 화면(2026-09-29). 사이트 루트다 — 편집기는 editor.html, 공유마당은 browse.html.
