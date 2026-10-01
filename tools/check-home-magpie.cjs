@@ -347,6 +347,25 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
  for(let i=0;i<20;i++){const e=clickBase.chooseReaction(near,i/20);assert(!e||near+e.duration+.2<clickBase.departure,'Chosen event must finish before departure');}
  const closeEvent=model.createVisit(24,{startMode:'perched',events:[{id:'preen',start:6}]});
  for(let i=0;i<20;i++){const e=closeEvent.chooseReaction(2,i/20);assert(!e||2+e.duration+.2<6,'Chosen event must fit before the next automatic event');}
+ // Every action is seen once per click cycle, including across a cycle boundary.
+ const cycling=await setup(false,false,'perched',clickBase),clicked=[];
+ cycling.api.seek(2);
+ for(let i=0;i<24;i++){
+  assert(cycling.api.react(),'Next distinct action is available');
+  assert(!cycling.api.react(),'Rejected extra click must not consume another action');
+  await cycling.flush();const active=cycling.api.getState().timeline.activeEvent;
+  assert(active);clicked.push(active.id);
+  if(i>0)assert.notEqual(clicked[i],clicked[i-1],'Last action of a cycle cannot immediately repeat');
+  cycling.advance((active.duration+.25)*1000);
+ }
+ for(let i=0;i<3;i++)assert.equal(new Set(clicked.slice(i*8,i*8+8)).size,8,'Each complete click cycle includes all eight actions exactly once');
+ cycling.api.destroy();
+ const onlyDoze=[...clickIds].filter(id=>id!=='doze');
+ assert.equal(closeEvent.chooseReaction(2,.1,onlyDoze),null,'When the remaining unseen action will not fit, wait instead of repeating a seen action');
+ const allSeen=[...clickIds];
+ for(let i=0;i<20;i++){
+  const next=clickBase.chooseReaction(2,i/20,allSeen);assert(next.resetCycle);assert.notEqual(next.id,allSeen.at(-1),'Refill excludes the immediately previous action');
+ }
  // Pointer following reuses every butterfly intermediate, outside the small SVG too.
  const watcher=await setup(false,false,'perched',clickBase);
  const watchSvg=descendants(watcher.host).find(n=>n.tag==='svg');
@@ -416,5 +435,5 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
  }
  const waking=await setup(false,false,'wake');assert.equal(waking.api.getState().timeline.poses[0].sheet,'wake');assert(waking.firstReady.some(p=>p.endsWith('wake.png')));assert(!waking.api.react(),'Do not interrupt waking');waking.advance(5100);assert.equal(waking.api.getState().timeline.poses[0].sheet,'neutral');waking.api.destroy();
  const r=await setup(true,false);assert.equal(r.api.getState().time,.7);assert.equal(r.timers.size,0);assert(!r.requests.some(p=>/flight|wings|landing/.test(p)));assert(!imageHrefs(r.host).some(p=>/flight-body|wings/.test(p)));r.api.destroy();
- console.log(`PASS: 1,000 visits (${arrivals} flying / ${1000-arrivals} seated), start modes ${JSON.stringify(modes)}, nine original whole-bird flight cels, faster approach and recovery, two walk cycles at original cadence, six standing recovery cels, ambient4–7s blinks with idle sleep, shared beak contour and seamless solid ink, all-action eye apertures, preserved closed/frontal/waking eyes, fixed stretch supporting toe, stable walking eye registration, 180-second dwell, shared neutral boundaries, non-overlapping events, real atlas dimensions, every event, lazy initial assets, reduced motion, hidden clock, pause/replay/loop, idle sleep, random click actions, uninterrupted events, pending-load lock, smooth pointer gaze with event priority and playback resets.`);
+ console.log(`PASS: 1,000 visits (${arrivals} flying / ${1000-arrivals} seated), start modes ${JSON.stringify(modes)}, nine original whole-bird flight cels, faster approach and recovery, two walk cycles at original cadence, six standing recovery cels, ambient4–7s blinks with idle sleep, shared beak contour and seamless solid ink, all-action eye apertures, preserved closed/frontal/waking eyes, fixed stretch supporting toe, stable walking eye registration, 180-second dwell, shared neutral boundaries, non-overlapping events, real atlas dimensions, every event, lazy initial assets, reduced motion, hidden clock, pause/replay/loop, idle sleep, random click actions without repeats across three full cycles, uninterrupted events, pending-load lock, smooth pointer gaze with event priority and playback resets.`);
 })().catch(e=>{console.error(e);process.exitCode=1});

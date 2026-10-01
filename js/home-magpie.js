@@ -19,6 +19,7 @@
     let wanted = opt.autoplay !== false, ready = false, dead = false, failure = null;
     let inView = true, pageAway = false, timer = 0, lastClock = null, reaction = null;
     let reactionRequest = 0, reactionPending = false, extraStarted = false, lastState = null;
+    let reactionHistory = [];
     let pointer = null, lookIndex = 0, lookTarget = 0, lookNext = 0, lookLoading = false;
     const fallback = container.querySelector('.hm-logo');
     function node(tag, attrs, parent) {
@@ -259,7 +260,7 @@
       account();
       // Never restart or replace an automatic action, a click action, or a pending load.
       if (!ready || dead || failure || media.matches || reactionPending || model.timeline(current,{reaction}).activeEvent) {schedule();return false;}
-      const chosen=model.chooseReaction(current);
+      const chosen=model.chooseReaction(current,Math.random(),reactionHistory);
       if(!chosen){schedule();return false;}
       const request=++reactionRequest;
       const sources=model.reactionSheets(chosen.id).map(name=>model.sheets[name].src);
@@ -268,6 +269,9 @@
         account();reactionPending=false;
         // Loading may have reached another action or departure; do not interrupt it.
         if(!failure&&!media.matches&&model.canReact(current,chosen.id)&&!model.timeline(current,{reaction}).activeEvent){
+          // Only an action that actually starts consumes its place in this cycle.
+          if(chosen.resetCycle)reactionHistory=[];
+          reactionHistory.push(chosen.id);
           reaction={id:chosen.id,start:current};draw();
         }
         schedule();

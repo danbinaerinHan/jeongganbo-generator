@@ -157,9 +157,12 @@
       const event=byId[id];
       return reactionIds.includes(id)&&t>=Math.max(settled+1,introDuration)&&t+event.duration+.2<departure&&!scheduled(t)&&events.every(e=>e.start<=t||e.start-t>event.duration+.2);
     }
-    function chooseReaction(t,sample=Math.random()){
-      const available=reactionIds.filter(id=>canReact(t,id));
-      return available.length?{...byId[available[Math.min(available.length-1,Math.floor(clamp(sample)*available.length))]]}:null;
+    function chooseReaction(t,sample=Math.random(),history=[]){
+      const resetCycle=reactionIds.every(id=>history.includes(id));
+      // Exhaust the unseen actions before refilling, even if only a shorter
+      // already-seen action would fit before the next automatic event.
+      const available=reactionIds.filter(id=>(resetCycle?id!==history[history.length-1]:!history.includes(id))&&canReact(t,id));
+      return available.length?{...byId[available[Math.min(available.length-1,Math.floor(clamp(sample)*available.length))]],resetCycle}:null;
     }
     function gazePose(index){const step=gazeSteps[Math.round(clamp(index,0,gazeSteps.length-1))];return pose(step[0],step[1]);}
     function gazeTarget(point,previous=0){
