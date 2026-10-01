@@ -205,7 +205,11 @@
   // 선택된 구간이 없으면 '구간 지우기'·셀 서식 실행 버튼들을 비활성화 — 눌러도 아무 일 없는
   // 상태를 미리 보여준다. 렌더마다 호출(선택이 render()로만 바뀌므로).
   // 방향 토글(위/아래)은 뺀다 — 선택과 무관하게 미리 골라둘 수 있는 '설정'이라서.
-  const MEL_SEL_BTN_IDS = ["rangeClearToggle", "cellFillPaintToggle",
+  // [내용 지우기]는 여기 없다 — 고른 구간이 없을 때 누르면 선택 모드로 넘겨 주는 길잡이라
+  // 늘 켜져 있어야 한다(2026-10-02: 꺼진 버튼은 '왜 안 눌리지'에서 사람을 멈춰 세웠다).
+  // 정간 서식 창의 버튼들은 창을 여는 순간 이미 선택 모드라 꺼 두어도 길을 잃지 않는다.
+  let clearArmHint = false;   // [내용 지우기]를 빈손으로 눌렀다 → 고를 때까지 안내 줄을 띄운다
+  const MEL_SEL_BTN_IDS = ["cellFillPaintToggle",
     "cellMergeBtn", "cellUnmergeBtn", "cellEraseBtn", "cellStyleResetBtn",
     "cellBorderShapeThick", "cellBorderShapeDashed", "cellBorderShapeDouble"];
   function refreshMelSelBtns() {
@@ -226,12 +230,14 @@
         nParts += 1;
         g.ranges.forEach(function (r) { n += r.hi - r.lo + 1; });
       });
-      hint.classList.toggle("on", n > 0);
+      if (n > 0 || !selectModeOn()) clearArmHint = false;   // 골랐거나 선택 모드를 떠났으면 할 일을 다 했다
+      hint.classList.toggle("on", n > 0 || clearArmHint);
       hint.innerHTML = n > 0
         ? "<b>" + (melSelLane === "ly" ? "곁줄" : "정간") + " " + n + "칸</b> 고름" +
           (nParts > 1 ? " <b>(" + nParts + "악기)</b>" : "") + "<br>" +
-          "⌘/Ctrl + <b>C</b> 복사 · <b>X</b> 오려두기 · <b>V</b> 붙여넣기"
-        : "";
+          "⌘/Ctrl + <b>C</b> 복사 · <b>X</b> 오려두기 · <b>V</b> 붙여넣기" +
+          (melSelLane === "mel" ? " · <b>Delete</b> 내용 지우기" : "")
+        : clearArmHint ? "지울 구간을 악보에서 <b>끌어 고른 뒤</b> [내용 지우기]를 다시 누르십시오" : "";
     }
   }
   let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
@@ -1715,7 +1721,15 @@
   function refreshCursorBtns() {
     const pan = cursorMode === "pan", sel = !pan && selectModeOn();
     if ($("cursorInput")) $("cursorInput").classList.toggle("on", !pan && !sel);
-    if ($("cursorSelect")) $("cursorSelect").classList.toggle("on", sel);
+    const sb = $("cursorSelect");
+    if (sb) {
+      // 선택 모드로 **저절로** 넘어가는 길이 있다(정간 서식 창·[내용 지우기]) — 그 순간 [선택]이
+      // 한 번 번져 '지금 모드가 바뀌었다'를 보인다. 켜짐 표시(.on)만으로는 눈에 안 들어왔다.
+      if (sel && !sb.classList.contains("on")) {
+        sb.classList.remove("mode-ping"); void sb.offsetWidth; sb.classList.add("mode-ping");
+      }
+      sb.classList.toggle("on", sel);
+    }
     if ($("cursorPan")) $("cursorPan").classList.toggle("on", pan);
   }
   function setCursorMode(mode) {
@@ -9427,8 +9441,26 @@
   });
   // 구간 지우기 — 토글이 아니라 즉시 실행 버튼. 지금 선택된 구간(드래그로 고른 것)이
   // 있어야 동작하고, 없으면 아무 일도 안 한다(refreshMelSelBtns가 매 렌더 disabled 처리).
+  // 고른 구간이 없으면 지울 것을 고르러 가는 길을 연다 — 선택 모드로 넘기고 안내 줄을 띄운다.
+  // 그 자리에서 바로 지우지는 않는다(고른 뒤 한 번 더 누르는 것이 곧 '지운다'는 확인이다).
   $("rangeClearToggle").addEventListener("click", function () {
-    if (!hasMelSel()) return;
+    if (!hasMelSel()) {
+      if (cursorMode !== "select") setCursorMode("select");
+      clearArmHint = true;
+      refreshMelSelBtns();
+      return;
+    }
+    clearMelodySel();
+  });
+  // 정간 구간을 고른 채 Delete·Backspace = [내용 지우기]. 글자를 치는 중이거나(입력칸)
+  // 시김새를 골라 둔 상태(위의 시김새 삭제 단축키가 맡는다)면 비켜선다.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing || e.keyCode === 229) return;
+    const tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable)) return;
+    if ((ornEditMode && ornSel) || !hasMelSel()) return;
+    e.preventDefault();
     clearMelodySel();
   });
   // 구간 복사·오려두기·붙여넣기 (⌘/Ctrl+C·X·V) — 드래그로 고른 구간이 대상이고,
@@ -9834,7 +9866,9 @@
       ld.style.width = leftDockW + "px";
     } else {
       document.body.classList.remove("leftdock-custom");
-      const ribbon = $("melodyRibbon"), divider = $("mouseToolsDivider");
+      // 기준은 '각 삽입/삭제' 뒤 구분선 — 예전엔 마우스 칸 뒤였는데, [입력 도구] 글자 버튼이
+      // 패널 손잡이로 빠지며(2026-10-02) 그 자리가 110px 당겨져 패널이 최소 폭까지 좁아졌다.
+      const ribbon = $("melodyRibbon"), divider = $("gakToolsDivider") || $("mouseToolsDivider");
       const aligned = document.body.classList.contains("ribbon-left") && window.innerWidth > 900;
       const r = divider.getBoundingClientRect(), main = $("main").getBoundingClientRect();
       // 8px 너비의 드래그 손잡이 중심을 위쪽 1px 구분선 중심에 맞춘다.
@@ -9877,7 +9911,6 @@
   });
   toolbarLayoutObserver.observe($("melodyRibbon"));
   toolbarLayoutObserver.observe($("melodyRibbon").querySelector(".mouse-mode-tabs"));
-  toolbarLayoutObserver.observe($("melodyRibbon").querySelector(".ribbon-topctl"));
   document.querySelectorAll(".direct-win").forEach(function (w) {
     const ph = document.createComment("win-home:" + w.id);
     w.parentNode.insertBefore(ph, w);
@@ -9888,6 +9921,7 @@
     const anyOpen = !!document.querySelector(".direct-win.win-open");
     document.body.classList.toggle("palette-collapsed", leftMode && !anyOpen);
     $("paletteToggle").setAttribute("aria-expanded", String(leftMode && anyOpen));
+    $("paletteToggle").title = (leftMode && anyOpen) ? "입력 도구 접기" : "입력 도구 펼치기";
     if (leftMode) {
       if (inputToolGroup.parentNode !== $("paletteTabs")) $("paletteTabs").appendChild(inputToolGroup);
     } else if (inputToolGroup.parentNode !== inputToolHome.parentNode) {
@@ -10590,7 +10624,7 @@
     return { side: need.side ? from.side : false, win: need.win ? from.win : null, view: from.view };
   }
   // from 상태에서 need로 가려면 무엇을 눌러야 하나(없으면 null = 이미 열려 있음).
-  // 도구창 탭은 입력 도구 칸 안에 있어 칸이 접혀 있으면 안 보인다 — 그때는 [입력 도구]부터.
+  // 도구창 탭은 입력 도구 칸 안에 있어 칸이 접혀 있으면 안 보인다 — 그때는 패널 손잡이(#paletteToggle)부터.
   function tourOpenerFor(need, from) {
     if (!need) return null;
     if (need.side && !from.side) return "#sidebarOpen";

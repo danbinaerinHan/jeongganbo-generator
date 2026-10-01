@@ -926,6 +926,7 @@
   /* 도킹 컨트롤 묶음 — 가로 배치에선 앞쪽 아이콘, 세로 도킹에선 맨 위 한 줄(헤더).
      예전의 기능바 접기(.ribbon.collapsed)는 없앴다 — index.html 주석 참고. */
   .ribbon-topctl { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+  .ribbon-topctl:empty { display: none; }   /* [입력 도구]가 패널 손잡이로 빠져 지금은 비어 있다 */
   /* 그룹은 2단 — 위에 얇은 이름표(.rb-cap), 아래에 실제 컨트롤(.rb-items) */
   .ribbon-group { display: flex; flex-direction: column; align-items: stretch; gap: 2px;
                   padding: 0 4px; flex: 0 0 auto; }
@@ -953,6 +954,26 @@
                 text-align: center; white-space: normal; word-break: keep-all; }
   body.ribbon-left .rb-selhint.on { display: block; }
   .rb-selhint b { color: var(--accent); font-weight: 700; }
+  /* 위쪽 한 줄 기능바(지금 직접 입력의 기본)에서는 이 줄을 **말풍선으로 띄운다**(2026-10-02).
+     글줄로 붙이면 기능바가 높아져 드래그 도중 악보가 내려앉으므로(위 주석) 한동안 아예 숨겨져
+     있었다 — 그래서 구간을 골라도 무엇을 할 수 있는지가 어디에도 안 떴다. absolute라 자리를
+     안 먹고, pointer-events:none이라 그 밑 악보를 가리지도 않는다. 선택자에 #melodyRibbon을
+     넣은 건 아래 '숨김' 규칙(ID 하나 + 클래스 둘)을 이기려는 것. */
+  body.ribbon-left #melodyRibbon .ribbon-group:has(#melSelHint) { position: relative; }
+  body.ribbon-left #melodyRibbon .rb-selhint.on {
+    display: block; position: absolute; top: calc(100% + 8px); left: 0; z-index: 30;
+    width: max-content; max-width: 340px; margin: 0; padding: 7px 10px;
+    font-size: 11.5px; line-height: 1.45; text-align: left; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    box-shadow: var(--ui-shadow); pointer-events: none;
+  }
+  /* [선택]이 저절로 켜질 때 한 번 번진다(app.js refreshCursorBtns) — 되풀이하지 않는다 */
+  .cursor-btn.mode-ping { animation: modePing .9s ease-out 1; }
+  @keyframes modePing {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+    100% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent) 0%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) { .cursor-btn.mode-ping { animation: none; } }
   .ribbon-sep { flex: 0 0 auto; width: 1px; margin: 3px 3px; background: var(--line); }
   .ribbon-btn { display: flex; flex-direction: column; align-items: center; justify-content: center;
                 gap: 2px; width: 58px; padding: 6px 2px 5px; border: 1px solid transparent;
@@ -1107,13 +1128,19 @@
   body.ribbon-left #melodyRibbon .ribbon-btn svg { width: 17px; height: 17px; }
   body.ribbon-left #melodyRibbon .ribbon-sep { height: 24px; align-self: center; margin: 0; }
   body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 68px; }
+  /* 입력 도구 패널 손잡이 — 악보 열 왼쪽 끝에 붙은 작은 탭(‹ / ›). 패널이 열려 있으면 패널과
+     악보의 경계에, 접혀 있으면 화면 왼쪽 끝에 선다(#sheetCol 기준이라 둘 다 같은 규칙이다).
+     예전 글자 버튼 [입력 도구]를 바꾼 것이다(2026-10-02) — 기능바엔 도로 넣지 말 것. */
+  body.ribbon-left #sheetCol { position: relative; }
   #paletteToggle {
-    align-items: center; white-space: nowrap; min-height: 32px; padding: 5px 8px;
-    border: 1px solid var(--line); border-radius: 5px; background: var(--panel);
-    color: var(--ink); font: inherit; font-size: 12px; cursor: pointer;
+    position: absolute; left: 0; top: 14px; z-index: 12;
+    width: 18px; height: 48px; padding: 0; align-items: center; justify-content: center;
+    border: 1px solid var(--line); border-left: none; border-radius: 0 6px 6px 0;
+    background: var(--panel); color: var(--muted); box-shadow: var(--ui-shadow); cursor: pointer;
   }
-  #paletteToggle[aria-expanded="true"] { background: var(--accent-soft); border-color: var(--accent); }
-  #paletteToggle:hover { background: var(--hover); }
+  #paletteToggle:hover { background: var(--hover); color: var(--ink); }
+  #paletteToggle .palette-chevron { width: 12px; height: 12px; transition: transform .15s ease; }
+  #paletteToggle[aria-expanded="true"] .palette-chevron { transform: rotate(180deg); }
   body.ribbon-left #leftDock {
     grid-column: 1; grid-row: 2; width: clamp(340px, 34vw, 466px);
     max-width: min(50vw, 600px); min-width: 0; min-height: 0;
@@ -2418,19 +2445,6 @@
   }
 
   /* 편집 컨트롤: 옅은 면과 얇은 경계, 선택된 항목만 한 단계 선명하게. */
-  #paletteToggle {
-    gap: 6px; padding: 5px 9px; border-radius: 8px; font-weight: 600;
-    border-color: var(--line); background: var(--soft);
-    box-shadow: 0 1px 2px rgba(0,0,0,.035);
-  }
-  #paletteToggle svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--muted); }
-  #paletteToggle .palette-chevron { width: 12px; height: 12px; flex-basis: 12px; transition: transform .15s ease; }
-  #paletteToggle[aria-expanded="true"] {
-    background: var(--accent-soft); color: var(--accent);
-    border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); box-shadow: none;
-  }
-  #paletteToggle[aria-expanded="true"] svg { color: var(--accent); }
-  #paletteToggle[aria-expanded="true"] .palette-chevron { transform: rotate(180deg); }
   body.ribbon-left #melodyRibbon .mouse-mode-tabs {
     gap: 2px; padding: 2px; border-radius: 8px; background: var(--soft);
     box-shadow: inset 0 0 0 1px var(--line);
