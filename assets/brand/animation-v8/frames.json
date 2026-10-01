@@ -1,5 +1,142 @@
 {
   "frames": {
+    "hop": [
+      {
+        "cell": [
+          46,
+          116,
+          371,
+          304
+        ],
+        "anchor": [
+          180.75212812499998,
+          415
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": true
+      },
+      {
+        "cell": [
+          455,
+          144,
+          373,
+          276
+        ],
+        "anchor": [
+          587.752128125,
+          415
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": true
+      },
+      {
+        "cell": [
+          848,
+          158,
+          387,
+          262
+        ],
+        "anchor": [
+          981.752128125,
+          415
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": true
+      },
+      {
+        "cell": [
+          46,
+          495,
+          360,
+          298
+        ],
+        "anchor": [
+          180.75212812499998,
+          787
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": true
+      },
+      {
+        "cell": [
+          462,
+          495,
+          356,
+          294
+        ],
+        "anchor": [
+          595.252128125,
+          783
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": true
+      },
+      {
+        "cell": [
+          857,
+          532,
+          375,
+          231
+        ],
+        "anchor": [
+          989.752128125,
+          758
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": false
+      },
+      {
+        "cell": [
+          46,
+          907,
+          364,
+          189
+        ],
+        "anchor": [
+          180.75212812499998,
+          1091
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": false
+      },
+      {
+        "cell": [
+          456,
+          893,
+          375,
+          268
+        ],
+        "anchor": [
+          589.752128125,
+          1156
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": false
+      },
+      {
+        "cell": [
+          859,
+          877,
+          366,
+          293
+        ],
+        "anchor": [
+          992.752128125,
+          1165
+        ],
+        "scale": 0.224,
+        "scaleX": 0.224,
+        "grounded": true
+      }
+    ],
     "settle": [
       {
         "cell": [
@@ -1723,6 +1860,11 @@
     ]
   },
   "sheets": {
+    "hop": {
+      "src": "assets/brand/animation-v14/art/hop.webp",
+      "width": 1254,
+      "height": 1254
+    },
     "settle": {
       "src": "assets/brand/animation-v13/art/settle.webp",
       "width": 1536,

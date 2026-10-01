@@ -8,7 +8,8 @@ const lookUpMeasured=model.sheets.lookUp?JSON.parse(fs.readFileSync('assets/bran
 const betweenMeasured=JSON.parse(fs.readFileSync('assets/brand/animation-v11/body-measurements.json','utf8'));
 const brakingMeasured=JSON.parse(fs.readFileSync('assets/brand/animation-v12/body-measurements.json','utf8'));
 const settleMeasured=JSON.parse(fs.readFileSync('assets/brand/animation-v13/body-measurements.json','utf8'));
-const measurementFor=sheet=>sheet==='landing'?landingMeasured:sheet==='neutral'?measured.walk:measured[sheet]||lookUpMeasured[sheet]||betweenMeasured[sheet]||brakingMeasured[sheet]||settleMeasured[sheet];
+const hopMeasured=JSON.parse(fs.readFileSync('assets/brand/animation-v14/body-measurements.json','utf8'));
+const measurementFor=sheet=>sheet==='landing'?landingMeasured:sheet==='neutral'?measured.walk:measured[sheet]||lookUpMeasured[sheet]||betweenMeasured[sheet]||brakingMeasured[sheet]||settleMeasured[sheet]||hopMeasured[sheet];
 const close=(actual,expected,message)=>assert(Math.abs(actual-expected)<1e-10,message);
 const canonical=model.geometry({sheet:'neutral',index:0});
 const reference=measured.walk.frames[0];
@@ -185,6 +186,36 @@ for(let i=1;i<6;i++){
  assert(Math.abs((source.head[0]+source.head[1])*g.scale/headWidth-1)<.02,'Walking must retain standing head size');
  assert(Math.abs(source.bodyArea*g.scale**2/bodyArea-1)<.01,'Walking must retain standing torso size');
 }
+// Hopping is articulated whole-bird motion: planted crouch, toe spring, tucked
+// airborne feet, reach, and bent-knee landing. Never scale or drift sideways.
+const hopping=model.createDemo('hop'),hopSeen=new Set();let airborneRuns=0,wasAirborne=false;
+for(let u=0;u<4.4;u+=1/240){
+ const s=hopping.timeline(7+u),p=s.poses[0],g=hopping.geometry(p);
+ close(s.x,model.perchX,'Both hops stay in place');
+ if(p.sheet==='hop'){
+  hopSeen.add(p.index);close(g.scale,.224,'All hop drawings share a fixed scale');close(g.scaleX,g.scale,'No squash or stretch transforms');
+  const toe=hopMeasured.hop.frames[p.index].foot[2],sole=s.y+g.y+toe*g.scale;
+  assert(sole<=model.ground+1e-8,'Hopping feet never penetrate the well');
+  const local=u<2.1?u:u-2.1;
+  if(local<1||local>=1.56)close(sole,model.ground,'Visible toes stay planted during crouch, push-off and recovery');
+ }
+ const inAir=s.y<model.ground-1e-6;if(inAir&&!wasAirborne)airborneRuns++;wasAirborne=inAir;
+}
+assert.equal(hopSeen.size,9,'Every new complete pose is used');assert.equal(airborneRuns,2,'Exactly two distinct hops');
+for(const start of [0,2.1]){
+ const samples=[];for(let u=1;u<1.56;u+=.001){const s=hopping.timeline(7+start+u),e=model.poseEye(s.poses[0]);samples.push(s.y+e.y);}
+ for(let i=1;i<samples.length;i++)assert(Math.abs(samples[i]-samples[i-1])<.15,'Changing airborne leg pose does not teleport the head');
+ const a=hopping.timeline(7+start+1-1e-6),b=hopping.timeline(7+start+1+1e-6);
+ assert(Math.abs(a.y+model.poseEye(a.poses[0]).y-b.y-model.poseEye(b.poses[0]).y)<.001,'Toe-off keeps the head continuous');
+ const c=hopping.timeline(7+start+1.56-1e-6),d=hopping.timeline(7+start+1.56+1e-6);
+ assert(Math.abs(c.y+model.poseEye(c.poses[0]).y-d.y-model.poseEye(d.poses[0]).y)<.001,'Landing keeps the head continuous');
+ const shown=new Set();for(let u=start;u<start+2.1;u+=1/24){const p=hopping.timeline(7+u).poses[0];if(p.sheet==='hop')shown.add(p.index);}
+ assert.equal(shown.size,9,'24fps playback displays every drawn intermediate in each hop');
+}
+assert(hopping.reactionSheets('hop').includes('hop'),'Clicks preload the hop atlas');
+for(let seed=0;seed<100;seed++){
+ const v=model.createVisit(seed);assert.equal(v.events.length,8,'Adding hopping preserves automatic event frequency');assert(v.events.some(e=>e.id==='hop'),'Hopping is also an automatic behavior');
+}
 // The reported braking jump is checked on the ACTUAL sequence, including both endpoints.
 const brakingTimes=[2.7,2.7601,2.8451,2.9301,3.0151,3.1001,3.1851,3.2701,3.3551,3.4501];
 const brakingExpected=['flight/0','braking/1','braking/2','braking/3','braking/4','braking/5','brakingBridge/0','braking/7','braking/8','landing/2'];
@@ -225,7 +256,7 @@ for(let index=0;index<6;index++){
 }
 // Beak tip and central profile match the original resting bird relative to its eye.
 const canonicalProfile=model.poseProfile({sheet:'neutral',index:0});
-for(const sheet of ['flight','braking','brakingBridge','landing','settle','walk','neutral'])for(let index=0;index<model.frames[sheet].length;index++){
+for(const sheet of ['hop','flight','braking','brakingBridge','landing','settle','walk','neutral'])for(let index=0;index<model.frames[sheet].length;index++){
  const p={sheet,index},profile=model.poseProfile(p),eye=model.poseEye(p);
  close(profile.x,eye.x,'Beak follows the actual drawn eye');close(profile.y,eye.y,'Beak follows the actual drawn eye');
  profile.contour.forEach(([x,y],i)=>{if(y>=-1&&y<=3.5)close(x,canonicalProfile.contour[i][0],'Beak core must not change shape or length at pose swaps');});
@@ -324,7 +355,7 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
  // Random click actions reserve their entire duration and cannot be restarted.
  const clickBase=model.createVisit(24,{startMode:'perched',events:[]});
  const clickIds=new Set(Array.from({length:80},(_,i)=>clickBase.chooseReaction(2,(i+.5)/80).id));
- assert.equal(clickIds.size,8,'All eight click actions can be selected');
+ assert.equal(clickIds.size,9,'All nine click actions can be selected, including hopping');
  assert(!clickIds.has('blink')&&!clickIds.has('wake'),'Do not choose a blink or the startup-only waking sequence');
  for(const id of clickIds){
   const candidate=clickBase.eventCatalog.find(e=>e.id===id);
@@ -350,7 +381,7 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
  // Every action is seen once per click cycle, including across a cycle boundary.
  const cycling=await setup(false,false,'perched',clickBase),clicked=[];
  cycling.api.seek(2);
- for(let i=0;i<24;i++){
+ for(let i=0;i<27;i++){
   assert(cycling.api.react(),'Next distinct action is available');
   assert(!cycling.api.react(),'Rejected extra click must not consume another action');
   await cycling.flush();const active=cycling.api.getState().timeline.activeEvent;
@@ -358,7 +389,7 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
   if(i>0)assert.notEqual(clicked[i],clicked[i-1],'Last action of a cycle cannot immediately repeat');
   cycling.advance((active.duration+.25)*1000);
  }
- for(let i=0;i<3;i++)assert.equal(new Set(clicked.slice(i*8,i*8+8)).size,8,'Each complete click cycle includes all eight actions exactly once');
+ for(let i=0;i<3;i++)assert.equal(new Set(clicked.slice(i*9,i*9+9)).size,9,'Each complete click cycle includes all nine actions exactly once');
  cycling.api.destroy();
  const onlyDoze=[...clickIds].filter(id=>id!=='doze');
  assert.equal(closeEvent.chooseReaction(2,.1,onlyDoze),null,'When the remaining unseen action will not fit, wait instead of repeating a seen action');

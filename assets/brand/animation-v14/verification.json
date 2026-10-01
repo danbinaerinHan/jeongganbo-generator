@@ -1,0 +1,42 @@
+{
+  "event": {
+    "id": "hop",
+    "duration": 4.4,
+    "hops": 2,
+    "airborneSecondsEach": 0.56,
+    "heightSceneUnits": [
+      15,
+      12
+    ]
+  },
+  "visualReview": {
+    "method": "Native renderer using actual runtime geometry, ink filtering, eye aperture and beak normalization.",
+    "images": [
+      "hop-review.png",
+      "head-review.png"
+    ],
+    "notes": "Reviewed nine poses against canonical resting bird; fixed the initially abrupt downward tail swing by editing three airborne/reaching tails.",
+    "limitation": "Actual browser playback has not been verified in this environment."
+  },
+  "checks": {
+    "bodyAreaRelativeToRest": [
+      1,
+      0.979,
+      0.987,
+      1.006,
+      0.997,
+      0.983,
+      0.991,
+      0.976,
+      0.992
+    ],
+    "fixedScale": 0.224,
+    "contact": "All measured grounded soles remain at ground; airborne feet do not cross below it.",
+    "head": "Continuous eye/head registration through airborne pose swaps and both contact boundaries.",
+    "playback": "Every hop cel appears in both cycles at24fps.",
+    "events": "Automatic frequency remains8 per visit; click cycle now has9 distinct behaviors.",
+    "webp": "Decoded RGBA exact:0 differing bytes.",
+    "regression": "node tools/check-home-magpie.cjs PASS"
+  },
+  "webAssetBytes": 317978
+}
