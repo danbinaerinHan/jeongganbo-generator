@@ -9,6 +9,7 @@
 // ③ 시김새가 제 꼴로 적히나(붙임=꾸밈음, 독립=제 자리를 나눈 실음).
 // ④ 곁줄 가사가 제 음에 붙나(한글 음절만 · 기호 토큰 제외 · 가사 없는 문서는 한 글자도 그대로).
 // ⑤ 곁줄 기호(사전에 있는 괄호 토큰)가 음표 위 <direction>으로 실리나(파일엔 표시 이름).
+// ⑥ 음표로 안 바뀌는 선율 시김새(사전에 snd 없음)가 같은 길로 음표 위에 실리나.
 
 import { loadApp } from "./lib/app-sandbox.mjs";
 await import("../js/staff-core.js");
@@ -828,6 +829,90 @@ console.log("\n곁줄 기호 — 사전에 있는 괄호 토큰은 음표 위 �
     app.setLyrics("{없는기호} | (x) | - | \n | | | ");
     ok("사전에 없는 토큰뿐인 곁줄 → 한 글자도 같다", buildMusicXml() === base);
     app.setLyrics("");
+  }
+}
+
+console.log("\n선율 시김새 — 음표로 안 바뀌는 것(사전에 snd 없음)은 음표 위 기호로");
+{
+  // 음표마다 "^위 기호들" — 붙임줄 뒤 조각은 앞에 ⌒를 붙여 그대로 센다(칸 시김새는 거기 설 수 있다).
+  function ornOf(mel, beats, ly, opt) {
+    app.setLyrics(ly || "");
+    app.fields.beats = String(beats);
+    app.setMelody(mel);
+    const xml = opt && opt.vrv
+      ? globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { title: "검사용", vrv: true })
+      : buildMusicXml();
+    app.setLyrics("");
+    const out = [];
+    let pend = [];
+    xml.split(/(?=<direction[ >]|<note>)/).forEach((ch) => {
+      if (/^<direction[ >]/.test(ch)) {
+        if (ch.includes("<metronome>")) return;
+        pend = pend.concat([...ch.matchAll(/<words>([^<]*)<\/words>/g)].map((m) => m[1]));
+        return;
+      }
+      if (!ch.startsWith("<note>") || ch.includes("<grace")) return;
+      out.push((ch.includes('<tie type="stop"/>') ? "⌒" : "") + (ch.includes("<rest/>") ? "쉼" : "") +
+               (pend.length ? "^" + pend.join("+") : ""));
+      pend = [];
+    });
+    return { out, xml };
+  }
+  // 기호 direction 줄만 걷은 XML — 이것이 기호 없는 문서와 같으면 음 길이·마디 합계가 그대로다
+  const bare = (xml) => xml.replace(/\n\s*<direction placement="above"><direction-type><words>.*?<\/direction>/g, "");
+  const sameNotes = (a, b) => bare(ornOf(a, 4).xml) === bare(ornOf(b, 4).xml);
+  const R = globalThis.JGB_SYM;
+
+  eq("판정은 사전의 snd 하나 — snd 없는 att/cell 시김새 수 = 사전에서 센 수",
+     R.list.filter((e) => globalThis.JGB_STAFF_CORE.ornMark(e.id)).length,
+     R.list.filter((e) => !e.snd && e.at && !("tempo" in e.at) && ("att" in e.at || "cell" in e.at)).length);
+  ok("snd 있는 시김새·빠르기·사전 밖 기호는 대상이 아니다",
+     ["nire", "ni", "nanina", "repeat", "점점느리게", "pause_007", "가로표", "덩"]
+       .every((id) => globalThis.JGB_STAFF_CORE.ornMark(id) === null));
+  eq("붙임 시김새 → 제가 붙은 본음 위",
+     ornOf("황{흘림표}|태{미는표}|중{농음표}{끊는표}|임", 4).out,
+     ["^흘림표", "^미는표", "^농음표+끊는표", ""]);
+  eq("snd 있는 시김새는 음표로 둘 뿐 위 기호로 겹쳐 그리지 않는다",
+     ornOf("중{니레}|{니}|황{나니나}|임{노네}", 4).xml.includes("<words>"), false);
+  eq("빠르기 기호는 대상이 아니다",
+     ornOf("황{점점느리게}|태|중|임", 4).xml.includes("<words>"), false);
+  eq("독립 시김새가 가른 음 + 붙임 시김새 — 그 자리의 첫 음에",
+     ornOf("황|{니나}{흘림표}|중|임", 4).out, ["", "^흘림표", "", "", ""]);
+  eq("칸 시김새(요성표) — 앞 음이 이어지므로 그 음 머리 위(갈린 조각이 없을 때)",
+     ornOf("황|{요성표}|중|임", 4).out, ["^요성표", "", ""]);
+  eq("칸 시김새 — 붙임줄로 갈린 조각이 그 시각에 서면 그 조각 위",
+     ornOf("황| |{요성표}|임", 4).out, ["", "⌒^요성표", ""]);
+  eq("칸 시김새 — 그 시각에 서는 조각이 없으면 그 시각을 덮는 조각(앞서 시작한 가장 가까운 머리) 위",
+     ornOf("황 태| |{요성표}|임", 4).out, ["", "", "⌒^요성표", ""]);
+  eq("퇴성·추성을 칸으로 쓴 것도 같은 규칙 · 붙임으로 쓰면 본음 위",
+     ornOf("황|{퇴성}|중{추성}|임", 4).out, ["^퇴성", "^추성", ""]);
+  eq("쉼표 자리(이을 앞 음 없음)·각이 바뀐 자리의 칸 시김새는 버린다",
+     ornOf("쉼|{요성표}|중|임\n{요성표}|태|중|임", 4).out.filter((x) => x.includes("^")), []);
+  eq("한 음에 시김새 기호와 곁줄 기호가 함께 — 시김새가 앞, 나란히",
+     ornOf("황{흘림표}|태|중|임", 4, "{가로표} | | | ").out, ["^흘림표+가로표", "", "", ""]);
+  {
+    const L = R.list;
+    const mk = (id) => "&#x" + (0xF0000 + L.findIndex((e) => e.id === id)).toString(16).toUpperCase() + ";";
+    eq("조판용 XML은 표지 글자(곁줄 기호와 같은 길)",
+       ornOf("황{흘림표}|{요성표}|중|임", 4, "", { vrv: true }).out, ["^" + mk("flow") + "+" + mk("shake"), "", ""]);
+  }
+  ok("음 길이·마디 합계 불변 — 시김새를 뺀(칸 시김새는 이음으로 둔) 문서와 기호 줄 말고는 같다",
+     sameNotes("황{흘림표}|태{미는표} 중|중{요성표}|임", "황|태 중|중 -|임"));
+  ok("음 길이·마디 합계 불변 — 칸 시김새 자리를 빈 정간으로 둔 문서와 같다",
+     sameNotes("황| |{요성표}|임\n황 태| |{요성표}|임", "황| | |임\n황 태| | |임"));
+  {
+    // 시김새가 없거나 snd 있는 것뿐인 문서는 예전과 한 글자도 같다(기호 줄이 아예 없다)
+    const a = ornOf("황|태 중|{니}|중{니레}\n임|- 남|쉼|황", 4).xml;
+    ok("시김새 없는/snd 시김새뿐인 문서 → 기호 direction 없음", !a.includes("<words>"));
+  }
+  {
+    // 마디 경계로 갈린 조각 — '대강마다' 마디 나눔(4정간 = 대강 2·2)에서 셋째 정간의 요성표는
+    // 둘째 마디 첫 조각 위로 간다
+    Object.assign(app.fields, { staffBar: "daegang", daegang: "2 2" });
+    const r = ornOf("황| |{요성표}|임", 4);
+    Object.assign(app.fields, { staffBar: "auto", daegang: "" });
+    eq("마디 경계로 갈린 조각에도 같은 규칙", r.out, ["", "⌒^요성표", ""]);
+    ok("마디는 둘", (r.xml.match(/<measure /g) || []).length === 2);
   }
 }
 

@@ -8,8 +8,11 @@
 //   scores = [{ name, fifths, clef:"G"|"F", beats, bpm, unit, jg, measures:[[음표…]] }] (악기 하나면 길이 1)
 //   음표   = { midi, rest, units, graces:[midi], afters:[midi], tieStart, tieStop, lyric? }
 //            lyric = { text, syllabic } — 곁줄 가사(staff-core placeLyrics). 있을 때만 <lyric>을 적는다.
-//            marks = [{ id, ko, n }] — 곁줄 기호(같은 placeLyrics). 있을 때만 그 음 앞에
+//            marks = [{ id, ko, n }] — 음표 위 기호: 음표로 안 바뀌는 선율 시김새(staff-core
+//                    ornMarks)와 곁줄 기호(같은 placeLyrics). 있을 때만 그 음 앞에
 //                    <direction placement="above">로 표시 이름(ko)을 적는다(아래 marksXml).
+//            marksAt = [{ off, marks }] — 칸 시김새가 그 음의 뒤쪽 시각에 남긴 기호(off = 그 음
+//                    머리에서 단위 수). writeAs로 갈린 조각 가운데 그 시각에 서는(덮는) 조각에 붙는다.
 //   meta   = { title, subtitle, measStart }
 //            measStart = 첫 마디 번호(없으면 1) — 나란히 인쇄가 각 범위를 잘라 쪽마다
 //            따로 만들 때 마디 번호가 쪽마다 1로 되돌지 않게 하는 용도.
@@ -58,7 +61,8 @@
   }
   const VRV_MARKS = { q: 11, dq: 111 };
 
-  // 곁줄 기호(활 표시·구음 등) → 음표 **위**. 무엇이 어느 음에 붙나는 staff-core placeLyrics가
+  // 곁줄 기호(활 표시·구음 등)와 음표로 안 바뀌는 선율 시김새(흘림표·요성표…) → 음표 **위**.
+  // 무엇이 어느 음에 붙나는 staff-core(placeLyrics·ornMarks·marksIn)와 app.js staffScoreOf가
   // 정했고 여기는 적기만 한다. 꼴이 <direction placement="above"><words>인 것은 Verovio 6.2
   // 실측 때문이다 — <lyric placement="above">는 무시되어 아래에 그려지고, <technical>
   // <other-technical>은 아예 안 그려지는데, direction의 words만 오선 위 그 음 자리에 선다.
@@ -189,6 +193,12 @@
         const pieces = C.writeAs(n.units, off, beat) || [{ units: n.units, tup: false }];
         let at = off;
         pieces.forEach(function (p, k) {
+          // 칸 시김새(요성표 등)가 이 음의 뒤쪽 시각에 남긴 기호(n.marksAt) — 그 시각에 서는
+          // 조각 또는 그 시각을 덮는 조각 머리 위에. 고르는 셈은 staff-core marksIn 한 곳이다.
+          // 여기가 마지막 가르기라 더 넘길 데가 없으므로 조각 안 뒤쪽 것(rest)도 이 머리가 진다.
+          const late = C.marksIn(n.marksAt, at - off, at - off + p.units);
+          const mk = (k === 0 ? (n.marks || []) : []).concat(late.at0,
+            [].concat.apply([], late.rest.map(function (x) { return x.marks; })));
           items.push({
             src: n, off: at, units: p.units, rest: !!n.rest,
             tup: p.tup ? C.tupletValue(p.units) : null,
@@ -200,7 +210,7 @@
             graces: k === 0 ? n.graces : null,
             // 가사도 첫 조각에만 — 붙임줄로 이은 뒤 조각은 같은 음절이 이어지는 것뿐이다
             lyric: k === 0 ? n.lyric : null,
-            marks: k === 0 ? n.marks : null,
+            marks: mk.length ? mk : null,
             afters: k === pieces.length - 1 ? n.afters : null
           });
           at += p.units;

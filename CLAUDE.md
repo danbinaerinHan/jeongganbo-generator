@@ -1430,7 +1430,7 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
   정간보를 오선보로 옮겨 적는 일 전부가 거기 있다. `js/staff-core.js`·`js/staff-view.js`·
   `js/musicxml.js`·`js/staff-glyphs.js`, 또는 app.js의 '오선보 보기'·'오선보 인쇄·PNG'·
   '장구 오선보' 절을 건드릴 땐 **먼저 그 문서를 읽을 것**.
-  여기 남기는 것은 **그 문서를 안 읽고도 깨뜨릴 수 있는 약속** 넷뿐이다:
+  여기 남기는 것은 **그 문서를 안 읽고도 깨뜨릴 수 있는 약속** 다섯뿐이다:
   · **새 오선보 기능은 app.js가 아니라 staff-core·staff-view·musicxml 셋 중 하나에** 붙인다.
     셋 다 app.js를 한 줄도 안 본다 — 받는 것은 `buildStaffScores()`가 만든 그릇 하나뿐이라
     악기가 늘어도 그대로 쓴다.
@@ -1441,6 +1441,10 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
     넷 다 **app.js보다 먼저**. verovio는 안 싣고 칸을 열 때 지연 로드한다.
   · 오선보를 그리는 것은 `scheduleStaff()` **한 곳**뿐이다(열려 있을 때만·120ms 뒤) —
     render()는 글자 한 자에도 불리므로 그 절 밖에서 직접 그리지 말 것.
+  · **음표 위 기호는 한 길뿐이다** — 곁줄 기호와 음표로 안 바뀌는(사전에 `snd` 없는) 선율
+    시김새가 같은 음표 `marks` → musicxml `marksXml` → app.js `vrvSymMarks`를 지난다. 대상
+    판정은 staff-core `ornMark`(잣대는 snd 하나 — 이름 목록을 박지 말 것). 기호 때문에 음을
+    가르지 않는다(음 길이·마디 합계 불변). 자세한 자리 규칙은 그 문서의 '곁줄 기호' 다음 절.
   (곁줄도 오선보에 실린다 — 괄호 없는 한글은 음표 **아래 가사**(`<lyric>`), 사전에 있는 괄호
   토큰(`{가로표}`·`{덩}`…)은 음표 **위 기호**(`<direction placement="above">`, 파일엔 표시 이름 ·
   화면은 app.js `vrvSymMarks`가 표지 글자를 사전 그림으로 바꿔 끼운다). 어느 음에 붙나는

@@ -546,6 +546,45 @@
     });
     return out;
   }
+  // ── 선율 시김새 가운데 음표로 안 바뀌는 것 → 음표 위 기호 ──────────────
+  // 정간 안 시김새는 사전의 snd가 있으면 음표·꾸밈음으로 풀린다(app.js realizeMelody). snd가
+  // **없는** 것(미는표·흘림표·농음표·요성표·퇴성·추성…)은 소리로 옮길 것이 없어 예전엔 오선보에서
+  // 통째로 사라졌다. 그것을 곁줄 기호와 **같은 길**(음표의 marks → musicxml marksXml →
+  // app.js vrvSymMarks)로 음표 위에 싣는다 — 두 번째 장치를 만들지 않는다.
+  // 판정은 '사전에 snd가 있느냐' 하나다(이름 목록을 박지 않는다 — 나중에 snd가 생기면 저절로
+  // 음표 쪽으로 넘어간다). 빠르기 기호(at.tempo)는 정간 밖 표기라 대상이 아니고, 사전에 없는
+  // 기호(쉼표·이음 등 SYM_MARK)도 아니다. 돌려주는 꼴은 lyricMarks와 같은 { id, ko, n }.
+  function ornMark(id) {
+    const R = root.JGB_SYM;
+    const e = R && R.byId && R.byId[id];
+    if (!e || !e.at || (R.sound && R.sound[id])) return null;
+    const has = function (k) { return Object.prototype.hasOwnProperty.call(e.at, k); };
+    if (has("tempo") || !(has("att") || has("cell"))) return null;
+    return { id: e.id, ko: e.ko, n: R.list.indexOf(e) };
+  }
+  // 한 자리(slot)에 적힌 시김새 id들 → 음표 위 기호 목록(적힌 차례). 없으면 빈 목록.
+  function ornMarks(ids) {
+    const out = [];
+    (ids || []).forEach(function (id) { const m = ornMark(id); if (m) out.push(m); });
+    return out;
+  }
+  // 음 하나가 **나중 시각에** 받은 기호(marksAt = [{ off, marks }], off = 그 음 머리에서 단위
+  // 수)를 갈린 조각에 나눠 준다. 칸을 차지하는 소리 없는 시김새(요성표처럼)는 새 음을 안 내고
+  // 앞 음을 잇는 자리라(hold), 그 기호는 **그 시각에 울리고 있는 음표머리** 위에 선다:
+  // 마디 경계·writeAs로 갈린 조각이 마침 그 시각에 시작하면 그 조각, 아니면 그 시각을 덮는
+  // 조각(= 그보다 앞서 시작한 가장 가까운 머리). 기호 때문에 음을 가르지는 않는다 — 음 길이·
+  // 마디 합계가 기호와 무관해야 해서다. 조각 [from, to)에 드는 것을 골라 준다.
+  // 돌려주는 것: { at0: 조각 머리(off === from)에 서는 기호들, rest: 조각 안 뒤쪽 것(off는 조각 기준) }
+  function marksIn(marksAt, from, to) {
+    const at0 = [], rest = [];
+    (marksAt || []).forEach(function (x) {
+      if (x.off < from || x.off >= to) return;
+      if (x.off === from) Array.prototype.push.apply(at0, x.marks);
+      else rest.push({ off: x.off - from, marks: x.marks });
+    });
+    return { at0: at0, rest: rest };
+  }
+
   // 한 음에 음절 여럿을 몰아 붙일 때 — 앞 것의 시작·뒤 것의 끝을 물려받는다.
   function joinSyllables(list) {
     if (list.length === 1) return list[0];
@@ -611,6 +650,7 @@
 
   root.JGB_STAFF_CORE = {
     lyricSyllables: lyricSyllables, lyricMarks: lyricMarks, placeLyrics: placeLyrics,
+    ornMark: ornMark, ornMarks: ornMarks, marksIn: marksIn,
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF, CLEF_INST: CLEF_INST,
     JANGGU: JANGGU, PERC_POS: PERC_POS,
     timeSig: timeSig, timeTop: timeTop, timeLabel: timeLabel, timeSigSvg: timeSigSvg, timeNoteSvg: timeNoteSvg, timeSigW: timeSigW, TIME_TYPES: TIME_TYPES, NOTE_TYPES: NOTE_TYPES, quarterRatio: quarterRatio,

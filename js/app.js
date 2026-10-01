@@ -6097,7 +6097,9 @@
 
     // row·rows = 그 자리가 정간 안 몇째 행(분박)에서 났나 · 그 정간의 행 수(빈 정간은 0).
     // 소리에는 안 쓰이고 오선보가 곁줄 가사를 그 행의 음에 붙일 때 본다(staff-core placeLyrics).
-    function push(kind, dur, g, j, r, row, rows) {
+    // syms = 그 자리를 이룬 그룹의 기호 id들(주 토큰 + 붙은 시김새, 적힌 차례). 소리에는 안
+    // 쓰이고 오선보가 **음표로 안 바뀌는 시김새**를 음표 위 기호로 실을 때 본다(staff-core ornMarks).
+    function push(kind, dur, g, j, r, row, rows, syms) {
       // 각(=한 장단)을 넘는 지속은 끊고 쉼으로 적는다(2026-08-14 사용자 확정) — 빈 정간·
       // 이음(-)은 제 각 안에서만 앞 음을 잇는다. 재생과 오선보가 이 함수 하나를 나눠 보므로
       // 소리도 여기서 끊기고 악보에도 쉼표로 나온다. prevMidi는 그대로 둔다 — 쉼표와 같은
@@ -6107,7 +6109,7 @@
       slots.push({ gak: g, cell: j, beat: beat, dur: dur, kind: kind,
                    seq: (r && r.seq) || [], share: (r && r.share) || [],
                    pre: (r && r.pre) || [], post: (r && r.post) || [],
-                   row: row || 0, rows: rows || 0 });
+                   row: row || 0, rows: rows || 0, syms: syms || [] });
       beat += dur;
     }
 
@@ -6171,7 +6173,9 @@
             // 음에서 한 칸 내린 음이라야 가락이 이어진다.
             if (grp.main.sym === "pause_007") { push("rest", slotDur, g, j, null, r, rows.length); continue; }
             const res = resolveGroup(grp);
-            push(res ? "note" : "hold", slotDur, g, j, res, r, rows.length);   // 이음(-)·소리 없는 기호 → 지속
+            const syms = [grp.main.sym].concat(grp.att.map(function (a) { return a.sym; }))
+              .filter(Boolean);
+            push(res ? "note" : "hold", slotDur, g, j, res, r, rows.length, syms);   // 이음(-)·소리 없는 기호 → 지속
           }
         }
       }
@@ -7113,12 +7117,26 @@
     //    것이므로 앞 음의 길이에 더한다(재생의 extend와 같은 규칙). 이을 앞 음이 없으면 쉼표.
     //    cell(어느 정간에서 났나)은 musicxml.js가 셋잇단 묶음의 경계로 쓴다 — 같은 정간에서
     //    난 잇단 음들만 한 괄호(숫자 3)로 묶여야 해서.
+    //    음표로 안 바뀌는 시김새(사전에 snd가 없는 것 — 흘림표·미는표·요성표…)는 곁줄 기호와
+    //    같은 marks로 음표 위에 싣는다(무엇이 대상인가는 staff-core ornMarks 한 곳). 자리는:
+    //    · 붙임 시김새 → 제가 붙은 본음(그 자리의 첫 음). 곁줄 기호보다 앞에 나란히 선다.
+    //    · 소리 없는 칸 시김새(hold — 새 음 없이 앞 음을 잇는 자리) → 그 시각에 울리는 음.
+    //      앞 음 머리에서 몇 단위 뒤인지(marksAt.off)만 적어 두고, 마디·붙임줄로 갈린 조각
+    //      가운데 어느 머리 위에 설지는 나중에 staff-core marksIn이 고른다. **기호 때문에 음을
+    //      가르지 않는다** — 음 길이·마디 합계는 기호가 없을 때와 똑같아야 한다.
+    //    · 쉼표 자리(이을 앞 음이 없거나 각이 바뀌어 끊긴 자리)의 기호는 버린다 — 떨거나 꺾을
+    //      소리가 없다.
     const notes = [];
     let prev = null;
     slots.forEach(function (s, si) {
       const cellKey = s.gak + ":" + s.cell;
+      const orn = SC.ornMarks(s.syms);
       if (s.kind !== "note") {
-        if (s.kind === "hold" && prev) { prev.units += s.units; return; }
+        if (s.kind === "hold" && prev) {
+          if (orn.length) (prev.marksAt = prev.marksAt || []).push({ off: prev.units, marks: orn });
+          prev.units += s.units;
+          return;
+        }
         notes.push({ rest: true, units: s.units, cell: cellKey });
         prev = null;
         return;
@@ -7135,6 +7153,8 @@
           if (slotLyric[si].lyric) prev.lyric = slotLyric[si].lyric;
           if (slotLyric[si].marks) prev.marks = slotLyric[si].marks;
         }
+        // 시김새 기호는 곁줄 기호보다 앞에(정간 안의 것이 먼저) — 한 음에 둘이면 나란히
+        if (i === 0 && orn.length) prev.marks = orn.concat(prev.marks || []);
         notes.push(prev);
       });
       if (s.post.length) prev.after = s.post;
@@ -7152,6 +7172,8 @@
       while (left > 0) {
         if (filled >= measLen) newMeasure();
         const take = Math.min(left, measLen - filled);
+        const pos = n.units - left;   // 이 조각이 그 음 머리에서 몇 단위 뒤에 서나
+        const late = SC.marksIn(n.marksAt, pos, pos + take);
         const piece = {
           midi: n.midi, rest: n.rest, units: take, cell: n.cell,
           // 꾸밈은 앞쪽은 첫 조각에, 뒤쪽은 마지막 조각에만 붙는다
@@ -7161,6 +7183,10 @@
         };
         if (first && n.lyric) piece.lyric = n.lyric;   // 붙임줄로 이은 뒤 조각에는 안 붙인다
         if (first && n.marks) piece.marks = n.marks;
+        // 칸 시김새가 남긴 뒤늦은 기호 — 이 조각 머리에 서는 것은 marks로, 조각 안 뒤쪽 것은
+        // marksAt으로 넘겨 musicxml.js가 writeAs 조각에서 다시 고르게 한다(같은 marksIn).
+        if (late.at0.length) piece.marks = (piece.marks || []).concat(late.at0);
+        if (late.rest.length) piece.marksAt = late.rest;
         cur.push(piece);
         filled += take; left -= take; first = false;
       }
@@ -7614,11 +7640,14 @@
   //   · 크기: 한 변 VRV_SYM_BOX칸 정사각 상자에 비율을 지켜(meet) 넣고, 사전의 곁줄 크기
   //     (at.lyric)로 줄인다 — 구음(0.65)·막대(0.8)는 상자 가득, 작은 시김새류(0.4)는 그
   //     비율만큼, '다'(0.23)는 점 크기. 정간보 곁줄에서 서로 견준 크기 그대로다.
+  //     선율 시김새(음표로 안 바뀌는 흘림표·요성표…, staff-core ornMarks)는 곁줄 크기가 없으면
+  //     곁줄의 작은 시김새류와 같은 0.4(VRV_SYM_ORN)에 정간보의 미세 배율(at.att/at.cell)을
+  //     곱한다 — 가늘고 긴 농음표류(2.5)는 상자 가득, 반길이표(0.5)는 그만큼 작게.
   //   · 한 음에 여럿이면 옆으로 나란히(가운데 정렬).
   //   · 다크모드는 css/styles.css의 `.vrv-sym` 규칙이 뒤집는다(그림은 currentColor를 못 따른다).
   //   · 그림은 데이터 URL이라 PNG 저장(SVG → <img>)에서도 그대로 따라간다(글꼴과 달리 따로
   //     심을 것이 없다 — 곁줄 기호 그림에는 <text>가 없다).
-  const VRV_SYM_BOX = 1.8, VRV_SYM_FULL = 0.65;
+  const VRV_SYM_BOX = 1.8, VRV_SYM_FULL = 0.65, VRV_SYM_ORN = 0.4;
   function vrvSymMarks(svg) {
     const base = window.JGB_MUSICXML.VRV_SYM_BASE;
     const MARK_RE = /[\u{F0000}-\u{FFFFD}]/u;
@@ -7636,7 +7665,9 @@
         });
         if (!ids.length) return all;
         const boxes = ids.map(function (e) {
-          const k = Math.min(1, ((e.at && e.at.lyric) || VRV_SYM_FULL) / VRV_SYM_FULL);
+          const a = e.at || {};
+          const lane = a.lyric || ((a.att || a.cell) ? VRV_SYM_ORN * (a.att || a.cell) : VRV_SYM_FULL);
+          const k = Math.min(1, lane / VRV_SYM_FULL);
           return { e: e, s: VRV_SYM_BOX * SP * k };
         });
         const gap = SP * 0.2;
