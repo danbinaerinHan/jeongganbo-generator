@@ -299,17 +299,18 @@ function verifyEyeApertures(host,eyes){
  const eyelid=nodes.find(n=>n.tag==='circle');
  assert(eyelid&&!descendants(maskedGroup).includes(eyelid),'Blink eyelid must paint over the hole outside its mask');
 }
-async function setup(reduced=false,arrival=true,startMode,customModel){
+async function setup(reduced=false,arrival=true,startMode,customModel,deferSource){
+ const deferredLoads=[];
  let now=0,serial=0,ticks=0,requests=[],timers=new Map();const win=new Target(),doc=new Target(),media=new Target();doc.hidden=false;media.matches=reduced;
  doc.createElementNS=(_,tag)=>new El(tag);doc.createElement=tag=>new El(tag);doc.querySelector=()=>null;
  win.performance={now:()=>now};win.matchMedia=()=>media;win.setTimeout=(fn,ms)=>{let id=++serial;timers.set(id,{fn,at:now+ms});return id};win.clearTimeout=id=>timers.delete(id);
- win.Image=class{set src(s){requests.push(s);queueMicrotask(()=>this.onload())}decode(){return Promise.resolve()}};
+ win.Image=class{set src(s){requests.push(s);if(s===deferSource)deferredLoads.push(()=>this.onload());else queueMicrotask(()=>this.onload())}decode(){return Promise.resolve()}};
  const ctx={window:win,document:doc,module:{exports:{}},Map,Promise};vm.runInNewContext(fs.readFileSync('js/home-magpie.js','utf8'),ctx);
  const host=new El('div');host.ownerDocument=doc;const visit=customModel||model.createVisit(1409,{arrival,...(startMode?{startMode}:{})});let firstReady;const api=ctx.module.exports.mount(host,{model:visit,home:true,onUpdate:s=>{if(s.ready&&!firstReady)firstReady=[...requests]}});
  async function flush(){for(let i=0;i<50;i++)await Promise.resolve()}
  await flush();
  function advance(ms){const end=now+ms;for(;;){const item=[...timers.entries()].sort((a,b)=>a[1].at-b[1].at)[0];if(!item||item[1].at>end)break;now=item[1].at;timers.delete(item[0]);item[1].fn();ticks++;if(ticks>20000)throw Error('loop');}now=end;}
- return {api,doc,media,win,host,requests,timers,advance,flush,visit,firstReady,get ticks(){return ticks}};
+ return {api,doc,media,win,host,requests,timers,advance,flush,visit,firstReady,resolveLoads:()=>deferredLoads.splice(0).forEach(fn=>fn()),get ticks(){return ticks}};
 }
 (async()=>{
  const h=await setup(false,false);
@@ -317,9 +318,72 @@ async function setup(reduced=false,arrival=true,startMode,customModel){
  assert(h.firstReady.includes(model.sheets.neutral.src));assert(!h.firstReady.some(p=>/flight|wings|landing/.test(p)),'seated first display loads only its canonical standing atlas');
  assert(!imageHrefs(h.host).some(p=>/flight|wings/.test(p)),'Inactive flight layers must not trigger eager SVG image loads');
  const late=Array.from({length:50},(_,i)=>60+i).find(t=>h.visit.canReact(t));
- h.api.pause();h.api.seek(late);assert(h.api.react());h.api.seek(2);assert(h.api.react(),'backward seek resets cooldown');
- h.api.seek(late);assert(h.api.react());h.api.seek(h.visit.duration);h.api.play();h.advance(2100);assert(h.api.react(),'replay resets cooldown');
- h.api.seek(late);assert(h.api.react());h.api.setLoop(true);h.api.seek(h.visit.duration-.01);h.advance(2150);assert(h.api.react(),'loop resets cooldown');h.api.destroy();
+ h.api.pause();h.api.seek(late);assert(h.api.react());h.api.seek(2);assert(h.api.react(),'backward seek clears click action');
+ h.api.seek(late);assert(h.api.react());h.api.seek(h.visit.duration);h.api.play();h.advance(2100);assert(h.api.react(),'replay clears click action');
+ h.api.seek(late);assert(h.api.react());h.api.setLoop(true);h.api.seek(h.visit.duration-.01);h.advance(2150);assert(h.api.react(),'loop clears click action');h.api.destroy();
+ // Random click actions reserve their entire duration and cannot be restarted.
+ const clickBase=model.createVisit(24,{startMode:'perched',events:[]});
+ const clickIds=new Set(Array.from({length:80},(_,i)=>clickBase.chooseReaction(2,(i+.5)/80).id));
+ assert.equal(clickIds.size,8,'All eight click actions can be selected');
+ assert(!clickIds.has('blink')&&!clickIds.has('wake'),'Do not choose a blink or the startup-only waking sequence');
+ for(const id of clickIds){
+  const candidate=clickBase.eventCatalog.find(e=>e.id===id);
+  const clickModel={...clickBase,chooseReaction:t=>clickBase.canReact(t,id)?candidate:null};
+  const c=await setup(false,false,'perched',clickModel);
+  c.api.seek(2);assert(c.api.react());assert(!c.api.react(),'Rapid second click must not restart the action');await c.flush();
+  const start=c.api.getState().timeline.activeEvent.start;
+  assert.equal(c.api.getState().timeline.activeEvent.id,id);
+  c.advance((candidate.duration-.1)*1000);
+  assert(!c.api.react(),'Even long8.4-second actions remain locked until completion');
+  assert.equal(c.api.getState().timeline.activeEvent.start,start,'Repeated click preserves the original start time');
+  c.advance(250);assert(c.api.react(),'A completed action may be followed by a new click');
+  c.api.destroy();
+ }
+ const auto=model.createVisit(24,{startMode:'perched',events:[{id:'doze',start:3}]});
+ const autoHost=await setup(false,false,'perched',auto);autoHost.api.seek(4);
+ assert(!autoHost.api.react(),'Clicks cannot interrupt an automatic event');
+ assert.equal(autoHost.api.getState().timeline.activeEvent.id,'doze');autoHost.api.destroy();
+ const near=clickBase.departure-3;
+ for(let i=0;i<20;i++){const e=clickBase.chooseReaction(near,i/20);assert(!e||near+e.duration+.2<clickBase.departure,'Chosen event must finish before departure');}
+ const closeEvent=model.createVisit(24,{startMode:'perched',events:[{id:'preen',start:6}]});
+ for(let i=0;i<20;i++){const e=closeEvent.chooseReaction(2,i/20);assert(!e||2+e.duration+.2<6,'Chosen event must fit before the next automatic event');}
+ // Pointer following reuses every butterfly intermediate, outside the small SVG too.
+ const watcher=await setup(false,false,'perched',clickBase);
+ const watchSvg=descendants(watcher.host).find(n=>n.tag==='svg');
+ watchSvg.getBoundingClientRect=()=>({left:100,top:200,width:368,height:396});
+ const eyeWorld={x:clickBase.perchX+clickBase.eye.x,y:clickBase.ground+clickBase.eye.y};
+ const move=(h,dx,dy,type='mouse')=>h.doc.emit('pointermove',{pointerType:type,clientX:100+(eyeWorld.x+dx-230)*2,clientY:200+(eyeWorld.y+dy-104)*2});
+ watcher.api.seek(2);move(watcher,60,-30);
+ const seen=[watcher.api.getState().timeline.gazeIndex||0];
+ for(let i=0;i<35;i++){watcher.advance(45);const index=watcher.api.getState().timeline.gazeIndex||0;if(seen.at(-1)!==index)seen.push(index);}
+ assert.deepEqual(seen,[0,1,2,3,4,5,6,7,8,9,10],'Turn follows all intermediate drawings, without jumping to the target');
+ assert.equal(watcher.api.getState().timeline.activeEvent,null,'Pointer looking does not become an automatic event');
+ assert.equal(watcher.api.getState().timeline.critters.length,0,'Mouse following does not create a butterfly');
+ const heldTicks=watcher.ticks;watcher.advance(100);assert.equal(watcher.ticks,heldTicks,'A held gaze sleeps between normal deadlines');
+ const sourceEye=model.poseEye(watcher.api.getState().timeline.poses[0]),watchLid=descendants(watcher.host).find(n=>n.tag==='circle');
+ close(Number(watchLid.getAttribute('cx')),sourceEye.x,'Blink eyelid follows the turned eye horizontally');close(Number(watchLid.getAttribute('cy')),sourceEye.y,'Blink eyelid follows the turned eye vertically');
+ watcher.doc.emit('pointerleave');const returning=[];
+ for(let i=0;i<35;i++){watcher.advance(45);const index=watcher.api.getState().timeline.gazeIndex||0;if(returning.at(-1)!==index)returning.push(index);}
+ assert.deepEqual(returning,[10,9,8,7,6,5,4,3,2,1,0],'Leaving smoothly returns through the same drawings');
+ watcher.api.seek(2);move(watcher,0,-70,'touch');watcher.advance(300);assert.equal(watcher.api.getState().timeline.gazeIndex||0,0,'Touch movement does not trigger mouse following');
+ move(watcher,0,20);watcher.advance(300);assert.equal(watcher.api.getState().timeline.gazeIndex||0,0,'Below the bird is outside the gaze region');
+ move(watcher,180,-60);watcher.advance(300);assert.equal(watcher.api.getState().timeline.gazeIndex||0,0,'Distant mouse does not distract the bird');
+ move(watcher,0,-70);watcher.advance(900);assert.equal(watcher.api.getState().timeline.gazeIndex,6,'Above the head uses the actual upward-looking pose');
+ assert(watcher.api.react(),'Looking at the mouse does not block a click action');await watcher.flush();assert(watcher.api.getState().timeline.activeEvent);assert.equal(watcher.api.getState().timeline.gazeIndex||0,0,'Click action takes priority over pointer looking');watcher.api.destroy();
+ const watchedAuto=await setup(false,false,'perched',auto);
+ descendants(watchedAuto.host).find(n=>n.tag==='svg').getBoundingClientRect=watchSvg.getBoundingClientRect;
+ watchedAuto.api.seek(4);move(watchedAuto,60,-30);watchedAuto.advance(300);
+ assert.equal(watchedAuto.api.getState().timeline.activeEvent.id,'doze');assert.equal(watchedAuto.api.getState().timeline.gazeIndex||0,0,'Mouse never overrides an automatic action');watchedAuto.api.destroy();
+ const waitingModel={...clickBase,chooseReaction:t=>clickBase.canReact(t,'look')?clickBase.eventCatalog.find(e=>e.id==='look'):null};
+ const waiting=await setup(false,false,'perched',waitingModel,model.sheets.gaze.src);
+ waiting.api.seek(2);const button=waiting.host.children.find(n=>n.className==='hm-magpie-hello');
+ button.emit('pointerenter',{pointerType:'mouse'});button.emit('focus');assert.equal(waiting.api.getState().timeline.activeEvent,null,'Hover and focus alone do not start actions');
+ button.emit('click');assert(!waiting.api.react(),'Loading request also locks repeated clicks');
+ waiting.advance(200);assert.equal(waiting.api.getState().timeline.activeEvent,null,'Keep resting until required pictures have loaded');
+ waiting.resolveLoads();await waiting.flush();assert.equal(waiting.api.getState().timeline.activeEvent.id,'look');waiting.api.destroy();
+ const cancelled=await setup(false,false,'perched',waitingModel,model.sheets.gaze.src);
+ cancelled.api.seek(2);assert(cancelled.api.react());cancelled.api.seek(.5);cancelled.resolveLoads();await cancelled.flush();
+ assert.equal(cancelled.api.getState().timeline.activeEvent,null,'Seeking cancels an obsolete loading request');cancelled.api.destroy();
  const idleModel=model.createVisit(24,{startMode:'perched',events:[]}),ambient=await setup(false,false,'perched',idleModel);
  const firstBlink=idleModel.ambientBlinks[0];
  ambient.advance((firstBlink+.11)*1000);
@@ -352,5 +416,5 @@ async function setup(reduced=false,arrival=true,startMode,customModel){
  }
  const waking=await setup(false,false,'wake');assert.equal(waking.api.getState().timeline.poses[0].sheet,'wake');assert(waking.firstReady.some(p=>p.endsWith('wake.png')));assert(!waking.api.react(),'Do not interrupt waking');waking.advance(5100);assert.equal(waking.api.getState().timeline.poses[0].sheet,'neutral');waking.api.destroy();
  const r=await setup(true,false);assert.equal(r.api.getState().time,.7);assert.equal(r.timers.size,0);assert(!r.requests.some(p=>/flight|wings|landing/.test(p)));assert(!imageHrefs(r.host).some(p=>/flight-body|wings/.test(p)));r.api.destroy();
- console.log(`PASS: 1,000 visits (${arrivals} flying / ${1000-arrivals} seated), start modes ${JSON.stringify(modes)}, nine original whole-bird flight cels, faster approach and recovery, two walk cycles at original cadence, six standing recovery cels, ambient4–7s blinks with idle sleep, shared beak contour and seamless solid ink, all-action eye apertures, preserved closed/frontal/waking eyes, fixed stretch supporting toe, stable walking eye registration, 180-second dwell, shared neutral boundaries, non-overlapping events, real atlas dimensions, every event, lazy initial assets, reduced motion, hidden clock, pause/replay/loop, idle sleep and cooldown reset.`);
+ console.log(`PASS: 1,000 visits (${arrivals} flying / ${1000-arrivals} seated), start modes ${JSON.stringify(modes)}, nine original whole-bird flight cels, faster approach and recovery, two walk cycles at original cadence, six standing recovery cels, ambient4–7s blinks with idle sleep, shared beak contour and seamless solid ink, all-action eye apertures, preserved closed/frontal/waking eyes, fixed stretch supporting toe, stable walking eye registration, 180-second dwell, shared neutral boundaries, non-overlapping events, real atlas dimensions, every event, lazy initial assets, reduced motion, hidden clock, pause/replay/loop, idle sleep, random click actions, uninterrupted events, pending-load lock, smooth pointer gaze with event priority and playback resets.`);
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -9,7 +9,7 @@
     if (!container || !model) return null;
     const doc = container.ownerDocument || document;
     const media = global.matchMedia('(prefers-reduced-motion: reduce)');
-    const id = 'hmBird' + (++serial), images = new Map(), removers = [];
+    const id = 'hmBird' + (++serial), images = new Map(), loadedImages = new Set(), removers = [];
     const settled = Number.isFinite(model.settled) ? model.settled : 5.8;
     const staticTime = Number.isFinite(model.staticTime) ? model.staticTime : settled + .7;
     const arrivalSheets = ['flight','braking','brakingBridge','landing','settle','walk'].filter(name=>model.sheets[name]);
@@ -17,8 +17,9 @@
     const startupSheets = media.matches ? [] : [...new Set(model.timeline(0).poses.map(pose=>pose.sheet))];
     let current = media.matches ? staticTime : 0, speed = 1, loop = false;
     let wanted = opt.autoplay !== false, ready = false, dead = false, failure = null;
-    let inView = true, pageAway = false, timer = 0, lastClock = null, reactionStart = null;
-    let lastReaction = -Infinity, extraStarted = false, lastState = null;
+    let inView = true, pageAway = false, timer = 0, lastClock = null, reaction = null;
+    let reactionRequest = 0, reactionPending = false, extraStarted = false, lastState = null;
+    let pointer = null, lookIndex = 0, lookTarget = 0, lookNext = 0, lookLoading = false;
     const fallback = container.querySelector('.hm-logo');
     function node(tag, attrs, parent) {
       const n = doc.createElementNS(NS, tag);
@@ -79,8 +80,8 @@
       container.classList.add('hm-magpie');
       hello = doc.createElement('button');
       hello.className = 'hm-magpie-hello'; hello.type = 'button'; hello.hidden = true;
-      hello.setAttribute('aria-label','까치에게 인사하기');
-      hello.title = '까치에게 인사하기';
+      hello.setAttribute('aria-label','까치와 놀기');
+      hello.title = '누르면 까치가 무작위 행동을 해요';
       container.appendChild(hello);
       motionToggle = doc.createElement('button');
       motionToggle.className = 'hm-magpie-toggle'; motionToggle.type = 'button'; motionToggle.hidden = true;
@@ -118,9 +119,46 @@
       attr(n.image,'width',sheet.width); attr(n.image,'height',sheet.height);
       attr(n.image,'href',asset(sheet.src));
     }
+    function resetLook() {pointer=null;lookIndex=lookTarget=0;lookNext=current;}
+    function updateLook() {
+      const idle=ready&&!media.matches&&!reactionPending&&!lastState.activeEvent&&current>=Math.max(settled,model.introDuration||0)&&current<model.departure;
+      if(!idle){lookIndex=lookTarget=0;lookNext=current+.11;return;}
+      const loaded=['lookUp','lookBetween'].every(name=>loadedImages.has(model.sheets[name].src));
+      const target=loaded?model.gazeTarget(pointer,lookTarget):0;
+      if(target!==lookTarget&&lookIndex===lookTarget)lookNext=current+.11;
+      lookTarget=target;
+      if(lookIndex!==lookTarget&&current+1e-8>=lookNext){lookIndex+=Math.sign(lookTarget-lookIndex);lookNext=current+.11;}
+      if(lookIndex>0){lastState.poses=[model.gazePose(lookIndex)];lastState.phase='마우스를 바라보는 중';}
+      lastState.gazeIndex=lookIndex;
+      if(lookIndex!==lookTarget)lastState.moving=true;
+    }
+    function clearPointer() {
+      if(!pointer&&lookIndex===0)return;
+      pointer=null;
+      if(running()){account();draw();schedule();}
+    }
+    function pointerMove(event) {
+      if(event.pointerType&&event.pointerType!=='mouse'){clearPointer();return;}
+      if(!running()||!svg.getBoundingClientRect)return;
+      const rect=svg.getBoundingClientRect(),view=opt.home?[230,104,184,198]:[0,0,640,360];
+      const scale=Math.min(rect.width/view[2],rect.height/view[3]);if(!(scale>0))return;
+      const point={x:view[0]+(event.clientX-rect.left-(rect.width-view[2]*scale)/2)/scale,y:view[1]+(event.clientY-rect.top-(rect.height-view[3]*scale)/2)/scale};
+      const target=model.gazeTarget(point,lookTarget);
+      pointer=target?point:null;
+      if(target&&!lookLoading&&!['lookUp','lookBetween'].every(name=>loadedImages.has(model.sheets[name].src))){
+        lookLoading=true;
+        Promise.all(['lookUp','lookBetween'].map(name=>load(model.sheets[name].src))).then(()=>{
+          lookLoading=false;if(running()&&pointer){account();draw();schedule();}
+        },fail);
+      }
+      if(lastState&&lastState.activeEvent)return;
+      if(target===lookTarget)return;
+      account();draw();schedule();
+    }
     function draw() {
       if (dead) return;
-      lastState = model.timeline(current,{reactionStart});
+      lastState = model.timeline(current,{reaction});
+      updateLook();
       attr(bird,'transform','translate('+lastState.x+' '+lastState.y+')');
       attr(bird,'opacity',lastState.opacity);
       birds.forEach((n,i)=>showLayer(n,lastState.poses[i]));
@@ -142,6 +180,7 @@
         attr(eyeTrim,'d',eyes.map(e=>ellipse(e,e.coverRadius,e.coverRadius)).join(' '));
         attr(eyeAperture,'d',eyes.map(e=>ellipse(e,e.radius,e.radiusY)).join(' '));
       }
+      if(eyes.length){attr(eyelid,'cx',eyes[0].x);attr(eyelid,'cy',eyes[0].y);}
       attr(eyelid,'opacity',lastState.blink||0);
       critters.forEach((n,i)=>{
         const c=(lastState.critters||[])[i];
@@ -168,7 +207,7 @@
       const promise = new Promise((resolve,reject)=>{
         const img = new global.Image();
         img.onload = () => {
-          (img.decode ? img.decode() : Promise.resolve()).then(()=>resolve(img),reject);
+          (img.decode ? img.decode() : Promise.resolve()).then(()=>{loadedImages.add(src);resolve(img);},reject);
         };
         img.onerror = reject; img.src = asset(src);
       });
@@ -185,7 +224,7 @@
       cancel();
       if (!running()) return;
       lastClock = global.performance.now();
-      let deadline = model.nextChange(current,{reactionStart});
+      let deadline = model.nextChange(current,{reaction});
       if (lastState && lastState.moving) deadline = Math.min(deadline,current+1/24);
       if (!Number.isFinite(deadline)) deadline = model.duration;
       if (current >= model.duration) return;
@@ -195,7 +234,7 @@
       if (!running()) {lastClock=null;return;}
       account();
       if (current >= model.duration) {
-        if (loop) {current=0;reactionStart=null;lastReaction=-Infinity;} else wanted=false;
+        if (loop) {current=0;resetReaction();} else wanted=false;
       }
       draw();preloadExtra();schedule();
     }
@@ -203,31 +242,52 @@
     function play() {
       if (dead || failure) return;
       account();
-      if (current >= model.duration) {current=0;reactionStart=null;lastReaction=-Infinity;}
+      if (current >= model.duration) {current=0;resetReaction();}
       wanted=true;draw();preloadExtra();schedule();
     }
     function seek(value) {
       account();
       const next = Math.max(0,Math.min(model.duration,Number(value)||0));
-      if (next < current) lastReaction=-Infinity;
-      current=next;reactionStart=null;
+      current=next;resetReaction();
       draw();preloadExtra();schedule();
     }
     function setSpeed(value) {
       account();speed=Math.max(.1,Math.min(20,Number(value)||1));schedule();notify();
     }
+    function resetReaction() {reaction=null;reactionPending=false;reactionRequest++;resetLook();}
     function react() {
       account();
-      if (!ready || dead || failure || media.matches || !model.canReact(current) || current-lastReaction<8) {schedule();return false;}
-      lastReaction=current;reactionStart=current;draw();schedule();return true;
+      // Never restart or replace an automatic action, a click action, or a pending load.
+      if (!ready || dead || failure || media.matches || reactionPending || model.timeline(current,{reaction}).activeEvent) {schedule();return false;}
+      const chosen=model.chooseReaction(current);
+      if(!chosen){schedule();return false;}
+      const request=++reactionRequest;
+      const sources=model.reactionSheets(chosen.id).map(name=>model.sheets[name].src);
+      const begin=()=>{
+        if(dead||request!==reactionRequest)return;
+        account();reactionPending=false;
+        // Loading may have reached another action or departure; do not interrupt it.
+        if(!failure&&!media.matches&&model.canReact(current,chosen.id)&&!model.timeline(current,{reaction}).activeEvent){
+          reaction={id:chosen.id,start:current};draw();
+        }
+        schedule();
+      };
+      if(sources.every(src=>loadedImages.has(src)))begin();
+      else{reactionPending=true;Promise.all(sources.map(load)).then(begin,fail);schedule();}
+      return true;
     }
     function visibility() {account();cancel();if (running()) {draw();preloadExtra();schedule();} else notify();}
-    listening(doc,'visibilitychange',visibility);
+    listening(doc,'pointermove',pointerMove);
+    listening(doc,'pointerleave',clearPointer);
+    listening(global,'blur',clearPointer);
+    listening(global,'scroll',clearPointer);
+    listening(global,'resize',clearPointer);
+    listening(doc,'visibilitychange',()=>{if(doc.hidden)clearPointer();visibility();});
     listening(global,'pagehide',()=>{account();pageAway=true;cancel();});
     listening(global,'pageshow',()=>{pageAway=false;visibility();});
     listening(media,'change',()=>{
-      account();cancel();reactionStart=null;
-      if (media.matches) {current=staticTime;lastReaction=-Infinity;}
+      account();cancel();resetReaction();
+      if (media.matches) {current=staticTime;}
       else if (ready && model.arrival !== false && arrivalSheets.some(name=>!images.has(model.sheets[name].src))) {
         // A visitor can change the OS preference without reloading the page.
         ready=false;
@@ -239,8 +299,7 @@
       draw();preloadExtra();schedule();
     });
     if (hello) {
-      listening(hello,'pointerenter',e=>{if(e.pointerType!=='touch') react();});
-      listening(hello,'focus',react);listening(hello,'click',react);
+      listening(hello,'click',react);
       listening(motionToggle,'click',()=>{wanted && current < model.duration ? pause() : play();});
     }
     let observer;

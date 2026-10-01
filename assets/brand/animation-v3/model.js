@@ -152,7 +152,30 @@
     for(let i=0;i<32;i++)add(departure+1.12+i*.077,'flight',(i+6)%9);
     const blinkAt=u=>smooth(u/.07)*(1-smooth((u-.18)/.12));
     function scheduled(t){return events.find(e=>t>=e.start&&t<e.start+e.duration)||null;}
-    function canReact(t){return t>=Math.max(settled+1,introDuration)&&t<departure-3&&!scheduled(t)&&events.every(e=>e.start<=t||e.start-t>byId.react.duration+.2);}
+    const reactionIds=['look','preen','peek','stretch','doze','worm','butterfly','react'];
+    function canReact(t,id='react'){
+      const event=byId[id];
+      return reactionIds.includes(id)&&t>=Math.max(settled+1,introDuration)&&t+event.duration+.2<departure&&!scheduled(t)&&events.every(e=>e.start<=t||e.start-t>event.duration+.2);
+    }
+    function chooseReaction(t,sample=Math.random()){
+      const available=reactionIds.filter(id=>canReact(t,id));
+      return available.length?{...byId[available[Math.min(available.length-1,Math.floor(clamp(sample)*available.length))]]}:null;
+    }
+    function gazePose(index){const step=gazeSteps[Math.round(clamp(index,0,gazeSteps.length-1))];return pose(step[0],step[1]);}
+    function gazeTarget(point,previous=0){
+      if(!point||!Number.isFinite(point.x+point.y))return 0;
+      const dx=point.x-PERCH_X-eye.x,dy=point.y-GROUND-eye.y;
+      if(dy> -4||dy< -115||Math.abs(dx)>100||Math.hypot(dx,dy)>130)return 0;
+      const angle=Math.atan2(-dy,dx)*180/Math.PI;
+      let best=0;gazeSteps.forEach((step,i)=>{if(Math.abs(step[2]-angle)<Math.abs(gazeSteps[best][2]-angle))best=i;});
+      const held=Math.round(clamp(previous,0,gazeSteps.length-1));
+      // A small angular margin prevents flickering at a pose boundary.
+      return Math.abs(gazeSteps[held][2]-angle)<=Math.abs(gazeSteps[best][2]-angle)+3?held:best;
+    }
+    function reactionSheets(id){
+      if(!reactionIds.includes(id))return [];
+      return [...new Set(['neutral',...sequences[id].map(key=>key[1]),...(id==='worm'?['critters']:id==='butterfly'?['lookUp','lookBetween','critters']:[])])];
+    }
     function timeline(seconds,options={}){
       const t=clamp(Number.isFinite(seconds)?seconds:0,0,duration);
       let x=LAND_X,y=GROUND,opacity=1,phase='머무름',moving=true,activeEvent=null,critters=[],blink=0;
@@ -164,8 +187,8 @@
       else if(arrival&&t<settled){x=mix(LAND_X,PERCH_X,smooth((t-WALK_START)/WALK_DURATION));phase='중앙까지 걷기';}
       else if(t<departure){
         x=PERCH_X;phase='우물 위에서 쉬는 중';moving=false;poses=[rest()];activeEvent=t<introDuration?{...byId.wake,start:0}:scheduled(t);
-        const rs=options.reactionStart;
-        if(!activeEvent&&Number.isFinite(rs)&&t>=rs&&t<rs+byId.react.duration&&canReact(rs))activeEvent={...byId.react,start:rs};
+        const reaction=options.reaction,event=reaction&&byId[reaction.id];
+        if(!activeEvent&&event&&Number.isFinite(reaction.start)&&t>=reaction.start&&t<reaction.start+event.duration&&canReact(reaction.start,reaction.id))activeEvent={...event,start:reaction.start};
         if(activeEvent){
           const e=activeEvent,u=t-e.start;moving=true;phase=e.label;poses=sequence(u,sequences[e.id]);
           if(e.id==='blink')blink=blinkAt(u);
@@ -213,7 +236,7 @@
       const e=poseEye(p);return e?{x:e.x,y:e.y,clear:[-18,-4.5,20,14.5],joinX:3,contour:PROFILE_CONTOURS[p.sheet][p.index]}:null;
     }
     const eye={x:(118-FRAMES.neutral[0].anchor[0])*FRAMES.neutral[0].scaleX,y:(224-FRAMES.neutral[0].anchor[1])*FRAMES.neutral[0].scale,radius:1.4};
-    return{duration,departure,arrival,arrivalTiming,startMode,introDuration,staticTime,settled,stay:departure-settled,ground:GROUND,perchX:PERCH_X,eye,poseEye,poseEyes,poseProfile,sheets,frames:FRAMES,eventCatalog,events,ambientBlinks,timeline,nextChange,canReact,geometry,createVisit,createDemo};
+    return{duration,departure,arrival,arrivalTiming,startMode,introDuration,staticTime,settled,stay:departure-settled,ground:GROUND,perchX:PERCH_X,eye,poseEye,poseEyes,poseProfile,sheets,frames:FRAMES,eventCatalog,events,ambientBlinks,timeline,nextChange,canReact,chooseReaction,reactionSheets,gazePose,gazeTarget,geometry,createVisit,createDemo};
   }
   function createDemo(id){if(!byId[id])throw new Error('Unknown event '+id);return createVisit(1,{arrival:true,events:[{id,start:7}],departure:Math.max(17,7+byId[id].duration+2)});}
   const api=createVisit(1409);
