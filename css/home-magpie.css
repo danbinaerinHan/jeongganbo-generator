@@ -1,0 +1,24 @@
+/* Clip decorative fly-in at the viewport edge without creating a scroll container
+ * in browsers supporting overflow: clip. Older browsers retain ordinary page scrolling. */
+body.home { overflow-x: hidden; }
+@supports (overflow: clip) { body.home { overflow-x: clip; } }
+/* The original logo reserves its exact space. Flight artwork never intercepts links. */
+.hm-magpie { position: relative; width: 130px; height: 140px; flex: 0 0 auto; }
+.hm-magpie-scene { display: block; width: 100%; height: auto; pointer-events: none; }
+.hm-magpie > .hm-magpie-scene { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hm-magpie-hello { position: absolute; left: calc(50% - 22px); top: 24px; width: 44px; height: 44px;
+  padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--ink); cursor: pointer; }
+.hm-magpie-hello:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 640px) {
+  .hm-magpie { width: 98px; height: 105px; }
+  .hm-magpie-hello { top: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .hm-magpie-hello { display: none; } }
+
+.hm-magpie-toggle { position: absolute; right: 0; bottom: 0; width: 28px; height: 28px;
+  display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%;
+  background: var(--panel); color: var(--ink); font: 12px/1 system-ui, sans-serif;
+  opacity: .5; cursor: pointer; }
+.hm-magpie-toggle:hover, .hm-magpie-toggle:focus-visible { opacity: 1; }
+.hm-magpie-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .hm-magpie-toggle { display: none; } }

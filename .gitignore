@@ -40,3 +40,20 @@ server/admin.local.json
 # 배포되는 것은 docs/ngc/index.html 한 장뿐이다(제안/단독본-만들기.py 가 만든다).
 제안/
 
+
+# 우물사이 홈페이지 까치 애니메이션 — 배포 이미지와 최종 편집 원본
+!/assets/brand/animation-v1/well.png
+!/assets/brand/animation-v10/art/look-up.png
+!/assets/brand/animation-v11/art/look-between.png
+!/assets/brand/animation-v12/art/braking.png
+!/assets/brand/animation-v13/art/settle.png
+!/assets/brand/animation-v3/art/critters.png
+!/assets/brand/animation-v6/art/bow.png
+!/assets/brand/animation-v6/art/flight.png
+!/assets/brand/animation-v6/art/gaze.png
+!/assets/brand/animation-v6/art/preen.png
+!/assets/brand/animation-v6/art/stretch.png
+!/assets/brand/animation-v6/art/takeoff.png
+!/assets/brand/animation-v6/art/wake.png
+!/assets/brand/animation-v6/art/walk.png
+!/assets/brand/animation-v8/art/landing.png

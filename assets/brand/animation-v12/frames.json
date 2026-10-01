@@ -1,0 +1,216 @@
+{
+  "frames": {
+    "braking": [
+      {
+        "cell": [
+          38,
+          67,
+          379,
+          318
+        ],
+        "anchor": [
+          162.70195975374997,
+          471.8333399845
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          458,
+          81,
+          382,
+          308
+        ],
+        "anchor": [
+          582.20195975375,
+          471.42715014878326
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          885,
+          81,
+          358,
+          334
+        ],
+        "anchor": [
+          1011.70195975375,
+          469.8385613890624
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          47,
+          462,
+          373,
+          330
+        ],
+        "anchor": [
+          172.70195975374997,
+          836.7625448264815
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          460,
+          474,
+          379,
+          322
+        ],
+        "anchor": [
+          586.70195975375,
+          828.8940715821846
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          883,
+          462,
+          361,
+          342
+        ],
+        "anchor": [
+          1010.70195975375,
+          826.9281127773155
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          49,
+          858,
+          370,
+          343
+        ],
+        "anchor": [
+          173.70195975374997,
+          1237.3333399845
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          460,
+          858,
+          380,
+          362
+        ],
+        "anchor": [
+          585.70195975375,
+          1226.4836229704376
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      },
+      {
+        "cell": [
+          882,
+          853,
+          361,
+          372
+        ],
+        "anchor": [
+          1007.70195975375,
+          1225.8950342107169
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      }
+    ],
+    "brakingBridge": [
+      {
+        "cell": [
+          0,
+          0,
+          380,
+          351
+        ],
+        "anchor": [
+          125.70195975374999,
+          370.0596395330186
+        ],
+        "scale": 0.24,
+        "scaleX": 0.24,
+        "grounded": false
+      }
+    ]
+  },
+  "steps": [
+    [
+      "braking",
+      1
+    ],
+    [
+      "braking",
+      2
+    ],
+    [
+      "braking",
+      3
+    ],
+    [
+      "braking",
+      4
+    ],
+    [
+      "braking",
+      5
+    ],
+    [
+      "brakingBridge",
+      0
+    ],
+    [
+      "braking",
+      7
+    ],
+    [
+      "braking",
+      8
+    ]
+  ],
+  "scale": 0.24,
+  "headPath": {
+    "start": {
+      "x": -16.968470340899998,
+      "y": -47.00000159628,
+      "radius": 1.15,
+      "radiusY": 1.15,
+      "coverRadius": 2.25
+    },
+    "end": {
+      "x": -16.968476699999997,
+      "y": -44.15732265000001,
+      "radius": 1.15,
+      "radiusY": 1.15,
+      "coverRadius": 2.25
+    },
+    "method": "Smooth eye registration from flight to grounded landing2; uniform scale .24 for every intermediate."
+  },
+  "timing": {
+    "first": 2.76,
+    "interval": 0.085,
+    "contactPose": 3.45,
+    "touchdown": 3.5
+  }
+}

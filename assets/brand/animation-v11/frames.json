@@ -1,0 +1,96 @@
+{
+  "frames": [
+    {
+      "cell": [
+        46,
+        89,
+        460,
+        375
+      ],
+      "anchor": [
+        203.71022239747631,
+        459
+      ],
+      "scale": 0.1902,
+      "scaleX": 0.1902,
+      "grounded": true
+    },
+    {
+      "cell": [
+        551,
+        75,
+        445,
+        389
+      ],
+      "anchor": [
+        699.7102223974763,
+        458
+      ],
+      "scale": 0.1902,
+      "scaleX": 0.1902,
+      "grounded": true
+    },
+    {
+      "cell": [
+        1056,
+        78,
+        439,
+        386
+      ],
+      "anchor": [
+        1190.7102223974764,
+        459
+      ],
+      "scale": 0.1902,
+      "scaleX": 0.1902,
+      "grounded": true
+    },
+    {
+      "cell": [
+        101,
+        564,
+        404,
+        379
+      ],
+      "anchor": [
+        206.21022239747631,
+        937
+      ],
+      "scale": 0.1902,
+      "scaleX": 0.1902,
+      "grounded": true
+    },
+    {
+      "cell": [
+        599,
+        570,
+        394,
+        373
+      ],
+      "anchor": [
+        699.2102223974763,
+        938
+      ],
+      "scale": 0.1902,
+      "scaleX": 0.1902,
+      "grounded": true
+    },
+    {
+      "cell": [
+        1084,
+        562,
+        403,
+        381
+      ],
+      "anchor": [
+        1186.2102223974764,
+        938
+      ],
+      "scale": 0.1902,
+      "scaleX": 0.1902,
+      "grounded": true
+    }
+  ],
+  "scale": 0.1902,
+  "registration": "One uniform atlas scale. Align belly center and planted sole to canonical neutral. Frame0 is reference only, aliases canonical neutral."
+}

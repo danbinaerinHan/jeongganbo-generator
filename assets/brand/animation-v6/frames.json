@@ -1,0 +1,1503 @@
+{
+  "frames": {
+    "bow": [
+      {
+        "cell": [
+          46,
+          62,
+          359,
+          325
+        ],
+        "anchor": [
+          177.0,
+          381
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          443,
+          56,
+          355,
+          331
+        ],
+        "anchor": [
+          591.5,
+          381
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          849,
+          66,
+          366,
+          321
+        ],
+        "anchor": [
+          1004.5,
+          381
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          42,
+          465,
+          359,
+          329
+        ],
+        "anchor": [
+          179.0,
+          788
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          441,
+          472,
+          364,
+          321
+        ],
+        "anchor": [
+          592.0,
+          787
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          869,
+          472,
+          346,
+          321
+        ],
+        "anchor": [
+          1005.0,
+          787
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          69,
+          880,
+          332,
+          321
+        ],
+        "anchor": [
+          179.0,
+          1195
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          483,
+          879,
+          311,
+          322
+        ],
+        "anchor": [
+          592.0,
+          1195
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      },
+      {
+        "cell": [
+          911,
+          871,
+          301,
+          330
+        ],
+        "anchor": [
+          1005.5,
+          1196
+        ],
+        "scale": 0.2220734,
+        "scaleX": 0.2220734,
+        "grounded": true
+      }
+    ],
+    "flight": [
+      {
+        "cell": [
+          53,
+          83,
+          361,
+          305
+        ],
+        "anchor": [
+          172.7565,
+          476.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          446,
+          130,
+          360,
+          258
+        ],
+        "anchor": [
+          565.2565,
+          476.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          841,
+          201,
+          361,
+          187
+        ],
+        "anchor": [
+          960.2565,
+          476.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          54,
+          597,
+          360,
+          203
+        ],
+        "anchor": [
+          173.2565,
+          812.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          447,
+          598,
+          360,
+          212
+        ],
+        "anchor": [
+          565.7565,
+          812.5598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          841,
+          598,
+          361,
+          156
+        ],
+        "anchor": [
+          960.2565,
+          813.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          54,
+          892,
+          360,
+          261
+        ],
+        "anchor": [
+          173.2565,
+          1241.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          447,
+          877,
+          359,
+          276
+        ],
+        "anchor": [
+          565.7565,
+          1241.5598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          842,
+          847,
+          360,
+          306
+        ],
+        "anchor": [
+          960.2565,
+          1241.5598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      }
+    ],
+    "gaze": [
+      {
+        "cell": [
+          36,
+          50,
+          362,
+          327
+        ],
+        "anchor": [
+          169.0,
+          372
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          465,
+          50,
+          342,
+          328
+        ],
+        "anchor": [
+          583.5,
+          372
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          892,
+          50,
+          330,
+          328
+        ],
+        "anchor": [
+          1000.0,
+          372
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          98,
+          458,
+          299,
+          329
+        ],
+        "anchor": [
+          179.5,
+          782
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          504,
+          457,
+          303,
+          330
+        ],
+        "anchor": [
+          585.5,
+          781
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          917,
+          457,
+          305,
+          330
+        ],
+        "anchor": [
+          1002.0,
+          781
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          97,
+          863,
+          300,
+          327
+        ],
+        "anchor": [
+          170.0,
+          1184
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          503,
+          863,
+          305,
+          326
+        ],
+        "anchor": [
+          586.5,
+          1184
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      },
+      {
+        "cell": [
+          921,
+          863,
+          302,
+          327
+        ],
+        "anchor": [
+          1004.5,
+          1184
+        ],
+        "scale": 0.2255959,
+        "scaleX": 0.2255959,
+        "grounded": true
+      }
+    ],
+    "landing": [
+      {
+        "cell": [
+          52,
+          88,
+          359,
+          301
+        ],
+        "anchor": [
+          169.4029,
+          469.0405
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": false
+      },
+      {
+        "cell": [
+          458,
+          99,
+          357,
+          295
+        ],
+        "anchor": [
+          574.4029,
+          465.0405
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": false
+      },
+      {
+        "cell": [
+          853,
+          110,
+          353,
+          334
+        ],
+        "anchor": [
+          971.4029,
+          446.0405
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": false
+      },
+      {
+        "cell": [
+          47,
+          470,
+          359,
+          329
+        ],
+        "anchor": [
+          166.5,
+          793
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": true
+      },
+      {
+        "cell": [
+          458,
+          548,
+          358,
+          247
+        ],
+        "anchor": [
+          590.0,
+          789
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": true
+      },
+      {
+        "cell": [
+          855,
+          603,
+          366,
+          190
+        ],
+        "anchor": [
+          1008.5,
+          788
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": true
+      },
+      {
+        "cell": [
+          51,
+          990,
+          372,
+          205
+        ],
+        "anchor": [
+          179.5,
+          1189
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": true
+      },
+      {
+        "cell": [
+          459,
+          968,
+          351,
+          227
+        ],
+        "anchor": [
+          586.5,
+          1189
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": true
+      },
+      {
+        "cell": [
+          847,
+          895,
+          354,
+          300
+        ],
+        "anchor": [
+          987.0,
+          1187
+        ],
+        "scale": 0.2574771,
+        "scaleX": 0.2574771,
+        "grounded": true
+      }
+    ],
+    "preen": [
+      {
+        "cell": [
+          44,
+          68,
+          357,
+          314
+        ],
+        "anchor": [
+          173.0,
+          377
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          461,
+          68,
+          349,
+          315
+        ],
+        "anchor": [
+          585.5,
+          377
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          894,
+          68,
+          325,
+          315
+        ],
+        "anchor": [
+          1001.0,
+          377
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          81,
+          461,
+          320,
+          315
+        ],
+        "anchor": [
+          173.0,
+          770
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          491,
+          461,
+          319,
+          315
+        ],
+        "anchor": [
+          585.5,
+          770
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          901,
+          461,
+          317,
+          314
+        ],
+        "anchor": [
+          998.0,
+          770
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          77,
+          850,
+          324,
+          314
+        ],
+        "anchor": [
+          173.0,
+          1159
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          461,
+          850,
+          348,
+          314
+        ],
+        "anchor": [
+          586.0,
+          1159
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      },
+      {
+        "cell": [
+          848,
+          850,
+          370,
+          314
+        ],
+        "anchor": [
+          1001.0,
+          1159
+        ],
+        "scale": 0.2319957,
+        "scaleX": 0.2319957,
+        "grounded": true
+      }
+    ],
+    "neutral": [
+      {
+        "cell": [
+          119,
+          239,
+          1017,
+          775
+        ],
+        "anchor": [
+          458.5,
+          1008
+        ],
+        "scale": 0.0897803,
+        "scaleX": 0.0897803,
+        "grounded": true
+      }
+    ],
+    "stretch": [
+      {
+        "cell": [
+          44,
+          59,
+          360,
+          324
+        ],
+        "anchor": [
+          176.0,
+          377
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          461,
+          59,
+          358,
+          321
+        ],
+        "anchor": [
+          574.0,
+          374
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          871,
+          60,
+          353,
+          320
+        ],
+        "anchor": [
+          989.5,
+          374
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          44,
+          448,
+          361,
+          336
+        ],
+        "anchor": [
+          157.0,
+          778
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          436,
+          448,
+          387,
+          336
+        ],
+        "anchor": [
+          573.5,
+          778
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          876,
+          453,
+          351,
+          330
+        ],
+        "anchor": [
+          991.0,
+          777
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          46,
+          842,
+          362,
+          317
+        ],
+        "anchor": [
+          157.5,
+          1153
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          455,
+          842,
+          361,
+          322
+        ],
+        "anchor": [
+          597.0,
+          1158
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      },
+      {
+        "cell": [
+          870,
+          841,
+          353,
+          322
+        ],
+        "anchor": [
+          1007.5,
+          1157
+        ],
+        "scale": 0.2245974,
+        "scaleX": 0.2245974,
+        "grounded": true
+      }
+    ],
+    "takeoff": [
+      {
+        "cell": [
+          61,
+          123,
+          349,
+          303
+        ],
+        "anchor": [
+          177.0,
+          420
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": true
+      },
+      {
+        "cell": [
+          453,
+          176,
+          354,
+          250
+        ],
+        "anchor": [
+          583.5,
+          421
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": true
+      },
+      {
+        "cell": [
+          843,
+          82,
+          352,
+          347
+        ],
+        "anchor": [
+          962.2565,
+          455.5598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          56,
+          487,
+          347,
+          277
+        ],
+        "anchor": [
+          174.2565,
+          843.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          451,
+          626,
+          359,
+          183
+        ],
+        "anchor": [
+          569.2565,
+          843.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          854,
+          625,
+          360,
+          180
+        ],
+        "anchor": [
+          972.2565,
+          843.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          53,
+          968,
+          359,
+          194
+        ],
+        "anchor": [
+          172.7565,
+          1242.5598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          455,
+          891,
+          350,
+          270
+        ],
+        "anchor": [
+          573.2565,
+          1241.0598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      },
+      {
+        "cell": [
+          848,
+          853,
+          359,
+          308
+        ],
+        "anchor": [
+          967.2565,
+          1241.5598
+        ],
+        "scale": 0.2485986,
+        "scaleX": 0.2485986,
+        "grounded": false
+      }
+    ],
+    "wake": [
+      {
+        "cell": [
+          42,
+          80,
+          353,
+          308
+        ],
+        "anchor": [
+          175.5,
+          383
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          440,
+          80,
+          353,
+          309
+        ],
+        "anchor": [
+          583.5,
+          383
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          850,
+          79,
+          361,
+          310
+        ],
+        "anchor": [
+          1001.5,
+          383
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          44,
+          467,
+          353,
+          310
+        ],
+        "anchor": [
+          177.0,
+          771
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          449,
+          467,
+          349,
+          309
+        ],
+        "anchor": [
+          584.5,
+          770
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          859,
+          467,
+          353,
+          309
+        ],
+        "anchor": [
+          1002.5,
+          770
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          58,
+          854,
+          339,
+          310
+        ],
+        "anchor": [
+          180.0,
+          1158
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          450,
+          854,
+          353,
+          310
+        ],
+        "anchor": [
+          585.0,
+          1158
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      },
+      {
+        "cell": [
+          855,
+          854,
+          358,
+          311
+        ],
+        "anchor": [
+          1002.0,
+          1159
+        ],
+        "scale": 0.2214667,
+        "scaleX": 0.2214667,
+        "grounded": true
+      }
+    ],
+    "walk": [
+      {
+        "cell": [
+          48,
+          91,
+          452,
+          368
+        ],
+        "anchor": [
+          213.5,
+          453
+        ],
+        "scale": 0.1970011,
+        "scaleX": 0.1970011,
+        "grounded": true
+      },
+      {
+        "cell": [
+          540,
+          91,
+          453,
+          367
+        ],
+        "anchor": [
+          726.5,
+          452
+        ],
+        "scale": 0.1970011,
+        "scaleX": 0.1970011,
+        "grounded": true
+      },
+      {
+        "cell": [
+          1032,
+          92,
+          455,
+          367
+        ],
+        "anchor": [
+          1228.5,
+          453
+        ],
+        "scale": 0.1970011,
+        "scaleX": 0.1970011,
+        "grounded": true
+      },
+      {
+        "cell": [
+          48,
+          573,
+          453,
+          364
+        ],
+        "anchor": [
+          206.5,
+          931
+        ],
+        "scale": 0.1970011,
+        "scaleX": 0.1970011,
+        "grounded": true
+      },
+      {
+        "cell": [
+          540,
+          573,
+          453,
+          365
+        ],
+        "anchor": [
+          768.0,
+          932
+        ],
+        "scale": 0.1970011,
+        "scaleX": 0.1970011,
+        "grounded": true
+      },
+      {
+        "cell": [
+          1033,
+          573,
+          454,
+          368
+        ],
+        "anchor": [
+          1219.5,
+          935
+        ],
+        "scale": 0.1970011,
+        "scaleX": 0.1970011,
+        "grounded": true
+      }
+    ],
+    "critters": [
+      {
+        "cell": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "anchor": [
+          252,
+          389
+        ],
+        "scale": 0.032,
+        "grounded": true
+      },
+      {
+        "cell": [
+          512,
+          0,
+          512,
+          512
+        ],
+        "anchor": [
+          792,
+          390
+        ],
+        "scale": 0.032,
+        "grounded": true
+      },
+      {
+        "cell": [
+          1024,
+          0,
+          512,
+          512
+        ],
+        "anchor": [
+          1292,
+          389
+        ],
+        "scale": 0.032,
+        "grounded": true
+      },
+      {
+        "cell": [
+          0,
+          512,
+          512,
+          512
+        ],
+        "anchor": [
+          285,
+          758
+        ],
+        "scale": 0.043,
+        "grounded": false
+      },
+      {
+        "cell": [
+          512,
+          512,
+          512,
+          512
+        ],
+        "anchor": [
+          852,
+          758
+        ],
+        "scale": 0.043,
+        "grounded": false
+      },
+      {
+        "cell": [
+          1024,
+          512,
+          512,
+          512
+        ],
+        "anchor": [
+          1340,
+          758
+        ],
+        "scale": 0.043,
+        "grounded": false
+      }
+    ]
+  },
+  "sheets": {
+    "bow": {
+      "src": "assets/brand/animation-v6/art/bow.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "flight": {
+      "src": "assets/brand/animation-v6/art/flight.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "gaze": {
+      "src": "assets/brand/animation-v6/art/gaze.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "landing": {
+      "src": "assets/brand/animation-v6/art/landing.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "preen": {
+      "src": "assets/brand/animation-v6/art/preen.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "neutral": {
+      "src": "assets/brand/animation-v6/art/rest.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "stretch": {
+      "src": "assets/brand/animation-v6/art/stretch.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "takeoff": {
+      "src": "assets/brand/animation-v6/art/takeoff.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "wake": {
+      "src": "assets/brand/animation-v6/art/wake.png",
+      "width": 1254,
+      "height": 1254
+    },
+    "walk": {
+      "src": "assets/brand/animation-v6/art/walk.png",
+      "width": 1536,
+      "height": 1024
+    },
+    "critters": {
+      "src": "assets/brand/animation-v3/art/critters.png",
+      "width": 1536,
+      "height": 1024
+    },
+    "well": {
+      "src": "assets/brand/animation-v1/well.png",
+      "width": 1254,
+      "height": 1254
+    }
+  },
+  "registration": {
+    "bow": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.22207337177164752,
+      "scaleY": 0.22207337177164752,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "flight": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.2485985548275862,
+      "scaleY": 0.2485985548275862,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ]
+    },
+    "gaze": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.22559590773485275,
+      "scaleY": 0.22559590773485275,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "landing": {
+      "referenceFrame": 8,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.25747707464285713,
+      "scaleY": 0.25747707464285713,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "preen": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.23199574943558504,
+      "scaleY": 0.23199574943558504,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "neutral": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.08978032473734479,
+      "scaleY": 0.08978032473734479
+    },
+    "stretch": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.2245974049735794,
+      "scaleY": 0.2245974049735794,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "takeoff": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.2485985548275862,
+      "scaleY": 0.2485985548275862,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "wake": {
+      "referenceFrame": 8,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.22146673556779753,
+      "scaleY": 0.22146673556779753,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "walk": {
+      "referenceFrame": 0,
+      "canonicalEye": [
+        -16.968481375358166,
+        -47
+      ],
+      "scaleX": 0.19700109627622175,
+      "scaleY": 0.19700109627622175,
+      "method": "fixed uniform scale: whole torso silhouette area, capped at 110% canonical head width; no per-pose zoom",
+      "bellySize": [
+        25.138484,
+        17.5969388
+      ],
+      "bellyArea": 198.0707222337755
+    },
+    "notes": "Every atlas now uses one fixed uniform scale, calibrated from actual head/torso silhouettes. There is no whole-bird zoom between its poses. White patch area is not a body size metric."
+  }
+}

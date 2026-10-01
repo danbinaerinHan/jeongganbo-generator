@@ -1,0 +1,20 @@
+{
+  "tool": "built-in image_gen",
+  "prompts": [
+    "Use case: illustration-story. Create a precise NINE FRAME hand-drawn whole-bird animation sprite atlas, 3 columns x3 rows, transparent background, square canvas. This is the DECELERATION AND FEET EXTENSION between flying and landing of the existing Korean magpie mascot.\nInput1 is CHARACTER / START reference, nine flight poses: its TOP LEFT pose is exact start. Input2 is END reference, nine landing poses: its TOP RIGHT pose is the intended end, legs extended with wings raised.\nRead new frames left-to-right top-to-bottom:\n0 exact input1 TOP LEFT bird, wings fully raised, horizontal long tail, feet tucked.\n1 same bird, a very slight aerodynamic braking change in wing angle, tiny toes just begin to emerge.\n2 toes emerge slightly more, bent legs still tucked against belly.\n3 thighs begin moving downward, knees remain bent, toes curled.\n4 legs extend about one-third, chest gently pitches upward for braking.\n5 legs half extended, toes gently start opening.\n6 legs three-quarters extended, open toes reaching forward/down.\n7 legs nearly extended, toes reach toward ground, wings still held high to brake.\n8 first soft toe-contact pose like input2 TOP RIGHT, extended legs, raised braking wings.\nCRITICAL consistency: use input1's narrow cute head, same beak length, SAME head and eye size, SAME chest/abdomen volume and long tail length in all9. Input2 supplies LEG POSE only, do not inflate body or head to match a different character. No camera zoom, no increase in body size as feet emerge. The body is a natural complete drawing in every frame: slight pitch is allowed, but avoid rigid fixed-body puppet. Wings ease gradually backward by just a few degrees, no abrupt wing phase changes. Belly outline stays thin and rounded, charcoal #2e2a26 silhouette with white patches. Exactly one small round white eye per side-view bird. Every bird faces LEFT, tail right. Nine FULL birds clearly separated, each same scale, consistent head location within cell, transparent gutters, no overlap/cropping. NO shadows, glow, background, floor, labels, numbers or guidelines. Actual transparent background. Preserve reference long graceful tail and cute plumpness without making it larger.",
+    "Edit this nine-frame magpie landing sprite sheet, keeping the first TWO ROWS exactly unchanged. Keep all head sizes, eye positions, wing angles, long tails and body widths unchanged across ALL frames. Only refine the three birds in the BOTTOM ROW for a smoother final leg reach:\nBottom-left: extend its existing bent legs a little farther down, toes about8 pixels lower; keep the head and wings in place.\nBottom-middle: extend its existing legs farther down, toes about16 pixels lower; make the underside of the belly very slightly rounder/deeper as chest pitches up.\nBottom-right: extend its existing legs to a nearly straight soft landing reach, toes about24 pixels lower, still inside canvas; the belly's underside should be about4 pixels deeper and slightly rounder. Head, chest WIDTH, wings and tail keep their size and positions.\nDo not move or scale the whole birds. Feet extend smoothly beneath the same bird, not detached long stilts. Preserve complete natural silhouettes, thin belly outline, exact charcoal-and-white artwork, grid spacing, actual transparent background. No shadows, glow, labels, ground, extra birds or other edits."
+  ],
+  "references": [
+    "../animation-v6/art/flight.png",
+    "../animation-v8/art/landing.png"
+  ],
+  "selected": "art/braking.png",
+  "webAssets": [
+    "art/braking.webp",
+    "art/braking-bridge.webp"
+  ],
+  "packing": {
+    "codec": "cwebp lossless -exact -z 9",
+    "bridge": "Unmodified pixels cropped from first generated atlas frame7 [460,858,380,351], retained as a small connector between repaired final poses."
+  }
+}

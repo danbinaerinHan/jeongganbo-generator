@@ -1,0 +1,71 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-01",
+  "scope": "Whole-body magpie event animation sprite atlases",
+  "assets": [
+    {
+      "file": "attention.png",
+      "grid": [
+        3,
+        3
+      ],
+      "reference": "../../animation-v2/landing.png",
+      "prompt": "Use case: illustration-story. Asset: transparent square PNG sprite atlas for a Korean magpie logo animation. Reference image is style and identity reference, specifically its BOTTOM RIGHT standing bird: rounded head, tiny white eye, short pointed bill, dark brown ink silhouette, white belly and wing patch, long tail held diagonally upright toward right. Create exactly NINE complete whole-body drawings in strict THREE columns by THREE rows of equal cells. Facing left unless the head direction below changes, body always facing left. No separated body parts. Row1: neutral standing looking left; curious head turned near-front toward viewer; head turned back to look right over shoulder. Row2: mild forward lean looking down into well; deep forward lean looking straight down below feet; normal standing with eye closed in blink. Row3: sleepy head dipping; asleep relaxed eyes closed head slightly tucked; alert awake head lifted. Preserve same body size, foot size, wing markings and tail length throughout. Every cell has both feet PLANTED on identical invisible baseline at 84% of cell height, center between toes at 40% cell width; whole bird including upright tail within 8%-92% cell bounds. Draw poses as naturally connected bird anatomy, not rotated cutout pieces. Keep whole tail root smooth, no jutting triangle. Flat warm near-black brown #2e2a26 and opaque white markings only, no feather texture, no gradients or shadows. Actual transparent exterior alpha. No perch, well, floor, worm, text, labels, grid, checkerboard or watermark. Clean coherent mini logo artwork. Nine poses, one bird per cell.",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-e4d1fe14-ad6d-4691-9b1b-b9b225947b4c.png",
+      "poses": [
+        "neutral",
+        "front",
+        "back",
+        "lookDown",
+        "lookDeep",
+        "blink",
+        "drowsy",
+        "asleep",
+        "alert"
+      ]
+    },
+    {
+      "file": "activity.png",
+      "grid": [
+        3,
+        3
+      ],
+      "reference": "attention.png",
+      "prompt": "Use case: illustration-story. Asset type: transparent square animation sprite atlas. Image1 reference is identity and style; match this exact warm near-black brown and white Korean magpie. Create NINE new coherent full-body bird poses in strict THREE columns by THREE rows equal-cell grid with one complete connected bird per cell. Read row-major. Row1: begin preening, head turning back with beak almost touching folded wing; deep preen with head lowered back and bill tucked into wing feathers; brief fluffy feather-shake, body rounder and feathers gently ruffled. Row2: begin stretching one wing rearwards and one leg backwards while other foot stays on ground; full natural one-wing and same-side-leg stretch, wing extending diagonally behind above back, one foot balancing under body, other leg extended backward; settled neutral standing. Row3: peck preparation, feet planted and head leaning forward-left and down; deep peck with feet planted and beak tip reaching ground just left of toes; swallowing pose, standing upright with head lifted and bill slightly open. No worm is in these cells. Body stays facing LEFT, tail stays long and angled diagonally upper-right except subtle anatomically natural variation, white wing and belly markings, tiny white circular eye. Exact consistent body and head scale across all frames. Draw the WHOLE bird coherently with shoulder/neck/hip changes; never rotate detached parts. Ground baseline same at84% cellheight, foot contact center40%cellwidth. Full extremities fit inside central84% ofcell with8%margin. Flat clean filled logo art, #2e2a26 ink and white markings only, real transparent outer alpha. No floor, perch, tree, well, shadow, gradients, feather veins, text, labels, grid or checkerboard.",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-6d8acaf3-2119-4683-b393-6d53537fb73d.png",
+      "poses": [
+        "preenBegin",
+        "preenDeep",
+        "shake",
+        "stretchBegin",
+        "stretchFull",
+        "settle",
+        "peckBegin",
+        "peckDeep",
+        "swallow"
+      ],
+      "notes": "First cell tail marginally exceeds grid cell; use component bounds for sprite crop."
+    },
+    {
+      "file": "critters.png",
+      "grid": [
+        3,
+        2
+      ],
+      "reference": "attention.png",
+      "prompt": "Use case: illustration-story. Asset: transparent sprite atlas for subtle wildlife events beside a Korean magpie logo. Reference image establishes only flat dark-brown/white style. Draw ONE atlas in strict THREE columns by TWO rows, each equal rectangular cell contains ONE small full creature. TOP ROW is a single tiny friendly inchworm in three successive rightward crawling poses: frame1 low extended body; frame2 middle of body arched up in a loop with head and tail grounded; frame3 extended body with head raised slightly. Rounded segmented silhouette, tiny simple head looking right, at most one tiny white eye, no antenna comedy and no excessive legs, natural cute little caterpillar. BOTTOM ROW is ONE tiny delicate butterfly in three successive wingbeat poses: frame1 both wings fully open symmetrically in gentle three-quarter view; frame2 wings half folded upwards; frame3 narrow wings nearly closed upright. Body facing upper-right, simple natural four-lobed wings and fine antennae. Use same creature identity and body size through each row; bodycenter identical across cells. Dark warm-brown #2e2a26 with restrained white butterfly markings. Fill only central60% of every cell; keep20% margin each side. Clean flat miniature logo silhouettes, no outlines, gradients, shading, textures, birds, plants, floor, text, labels, cell grid or checkerboard. Real transparent alpha exterior. All extremities fully inside each cell.",
+      "correctionPrompt": "Edit target: the transparent critter sprite sheet. Keep the same six creature poses and exact layout:3columns2rows,3rightfacing inchworms on top,3butterfly wing poses on bottom. Correct ONLY rendering and transparency: remove ALL brown smoky halos, glow, shadow and soft gradient surrounding every creature. Creature silhouettes must be completely OPAQUE solid flat #2e2a26 brown ink with clean crisp antialiased edges, white tiny eye and butterfly markings. Exterior must be exactly alphaZERO immediately outside crisp silhouettes. No lighting, no transparency inside the dark silhouettes, no soft edges, no texture. The clean opaque filled shapes must read strongly against both white and transparent backgrounds. Keep all six full subjects within their existing cells, no text or grid.",
+      "discardedSource": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-25f2d710-4612-4490-b12a-2e75210c6893.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-9bbc84e4-9144-4675-b2d6-88a3628214f1.png",
+      "poses": [
+        "wormExtended",
+        "wormArched",
+        "wormHeadUp",
+        "butterflyOpen",
+        "butterflyHalf",
+        "butterflyClosed"
+      ],
+      "notes": "Actual alpha inspected via CoreGraphics and composited on white for QA; clean exterior with no smoke/glow despite inline black-background preview artifact."
+    }
+  ]
+}

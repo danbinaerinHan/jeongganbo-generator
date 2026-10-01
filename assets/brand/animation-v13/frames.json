@@ -1,0 +1,96 @@
+{
+  "frames": [
+    {
+      "cell": [
+        47,
+        216,
+        439,
+        240
+      ],
+      "anchor": [
+        196.63391854157157,
+        448
+      ],
+      "scale": 0.1970011,
+      "scaleX": 0.1970011,
+      "grounded": true
+    },
+    {
+      "cell": [
+        547,
+        210,
+        446,
+        246
+      ],
+      "anchor": [
+        696.6339185415716,
+        450
+      ],
+      "scale": 0.1970011,
+      "scaleX": 0.1970011,
+      "grounded": true
+    },
+    {
+      "cell": [
+        1040,
+        165,
+        456,
+        291
+      ],
+      "anchor": [
+        1191.1339185415716,
+        450
+      ],
+      "scale": 0.1970011,
+      "scaleX": 0.1970011,
+      "grounded": true
+    },
+    {
+      "cell": [
+        47,
+        589,
+        459,
+        325
+      ],
+      "anchor": [
+        197.13391854157157,
+        908
+      ],
+      "scale": 0.1970011,
+      "scaleX": 0.1970011,
+      "grounded": true
+    },
+    {
+      "cell": [
+        543,
+        567,
+        441,
+        347
+      ],
+      "anchor": [
+        693.1339185415716,
+        908
+      ],
+      "scale": 0.1970011,
+      "scaleX": 0.1970011,
+      "grounded": true
+    },
+    {
+      "cell": [
+        1039,
+        563,
+        457,
+        351
+      ],
+      "anchor": [
+        1189.1339185415716,
+        907
+      ],
+      "scale": 0.1970011,
+      "scaleX": 0.1970011,
+      "grounded": true
+    }
+  ],
+  "scale": 0.1970011,
+  "method": "Grounded sole; measured eye X aligned to canonical. Every new whole-pose frame uses the exact canonical standing scale."
+}

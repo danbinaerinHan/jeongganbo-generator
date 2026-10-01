@@ -20,14 +20,9 @@
      편집기와 같은 styles.css를 싣는 것은 색 변수를 한 곳에 두려는 것이다(공유마당과 같은 규칙). -->
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/home-magpie.css">
 </head>
 <body class="home">
-
-<!-- 윗줄엔 링크만 — 문패는 가운데에 크게 선다(위에 또 두면 두 번 박힌 꼴이다).
-     공유마당은 여기 두지 않는다(사용자 확정, 2026-09-29) — 가운데 문이 이미 그리로 간다. -->
-<nav class="hm-top">
-  <a href="board.html" id="hmBoard" hidden>묻고 제안하기</a>
-</nav>
 
 <main class="hm-main">
   <!-- 가운데 문패 — 로고·이름·부제뿐, 소개 문구는 두지 않는다(사용자 확정: 뻔한 말은 안 쓴다).
@@ -88,6 +83,24 @@
       <span class="hm-desc">자신이 만든 악보를 공유하고 다른 사람들이 공유한 정간보 중 필요한 악보를 찾아 바로 사용할 수 있습니다.</span>
       <span class="hm-extra" id="hmCounts" hidden></span>
     </a>
+
+    <!-- 묻고 제안하기 — 두 문 **아래 길게 한 줄**(2026-10-01 사용자 요청, 예전엔 윗줄 오른쪽의
+         작은 글자 링크라 눈에 안 띄었다). 문 두 짝과 무게를 맞추지 않고 낮은 띠로 둔다 —
+         악보를 쓰고 나누는 일이 아니라 앱에 대해 묻는 곳이라서. 칸 전체가 링크인 것은 문과 같다.
+         `JGB_CLOUD.board`가 꺼져 있으면 숨은 채로 둔다(js/home.js). -->
+    <a class="hm-bar" href="board.html" id="hmBoard" hidden>
+      <!-- 말풍선 둘 — 묻는 것과 답하는 것 -->
+      <svg class="hm-bar-ill" viewBox="0 0 48 36" aria-hidden="true">
+        <path class="hm-grid" d="M4 5 H30 V21 H14 L8 27 V21 H4 Z"/>
+        <path class="hm-sheet" d="M18 13 H44 V29 H40 V35 L34 29 H18 Z"/>
+        <g class="hm-ink"><circle cx="25" cy="21" r="1.6"/><circle cx="31" cy="21" r="1.6"/><circle cx="37" cy="21" r="1.6"/></g>
+      </svg>
+      <span class="hm-bar-text">
+        <span class="hm-name">묻고 제안하기</span>
+        <span class="hm-desc">사용법에 관한 질문과 기능 제안을 남기고, 자주 묻는 질문을 확인할 수 있습니다.</span>
+      </span>
+      <span class="hm-bar-go" aria-hidden="true">→</span>
+    </a>
   </div>
 </main>
 
@@ -100,5 +113,7 @@
 <script src="js/analytics.js"></script>
 <script src="js/cloud-config.js"></script>
 <script src="js/home.js"></script>
+<script src="assets/brand/animation-v3/model.js?v=17"></script>
+<script src="js/home-magpie.js?v=15"></script>
 </body>
 </html>

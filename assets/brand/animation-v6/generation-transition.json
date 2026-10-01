@@ -1,0 +1,61 @@
+{
+  "tool": "image_gen.imagegen",
+  "mode": "built-in",
+  "transparent_background": true,
+  "references": [
+    {
+      "path": "assets/brand/animation-v6/art/rest.png",
+      "role": "canonical rounded magpie identity"
+    }
+  ],
+  "assets": [
+    {
+      "path": "assets/brand/animation-v6/art/flight.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-1e18b151-4cea-44f8-a6fd-034ecbfd2b93.png",
+      "prompt": "Use case: illustration-story. Asset: ONE square transparent PNG animation sprite atlas, exactly9 complete birds in strict3columns by3rows equal-size cells.\nReference image is the EXACT canonical cute Umulsai magpie. Preserve its rounded compact head, short pointed bill, tiny circular white eye, slightly plump pear-shaped belly, opaque white crescent belly patch enclosed by a DELICATE dark curved lower edge, opaque white almond wing patch, sturdy slim feet, and long narrow two-lobed tail. The reference's personality and anatomical proportions must remain recognizable while airborne. Do not redesign into a skinny bird, change eye size, enlarge head or inflate body. No thick contour line around bird.\nAction: smooth continuous nine-frame wingbeat of THIS SAME magpie flying LEFT. Body naturally inclines into horizontal flight but retains head size and body volume. All feet tucked against belly. Long tail trails smoothly right, nearly horizontal. Frame0 wings highest overhead; frame1 halfway downward; frame2 wings nearly horizontal; frame3 low downstroke; frame4 lowest downstroke with gentle flexible primary tips; frame5 wings recover backward with elbow/wrist flexion; frame6 halfway up; frame7 wings rising and opening; frame8 highest overhead, closes cycle into0. Draw actual connected whole-body anatomical poses, no dismembered pieces, every wing rooted firmly in shoulder, no detached wing fragments.\nStyle: dark brown #2e2a26 and opaque white, smooth flat filled logo illustration. White belly remains enclosed within a delicate dark curved body silhouette edge in ALL poses; that edge is built into each drawing, not a heavy outline. No gradients, texture, shading, feather veins, extra contour stroke or shadow.\nRegistration: identical head and torso scale in every cell, body and eye position consistently registered. Entire bird including wings and long tail inside central76% of each equal cell, 12% transparent padding on all sides. True alpha transparency outside bird, white patches remain opaque. Nine distinct complete silhouettes, no crossing cell boundaries, no clipping. No labels, grid lines, text, perch, ground, effects or other objects.",
+      "review": "Nine whole left-facing flight drawings preserve compact rounded head, tiny white eye and fuller belly. White belly enclosed in dark natural silhouette arc; no software outline. All flight artwork is new and references v6 rest."
+    },
+    {
+      "path": "assets/brand/animation-v6/art/landing.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-f01ae9e9-0dcc-4d8d-9103-4996c7f88095.png",
+      "references": [
+        "assets/brand/animation-v6/art/rest.png",
+        "assets/brand/animation-v6/art/flight.png"
+      ],
+      "prompt": "Use case: illustration-story. Asset: one square transparent PNG, exactly9 complete magpie drawings in3columns x3rows equal cells, chronological left to right/top to bottom.\nREFERENCES: Image1 is exact canonical standing character. Image2 is THIS character's approved newly drawn flight wingbeat. Create LANDING poses that continuously connect image2 flight to image1 rest with no identity change.\nCharacter: cute rounded head, short pointed bill, TINY white eye, slightly plump pear-shaped belly, curved opaque white belly patch enclosed in delicate dark lower edge, white almond wing marking, thin dark legs and long two-tipped tail. Keep exact head size/body volume through movement; natural flight streamlining is posture only. Do not make a different skinny bird, big-eyed cartoon or heavy outline.\nNine successive whole-body frames:\n0 matches image2 flight0: horizontal flight LEFT, wings high, tucked feet, long tail trailing right.\n1 brake gently, wings angle up/forward, torso rises a little, tail slightly lowers.\n2 feet extend toward ground, body more upright, wings brake.\n3 toes make contact, legs straight, wings still high and firmly attached.\n4 soft landing crouch: legs bend, torso lowers slightly, both wings HALF folded close to shoulder, still one connected anatomy.\n5 torso rises, wings two-thirds folded.\n6 nearly closed wings and neutral stance.\n7 small final settling, almost image1 neutral.\n8 EXACT image1 neutral standing posture facing LEFT, folded wings, long tail diagonally up-right.\nIn-between drawings must be gradual and anatomically coherent. Never show detached wing or disconnected body part. Wing roots stay attached to back with no gap; do not abruptly switch high wing to fully closed. Preserve eye/beak/head shape across all frames, belly must never inflate or shrink.\nStyle: flat dark brown #2e2a26 and opaque white, smooth filled logo silhouette. White belly is inside body silhouette, enclosed underneath by a delicate dark curved edge drawn into the bird; no thick contour stroke, shadow, gradient, texture or feather veins. Genuine alpha transparent exterior.\nLayout: identical anatomical scale, exactly equal cells, each complete silhouette including tail and wing tips inside central76% with12% transparent margins. No overlap/clipping. Groundedframes3–8 soles at80% cellheight and foot midpoint42% width. No visible grid, text, labels, perch, ground or extras.",
+      "iterations": [
+        {
+          "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-cc114f43-802b-4833-9440-45e867db07e3.png",
+          "issue": "Tail remained horizontal until final upright frame."
+        },
+        {
+          "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-f01ae9e9-0dcc-4d8d-9103-4996c7f88095.png",
+          "prompt": "Edit this landing sprite sheet with ONE precise correction. Preserve all9 magpie drawings, the same3x3 layout, canonical character, head, feet, bodies, wing poses and alpha transparency. Change ONLY the tail angle in the last four frames so its rise is gradual: frame5 (middle row right) tail lifted15 degrees above horizontal; frame6 (bottom left) tail lifted30 degrees above horizontal; frame7 (bottom middle) tail lifted45 degrees above horizontal; frame8 (bottom right) preserve its current fully raised tail about55 degrees above horizontal. Keep same tail length, thickness, dark color and two-lobed tip, with smooth attached rump root. Frame0–4 remain exactly unchanged. Each entire tail remains within its own cell and no clipping. The tail progression must visibly be horizontal→15→30→45→55 degrees, not horizontal until the final jump. Do not alter body size, eye, head, white markings, wing, legs, feet, row positioning, or character style. Do not add contour strokes, shadows, text or grid. True transparent exterior and opaque white patches remain.",
+          "selected": true
+        }
+      ],
+      "review": "Selected revision lifts tail progressively across final frames. Whole-body connected wing-fold sequence, ending canonical upright-tail stance. Frames3–8 grounded; per-frame registration measured by parent."
+    },
+    {
+      "path": "assets/brand/animation-v6/art/takeoff.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-3dd90f7f-779e-40b3-b33b-aea7c9d01bef.png",
+      "references": [
+        "assets/brand/animation-v6/art/rest.png",
+        "assets/brand/animation-v6/art/flight.png"
+      ],
+      "prompt": "Use case: illustration-story. ONE square transparent PNG sprite atlas, exactly9 complete magpies arranged in equal3x3cells, chronological left-right/top-bottom.\nImage1 is the EXACT canonical cute standing magpie. Image2 is its newly drawn matching flight cycle. Produce a continuous TAKEOFF sequence joining image1 to image2. Identity must not change: same rounded compact head, short pointed bill, TINY white dot eye, slightly plump pear-shaped belly with opaque white crescent patch enclosed by delicate dark lower curve, opaque white almond wing marking, long narrow two-tipped tail and two slim legs. Keep same anatomical head size and body volume throughout; moving to horizontal flight is posture change, not different slimmer bird.\nNine whole-body drawings:\n0 EXACT canonical left-facing neutral standing bird, wings closed, tail diagonal up-right.\n1 slight anticipatory crouch, knees flex, wings begin opening, tail lowers slightly.\n2 strong leg push through toes, body extends forward, wings lift high, tail angles halfway down toward horizontal.\n3 feet off ground and tucking toward belly, wings fully up, body approaching horizontal, tail nearly horizontal.\n4 horizontal flight, feet tucked, wings halfway down.\n5 horizontal flight, wings lowest in downstroke with curved primaries.\n6 upstroke recovery, wings flex slightly backward.\n7 wings lift and open.\n8 horizontal flight with wings fully high, matching first frame of image2, long tail trailing horizontally right.\nImportant: tail lowers smoothly through0→1→2→3, no abrupt upright/horizontal jump. Every wing, head, tail, foot is anatomically connected to body; no floating fragments. Draw real whole pose in-betweens, never separate rotating puppet pieces. Slightly plump belly stays the same size, eye stays tiny.\nStyle: flat filled dark brown #2e2a26 and opaque white logo art. White belly enclosed inside a delicate dark curved silhouette edge, drawn as part of bird rather than thick stroke. No software outline, extra contour, gradients, shadows, texture, feather veins or effects.\nLayout: exact3x3 uniform grid without visible borders. Same anatomical scale and consistent body registration. Complete extremities inside central76% of each cell with12% transparent padding, no crossing boundaries/clipping/overlap. Grounded0–2 soles at80% cellheight, footmid42% width. True transparent exterior, white markings opaque. No perch, ground, labels, grid or text.",
+      "iterations": [
+        {
+          "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-b7b9e2d1-2d56-40b5-b9cb-ccb33e7b77eb.png",
+          "issue": "Tail lowered abruptly between initial poses."
+        },
+        {
+          "source": "/Users/handanbinaerin/.codex/generated_images/01a0f70d-7dd1-7701-962d-2d246afedf39/exec-3dd90f7f-779e-40b3-b33b-aea7c9d01bef.png",
+          "prompt": "Precise sprite-sheet edit: ONLY correct the long tail in frame1 and frame2 (top-middle and top-right cells) so takeoff tail lowers gradually. Preserve all9 whole magpie drawings, exact layout, body/head/eye/whitebelly/wing/feet/scale/identity and alpha. Top-left frame0 retains its raised55degree tail. Top-middle frame1 tail must point UP AND RIGHT at35degrees above horizontal, same long narrow two-lobed tail, smooth continuous attached root. Top-right frame2 tail must point UP AND RIGHT at15degrees above horizontal, same length and smooth root. Frames3–8 (lower two rows) keep their existing horizontal trailing tails completely unchanged. These corrected angles produce55→35→15→0degrees, no abrupt pop. Do not alter wing geometry while fixing tails: all wings remain connected. Keep whole tail inside each cell. No extra outline, no shadows, no gradient, no text/grid or background. Transparent exterior, opaque white patches.",
+          "selected": true
+        }
+      ],
+      "review": "Selected revision lowers tail more gradually before horizontal flight. Identity matches newly generated v6 flight and rest. Frames0–1 grounded, frame2 visually begins airborne leg extension. No thick contour stroke."
+    }
+  ]
+}

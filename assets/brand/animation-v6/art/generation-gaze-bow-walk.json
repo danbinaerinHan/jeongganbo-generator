@@ -1,0 +1,36 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-01",
+  "reference": "rest.png",
+  "identity": "Canonical original-inspired cute mildly plump magpie, no uniform outline, natural dark belly arc",
+  "assets": [
+    {
+      "file": "gaze.png",
+      "grid": [
+        3,
+        3
+      ],
+      "prompt": "Use case: illustration-story. Generate one square transparent sprite atlas exactly THREE columns by THREE rows equal cells: nine full connected drawings of EXACT reference magpie doing a smooth head turn, read row-major. Reference is the ONLY canonical identity. Match its cute slightly plump round belly, rounded small head flowing directly into chest WITHOUT skinny neck, tiny white eye, short pointed bill, folded white wing patch, long thick two-lobed tail diagonal up-right at EXACT reference angle/length. White belly enclosed by subtle natural thin dark belly-edge arc as reference; do not add uniform outline anywhere. Same body, wing, tail, legs, planted feet and body scale/location in all frames. Only connected head/neck changes anatomically. Frame0 exact neutral reference looking left;1 slightly toward viewer;2 three-quarter left;3 almost front;4 directly front with two tiny eyes;5 slightly right of viewer;6 three-quarter right;7 almost right profile;8 right profile looking back over shoulder. Nine gradual distinct inbetweens with consistent headvolume and billlength, no randomemotion. Whole bird, no separate parts or seams. Both foot contacts anchored identically at40%cellwidth and82%cellheight. Generous at least10% blank margin on each cell edge, full tailtip fits completely. Flat opaque warmdarkbrown #2e2a26 and opaque white patches; true transparent exterior alpha. No perch,floor,well,text,labels,grid,shadows,gradients,smoke,checkerboard.",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-7db3b33a-133b-467b-82fc-3485cffdea0f.png"
+    },
+    {
+      "file": "bow.png",
+      "grid": [
+        3,
+        3
+      ],
+      "prompt": "Use case: illustration-story. Generate ONE square transparent sprite atlas exactly3columns×3rows equalcells, NINE consecutive BOW/PECK inbetween whole-bird drawings. Attachedimage is ONLY characteridentity reference: cute mildlyplump magpie with roundedhead/roundbelly, shortneck flowing smoothly intochest, smallwhiteeye, shortpointedbill, whitewingpatch and broadwhitebelly enclosed bysubtle naturalthin darkbellyedge arc. NO uniformoutline anywhere, no skinnyneck or skinnytorso. Preservereference thicklong two-lobed tail diagonalup-right angle andlength. Wholeconnectedbird facingleft ineachcell. Frame0 exactneutralcanonical upright;1 slight5degreeforwardheadbow;2 10degreebow;3 18degreebow;4 27degreebow;5 37degreebow;6 48degreebow;7 60degreebow;8 deepestbow withbilltipnearly touchinginvisibleground justleftof toes. Allnine are SMALL progressive realinbetweendrawings, notthreeposes repeated. Keepbothfeet planted identically, bodymass/hips approximatelyfixed, same body/headsize eachcell, subtle naturalbodyflex andtailcounterbalance only. No cutoutparts, all neck/chest/wing connections naturallyredrawn. Feetcontactbaseline82%cellheight, anchor40%cellwidth, entirebird insidecentral80%cell with10%blankmargin onall sidesincludingtailtip. Flat warmdarkbrown #2e2a26 andopaque whitepatches, crispedges, realtransparentoutsidealpha. No floor,perch,well,worm,text,labels,grid,shadow,gradient,smoke,checkerboard.",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-fc163bc2-f545-4696-8129-8a701000b3e1.png"
+    },
+    {
+      "file": "walk.png",
+      "grid": [
+        3,
+        2
+      ],
+      "prompt": "Use case: illustration-story. Create ONE transparent sprite atlas with exactly SIX complete whole connected bird drawings in strict THREEcolumns by TWOrows equalcells. Attachedimage is solecanonicalidentityreference. Preserve cute slightlyplump magpie: roundedhead/roundbelly, shortneck flowingintochest, tinywhiteeye, shortpointedbill, foldedwhitewingpatch, broadwhitebelly withsubtle natural thin darkedge enclosingit. No uniformoutline and no skinnyneck/skinnybody. Matchcanonical long thick two-lobedtail diagonalup-right exactlylength/angle. Sixconsecutive natural walkingLEFT poses:0 neutralbothfeetplantedexactreference;1 nearfoot liftsandswingsforwardleft whilefarfootplanted;2 nearfootplantsforward;3 farfoot liftsandpassessupportfoot;4 farfootlandsforward;5 settlebackintoneutralbothfeetlikeframe0. Wholebody/head/tailscale IDENTICALthroughout. Headfacingleftandstable, foldedwingsstationary, only natural legarticulation andtinyhipbob/tailcounterbalance. Bodyanchorinplace percell, no growing/shrinking. Eachposehasonefootalwaysplanted; groundbaseline82%cellheight. Entirebirdwithtailinsidecentral80%cell withminimum10%blankmargins onallsides. Opaque warmdarkbrown #2e2a26 andwhitepatches, crispsmooth silhouettes, realtransparentoutsidealpha. No floor,perch,well,text,labels,grid,shadow,gradient,smoke,checkerboard.",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-b1cc-7741-9858-b9ee2daccbea/exec-65d26916-1b3d-41d8-9219-3f3a4b9b6cca.png"
+    }
+  ],
+  "qa": "Complete connected silhouettes with opaque white patches; walk reviewed on white composite. Registration needed per-frame. Gaze late frames rotate torso somewhat with head."
+}

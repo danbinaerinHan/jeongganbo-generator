@@ -1,0 +1,64 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "identityReference": "/Users/handanbinaerin/Library/Mobile Documents/com~apple~CloudDocs/정간보 생성기/assets/brand/animation-v6/art/rest.png",
+  "assets": {
+    "preen": {
+      "path": "art/preen.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-75c0-72c1-ab89-6ac7f51261d3/exec-ed2b55b8-3cb9-4054-a225-c36d33c5aac1.png",
+      "prompt": "Use case: illustration-story. Asset: one transparent sprite atlas for a Korean magpie logo animation. The attached image is the ONLY character identity reference. Preserve EXACTLY its original-logo-like cute slightly plump proportions: rounded head flowing into a short relaxed neck, soft oval belly, two short legs, tiny white eye, short pointed beak, and long raised diagonal-right tail with two rounded tip lobes. Keep the white belly patch and white wing patch the same shape/size proportions. The white belly is enclosed by the reference's delicate naturally varying dark silhouette curve: NO thick uniform cartoon outline, no new stroke around white areas, no black border added. Do not make it slender, long-necked, long-legged, realistic, over-detailed or a different bird. Flat warm brown #2e2a26 and opaque white illustration, no outline strokes or feather texture.\nOutput: ONE square transparent PNG, exactly NINE complete whole-bird drawings in a strict equal 3 columns by3 rows grid, read left-to-right then top-to-bottom. TRUE transparent exterior alpha with opaque white belly/wing/eye. Each cell contains ONE fully connected anatomically coherent bird, no detached cutout pieces, no separate body parts or seams. Keep whole-body anatomical size and scale constant. Both feet registered to a common invisible baseline at82% of each cell; body and tail almost fixed except requested action. Entire bird including tail and extended wing tips fit inside its own cell with generous at least10% padding on EVERY side, never touch neighboring cells. Match reference neutral pose exactly whenever neutral requested. No labels, grid, numbers, perch, floor, shadows, text or checkerboard. Draw nine ACTUAL SMALL INTERMEDIATE POSES for a gentle preening cycle:0 exact neutral reference left-profile;1 head turns a little toward viewer, THREE-QUARTER-LEFT with beak still angled LEFT;2 FRONT-facing head, exactly TWO tiny white eyes and centered tiny beak, oval torso remains left-side view;3 head THREE-QUARTER-RIGHT and dipping toward shoulder feathers;4 head naturally curled into shoulder, beak gently preening folded wing;5 lifts out of feathers, THREE-QUARTER-RIGHT;6 FRONT-facing head with exactly two tiny eyes, returning left;7 THREE-QUARTER-LEFT, nearly neutral;8 exact same neutral left-profile reference as0. Left→quarterleft→front→quarterright→preen→quarterright→front→quarterleft→left. Keep cute head its same natural size while turning. Torso, short legs, feet and raised tail remain fixed. No stretched skinny neck and no giant eyes.",
+      "sequence": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    "stretch": {
+      "path": "art/stretch.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-75c0-72c1-ab89-6ac7f51261d3/exec-1a602b74-e1a6-487e-bb7d-99dd48aa262e.png",
+      "prompt": "Use case: illustration-story. Asset: one transparent sprite atlas for a Korean magpie logo animation. The attached image is the ONLY character identity reference. Preserve EXACTLY its original-logo-like cute slightly plump proportions: rounded head flowing into a short relaxed neck, soft oval belly, two short legs, tiny white eye, short pointed beak, and long raised diagonal-right tail with two rounded tip lobes. Keep the white belly patch and white wing patch the same shape/size proportions. The white belly is enclosed by the reference's delicate naturally varying dark silhouette curve: NO thick uniform cartoon outline, no new stroke around white areas, no black border added. Do not make it slender, long-necked, long-legged, realistic, over-detailed or a different bird. Flat warm brown #2e2a26 and opaque white illustration, no outline strokes or feather texture.\nOutput: ONE square transparent PNG, exactly NINE complete whole-bird drawings in a strict equal 3 columns by3 rows grid, read left-to-right then top-to-bottom. TRUE transparent exterior alpha with opaque white belly/wing/eye. Each cell contains ONE fully connected anatomically coherent bird, no detached cutout pieces, no separate body parts or seams. Keep whole-body anatomical size and scale constant. Both feet registered to a common invisible baseline at82% of each cell; body and tail almost fixed except requested action. Entire bird including tail and extended wing tips fit inside its own cell with generous at least10% padding on EVERY side, never touch neighboring cells. Match reference neutral pose exactly whenever neutral requested. No labels, grid, numbers, perch, floor, shadows, text or checkerboard. Draw nine ACTUAL SMALL INTERMEDIATE POSES for one gentle wing stretch:0 exact neutral reference;1 wing starts opening only a tiny amount while weight subtly shifts to supporting short leg;2 wing half opens, same-side leg begins a small backward lift;3 wing mostly opens and that leg stretches back, supporting foot still planted;4 full single-wing stretch and same-side leg stretch, balanced rounded cute body and small head facing left, the other foot fixed to baseline;5 wing returns to three-quarters open and lifted leg begins coming home;6 half-folded wing and halfway-returning leg;7 almost closed wing with foot just about to touch ground;8 exact neutral reference as0. Smooth progressive full-body drawings, never jump from closed to fully open. Tail shape and angle remain reference-consistent and distinct from wing. Supporting foot never slides. No body stretching or change into a skinny bird.",
+      "sequence": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    },
+    "wake": {
+      "path": "art/wake.png",
+      "source": "/Users/handanbinaerin/.codex/generated_images/01a0f708-75c0-72c1-ab89-6ac7f51261d3/exec-09ff7174-fda1-4610-830e-54f7d4f05ffd.png",
+      "prompt": "Use case: illustration-story. Asset: one transparent sprite atlas for a Korean magpie logo animation. The attached image is the ONLY character identity reference. Preserve EXACTLY its original-logo-like cute slightly plump proportions: rounded head flowing into a short relaxed neck, soft oval belly, two short legs, tiny white eye, short pointed beak, and long raised diagonal-right tail with two rounded tip lobes. Keep the white belly patch and white wing patch the same shape/size proportions. The white belly is enclosed by the reference's delicate naturally varying dark silhouette curve: NO thick uniform cartoon outline, no new stroke around white areas, no black border added. Do not make it slender, long-necked, long-legged, realistic, over-detailed or a different bird. Flat warm brown #2e2a26 and opaque white illustration, no outline strokes or feather texture.\nOutput: ONE square transparent PNG, exactly NINE complete whole-bird drawings in a strict equal 3 columns by3 rows grid, read left-to-right then top-to-bottom. TRUE transparent exterior alpha with opaque white belly/wing/eye. Each cell contains ONE fully connected anatomically coherent bird, no detached cutout pieces, no separate body parts or seams. Keep whole-body anatomical size and scale constant. Both feet registered to a common invisible baseline at82% of each cell; body and tail almost fixed except requested action. Entire bird including tail and extended wing tips fit inside its own cell with generous at least10% padding on EVERY side, never touch neighboring cells. Match reference neutral pose exactly whenever neutral requested. No labels, grid, numbers, perch, floor, shadows, text or checkerboard. Draw nine ACTUAL SMALL INTERMEDIATE POSES for slowly waking from a doze:0 sleepy closed tiny eyelid, rounded head lowered a little forward, relaxed cute body;1 head starts a very small lift, eyes closed;2 rises another small step, eyes still closed;3 halfway raised toward reference neutral, tiny eyelid still closed;4 three-quarters raised, eye starting to open a sliver;5 almost neutral head height and half-open tiny white eye;6 neutral height, eye three-quarters open;7 awake tiny eye fully open, last small settling head movement;8 exact fully awake canonical reference neutral pose. Both short feet remain planted and body/tail remain almost still. Coherent naturally changing neck silhouette, no cutout movement, no sudden startle, no large cartoon eyes or long neck. Frames0to8 show real incremental waking, not nine duplicate birds.",
+      "sequence": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alpha": true
+    }
+  },
+  "qa": "Nine whole connected drawings per sheet. Preen and stretch return to neutral; wake gradually raises head and opens eye. White belly remains enclosed in naturally varying silhouette, no added thick uniform outline. Single canonical v6 rest reference used. Per-frame foot registration needed for runtime; raw generated source pixels preserved."
+}

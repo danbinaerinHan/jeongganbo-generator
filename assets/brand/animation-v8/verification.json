@@ -1,0 +1,49 @@
+{
+  "changes": [
+    "Restored v6 complete flight drawings and removed v7 body/wing rig",
+    "Replaced landing art with sequential wing folding poses",
+    "Horizontal registration uses eye rather than changing toe midpoint",
+    "Same landing2 pose spans ground contact at 3.5 seconds; weight transfer starts 3.66",
+    "Landing+folding slowed; settled at6.5 seconds;180-second dwell retained",
+    "Folded arrival landing8, walking0 and neutral all resolve to the same complete walking0 drawing and transform; neutral rest.png replacement removed from this transition",
+    "Normalize visible eye diameter to2 sceneunits via SVG aperture trim at measured per-pose eye centers; no whole-body scaling or sprite replacement.",
+    "Extended eye normalization to gaze,bow,preen,stretch,wake,takeoff; retain both frontal eyes, closed eyelids and gradual half-opening.",
+    "Corrected stretch front-toe registration across one-foot poses and return; original scale preserved.",
+    "v12: Enlarge all open eye apertures by15% using a real transparent mask; new complete lookUp atlas and butterfly position-based gaze."
+  ],
+  "manifest": "frames.json",
+  "generation": "generation.json",
+  "tests": "node tools/check-home-magpie.cjs; node --check on model/runtime/preview; git diff --check",
+  "visualReview": "120 whole-pose panels including upward gaze and resting comparisons, plus12 enlarged expressions. CoreGraphics equivalent of SVG tint and eye aperture mask. Native rendering only; browser playback not verified.",
+  "cleanup": "../asset-cleanup.json",
+  "reviewImages": [
+    "all-actions-review.png",
+    "eye-review.png"
+  ],
+  "walkingChecks": {
+    "headWidthVariationMax": "1.4%",
+    "torsoAreaVariationMax": "1%",
+    "boundaries": "4.65,4.85,5.05,5.15,6.35,6.5 use identical displayed geometry and source"
+  },
+  "eyeReview": "eye-review.png",
+  "eyeChecks": {
+    "sourceFlightDiameter": 2.6759280625130626,
+    "sourceFirstLandingDiameter": 3.060942403101524,
+    "sourceWalkingDiameter": 2.166633795763071,
+    "correctedDiameter": 2.3,
+    "scope": "all bird action atlases",
+    "bodyScaleUnchanged": true,
+    "exceptions": {
+      "frontalDiameter": 1.9549999999999998,
+      "closedPreserved": [
+        "wake0-4",
+        "preen4"
+      ],
+      "wakeHalfOpeningHeights": [
+        1.035,
+        1.7249999999999999
+      ]
+    }
+  },
+  "bodyAudit": "Independent source-pixel audit found stretch recentering on remaining foot. Corrected actual planted front toe. Head rotation, bowing and sleeping posture changes preserved; no rescaling based on white belly area or rotated head scanline width."
+}

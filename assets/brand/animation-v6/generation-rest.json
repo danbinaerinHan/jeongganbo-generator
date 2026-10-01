@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "file": "art/rest.png",
+  "references": [
+    "../animation-v1/bird-perched.png",
+    "../../../Gemini_Generated_Logo.png"
+  ],
+  "prompt": "Use case: identity-preserve. Redraw the ORIGINAL Korean magpie logo character shown in reference 1 (bird atop the well); reference 2 is its isolated character. Produce ONE canonical resting magpie, facing LEFT, on genuine transparent background, no well, no perch. Faithfully preserve the original's quiet cute charm: rounded modest head, tiny white dot eye, short pointed bill, softly rounded slightly plump oval torso, short unobtrusive neck, relaxed short bent legs, long tapered two-tip tail rising upper right around 40 degrees. Do not make an elongated neck, skinny angular chest, oversized baby head, big eye, squat ball, or generic emoji. Restore the original white belly patch FULLY ENCLOSED by a delicate dark belly arc: draw the arc naturally as part of the silhouette, about 1% of entire bird's tip-to-tip width, never a thick uniform cartoon outline. White almond wing patch. Entire body fill flat warm charcoal #2e2a26, white patches fully opaque, transparent exterior. Smooth clear logo-like silhouettes without heavy outlines, textures, shading, shadows or gradient. Preserve the ORIGINAL reference's proportions and character as closely as possible. Whole bird with both feet on a common invisible groundline, complete tail and feet, centered with 12% empty padding. Single bird only; no text or other marks."
+}

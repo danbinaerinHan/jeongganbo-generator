@@ -1,0 +1,100 @@
+{
+  "sheet": "lookUp",
+  "frames": [
+    {
+      "cell": [
+        46,
+        87,
+        456,
+        375
+      ],
+      "anchor": [
+        205.17815699481864,
+        456
+      ],
+      "scale": 0.193,
+      "scaleX": 0.193,
+      "grounded": true
+    },
+    {
+      "cell": [
+        562,
+        87,
+        431,
+        375
+      ],
+      "anchor": [
+        698.1781569948187,
+        456
+      ],
+      "scale": 0.193,
+      "scaleX": 0.193,
+      "grounded": true
+    },
+    {
+      "cell": [
+        1063,
+        88,
+        431,
+        374
+      ],
+      "anchor": [
+        1189.6781569948187,
+        456
+      ],
+      "scale": 0.193,
+      "scaleX": 0.193,
+      "grounded": true
+    },
+    {
+      "cell": [
+        104,
+        573,
+        403,
+        369
+      ],
+      "anchor": [
+        206.67815699481864,
+        936
+      ],
+      "scale": 0.193,
+      "scaleX": 0.193,
+      "grounded": true
+    },
+    {
+      "cell": [
+        596,
+        573,
+        394,
+        369
+      ],
+      "anchor": [
+        697.6781569948187,
+        936
+      ],
+      "scale": 0.193,
+      "scaleX": 0.193,
+      "grounded": true
+    },
+    {
+      "cell": [
+        1079,
+        573,
+        405,
+        370
+      ],
+      "anchor": [
+        1183.6781569948187,
+        937
+      ],
+      "scale": 0.193,
+      "scaleX": 0.193,
+      "grounded": true
+    }
+  ],
+  "registration": {
+    "scale": 0.193,
+    "method": "Uniform scale for the atlas; align belly center with canonical walk0, sole on ground. Pose0 aliases canonical neutral."
+  },
+  "eyeEnlargement": 1.15
+}

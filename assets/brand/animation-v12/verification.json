@@ -1,0 +1,41 @@
+{
+  "scope": "Only approach deceleration and extending legs before contact. Existing first wingbeats, grounded folding, walking and events retained.",
+  "changes": [
+    "Eight complete intermediate poses from2.76 to3.355 at85ms intervals.",
+    "Original landing2 enters at3.45 and spans3.5 toe contact, followed by original folding at3.66.",
+    "All new drawings share uniform scale .24; eye registration smoothly connects flight and planted landing pose.",
+    "Repaired lower belly and final foot reach; retained a small unmodified connector crop to avoid a shape jump."
+  ],
+  "measurements": {
+    "oldEyeYStep": 2.8427,
+    "newMaximumEyeYStep": 0.471831,
+    "oldExtendedPoseHoldSeconds": 0.54,
+    "newContactPoseHoldSeconds": 0.21,
+    "newIntermediateHoldSeconds": 0.085,
+    "newMaxAdjacentBellyLinearChange": 0.02984,
+    "headScanlineResidual": "Adjacent difference below0.75 scene pixels; within1 scene pixel of incoming head. Independent hand-drawn outlines still have small shape differences."
+  },
+  "optimization": {
+    "format": "lossless WebP",
+    "sourcePNGBytes": 602034,
+    "totalRuntimeAddedBytes": 435956,
+    "sourcePreserved": true,
+    "rgbaDecodeDifferenceBytes": 0
+  },
+  "tests": {
+    "command": "node tools/check-home-magpie.cjs",
+    "passed": true,
+    "visits": 1000,
+    "coverage": [
+      "24fps reaches every added pose",
+      "shared contact source and planted toes",
+      "head/eye/belly registration and size bounds",
+      "arrival preloads both new assets",
+      "source dimensions and lossless WebP header",
+      "existing startup modes, events, idle clock and playback controls"
+    ]
+  },
+  "review": "braking-review.png",
+  "verification": "Native CoreGraphics frame sequence inspected; browser playback not verified.",
+  "generation": "generation.json"
+}

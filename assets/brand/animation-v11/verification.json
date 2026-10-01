@@ -1,0 +1,27 @@
+{
+  "change": "Five whole-bird intermediate drawings inserted between existing butterfly gaze poses. Forward and return both use11 poses.",
+  "source": "art/look-between.png",
+  "prompt": "generation.json",
+  "registration": {
+    "scale": 0.1902,
+    "method": "One atlas scale, belly center anchored to rest, sole at ground. Existing key poses retain previous geometry.",
+    "eyes": "Same enlarged aperture diameter2.3 throughout"
+  },
+  "tests": {
+    "command": "node tools/check-home-magpie.cjs",
+    "passed": true,
+    "visits": 1000,
+    "checks": [
+      "All11 forward poses and all11 return poses reached in order at24fps",
+      "Target gaze deviation below18 degrees including180ms response delay",
+      "Intermediate belly linear size within2.2% of canonical",
+      "No detached feet, enlarged eyes or neck-height overshoot beyond1.5 sceneunits relative to adjacent poses"
+    ]
+  },
+  "visualReview": {
+    "interleaved": "inbetweens-review.png",
+    "event": "../animation-v10/butterfly-review.png",
+    "method": "Native CoreGraphics renders inspected; browser playback not verified."
+  },
+  "cleanup": "Only the selected final atlas is copied into this project. Rejected generation variants remain outside the project."
+}

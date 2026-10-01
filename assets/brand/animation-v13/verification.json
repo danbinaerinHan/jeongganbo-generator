@@ -1,0 +1,70 @@
+{
+  "changes": [
+    "Six complete whole-bird recovery poses from folded landing to standing, 4.17–4.87 seconds; canonical standing starts at5.01 seconds before walking.",
+    "One fixed recovery scale0.1970011, measured soles anchored to well ground, measured eye positions registered horizontally.",
+    "Canonical resting beak core replaces varied angular/short source beaks in horizontal flight, braking, landing, recovery and walking poses. Forehead/throat contour blends into each original full drawing.",
+    "Ink alpha>=0.95 becomes solid, <=0.90 unchanged, preventing darker repair patches without adding an outline.",
+    "Page and preview cache revision15."
+  ],
+  "tests": {
+    "command": "node tools/check-home-magpie.cjs",
+    "result": "PASS",
+    "visits": 1000,
+    "recoveryFramesAt24fps": 6,
+    "beakCore": "Same contour relative to eye on every corrected pose",
+    "groundContact": "Measured toes at ground through landing and recovery",
+    "webp": "Decoded RGBA exact:0 changed bytes",
+    "newWebAssetBytes": 897386
+  },
+  "visualReview": {
+    "method": "Native CoreGraphics rendering of actual model geometry, source atlas crops, ink alpha normalization, profile contour and eye aperture; enlarged beak contact sheets plus full-scene landing sequence.",
+    "images": [
+      "flight-beak-review.png",
+      "landing-beak-review.png",
+      "settling-review.png"
+    ],
+    "result": "Reviewed shared beak silhouette and absence of opaque patch seams; planted feet and progressive tail recovery visible.",
+    "limitation": "Actual browser animation playback has not been verified in this environment."
+  },
+  "cleanup": "Only final selected recovery atlas retained in project; rejected generated variants remain outside project in generator output. PNG is editable source, lossless WebP is website asset.",
+  "timingRevision16": {
+    "arrivalRate": 1.15,
+    "airborneDuration": 2.695652173913044,
+    "touchdown": 3.095652173913044,
+    "groundedRecoveryAndWalkingDuration": 3,
+    "ambientBlinkInterval": [
+      4,
+      7
+    ],
+    "notes": "Earlier timestamps above describe revision15. Revision16 compresses only approach and shifts all grounded arrival poses earlier by0.404347826 seconds. Blinking is independent of events, suppressed during other actions; idle renderer sleeps between blinks.",
+    "checks": [
+      "Existing1000-visit regression suite PASS",
+      "Before/after pose and trajectory comparison PASS with unchanged grounded durations",
+      "Ambient blink timer closes and reopens actual SVG eyelid; sleeps between blinks"
+    ]
+  },
+  "timingRevision17": {
+    "rate": 1.45,
+    "recoveryRate": 1.35,
+    "start": 0.4,
+    "touchdown": 2.537931034482759,
+    "brakingStart": 1.9862068965517246,
+    "standingTime": 3.656449553001277,
+    "walkStart": 3.6860791826309067,
+    "walkEnd": 6.286079182630907,
+    "landingX": 350,
+    "perchX": 330,
+    "walkCycles": 2,
+    "walkFrameInterval": 0.2,
+    "walkDuration": 2.6,
+    "previousWalkDuration": 1.3,
+    "notes": "Approach and recovery both accelerated. Landing moved10 scene units right. Distance and walking duration both doubled to preserve mean speed, with unchanged200ms cel cadence.",
+    "checks": [
+      "Existing1000-visit suite PASS",
+      "Every braking and recovery intermediate still displayed at24fps",
+      "Both complete walking cycles and mean travel speed verified",
+      "Native scene contact sheet reviewed at new landing position; actual browser playback not verified"
+    ],
+    "reviewImage": "settling-review.png"
+  }
+}

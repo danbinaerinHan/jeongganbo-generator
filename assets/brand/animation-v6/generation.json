@@ -1,0 +1,33 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "canonical": "art/rest.png",
+  "reference": "Original static Umulsai logo magpie",
+  "design": "Rounded head, short neck, gently plump oval belly, tiny white eye, long tapered tail. The delicate belly contour belongs to each drawing; never add a uniform runtime stroke.",
+  "selectedArt": [
+    "art/rest.png",
+    "art/flight.png",
+    "art/landing.png",
+    "art/takeoff.png",
+    "art/walk.png",
+    "art/gaze.png",
+    "art/bow.png",
+    "art/preen.png",
+    "art/stretch.png",
+    "art/wake.png"
+  ],
+  "promptSets": [
+    "generation-rest.json",
+    "art/generation-gaze-bow-walk.json",
+    "generation-preen-stretch-wake.json",
+    "generation-transition.json"
+  ],
+  "registration": "frames.json",
+  "runtime": "../animation-v3/model.js",
+  "comparison": "comparison.png",
+  "continuity": {
+    "measurements": "body-measurements.json",
+    "review": "all-actions-review.png",
+    "registration": "Fixed uniform per-atlas scale based on head and torso silhouettes; original canonical rest retained; stretch frame4 excluded because inflated torso.",
+    "tests": "../../../tools/check-home-magpie.cjs"
+  }
+}

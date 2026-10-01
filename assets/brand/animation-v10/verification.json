@@ -1,0 +1,22 @@
+{
+  "changes": [
+    "All open eyes enlarged15% with transparent apertures; sleeping and half-open eyes preserved.",
+    "Six whole-bird lookUp drawings; first pose aliases canonical neutral.",
+    "Butterfly follows one trajectory shared by rendering and gaze;180ms response delay. Nearest drawn head direction selected from measured eye position.",
+    "After butterfly leaves, head returns through intermediate poses to canonical rest.",
+    "v13: Five additional whole-bird in-between drawings from animation-v11 now connect the six original gaze poses in both directions."
+  ],
+  "review": "butterfly-review.png",
+  "tests": "node tools/check-home-magpie.cjs; syntax checks for model/runtime/preview; git diff --check",
+  "results": {
+    "visitCount": 1000,
+    "gaze": "Left → upper left → overhead → upper right; no unrelated gaze/behind animation.",
+    "ground": "Sole on ground, belly center aligned; single atlas scale .193.",
+    "bellyAreaDifference": "Within2.5% of canonical drawing",
+    "eyeDiameter": 2.3,
+    "frontalEyeDiameter": 1.9549999999999998
+  },
+  "visualQA": "Native CoreGraphics renders inspected: full butterfly event,120 pose comparisons,12 close-up eye states. Browser playback not verified.",
+  "generation": "generation.json",
+  "inbetweens": "../animation-v11/verification.json"
+}
