@@ -20,7 +20,7 @@ const app = await loadApp(
   ["const:SC", "const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
-   "scaleNotes", "makeScale", "realizeMelody",
+   "scaleNotes", "makeScale", "seqShare", "realizeMelody",
    "const:PAPERS", "const:MARGIN_BASE", "const:STAFF_PRINT_SP_MM", "staffPrintSpMm", "staffPrintScale",
    "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores",
    "paperSize", "paperWH", "paperMargin", "staffSheetPages", "paperWrap"],

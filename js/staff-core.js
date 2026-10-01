@@ -502,7 +502,115 @@
     return tiedSplit(units, off, beat);
   }
 
+  // ── 곁줄 가사 → 음표 가사 · 곁줄 기호 → 음표 위 기호 ───────────────────
+  // 곁줄(정간 오른쪽 줄)에는 가사 말고도 활 표시·장구 구음·시김새가 **괄호 토큰**으로
+  // 함께 적힌다. 오선보는 둘을 가른다 — 그 판단은 아래 두 함수(lyricSyllables·lyricMarks)뿐이다.
+  //   · 괄호 없이 적은 **완성형 한글 음절(가~힣)** → 음표 **아래 가사**(<lyric>).
+  //     문장부호·`-` 자리표·한자·로마자는 버린다.
+  //   · 괄호 토큰({…}·[…]·(…), 앱의 SYM_TOKEN_RE와 같은 꼴) 가운데 **기호 사전(JGB_SYM)에
+  //     있는 것** → 음표 **위 기호**(lyricMarks). 사전에 없는 토큰은 버린다.
+  //   · syllabic: 곁줄의 공백은 분박(행)을 가르므로 **한 행 안에 붙여 쓴 음절들이 한 낱말**이다
+  //     (`작은` → begin·end). 행이 다른 음절끼리는 낱말인지 알 길이 없어 single로 둔다.
+  const LYRIC_TOKEN_RE = /\{[^{}]*\}|\[[^\[\]]*\]|\([^()]*\)/g;
+  function lyricSyllables(row) {
+    const bare = String(row || "").replace(LYRIC_TOKEN_RE, "");
+    const syl = Array.from(bare).filter(function (ch) { return ch >= "\uAC00" && ch <= "\uD7A3"; });
+    return syl.map(function (t, i) {
+      return { text: t, syllabic: syl.length < 2 ? "single"
+        : i === 0 ? "begin" : i === syl.length - 1 ? "end" : "middle" };
+    });
+  }
+  // 괄호 토큰 → 사전의 기호 { id(그림 키), ko(표시 이름), n(사전 차례 — 화면 조판의 표지가
+  // 쓴다, musicxml.js VRV_SYM_BASE) }. 이름 찾기는 곁줄이 그림을 찾는 길과 같다: 곁줄 별칭
+  // (전성→roll-str·s01→sigimsae-01·옛 가로막대→가로표) → 그림 키 그대로 → 표시 이름.
+  // `@크기,좌우,상하`(기호 개별 조정)는 이름이 아니라 뗀다. 사전이 안 실렸으면(대비) 빈 목록.
+  let koIndex = null;
+  function symOf(name) {
+    const R = root.JGB_SYM;
+    if (!R || !R.byId) return null;
+    if (!koIndex) {
+      koIndex = {};
+      R.list.forEach(function (e, i) { if (!(e.ko in koIndex)) koIndex[e.ko] = i; });
+    }
+    const nm = String(name).split("@")[0].trim();
+    const id = (R.lyricAlias && R.lyricAlias[nm]) || (R.byId[nm] ? nm
+      : (nm in koIndex ? R.list[koIndex[nm]].id : null));
+    const e = id && R.byId[id];
+    return e ? { id: e.id, ko: e.ko, n: R.list.indexOf(e) } : null;
+  }
+  function lyricMarks(row) {
+    const out = [];
+    (String(row || "").match(LYRIC_TOKEN_RE) || []).forEach(function (t) {
+      const m = symOf(t.slice(1, -1));
+      if (m) out.push(m);
+    });
+    return out;
+  }
+  // 한 음에 음절 여럿을 몰아 붙일 때 — 앞 것의 시작·뒤 것의 끝을 물려받는다.
+  function joinSyllables(list) {
+    if (list.length === 1) return list[0];
+    const st = /^(single|begin)$/.test(list[0].syllabic);
+    const en = /^(single|end)$/.test(list[list.length - 1].syllabic);
+    return { text: list.map(function (x) { return x.text; }).join(""),
+             syllabic: st && en ? "single" : st ? "begin" : en ? "end" : "middle" };
+  }
+  // 어느 음에 무엇을 붙이나. slots = app.js realizeMelody의 자리 목록({gak,cell,row,rows,kind}),
+  // lyricGaks = 곁줄을 [각][정간] = 칸 글자로 편 것. 돌려주는 것은 slots와 같은 길이의 배열이고
+  // **kind "note"인 자리에만** 값 { lyric: {text, syllabic} | null, marks: [기호…] | null }이
+  // 선다(둘 다 없으면 null). 가사와 기호는 **같은 짝맞춤**으로 함께 나눈다:
+  //   ① 곁줄의 행 i는 선율의 행 i에 붙는다(drawLyricCell이 '율 하나-가사 하나'로 나란히 앉히는
+  //      것과 같은 짝). 곁줄 행이 선율 행보다 많으면 비례로 앞 행에 몰린다.
+  //   ② 그 행에서 **시작하는 실음**에 음절을 차례대로 하나씩. 음절이 모자라면 앞에서부터만
+  //      붙는다(한 음절을 여러 음에 걸쳐 부르는 자리). 남으면 그 행 마지막 음에 이어 붙인다.
+  //      기호는 그 행의 **첫 실음**에 모두 — 활 표시·구음은 그 분박(=그 음의 시작)에 걸린다.
+  //   ③ 그 행에 시작하는 음이 없으면(쉼표·이음·빈 정간·소리 없는 기호) 음절·기호를 버리지 않고
+  //      **같은 각 안의 다음 실음**으로 넘긴다 — 가사는 음절이 시작되는 음에 붙는 것이 악보
+  //      관행이고, 이음 자리에 적은 글자는 대개 그다음 소리에서 부르는 말이다. 각(=장단 한
+  //      주기)을 넘겨 끌고 가면 뒤 각의 가사가 줄줄이 밀리므로 각이 끝나면 버린다.
+  // 꾸밈음·붙임줄 뒤 조각에는 안 붙는다(그건 부르는 쪽 app.js·musicxml.js가 지킨다).
+  function placeLyrics(slots, lyricGaks) {
+    const out = new Array(slots.length).fill(null);
+    const put = function (k, key, v) { (out[k] = out[k] || { lyric: null, marks: null })[key] = v; };
+    let pending = [], pendMarks = [], pendGak = -1;
+    let i = 0;
+    while (i < slots.length) {
+      const g = slots[i].gak, c = slots[i].cell;
+      let j = i;
+      while (j < slots.length && slots[j].gak === g && slots[j].cell === c) j++;
+      if (g !== pendGak) { pending = []; pendMarks = []; }
+      const melRows = Math.max(1, slots[i].rows || 0);
+      const text = (lyricGaks[g] && lyricGaks[g][c]) || "";
+      const lyRows = String(text).split(/\s+/).filter(Boolean);
+      const bucket = [], mBucket = [];
+      for (let r = 0; r < melRows; r++) { bucket.push([]); mBucket.push([]); }
+      lyRows.forEach(function (row, k) {
+        const mr = lyRows.length <= melRows ? k : Math.floor(k * melRows / lyRows.length);
+        lyricSyllables(row).forEach(function (x) { bucket[mr].push(x); });
+        lyricMarks(row).forEach(function (x) { mBucket[mr].push(x); });
+      });
+      for (let r = 0; r < melRows; r++) {
+        const queue = pending.concat(bucket[r]);
+        const mQueue = pendMarks.concat(mBucket[r]);
+        pending = []; pendMarks = []; pendGak = g;
+        const onsets = [];
+        for (let k = i; k < j; k++) {
+          if ((slots[k].row || 0) === r && slots[k].kind === "note") onsets.push(k);
+        }
+        if (!queue.length && !mQueue.length) continue;
+        if (!onsets.length) { pending = queue; pendMarks = mQueue; continue; }
+        if (mQueue.length) put(onsets[0], "marks", mQueue);
+        const n = Math.min(onsets.length, queue.length);
+        for (let k = 0; k < n; k++) {
+          put(onsets[k], "lyric", k === n - 1 ? joinSyllables(queue.slice(k)) : queue[k]);
+        }
+      }
+      i = j;
+    }
+    return out;
+  }
+
   root.JGB_STAFF_CORE = {
+    lyricSyllables: lyricSyllables, lyricMarks: lyricMarks, placeLyrics: placeLyrics,
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF, CLEF_INST: CLEF_INST,
     JANGGU: JANGGU, PERC_POS: PERC_POS,
     timeSig: timeSig, timeTop: timeTop, timeLabel: timeLabel, timeSigSvg: timeSigSvg, timeNoteSvg: timeNoteSvg, timeSigW: timeSigW, TIME_TYPES: TIME_TYPES, NOTE_TYPES: NOTE_TYPES, quarterRatio: quarterRatio,

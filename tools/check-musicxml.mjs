@@ -7,6 +7,8 @@
 // 보는 것은 셋이다: ① 마디 길이가 딱 맞나(어긋나면 악보 프로그램이 마디를 다시 짠다)
 // ② 음높이가 재생과 같은가(같은 realizeMelody를 보므로 어긋나면 어느 한쪽이 깨진 것)
 // ③ 시김새가 제 꼴로 적히나(붙임=꾸밈음, 독립=제 자리를 나눈 실음).
+// ④ 곁줄 가사가 제 음에 붙나(한글 음절만 · 기호 토큰 제외 · 가사 없는 문서는 한 글자도 그대로).
+// ⑤ 곁줄 기호(사전에 있는 괄호 토큰)가 음표 위 <direction>으로 실리나(파일엔 표시 이름).
 
 import { loadApp } from "./lib/app-sandbox.mjs";
 await import("../js/staff-core.js");
@@ -15,8 +17,8 @@ await import("../js/musicxml.js");
 const app = await loadApp(
   ["const:SC", "const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
-   "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
-   "scaleNotes", "makeScale", "realizeMelody",
+   "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens", "stripSymBracket",
+   "scaleNotes", "makeScale", "seqShare", "realizeMelody",
    "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", staffJanggu: "legend", wantJangdan: false, jangdan: "", daegang: "" },
@@ -72,7 +74,8 @@ console.log("마디 길이 — 각 하나가 딱 채워지는가 (정간 = 점4�
  ["한 행에 두 음", "황태|중|임|남", 4],
  ["빈 정간(앞 음 지속)", "황| | |임", 4],
  ["쉼표 섞임", "황|쉼|중|임", 4],
- ["5등분 시김새", "중{느나르나니}|임|남|황", 4],
+ ["느나르나니(1:1:1:2:1 = 6등분)", "중{느나르나니}|임|남|황", 4],
+ ["독립 느나르나니", "중|{느나르나니}|남|황", 4],
  ["7등분(나눠떨어지지 않는 분박)", "황태중임남황태|중|임|남", 4],
  ["여러 각", "황|태|중|임\n남|황|태|중", 4]
 ].forEach(([label, mel, beats]) => {
@@ -90,13 +93,24 @@ console.log("\n음높이 — 오선보에서 되읽은 음이 시김새 규칙�
   ok("꾸밈음엔 길이가 없다", m.filter((n) => n.grace).every((n) => n.dur === 0));
 }
 {
-  // 독립 시김새는 제 자리를 고르게 나눈 '실음'이라 길이가 있어야 한다
-  const m = parseMeasures(xmlOf("중|{느나르나니}|황|황", 4))[0];
+  // 독립 시김새는 제 자리를 나눈 '실음'이라 길이가 있어야 한다. 느나르나니는 5등분이
+  // 표준 음표로 안 나뉘어 길이 비 1:1:1:2:1(6등분)로 가른다(사전의 snd.w, 2026-10-01).
+  const xml = xmlOf("중|{느나르나니}|황|황", 4);
+  const m = parseMeasures(xml)[0];
   const five = m.slice(1, 6);
   eq("{느나르나니}는 다섯 실음으로", five.map(midiOf),
      [P("태"), P("중"), P("임"), P("중"), P("태")]);
-  ok("다섯이 정간 하나를 고르게 나눈다", five.every((n) => n.dur === JG / 5),
-     `길이: [${five.map((n) => n.dur)}]`);
+  eq("길이 비 1:1:1:2:1 — 정간 하나를 6등분", five.map((n) => n.dur),
+     [JG / 6, JG / 6, JG / 6, JG / 3, JG / 6]);
+  const types = xml.split("<measure ")[1].split("<note>").slice(2, 7)
+    .map((n) => (n.match(/<type>(\w+)<\/type>/) || [])[1] || null);
+  eq("점4분음표 정간 → 16분음표 셋 + 8분음표 + 16분음표(모두 <type>이 붙는다)", types,
+     ["16th", "16th", "16th", "eighth", "16th"]);
+}
+{
+  // 붙임(att)으로 본음 자리를 가르는 seq가 길이 비 없이 와도 예전처럼 고르게 나뉜다
+  const m = parseMeasures(xmlOf("중{나니나}|황|황|황", 4))[0].slice(0, 3);
+  eq("{나니나}는 그대로 3등분", m.map((n) => n.dur), [JG / 3, JG / 3, JG / 3]);
 }
 
 console.log("\n각을 넘는 지속 — 소리가 끊기고 쉼표로 적히는가");
@@ -626,6 +640,249 @@ console.log("\n한 줄에 몇 마디 — 줄바꿈이 악보에 적히는가");
   ok("줄을 끊어도 음표 수는 그대로",
      JSON.stringify(split.map((m) => m.length)) === JSON.stringify(plain.map((m) => m.length)));
   app.fields.staffPerLine = "auto";
+}
+
+console.log("\n곁줄 가사 — 한글 음절만, 그 행에서 시작하는 실음에 붙는가");
+{
+  // 음표마다 [가사, syllabic] — 꾸밈음은 빼고 쉼표는 남긴다(자리 셈이 어긋나지 않게)
+  function lyricsOf(mel, ly, beats) {
+    app.setLyrics(ly);
+    const xml = xmlOf(mel, beats);
+    app.setLyrics("");
+    // 붙임줄로 이은 뒤 조각도 뺀다(같은 음이 이어지는 것뿐 — 따로 아래에서 본다)
+    return xml.split("<note>").slice(1)
+      .filter((n) => !n.includes("<grace") && !n.includes('<tie type="stop"/>'))
+      .map((n) => {
+        const t = n.match(/<lyric number="1"><syllabic>(\w+)<\/syllabic><text>([^<]*)<\/text><\/lyric>/);
+        return n.includes("<rest/>") ? "쉼" : t ? t[2] + ":" + t[1] : "";
+      });
+  }
+  eq("한 음에 한 음절", lyricsOf("황|태|중|임", "아 | 리 | 랑 | 가", 4),
+     ["아:single", "리:single", "랑:single", "가:single"]);
+  eq("기호 토큰({가로표}·{세로표}·{덩})과 문장부호는 안 싣는다",
+     lyricsOf("황|태|중|임", "{가로표}아 | {세로표} | {덩} | 다!", 4),
+     ["아:single", "", "", "다:single"]);
+  eq("한 행에 붙여 쓴 두 음절 → 그 행의 두 음에 차례로 (begin/end)",
+     lyricsOf("황태|중|임|남", "작은 | 새 | 야 | 아", 4),
+     ["작:begin", "은:end", "새:single", "야:single", "아:single"]);
+  eq("음절이 음보다 적으면 앞에서부터만 (뒤 음은 이어 부르는 자리)",
+     lyricsOf("황태|중|임|남", "물 | 새 | 야 | 아", 4),
+     ["물:single", "", "새:single", "야:single", "아:single"]);
+  eq("곁줄 행 i는 선율 행 i에 (분박끼리 짝)",
+     lyricsOf("황 태|중|임|남", "아 리 | 랑 | | 가", 4),
+     ["아:single", "리:single", "랑:single", "", "가:single"]);
+  eq("이음 자리의 글자는 같은 각의 다음 실음으로 넘어간다 · 각 끝 쉼표의 글자는 버린다",
+     lyricsOf("황|-|중|쉼", "아 | 리 | 랑 | 가", 4),
+     ["아:single", "리랑:single", "쉼"]);
+  eq("이음 자리 행(- 청태)의 '-'는 싣지 않고 다음 행 음에 글자가",
+     lyricsOf("황|- 태|중|임", "아 | - 노 | 랑 | 가", 4),
+     ["아:single", "노:single", "랑:single", "가:single"]);
+  {
+    // 각을 넘겨 끌고 가지 않는다 — 앞 각 끝의 쉼표 자리 글자가 다음 각 첫 음을 안 밀어낸다
+    const two = lyricsOf("황|태|중|쉼\n임|남|황|태", "가 | 나 | 다 | 라\n마 | 바 | 사 | 아", 4);
+    eq("각이 바뀌면 넘어가던 글자는 버린다", two,
+       ["가:single", "나:single", "다:single", "쉼", "마:single", "바:single", "사:single", "아:single"]);
+  }
+  {
+    // 붙임줄로 이은 뒤 조각엔 안 붙는다 — 3정간을 끄는 황은 붙임줄로 갈린다
+    app.setLyrics("아 | | | 리");
+    const xml = xmlOf("황| | |임", 4);
+    app.setLyrics("");
+    const ns = xml.split("<note>").slice(1);
+    const tied = ns.filter((n) => n.includes('<tie type="stop"/>'));
+    ok("붙임줄 뒤 조각에는 가사가 없다", tied.length > 0 && tied.every((n) => !n.includes("<lyric")),
+       `뒤 조각 ${tied.length}개`);
+    ok("가사는 두 개뿐(황·임)", (xml.match(/<lyric /g) || []).length === 2);
+    // 규격의 차례 — <lyric>은 <notations> 뒤
+    const withBoth = ns.find((n) => n.includes("<lyric") && n.includes("<notations>"));
+    ok("<lyric>이 <notations> 뒤에 온다",
+       !withBoth || withBoth.indexOf("</notations>") < withBoth.indexOf("<lyric"));
+  }
+  {
+    // 꾸밈음(붙임 시김새)에는 안 붙는다
+    app.setLyrics("아 | 리 | 랑 | 가");
+    const xml = xmlOf("중|{니}|중{니레}|중", 4);
+    app.setLyrics("");
+    const graces = xml.split("<note>").slice(1).filter((n) => n.includes("<grace"));
+    ok("꾸밈음에는 가사가 없다", graces.length > 0 && graces.every((n) => !n.includes("<lyric")));
+    ok("독립 시김새({니})는 실음이라 가사를 받는다", (xml.match(/<lyric /g) || []).length === 4);
+  }
+  {
+    // 가사 없는 문서 · 비어 있는 곁줄 · 사전에 없는 토큰뿐인 곁줄 → MusicXML이 한 글자도 같다
+    // (사전에 있는 기호는 이제 음표 위 기호로 실린다 — 아래 '곁줄 기호' 절)
+    const mel = "황|태 중|{니}|중{니레}\n임|- 남|쉼|황";
+    app.setLyrics("");
+    const base = xmlOf(mel, 4);
+    ok("가사가 없으면 <lyric>이 하나도 없다", !base.includes("<lyric"));
+    [" |  |  | \n |  |  | ", "{없는기호} | [아무개] | (abc) | -\n | ! | | "].forEach((ly) => {
+      app.setLyrics(ly);
+      const x = xmlOf(mel, 4);
+      ok(`곁줄 ${JSON.stringify(ly.slice(0, 14))}… → 가사 없는 문서와 한 글자도 같다`, x === base);
+    });
+    app.setLyrics("");
+  }
+  {
+    // 장구(1선보)에는 안 붙는다 — 장단 줄은 곡에 하나뿐이고 곁줄과 무관하다
+    Object.assign(app.fields, { wantJangdan: true, jangdan: "덩 | 덕 | 쿵 | 덕", staffJanggu: "part" });
+    app.setLyrics("아 | 리 | 랑 | 가");
+    const xml = xmlOf("황|태|중|임", 4);
+    app.setLyrics("");
+    Object.assign(app.fields, { wantJangdan: false, jangdan: "", staffJanggu: "legend" });
+    const percPart = xml.split("<part id=").find((p) => p.includes("<unpitched>"));
+    ok("장구 파트가 나왔다", !!percPart);
+    ok("장구 파트에는 가사가 없다", percPart && !percPart.includes("<lyric"));
+    ok("선율 파트에는 가사 넷", (xml.match(/<lyric /g) || []).length === 4);
+  }
+}
+
+console.log("\n곁줄 기호 — 사전에 있는 괄호 토큰은 음표 위 기호로");
+{
+  // 음표마다 [위 기호들(표시 이름), 아래 가사] — 꾸밈음·붙임줄 뒤 조각은 뺀다.
+  // <direction>은 그 음의 <note> 바로 앞에 선다(꾸밈음 뒤) — 그 차례로 읽는다.
+  function marksOf(mel, ly, beats, opt) {
+    app.setLyrics(ly);
+    app.fields.beats = String(beats);
+    app.setMelody(mel);
+    const xml = opt && opt.vrv
+      ? globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { title: "검사용", vrv: true })
+      : buildMusicXml();
+    app.setLyrics("");
+    const out = [];
+    let pend = [];
+    xml.split(/(?=<direction[ >]|<note>)/).forEach((ch) => {
+      if (/^<direction[ >]/.test(ch)) {
+        if (ch.includes("<metronome>")) return;
+        if (!ch.startsWith('<direction placement="above">')) out.push("아래?");
+        pend = pend.concat([...ch.matchAll(/<words>([^<]*)<\/words>/g)].map((m) => m[1]));
+        return;
+      }
+      if (!ch.startsWith("<note>")) return;
+      if (ch.includes("<grace")) return;
+      const t = ch.match(/<lyric number="1"><syllabic>\w+<\/syllabic><text>([^<]*)<\/text>/);
+      const tied = ch.includes('<tie type="stop"/>');
+      if (tied) { ok("붙임줄 뒤 조각 앞에는 기호가 없다", pend.length === 0); return; }
+      out.push((ch.includes("<rest/>") ? "쉼" : "") + (pend.length ? "^" + pend.join("+") : "") +
+               (t ? "_" + t[1] : ""));
+      pend = [];
+    });
+    return out;
+  }
+  eq("괄호 토큰 → 위 기호(표시 이름) · 한글 → 아래 가사 · 같은 음이면 둘 다",
+     marksOf("황|태|중|임", "{가로표}아 | {세로표} | {덩} | 다", 4),
+     ["^가로표_아", "^세로표", "^덩", "_다"]);
+  eq("사전에 없는 괄호 토큰은 싣지 않는다 · 별칭(s02·옛 가로막대)은 사전 이름으로",
+     marksOf("황|태|중|임", "{없는기호} | {s02} | {가로막대} | [뜰]", 4),
+     ["", "^s02", "^가로표", "^뜰"]);
+  eq("한 행에 기호 둘 → 그 음 하나에 둘 다",
+     marksOf("황|태|중|임", "{덩}{가로표} | | | ", 4),
+     ["^덩+가로표", "", "", ""]);
+  eq("기호는 그 행의 첫 실음에 · 행 짝은 가사와 같다",
+     marksOf("황 태|중태|임|남", "{가로표} {세로표} | {덩}작은 | | ", 4),
+     ["^가로표", "^세로표", "^덩_작", "_은", "", ""]);
+  eq("이음·쉼표 자리의 기호는 같은 각의 다음 실음으로 · 각 끝이면 버린다",
+     marksOf("황|-|중|쉼\n임|남|황|태", "{가로표} | {세로표} | 랑 | {덩}\n | | | ", 4),
+     ["^가로표", "^세로표_랑", "쉼", "", "", "", ""]);
+  {
+    // 붙임줄 — 3정간을 끄는 황(붙임줄로 갈린다): 기호는 첫 조각 앞에만
+    const r = marksOf("황| | |임", "{가로표} | | | {세로표}", 4);
+    eq("붙임줄로 이은 음 — 첫 조각에만", r, ["^가로표", "^세로표"]);
+  }
+  {
+    // 꾸밈음 뒤·본음 앞에 선다 — 꾸밈음 앞에 두면 다른 프로그램이 꾸밈음에 걸어 버린다
+    app.setLyrics("{가로표} | | | ");
+    app.fields.beats = "4";
+    app.setMelody("중{니레}|중|중|중");
+    const xml = buildMusicXml();
+    app.setLyrics("");
+    const d = xml.indexOf('<direction placement="above"><direction-type><words>가로표');
+    const g = xml.indexOf("<grace");
+    const n = xml.indexOf("<note>", d);
+    ok("기호 direction은 꾸밈음 뒤, 본음 바로 앞", d > g && g > 0 && !xml.slice(d, n).includes("<grace"));
+  }
+  {
+    // 화면 조판용(vrv)은 표지 글자 한 자(U+F0000 + 사전 차례) — vrvPage가 그림으로 바꾼다
+    const r = marksOf("황|태|중|임", "{가로표} | {덩} | | ", 4, { vrv: true });
+    const L = globalThis.JGB_SYM.list;
+    const mk = (id) => "&#x" + (0xF0000 + L.findIndex((e) => e.id === id)).toString(16).toUpperCase() + ";";
+    eq("조판용 XML은 표지 글자", r, ["^" + mk("가로표"), "^" + mk("덩"), "", ""]);
+  }
+  {
+    // 장구(1선보)에는 안 붙는다
+    Object.assign(app.fields, { wantJangdan: true, jangdan: "덩 | 덕 | 쿵 | 덕", staffJanggu: "part" });
+    app.setLyrics("{가로표} | {덩} | 아 | ");
+    app.fields.beats = "4";
+    app.setMelody("황|태|중|임");
+    const xml = buildMusicXml();
+    app.setLyrics("");
+    Object.assign(app.fields, { wantJangdan: false, jangdan: "", staffJanggu: "legend" });
+    const percPart = xml.split("<part id=").find((p) => p.includes("<unpitched>"));
+    ok("장구 파트에는 기호가 없다", percPart && !percPart.includes("<words>"));
+    eq("선율 파트에 기호 둘", (xml.match(/<words>/g) || []).length, 2);
+  }
+  {
+    // 무변화 회귀 — 가사도 기호도 없는 곁줄이면 곁줄이 아예 없는 문서와 한 글자도 같다
+    const mel = "황|태 중|{니}|중{니레}\n임|- 남|쉼|황";
+    app.setLyrics(""); app.fields.beats = "4"; app.setMelody(mel);
+    const base = buildMusicXml();
+    ok("곁줄 없는 문서엔 기호 direction이 없다", !base.includes("<words>"));
+    app.setLyrics("{없는기호} | (x) | - | \n | | | ");
+    ok("사전에 없는 토큰뿐인 곁줄 → 한 글자도 같다", buildMusicXml() === base);
+    app.setLyrics("");
+  }
+}
+
+console.log("\n곁줄 가사 — 총보는 파트마다 제 곁줄");
+{
+  // 활성 파트(0)는 작업 사본 lyricsFull, 나머지는 parts[i].lyrics에서 온다
+  const tot = await loadApp(
+    ["const:SC", "const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE", "const:SCALE",
+     "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
+     "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens", "stripSymBracket",
+     "scaleNotes", "makeScale", "seqShare", "realizeMelody",
+     "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "partLabel", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
+    { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
+      title: "검사용", subtitle: "", scoreView: true, staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", staffJanggu: "legend", wantJangdan: false, jangdan: "", daegang: "" },
+    `let parts = [{ name: "소리", abbr: "", melody: "", lyrics: "", muted: false },
+                  { name: "대금", abbr: "", melody: "임|남|황|태", lyrics: "가 | 나 | {가로표} | 라", muted: false }];
+     let activePart = 0;
+     function stashActivePart() { parts[0].melody = melodyFull; parts[0].lyrics = lyricsFull; }`);
+  tot.setMelody("황|태|중|임");
+  tot.setLyrics("아 | 리 | 랑 | 가");
+  const xml = tot.fn("buildMusicXml")();
+  const textsOf = (part) => [...part.matchAll(/<text>([^<]*)<\/text>/g)].map((m) => m[1]);
+  const ps = xml.split("<part id=").slice(1);
+  eq("두 파트", ps.length, 2);
+  eq("파트 1(활성) — 제 곁줄", textsOf(ps[0]), ["아", "리", "랑", "가"]);
+  eq("파트 2 — 제 곁줄(기호 토큰은 빠짐)", textsOf(ps[1]), ["가", "나", "라"]);
+}
+
+console.log("\n곁줄 가사 — 예시 악보");
+{
+  const fs = await import("node:fs");
+  const keep = Object.assign({}, app.fields);
+  [["늴리리야", "samples/늴리리야.jgb.json"], ["새야새야", "samples/새야새야.jgb.json"]].forEach(([nm, f]) => {
+    const d = JSON.parse(fs.readFileSync(new URL("../" + f, import.meta.url), "utf8"));
+    const c = d.controls || {};
+    ["beats", "gakBeats", "daegang", "hwangPitch", "joPreset", "tempoBpm"].forEach((k) => {
+      if (c[k] != null) app.fields[k] = String(c[k]);
+    });
+    const mel = d.parts ? d.parts[d.activePart || 0].melody : d.melody;
+    const ly = d.parts ? d.parts[d.activePart || 0].lyrics : d.lyrics;
+    app.setLyrics(ly);
+    app.setMelody(mel);
+    const xml = buildMusicXml();
+    app.setLyrics("");
+    const got = [...xml.matchAll(/<text>([^<]*)<\/text>/g)].map((m) => m[1]);
+    // 곁줄에 적힌 한글 음절 수(기대값) — 검사가 원문을 따로 세어 견준다
+    const want = ly.replace(/\{[^{}]*\}|\[[^\[\]]*\]|\([^()]*\)/g, "").match(/[가-힣]/g) || [];
+    const joined = got.join("");
+    console.log(`    ${nm}: 곁줄 음절 ${want.length} · 실린 가사 ${got.length}개 — ${got.slice(0, 16).join(" ")} …`);
+    ok(`${nm} — 가사가 실린다`, got.length > 0);
+    // 이 두 곡은 음 없는 자리에 글자가 없어 하나도 안 버려진다 — 곁줄 음절이 차례 그대로 다 실려야 한다
+    ok(`${nm} — 곁줄의 한글 음절이 차례 그대로 빠짐없이 실린다`,
+       joined === want.join(""), `${joined.slice(0, 30)} / ${want.join("").slice(0, 30)}`);
+  });
+  Object.keys(app.fields).forEach((k) => { app.fields[k] = keep[k]; });
 }
 
 console.log("\n악보 꼴 — 열고 닫는 짝이 맞는가");

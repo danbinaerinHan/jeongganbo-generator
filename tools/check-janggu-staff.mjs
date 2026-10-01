@@ -24,7 +24,7 @@ const app = await loadApp(
    "const:DAEGANG_PRESET",
    "parseDaegang", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor",
    "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens", "stripSymBracket",
-   "scaleNotes", "makeScale", "realizeMelody",
+   "scaleNotes", "makeScale", "seqShare", "realizeMelody",
    "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf",
    "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn",
    "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore",

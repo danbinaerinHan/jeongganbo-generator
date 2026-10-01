@@ -684,6 +684,9 @@
   /* use가 꼭 있어야 한다 — 음표머리·글리프는 <use>가 defs를 참조하는데, 원본 path에 준
      fill이 복제본까지는 못 가서 use 자신에 줘야 붙는다(실측 2026-08-14). */
   #staffBody .vrv-out :is(path, ellipse, rect, polygon, polyline, text, use) { fill: currentColor; }
+  /* 곁줄 기호(음표 위 활 표시·구음 — app.js vrvSymMarks)는 사전의 그림(<image>)이라
+     currentColor를 못 따른다. 다크에서만 뒤집는다(로고 img의 invert와 같은 수법). */
+  body.dark #staffBody .vrv-out image.vrv-sym { filter: invert(1); }
   /* 재생 중 **지금 울리는 음표** — 정간보가 현재 정간을 상자로 짚는 그 순간과 같은 것을
      가리킨다(app.js '재생 위치 짚기'). 정간보 쪽은 흰 종이 위라 고정색이지만 오선보는
      종이가 아니라 화면의 일부라(위 주석) 강조색이 테마·다크를 따라간다.

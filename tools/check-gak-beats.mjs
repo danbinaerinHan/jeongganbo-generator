@@ -25,7 +25,7 @@ const app = await loadApp(
    "parseDaegang", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor",
    "gakCellOffset", "melCellSeq", "seqToCell",
    "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
-   "scaleNotes", "makeScale", "realizeMelody",
+   "scaleNotes", "makeScale", "seqShare", "realizeMelody",
    "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
   { beats: "12", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", daegang: "", staffJanggu: "legend", wantJangdan: false, jangdan: "" },

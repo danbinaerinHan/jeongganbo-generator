@@ -471,7 +471,7 @@ if (flags.has("--verify")) {
      "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
      "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens",
      "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt",
-     "sigimsaeSoundOn", "stripSymBracket", "scaleNotes", "makeScale", "realizeMelody"],
+     "sigimsaeSoundOn", "stripSymBracket", "scaleNotes", "makeScale", "seqShare", "realizeMelody"],
     { beats: "12", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "all", playSigimsae: true },
     `let parts = [{ melody: "", muted: false }];
      let activePart = 0;

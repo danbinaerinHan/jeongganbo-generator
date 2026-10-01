@@ -16,7 +16,7 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "matchSpecialNote", "tokenizeNotes", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "parseDaegang", "parseMelodyOffsets", "groupRowTokens",
    "jangguSoundOn", "sigimsaeSoundOn", "stripSymBracket", "midiToFreq", "scaleNotes", "makeScale",
-   "realizeMelody", "scoreViewOn", "buildAudioEvents"],
+   "seqShare", "realizeMelody", "scoreViewOn", "buildAudioEvents"],
   { beats: "20", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
     jangdan: "", wantJangdan: false, playJanggu: false, playSigimsae: true },
   // 합주 파트는 이 검사의 관심 밖이라 '파트 하나'로 세워 둔다 — 여기서 보는 것은 한 가락이
@@ -112,6 +112,18 @@ eq("꾸밈이 붙어도 총 길이 그대로",
    [Math.round(totalOf("중{니레}|중{느니르}", 2) * 1e6),
     Math.round(totalOf("중|{느나르나니}", 2) * 1e6)],
    [Math.round(plain * 1e6), Math.round(plain * 1e6)]);
+
+console.log("\n길이 비 — 사전의 snd.w대로 자리를 나누는가(오선보와 같은 share)");
+{
+  // 느나르나니는 1:1:1:2:1(6등분, 2026-10-01). 정간 = 1초(60 BPM)
+  app.fields.beats = "2";
+  app.setMelody("중|{느나르나니}");
+  const durs = buildAudioEvents().events.slice(1).map((e) => Math.round(e.dur * 6e6) / 1e6);
+  eq("{느나르나니} 다섯 음의 길이(1/6초 단위) = 1:1:1:2:1", durs, [1, 1, 1, 2, 1]);
+  app.setMelody("중{나니나}|중");
+  const even = buildAudioEvents().events.slice(0, 3).map((e) => Math.round(e.dur * 3e6) / 1e6);
+  eq("길이 비가 없는 {나니나}는 그대로 고르게", even, [1, 1, 1]);
+}
 
 console.log("\n민음으로 듣기 (재생 설정의 '시김새대로 연주' 끔)");
 {

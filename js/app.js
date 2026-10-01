@@ -651,16 +651,28 @@
   //     중{흘림표} · 중{니레} · 중{퇴성} → 한 칸(붙음)      {흘림표}중 → 두 칸(갈림)
   //   홀로 선 시김새(`{니레}`)는 제 분박을 차지하는 독립 시김새라 한 칸이고 걸리지 않는다.
   //
+  // **넷 이상으로는 나누지 않는다**(2026-10-01, 논문 심사 지적). 간행 정악보의 정간은 위아래
+  // 2·3소박으로 나뉘고, 한 행 안은 대개 둘·셋잇단을 적을 때 셋이다 — 넷 이상은 정간보의 등분
+  // 체계에 없다. 그래서 **행이 넷 이상**이거나 **한 행 안 좌우 칸이 넷 이상**이면 틀린 칸이다
+  // (행 3 × 칸 3까지는 그대로 받는다). 시김새가 소리로 풀리며 정간을 4~5음으로 가르는 것
+  // (느나르나니 등, 사전의 snd.seq)은 사람이 나눈 것이 아니라 대상이 아니다 — 여기서 세는 것은
+  // 적힌 글자의 칸이지 울리는 음의 수가 아니다. 그리기·재생·오선보는 손대지 않는다(표시만).
+  //
   // 세는 자는 그리기가 쓰는 그것 그대로다(rowToks 필터 + groupRowTokens) — 여기서 따로 세면
-  // 화면에 그려진 칸 수와 검사가 어긋난다.
+  // 화면에 그려진 칸 수와 검사가 어긋난다. 행 수도 drawCell·realizeMelody의 rows.length 그대로다.
   function cellSplitBad(cellText) {
+    const SPLIT_MAX = 3;
     const rows = cellText.split(/\s+/).filter(Boolean);
-    if (rows.length !== 1) return false;      // 상하로 나뉘었으면 좌우는 마음대로
+    if (rows.length > SPLIT_MAX) return true;  // 위아래로 넷 이상
     // 숨표·빠르기는 칸을 차지하지 않는다(drawCell이 배치에서 빼는 것과 같은 규칙)
-    const toks = tokenizeNotes(rows[0]).filter(function (tk) {
-      return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
+    const cols = rows.map(function (row) {
+      return groupRowTokens(tokenizeNotes(row).filter(function (tk) {
+        return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
+      })).length;
     });
-    return groupRowTokens(toks).length > 1;
+    if (cols.some(function (n) { return n > SPLIT_MAX; })) return true;   // 한 행 안 좌우 넷 이상
+    // 상하로 나뉘었으면 좌우는 (셋까지) 마음대로, 분박 하나짜리는 좌우로 못 가른다
+    return rows.length === 1 && cols[0] > 1;
   }
 
   // 에디터 뒤 배경 레이어에 같은 글을 깔고, 잘못된 글자에만 빨간 배경을 입힌다
@@ -2358,7 +2370,10 @@
     const r = tempoRange();
     // 물결표는 전각(～) — 반각 ~는 세로쓰기에서 글자 높이의 한가운데 가는 획으로만 남아
     // 앞뒤 한자 사이에 묻힌다. 전각이라야 한 글자 자리를 제대로 차지한다.
-    return "一分・" + numToHanjaTempo(r.lo) + (r.hi ? "～" + numToHanjaTempo(r.hi) : "") + "井";
+    // 수사 방식(#tempoNumStyle): 一六十(국립국악원 정악보) | 一六○(자리 숫자). 악보와 미리보기가
+    // 둘 다 이 함수를 지나므로 고르개를 바꾸면 두 자리가 같은 글자를 낸다.
+    const conv = ($("tempoNumStyle") && $("tempoNumStyle").value === "digit") ? numToHanjaDigits : numToHanjaTempo;
+    return "一分・" + conv(r.lo) + (r.hi ? "～" + conv(r.hi) : "") + "井";
   }
   // 재생 빠르기는 '악보에 적은 최소값'에서 시작하고, 재생 설정(⚙)에서 한 번이라도 직접
   // 바꾸면 그때부터 따로 논다 — 악보 표기를 고쳐도 안 끌려간다. 예전엔 둘이 늘 같은 값이라
@@ -2380,6 +2395,13 @@
     const baek = Math.floor(n / 100), rest = n % 100;
     if (rest === 0) return HANJA_DIGIT[baek] + "百";
     return HANJA_DIGIT[baek] + numToHanja(rest);
+  }
+
+  // 빠르기 표기의 또 다른 수사 — 국립국악원 2015~2016년 정악보 이전의 악보는 자리 표시(百·十)를
+  // 모두 덜고 자리마다 숫자를 그대로 옮겨 적었다: 160 → 一六○, 105 → 一○五, 72 → 七二. 0은 '○'.
+  function numToHanjaDigits(n) {
+    n = Math.max(0, Math.round(n));
+    return String(n).split("").map(function (d) { return d === "0" ? "○" : HANJA_DIGIT[+d]; }).join("");
   }
 
   function numToHanja(n) {
@@ -5963,6 +5985,16 @@
   // opts.plain — **시김새를 빼고 적힌 율명만** 푼다(재생 설정의 '시김새대로 연주' 끔).
   // 가락의 뼈대만 듣고 싶을 때가 있어서 둔 길이고, 기본은 늘 켬(시김새대로)이다.
   // **재생만 이 옵션을 준다** — 오선보·MusicXML은 늘 시김새를 그리므로 안 준다.
+  // seq 음들이 자리를 나눠 갖는 몫(합 1). 사전의 snd.w(길이 비)가 있으면 그 비율로,
+  // 없거나 길이가 안 맞으면 고르게. 재생과 오선보가 이 몫(slot.share)을 그대로 쓴다 —
+  // 느나르나니 [1,1,1,2,1]처럼 5등분을 표준 음표로 나뉘는 6등분으로 바꾸는 자리(2026-10-01).
+  function seqShare(n, w) {
+    const ok = Array.isArray(w) && w.length === n && w.every(function (x) { return x > 0; });
+    const ws = ok ? w : Array.from({ length: n }, function () { return 1; });
+    const sum = ws.reduce(function (a, x) { return a + x; }, 0);
+    return ws.map(function (x) { return x / sum; });
+  }
+
   function realizeMelody(hwangMidi, melodyText, opts) {
     const plain = !!(opts && opts.plain);
     const sc = makeScale(hwangMidi);
@@ -5976,7 +6008,9 @@
     // 마지막 실음이 난 각 — **지속은 제 각 안에서만**이라 이걸로 가른다.
     let lastNoteGak = -1;
 
-    function push(kind, dur, g, j, r) {
+    // row·rows = 그 자리가 정간 안 몇째 행(분박)에서 났나 · 그 정간의 행 수(빈 정간은 0).
+    // 소리에는 안 쓰이고 오선보가 곁줄 가사를 그 행의 음에 붙일 때 본다(staff-core placeLyrics).
+    function push(kind, dur, g, j, r, row, rows) {
       // 각(=한 장단)을 넘는 지속은 끊고 쉼으로 적는다(2026-08-14 사용자 확정) — 빈 정간·
       // 이음(-)은 제 각 안에서만 앞 음을 잇는다. 재생과 오선보가 이 함수 하나를 나눠 보므로
       // 소리도 여기서 끊기고 악보에도 쉼표로 나온다. prevMidi는 그대로 둔다 — 쉼표와 같은
@@ -5984,7 +6018,9 @@
       if (kind === "note") lastNoteGak = g;
       else if (kind === "hold" && lastNoteGak !== g) kind = "rest";
       slots.push({ gak: g, cell: j, beat: beat, dur: dur, kind: kind,
-                   seq: (r && r.seq) || [], pre: (r && r.pre) || [], post: (r && r.post) || [] });
+                   seq: (r && r.seq) || [], share: (r && r.share) || [],
+                   pre: (r && r.pre) || [], post: (r && r.post) || [],
+                   row: row || 0, rows: rows || 0 });
       beat += dur;
     }
 
@@ -5998,12 +6034,12 @@
         grp.att.forEach(function (a) { if (a.sym && SYM_SND[a.sym]) atts.push(SYM_SND[a.sym]); });
       }
 
-      let ref, degs;
+      let ref, degs, wts = null;
       if (tk.base) {
         ref = hwangMidi + SCALE.indexOf(tk.base) + tk.oct * 12;
         degs = [0];
         // 나니나처럼 본음의 자리를 가르는 붙임이 있으면 그 꼴이 본음 하나를 대신한다
-        for (let i = 0; i < atts.length; i++) if (atts[i].seq) { degs = atts[i].seq; break; }
+        for (let i = 0; i < atts.length; i++) if (atts[i].seq) { degs = atts[i].seq; wts = atts[i].w; break; }
       } else {
         // 독립 시김새는 적힌 율명이 아니라 시김새 그 자체다 — 민음에서는 앞 음이 이어진다
         if (plain) return null;
@@ -6011,6 +6047,7 @@
         if (!own || !own.seq || prevMidi == null) return null;
         ref = prevMidi;   // 독립 시김새의 기준음은 앞 음
         degs = own.seq;
+        wts = own.w;
       }
 
       const pre = [], post = [];
@@ -6020,7 +6057,7 @@
       });
       const seq = degs.map(function (d) { return sc.pitch(ref, d); });
       prevMidi = seq[seq.length - 1];
-      return { seq: seq, pre: pre, post: post };
+      return { seq: seq, share: seqShare(seq.length, wts), pre: pre, post: post };
     }
 
     for (let g = 0; g < gaks.length; g++) {
@@ -6039,15 +6076,15 @@
             return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
           });
           const groups = groupRowTokens(toks);
-          if (!groups.length) { push("hold", rowDur, g, j); continue; }
+          if (!groups.length) { push("hold", rowDur, g, j, null, r, rows.length); continue; }
           const slotDur = rowDur / groups.length;
           for (let gi = 0; gi < groups.length; gi++) {
             const grp = groups[gi];
             // 쉼표는 앞 음을 끊지만 기준음은 지우지 않는다 — 쉼표 뒤의 '노'도 쉼표 앞
             // 음에서 한 칸 내린 음이라야 가락이 이어진다.
-            if (grp.main.sym === "pause_007") { push("rest", slotDur, g, j); continue; }
+            if (grp.main.sym === "pause_007") { push("rest", slotDur, g, j, null, r, rows.length); continue; }
             const res = resolveGroup(grp);
-            push(res ? "note" : "hold", slotDur, g, j, res);   // 이음(-)·소리 없는 기호 → 지속
+            push(res ? "note" : "hold", slotDur, g, j, res, r, rows.length);   // 이음(-)·소리 없는 기호 → 지속
           }
         }
       }
@@ -6150,9 +6187,9 @@
         if (s.kind === "hold") { extend(dur, s.gak, s.cell); return; }
         const gn = s.pre.length + s.post.length;
         const gl = graceLen(dur, gn);
-        const body = (dur - gl * gn) / s.seq.length;
+        const body = dur - gl * gn;   // seq가 나눠 갖는 몫 — 길이 비는 realizeMelody의 share
         s.pre.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
-        s.seq.forEach(function (m) { note(midiToFreq(m), body, s.gak, s.cell); });
+        s.seq.forEach(function (m, i) { note(midiToFreq(m), body * s.share[i], s.gak, s.cell); });
         s.post.forEach(function (m) { note(midiToFreq(m), gl, s.gak, s.cell); });
       });
       totalT = Math.max(totalT, t);
@@ -6963,6 +7000,17 @@
     //    오차는 그 정간의 마지막 자리에서 걷어, 정간 하나가 늘 딱 jg가 되게 한다 —
     //    안 그러면 오차가 쌓여 뒤쪽 마디부터 마디 길이가 어긋난다.
     const slots = realizeMelody(hwangMidi, melodyText);
+    // 곁줄 가사·기호 — **어느 음에 무엇이 붙나는 staff-core의 placeLyrics 한 곳이 정한다**
+    // (괄호 없는 한글 음절 = 음표 아래 가사 · 사전에 있는 괄호 토큰 = 음표 위 기호 · 그 행에서
+    // 시작하는 실음에 · 음이 없는 자리의 것은 같은 각의 다음 실음으로). 여기서는 곁줄 원문을
+    // 칸 글자로 펴서 넘기기만 한다.
+    // 곁줄이 비어 있으면 아무것도 안 붙어 MusicXML이 예전과 한 글자도 같다.
+    const lyText = meta && meta.lyrics;
+    const slotLyric = (lyText && lyText.replace(/[|\s]/g, ""))
+      ? SC.placeLyrics(slots, parseMelodyOffsets(lyText).map(function (g) {
+          return g.map(function (c) { return c.text; });
+        }))
+      : null;
     let cellSum = 0;
     slots.forEach(function (s, i) {
       s.units = Math.max(1, Math.round(s.dur * jg));
@@ -6980,7 +7028,7 @@
     //    난 잇단 음들만 한 괄호(숫자 3)로 묶여야 해서.
     const notes = [];
     let prev = null;
-    slots.forEach(function (s) {
+    slots.forEach(function (s, si) {
       const cellKey = s.gak + ":" + s.cell;
       if (s.kind !== "note") {
         if (s.kind === "hold" && prev) { prev.units += s.units; return; }
@@ -6988,9 +7036,18 @@
         prev = null;
         return;
       }
-      const each = s.units / s.seq.length;
+      // 길이 비(share)대로 나눈다 — 누적해 반올림해야 합이 s.units에서 안 어긋난다
+      let acc = 0, given = 0;
       s.seq.forEach(function (m, i) {
+        acc += s.share[i];
+        const upto = i === s.seq.length - 1 ? s.units : Math.round(s.units * acc);
+        const each = upto - given; given = upto;
         prev = { midi: m, units: each, grace: i === 0 ? s.pre : [], after: [], cell: cellKey };
+        // 가사·기호는 그 자리의 **첫 음**에만 — 뒤 음들은 독립 시김새가 가른 같은 음절의 가락이다
+        if (i === 0 && slotLyric && slotLyric[si]) {
+          if (slotLyric[si].lyric) prev.lyric = slotLyric[si].lyric;
+          if (slotLyric[si].marks) prev.marks = slotLyric[si].marks;
+        }
         notes.push(prev);
       });
       if (s.post.length) prev.after = s.post;
@@ -7008,13 +7065,16 @@
       while (left > 0) {
         if (filled >= measLen) newMeasure();
         const take = Math.min(left, measLen - filled);
-        cur.push({
+        const piece = {
           midi: n.midi, rest: n.rest, units: take, cell: n.cell,
           // 꾸밈은 앞쪽은 첫 조각에, 뒤쪽은 마지막 조각에만 붙는다
           graces: first ? (n.grace || []) : [],
           afters: (left - take <= 0) ? (n.after || []) : [],
           tieStart: left - take > 0, tieStop: !first
-        });
+        };
+        if (first && n.lyric) piece.lyric = n.lyric;   // 붙임줄로 이은 뒤 조각에는 안 붙인다
+        if (first && n.marks) piece.marks = n.marks;
+        cur.push(piece);
         filled += take; left -= take; first = false;
       }
     });
@@ -7065,9 +7125,12 @@
       // 채로 둔다 — 거기 '파트 1'이라 적히면 알려 주는 것 없이 자리만 먹는다.
       const named = (p.name || "").trim()
         || (p.instrument && p.instrument !== "all" ? p.instrument : "");
+      // 가사는 파트마다 제 곁줄에서 — 곁줄 자리를 보이나(#lyricsLane)와는 무관하다. 그건
+      // 정간보 종이의 자리 문제이고 오선보·파일은 곡 자체를 담는다(장구 범례와 같은 셈).
       return staffScoreOf(i === activePart ? melodyFull : p.melody,
                           { name: all ? partLabel(p, i) : named, abbr: p.abbr,
-                            instrument: p.instrument });
+                            instrument: p.instrument,
+                            lyrics: i === activePart ? lyricsFull : p.lyrics });
     });
     // 장구는 **맨 위**에 선다 — 각(장단)이 이 기보의 뼈대라 그것부터 읽는 것이 맞고,
     // 빠르기 표시도 맨 위 보표에 붙어야 한다(musicxml.js는 pi===0에 적는다).
@@ -7423,7 +7486,9 @@
   // 이 값도 다시 잴 것.
   const VRV_ONE_W = 1.339;
   function vrvPage(i) {
-    const svg = vrvTk.renderToSVG(i, {});
+    return vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {})));
+  }
+  function vrvTimeNotes(svg) {
     const tt = staffTimeType();
     if (!SC.NOTE_TYPES[tt] && tt !== "na") return svg;
     const marks = window.JGB_MUSICXML.VRV_MARKS;
@@ -7448,6 +7513,58 @@
         lows.forEach(function (u) { body = body.replace(u.src, ""); });
         return open + body +
                SC.timeNoteSvg(dotOf[key], cx, yTop - SP, SP, "vrv-time") + close;
+      });
+  }
+
+  // 곁줄 기호(활 표시·구음…)를 **사전의 그림**으로 바꿔 끼운다 — vrvPage의 둘째 일.
+  // 조판용 XML(js/musicxml.js marksXml, meta.vrv)은 음표 위 <direction><words>에 표지 글자
+  // (U+F0000 + 사전 차례)를 적어 두었다. Verovio는 그것을 그 음 자리, 오선 위에 글자로 그리므로
+  // 그 dir 묶음의 글자를 걷고 같은 자리에 symURL(id)의 그림을 놓는다(파일로 나가는 MusicXML은
+  // 표시 이름 그대로라 여기를 안 지난다). 무엇이 어느 음에 붙나는 staff-core placeLyrics가
+  // 이미 정했다 — 여기는 그림만 바꾼다.
+  //   · 자리: text의 x = 음표머리 왼끝, y = 글줄 밑선. 머리 가운데(x + 0.59칸)에 맞추고
+  //     밑선에 바닥을 댄다 — 조판기가 글자 높이(≈2.2칸)만큼 위를 비워 두었으므로 그 안에 든다.
+  //   · 크기: 한 변 VRV_SYM_BOX칸 정사각 상자에 비율을 지켜(meet) 넣고, 사전의 곁줄 크기
+  //     (at.lyric)로 줄인다 — 구음(0.65)·막대(0.8)는 상자 가득, 작은 시김새류(0.4)는 그
+  //     비율만큼, '다'(0.23)는 점 크기. 정간보 곁줄에서 서로 견준 크기 그대로다.
+  //   · 한 음에 여럿이면 옆으로 나란히(가운데 정렬).
+  //   · 다크모드는 css/styles.css의 `.vrv-sym` 규칙이 뒤집는다(그림은 currentColor를 못 따른다).
+  //   · 그림은 데이터 URL이라 PNG 저장(SVG → <img>)에서도 그대로 따라간다(글꼴과 달리 따로
+  //     심을 것이 없다 — 곁줄 기호 그림에는 <text>가 없다).
+  const VRV_SYM_BOX = 1.8, VRV_SYM_FULL = 0.65;
+  function vrvSymMarks(svg) {
+    const base = window.JGB_MUSICXML.VRV_SYM_BASE;
+    const MARK_RE = /[\u{F0000}-\u{FFFFD}]/u;
+    if (!MARK_RE.test(svg)) return svg;   // 기호 없는 쪽은 한 글자도 안 바꾼다
+    // 칸(오선 한 칸 높이) — 첫 오선의 두 줄 사이. Verovio의 내부 단위라 쪽 안에서 같다.
+    const ln = svg.match(/class="staff"[^>]*>\s*<path d="M[\d.]+ ([\d.]+) L[^"]*"[^>]*\/>\s*<path d="M[\d.]+ ([\d.]+) /);
+    const SP = ln ? Math.abs(+ln[2] - +ln[1]) : 180;
+    return svg.replace(/<g([^>]*)class="dir"([^>]*)>\s*<text x="([-\d.]+)" y="([-\d.]+)"[^>]*>([\s\S]*?)<\/text>\s*<\/g>/g,
+      function (all, a1, a2, xs, ys, body) {
+        const ids = [];
+        Array.from(body.replace(/<[^>]*>/g, "")).forEach(function (ch) {
+          if (!MARK_RE.test(ch)) return;
+          const e = SYM_REG.list[ch.codePointAt(0) - base];
+          if (e && symURL(e.id)) ids.push(e);
+        });
+        if (!ids.length) return all;
+        const boxes = ids.map(function (e) {
+          const k = Math.min(1, ((e.at && e.at.lyric) || VRV_SYM_FULL) / VRV_SYM_FULL);
+          return { e: e, s: VRV_SYM_BOX * SP * k };
+        });
+        const gap = SP * 0.2;
+        const total = boxes.reduce(function (t, b) { return t + b.s; }, 0) + gap * (boxes.length - 1);
+        let x = +xs + 0.59 * SP - total / 2;
+        const y0 = +ys;
+        const ims = boxes.map(function (b) {
+          const href = symURL(b.e.id);
+          const im = "<image class=\"vrv-sym\" x=\"" + x.toFixed(1) + "\" y=\"" + (y0 - b.s).toFixed(1) +
+            "\" width=\"" + b.s.toFixed(1) + "\" height=\"" + b.s.toFixed(1) +
+            "\" preserveAspectRatio=\"xMidYMax meet\" href=\"" + href + "\" xlink:href=\"" + href + "\"/>";
+          x += b.s + gap;
+          return im;
+        });
+        return "<g" + a1 + "class=\"dir vrv-symdir\"" + a2 + ">" + ims.join("") + "</g>";
       });
   }
 
@@ -8138,7 +8255,7 @@
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
     "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "yulFont", "pageNumPos", "gakNumMode",
-    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX",
+    "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX", "tempoNumStyle",
     "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffJanggu", "staffPrintSize"];
   const LS_KEY = "jgb_state_v1";
   // 문서에 딸린 칸의 **기본값** — 페이지가 처음 그려진 그대로(HTML의 value/checked)를 한 번
@@ -8743,7 +8860,7 @@
   });
   ["sizeScale", "pageFill", "noteScale", "lyricsScale", "subtitle",
    "titleFont", "lyricsFont", "header", "frame", "lyricsLane", "noteMode", "yulFont", "paperSize", "orientation", "pageNumPos", "gakNumMode",
-   "gakNameHanja", "scoreView"].forEach(id => {
+   "gakNameHanja", "tempoNumStyle", "scoreView"].forEach(id => {
     $(id).addEventListener("input", render);
     $(id).addEventListener("change", render);
   });

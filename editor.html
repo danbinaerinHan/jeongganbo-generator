@@ -1669,6 +1669,15 @@
           <span class="tool-inline" title="최대값 — 적으면 '최소~최대'로 표기됩니다. 비우면 한 값만 표기">~
             <span class="num-unit"><input type="number" id="tempoBpmGakMax" min="20" max="240" placeholder="최대" title="비우면 한 값만 적습니다"></span>
           </span>
+          <!-- 한자 수사의 방식 — 국립국악원 정악보(2015~2016)는 백의 자리 '百'만 덜어 '一六十'으로,
+               그 이전 악보는 자리 표시(百·十)를 다 덜고 자리마다 숫자를 옮겨 '一六○'으로 적었다.
+               문서에 저장된다(CTRL_IDS) — 값이 없는 옛 문서는 아래 selected인 一六十으로 열린다. -->
+          <span class="tool-inline" title="빠르기 숫자를 한자로 적는 방식">수사
+            <select id="tempoNumStyle">
+              <option value="nggc" selected title="국립국악원 정악보(2015~2016)의 표기 — 백의 자리 '百'만 덜어 냅니다">一六十</option>
+              <option value="digit" title="그 이전 악보의 표기 — 자리마다 숫자를 적고 0은 ○">一六○</option>
+            </select>
+          </span>
           <span class="tool-inline" title="빠르기 표기의 글자 크기 배율 (각/장 이름과 따로)">크기
             <span class="num-unit"><input type="number" id="tempoSize" min="0.3" max="3" step="0.1" value="1"><span class="unit">×</span></span>
           </span>

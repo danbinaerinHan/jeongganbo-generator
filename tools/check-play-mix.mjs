@@ -25,7 +25,7 @@ const app = await loadApp(
    "matchSpecialNote", "tokenizeNotes", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats",
    "gakBeatsMap", "beatsAt", "daegangTextFor", "parseDaegang", "parseMelodyOffsets",
    "groupRowTokens", "jangguSoundOn", "sigimsaeSoundOn", "stripSymBracket", "midiToFreq",
-   "scaleNotes", "makeScale", "realizeMelody", "scoreViewOn", "buildAudioEvents",
+   "scaleNotes", "makeScale", "seqShare", "realizeMelody", "scoreViewOn", "buildAudioEvents",
    "const:MELODY_PEAK", "const:SOFT_KNEE", "const:JANGGU_GAIN", "softClipCurve"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "all",
     jangdan: "", wantJangdan: false, playJanggu: false, playSigimsae: true,

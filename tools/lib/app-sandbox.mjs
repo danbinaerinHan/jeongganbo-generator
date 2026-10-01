@@ -72,7 +72,7 @@ function takeConst(name) {
  * @param fields  DOM 칸 흉내 — { id: "값" | true/false }
  * @param prelude 떼어 온 조각들 앞에 끼워 넣을 대역(代役) 코드. 검사 범위 밖의 것을
  *                가리는 데 쓴다(예: 합주 파트 목록 — 시김새 소리 검사엔 파트가 하나면 된다).
- * @returns { fields, setMelody, fn }
+ * @returns { fields, setMelody, setLyrics, fn }
  */
 export async function loadApp(names, fields, prelude) {
   await import("../../js/symbols-registry.js");
@@ -103,10 +103,12 @@ export async function loadApp(names, fields, prelude) {
     const ORN_KO = {};
     ORN_LIST.forEach(function (o) { if (!(o.k in ORN_KO)) ORN_KO[o.k] = o.s; });
     let melodyFull = "";
+    let lyricsFull = "";   // 활성 파트의 곁줄 작업 사본 — 오선보 가사 검사가 setLyrics로 채운다
     function track() {}
     ${prelude || ""}
     ${parts.join("\n\n")}
     return { __setMelody: function (t) { melodyFull = t; },
+             __setLyrics: function (t) { lyricsFull = t; },
              ${exposed.map(function (n) { return n + ": " + n; }).join(", ")} };
   `);
 
@@ -116,6 +118,7 @@ export async function loadApp(names, fields, prelude) {
   return {
     fields: state.fields,
     setMelody(t) { state.melody = t; api.__setMelody(t); },
+    setLyrics(t) { api.__setLyrics(t); },
     fn(name) {
       if (!api[name]) throw new Error(`${name}을 떼어 오지 않았습니다`);
       return api[name];

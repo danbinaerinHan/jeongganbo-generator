@@ -6,7 +6,10 @@
 //
 //   build(scores, meta) → XML 문자열
 //   scores = [{ name, fifths, clef:"G"|"F", beats, bpm, unit, jg, measures:[[음표…]] }] (악기 하나면 길이 1)
-//   음표   = { midi, rest, units, graces:[midi], afters:[midi], tieStart, tieStop }
+//   음표   = { midi, rest, units, graces:[midi], afters:[midi], tieStart, tieStop, lyric? }
+//            lyric = { text, syllabic } — 곁줄 가사(staff-core placeLyrics). 있을 때만 <lyric>을 적는다.
+//            marks = [{ id, ko, n }] — 곁줄 기호(같은 placeLyrics). 있을 때만 그 음 앞에
+//                    <direction placement="above">로 표시 이름(ko)을 적는다(아래 marksXml).
 //   meta   = { title, subtitle, measStart }
 //            measStart = 첫 마디 번호(없으면 1) — 나란히 인쇄가 각 범위를 잘라 쪽마다
 //            따로 만들 때 마디 번호가 쪽마다 1로 되돌지 않게 하는 용도.
@@ -54,6 +57,27 @@
            "</beats><beat-type>" + ts.type + "</beat-type></time>";
   }
   const VRV_MARKS = { q: 11, dq: 111 };
+
+  // 곁줄 기호(활 표시·구음 등) → 음표 **위**. 무엇이 어느 음에 붙나는 staff-core placeLyrics가
+  // 정했고 여기는 적기만 한다. 꼴이 <direction placement="above"><words>인 것은 Verovio 6.2
+  // 실측 때문이다 — <lyric placement="above">는 무시되어 아래에 그려지고, <technical>
+  // <other-technical>은 아예 안 그려지는데, direction의 words만 오선 위 그 음 자리에 선다.
+  //   · **파일**: words = 기호의 표시 이름(ko) — 다른 프로그램에서 열어도 글자로 보인다.
+  //   · **화면 조판용(meta.vrv)**: words = 표지 글자 한 자(보충 사용자 영역 U+F0000 + 사전 차례 n).
+  //     app.js vrvPage가 그린 뒤 그 글자를 사전의 그림으로 바꿔 끼운다(박자표 VRV_MARKS와 같은
+  //     수법). 한 자짜리 사용자 영역 글자인 것은 **폭을 안 먹게** 하려는 것이다 — 이름을 그대로
+  //     적으면 조판기가 그 글자 폭만큼 자리를 비켜 이웃 음의 기호가 층층이 위로 쌓였다(실측).
+  //     BMP 사용자 영역(U+E000~)은 **쓰지 말 것** — SMuFL 악보 글리프 자리라 조판기가 빠르기
+  //     표(♩ = 60)를 그 글자로 그린다(실측). 보충 영역(U+F0000~)은 아무도 안 쓴다.
+  //   한 음에 기호가 여럿이면 direction 하나에 words를 여럿 둔다(조판기가 한 줄로 잇는다).
+  const VRV_SYM_BASE = 0xF0000;
+  function marksXml(marks, vrv) {
+    return "      <direction placement=\"above\">" + marks.map(function (m) {
+      return "<direction-type><words>" +
+        (vrv ? "&#x" + (VRV_SYM_BASE + m.n).toString(16).toUpperCase() + ";" : esc(m.ko)) +
+        "</words></direction-type>";
+    }).join("") + "</direction>";
+  }
 
   function build(scores, meta) {
     if (!C) throw new Error("js/staff-core.js가 먼저 실려 있어야 합니다");
@@ -127,6 +151,12 @@
         nots.forEach(function (n) { out.push(n); });
         out.push("        </notations>");
       }
+      // 곁줄 가사 — 규격상 <notations> 뒤에 온다. 어느 음에 무엇이 붙나는 staff-core의
+      // placeLyrics가 이미 정했고(재료의 o.lyric), 여기는 적기만 한다. 꾸밈음·쉼표엔 안 적는다.
+      if (o.lyric && !o.grace && !o.rest) {
+        out.push("        <lyric number=\"1\"><syllabic>" + o.lyric.syllabic +
+                 "</syllabic><text>" + esc(o.lyric.text) + "</text></lyric>");
+      }
       out.push("      </note>");
     }
 
@@ -168,6 +198,9 @@
             tieStart: n.rest ? false : (k < pieces.length - 1 || n.tieStart),
             noAcc: k > 0,
             graces: k === 0 ? n.graces : null,
+            // 가사도 첫 조각에만 — 붙임줄로 이은 뒤 조각은 같은 음절이 이어지는 것뿐이다
+            lyric: k === 0 ? n.lyric : null,
+            marks: k === 0 ? n.marks : null,
             afters: k === pieces.length - 1 ? n.afters : null
           });
           at += p.units;
@@ -258,11 +291,15 @@
 
       items.forEach(function (it) {
         graceRun(it.graces);
+        // 곁줄 기호 — 꾸밈음 뒤·본음 바로 앞(그 음에 걸리게). 쉼표·장구엔 안 적는다.
+        if (it.marks && it.marks.length && !it.rest && !VOP.perc) {
+          out.push(marksXml(it.marks, meta.vrv));
+        }
         // 빔은 위 절이 잇단·보통 음표를 가리지 않고 한 벌로 얹었다
         noteEl(Object.assign({}, it.src, VOP, {
           units: it.units, rest: it.rest, noAcc: it.noAcc,
           tup: it.tup, tupStart: it.tupStart, tupStop: it.tupStop,
-          tieStart: it.tieStart, tieStop: it.tieStop, beams: it.beams,
+          tieStart: it.tieStart, tieStop: it.tieStop, beams: it.beams, lyric: it.lyric,
           // 트레몰로(더러러러)는 갈린 조각 가운데 **첫 조각에만** 얹는다 — 조각마다 얹으면
           // 굴림이 여러 번 시작하는 것처럼 보인다.
           trem: it.noAcc ? 0 : it.src.trem
@@ -377,5 +414,5 @@
     return out.join("\n");
   }
 
-  root.JGB_MUSICXML = { build: build, VRV_MARKS: VRV_MARKS };
+  root.JGB_MUSICXML = { build: build, VRV_MARKS: VRV_MARKS, VRV_SYM_BASE: VRV_SYM_BASE };
 })(typeof window !== "undefined" ? window : globalThis);
