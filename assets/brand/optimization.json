@@ -1,0 +1,96 @@
+{
+  "codec": "cwebp -lossless -exact -z 9",
+  "images": [
+    {
+      "input": "assets/brand/animation-v10/art/look-up.png",
+      "output": "assets/brand/animation-v10/art/look-up.webp",
+      "before": 1238796,
+      "after": 772878
+    },
+    {
+      "input": "assets/brand/animation-v11/art/look-between.png",
+      "output": "assets/brand/animation-v11/art/look-between.webp",
+      "before": 1361959,
+      "after": 893836
+    },
+    {
+      "input": "assets/brand/animation-v6/art/bow.png",
+      "output": "assets/brand/animation-v6/art/bow.webp",
+      "before": 491140,
+      "after": 312990
+    },
+    {
+      "input": "assets/brand/animation-v6/art/flight.png",
+      "output": "assets/brand/animation-v6/art/flight.webp",
+      "before": 488542,
+      "after": 318590
+    },
+    {
+      "input": "assets/brand/animation-v6/art/gaze.png",
+      "output": "assets/brand/animation-v6/art/gaze.webp",
+      "before": 503063,
+      "after": 316900
+    },
+    {
+      "input": "assets/brand/animation-v8/art/landing.png",
+      "output": "assets/brand/animation-v8/art/landing.webp",
+      "before": 496040,
+      "after": 319358
+    },
+    {
+      "input": "assets/brand/animation-v6/art/preen.png",
+      "output": "assets/brand/animation-v6/art/preen.webp",
+      "before": 504963,
+      "after": 316762
+    },
+    {
+      "input": "assets/brand/animation-v6/art/stretch.png",
+      "output": "assets/brand/animation-v6/art/stretch.webp",
+      "before": 554132,
+      "after": 354624
+    },
+    {
+      "input": "assets/brand/animation-v6/art/takeoff.png",
+      "output": "assets/brand/animation-v6/art/takeoff.webp",
+      "before": 484007,
+      "after": 309740
+    },
+    {
+      "input": "assets/brand/animation-v6/art/walk.png",
+      "output": "assets/brand/animation-v6/art/walk.webp",
+      "before": 1216525,
+      "after": 763742
+    },
+    {
+      "input": "assets/brand/animation-v6/art/wake.png",
+      "output": "assets/brand/animation-v6/art/wake.webp",
+      "before": 494477,
+      "after": 309092
+    },
+    {
+      "input": "assets/brand/animation-v1/well.png",
+      "output": "assets/brand/animation-v1/well.webp",
+      "before": 314515,
+      "after": 197974
+    },
+    {
+      "input": "assets/brand/animation-v3/art/critters.png",
+      "output": "assets/brand/animation-v3/art/critters.webp",
+      "before": 1063305,
+      "after": 673022
+    }
+  ],
+  "beforeTotalBytes": 10544806,
+  "afterTotalBytes": 7192850,
+  "pixels": "Every converted image compared via decoded RGBA: exact match; dimensions unchanged.",
+  "changes": [
+    "Larger touch target covers the bird head and body; touch-action:manipulation on that button.",
+    "Head and eye SVG paths recomputed only when the pose changes.",
+    "Preload upcoming automatic actions; load extra click actions on demand. Touch-only visits do not eagerly load hover-only artwork or unused arrival artwork."
+  ],
+  "limitations": "Actual phone behavior is not yet reproduced; lossless compression reduces network transfer, not the decoded size of each atlas.",
+  "tests": [
+    "check-home-magpie.cjs PASS:1000 visits, all gesture/event checks, touch-only deferred loading and head path caching",
+    "13 converted WebP images:decoded RGBA exact match to PNG sources"
+  ]
+}

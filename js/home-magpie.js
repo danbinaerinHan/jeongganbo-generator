@@ -9,6 +9,7 @@
     if (!container || !model) return null;
     const doc = container.ownerDocument || document;
     const media = global.matchMedia('(prefers-reduced-motion: reduce)');
+    const pointerMedia = global.matchMedia('(any-hover: hover) and (any-pointer: fine)');
     const id = 'hmBird' + (++serial), images = new Map(), loadedImages = new Set(), removers = [];
     const settled = Number.isFinite(model.settled) ? model.settled : 5.8;
     const staticTime = Number.isFinite(model.staticTime) ? model.staticTime : settled + .7;
@@ -20,6 +21,7 @@
     let inView = true, pageAway = false, timer = 0, lastClock = null, reaction = null;
     let reactionRequest = 0, reactionPending = false, extraStarted = false, lastState = null;
     let reactionHistory = [];
+    let lastDrawnPose = null;
     let pointer = null, lookIndex = 0, lookTarget = 0, lookNext = 0, lookLoading = false;
     const fallback = container.querySelector('.hm-logo');
     function node(tag, attrs, parent) {
@@ -48,7 +50,7 @@
     node('feComposite', {in:'inkColor',in2:'solidInk',operator:'in'},filter);
     const asset = src => (opt.assetBase || '') + src;
     const well = node('image', {x:210,y:98,width:220,height:220,filter:'url(#'+id+'Ink)',
-      href:asset('assets/brand/animation-v1/well.png')},svg);
+      href:asset(model.sheets.well.src)},svg);
     const bird = node('g',{},svg);
     function layer(parent, n) {
       const clip = node('clipPath',{id:id+'Clip'+n,clipPathUnits:'userSpaceOnUse'},defs);
@@ -140,7 +142,7 @@
     }
     function pointerMove(event) {
       if(event.pointerType&&event.pointerType!=='mouse'){clearPointer();return;}
-      if(!running()||!svg.getBoundingClientRect)return;
+      if(!pointerMedia.matches||!running()||!svg.getBoundingClientRect)return;
       const rect=svg.getBoundingClientRect(),view=opt.home?[230,104,184,198]:[0,0,640,360];
       const scale=Math.min(rect.width/view[2],rect.height/view[3]);if(!(scale>0))return;
       const point={x:view[0]+(event.clientX-rect.left-(rect.width-view[2]*scale)/2)/scale,y:view[1]+(event.clientY-rect.top-(rect.height-view[3]*scale)/2)/scale};
@@ -163,25 +165,30 @@
       attr(bird,'transform','translate('+lastState.x+' '+lastState.y+')');
       attr(bird,'opacity',lastState.opacity);
       birds.forEach((n,i)=>showLayer(n,lastState.poses[i]));
-      const profile=model.poseProfile?model.poseProfile(lastState.poses[0]):null;
-      attr(profileClear,'display',profile?'inline':'none');attr(profileGroup,'display',profile?'inline':'none');
-      if(profile){
-        ['x','y','width','height'].forEach((key,k)=>attr(profileClear,key,profile.clear[k]+(k===0?profile.x:k===1?profile.y:0)));
-        const points=profile.contour,join=profile.x+profile.joinX;
-        let outline='M '+join+' '+(profile.y+points[0][1])+' L '+(profile.x+points[0][0])+' '+(profile.y+points[0][1]);
-        for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i];outline+=' Q '+(profile.x+a[0])+' '+(profile.y+a[1])+' '+(profile.x+(a[0]+b[0])/2)+' '+(profile.y+(a[1]+b[1])/2);}
-        const last=points[points.length-1];
-        attr(profileGroup,'d',outline+' L '+(profile.x+last[0])+' '+(profile.y+last[1])+' L '+join+' '+(profile.y+last[1])+' Z');
+      const poseKey=lastState.poses[0].sheet+'/'+lastState.poses[0].index;
+      // Head/eye paths are static within a cel; only position and blink change per tick.
+      if(poseKey!==lastDrawnPose){
+        lastDrawnPose=poseKey;
+        const profile=model.poseProfile?model.poseProfile(lastState.poses[0]):null;
+        attr(profileClear,'display',profile?'inline':'none');attr(profileGroup,'display',profile?'inline':'none');
+        if(profile){
+          ['x','y','width','height'].forEach((key,k)=>attr(profileClear,key,profile.clear[k]+(k===0?profile.x:k===1?profile.y:0)));
+          const points=profile.contour,join=profile.x+profile.joinX;
+          let outline='M '+join+' '+(profile.y+points[0][1])+' L '+(profile.x+points[0][0])+' '+(profile.y+points[0][1]);
+          for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i];outline+=' Q '+(profile.x+a[0])+' '+(profile.y+a[1])+' '+(profile.x+(a[0]+b[0])/2)+' '+(profile.y+(a[1]+b[1])/2);}
+          const last=points[points.length-1];
+          attr(profileGroup,'d',outline+' L '+(profile.x+last[0])+' '+(profile.y+last[1])+' L '+join+' '+(profile.y+last[1])+' Z');
+        }
+        const eyes = model.poseEyes ? model.poseEyes(lastState.poses[0]) : [];
+        attr(eyeTrim,'display',eyes.length?'inline':'none');
+        attr(eyeAperture,'display',eyes.length?'inline':'none');
+        const ellipse = (eye,rx,ry) => 'M '+(eye.x-rx)+' '+eye.y+' a '+rx+' '+ry+' 0 1 0 '+(2*rx)+' 0 a '+rx+' '+ry+' 0 1 0 '+(-2*rx)+' 0 Z';
+        if (eyes.length) {
+          attr(eyeTrim,'d',eyes.map(e=>ellipse(e,e.coverRadius,e.coverRadius)).join(' '));
+          attr(eyeAperture,'d',eyes.map(e=>ellipse(e,e.radius,e.radiusY)).join(' '));
+        }
+        if(eyes.length){attr(eyelid,'cx',eyes[0].x);attr(eyelid,'cy',eyes[0].y);}
       }
-      const eyes = model.poseEyes ? model.poseEyes(lastState.poses[0]) : [];
-      attr(eyeTrim,'display',eyes.length?'inline':'none');
-      attr(eyeAperture,'display',eyes.length?'inline':'none');
-      const ellipse = (eye,rx,ry) => 'M '+(eye.x-rx)+' '+eye.y+' a '+rx+' '+ry+' 0 1 0 '+(2*rx)+' 0 a '+rx+' '+ry+' 0 1 0 '+(-2*rx)+' 0 Z';
-      if (eyes.length) {
-        attr(eyeTrim,'d',eyes.map(e=>ellipse(e,e.coverRadius,e.coverRadius)).join(' '));
-        attr(eyeAperture,'d',eyes.map(e=>ellipse(e,e.radius,e.radiusY)).join(' '));
-      }
-      if(eyes.length){attr(eyelid,'cx',eyes[0].x);attr(eyelid,'cy',eyes[0].y);}
       attr(eyelid,'opacity',lastState.blink||0);
       critters.forEach((n,i)=>{
         const c=(lastState.critters||[])[i];
@@ -218,7 +225,10 @@
       if (extraStarted || !ready || current < settled || media.matches) return;
       extraStarted = true;
       // One file at a time during the long rest; arrival never waits on event artwork.
-      const restFirst = ['neutral','lookUp','lookBetween','gaze','bow','wake','preen','stretch','critters','walk','takeoff','flight','braking','brakingBridge','landing','settle','well'];
+      const upcoming=(model.events||[]).flatMap(event=>model.reactionSheets(event.id));
+      const restFirst=[...new Set(['neutral',...(pointerMedia.matches?['lookUp','lookBetween']:[]),...upcoming,'takeoff','flight','well'])];
+      // Touch-only visits need no hover atlases or unused landing sequences.
+      // Click-selected artwork still loads on demand before that action starts.
       restFirst.filter(name=>model.sheets[name]).reduce((chain,name)=>chain.then(()=>dead?null:load(model.sheets[name].src)),Promise.resolve()).catch(fail);
     }
     function schedule() {
@@ -317,7 +327,7 @@
     // A seated arrival and the static setting need only the resting drawing.
     const initial = [...new Set([...(media.matches || model.arrival === false ? [] : arrivalSheets),...restSheets,...startupSheets])].filter(name=>model.sheets[name]);
     const initialSources = opt.preloadAll ? Object.values(model.sheets).map(sheet=>sheet.src) : initial.map(name=>model.sheets[name].src);
-    Promise.all(['assets/brand/animation-v1/well.png',...initialSources].map(load)).then(()=>{
+    Promise.all([model.sheets.well.src,...initialSources].map(load)).then(()=>{
       if (dead || failure) return;
       ready=true;draw();svg.style.visibility='';
       if (fallback) {fallback.style.visibility='hidden';fallback.setAttribute('aria-hidden','true');}

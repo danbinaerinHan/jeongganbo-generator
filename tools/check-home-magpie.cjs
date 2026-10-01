@@ -25,11 +25,11 @@ for(const [sheet,ref] of Object.entries({gaze:0,bow:0,preen:0,stretch:0,wake:8,w
  // The airborne silhouette is streamlined and partly occluded by its wings.
  if(sheet!=='flight')assert(Math.abs(source.bodyArea*g.scale**2/bodyArea-1)<.03,`${sheet}: resting torso volume must match`);
 }
-assert.equal(model.sheets.flight.src,'assets/brand/animation-v6/art/flight.png');
+assert.equal(model.sheets.flight.src,'assets/brand/animation-v6/art/flight.webp');
 assert(!model.flightWings&&!model.sheets.flightWings&&!model.frames.flightWings,'Flight uses complete bird drawings without a separate wing rig');
 assert.equal(model.frames.flight.length,9);
 assert.equal(new Set(model.frames.flight.map(f=>JSON.stringify(f.cell))).size,9,'Nine wingbeats must select nine distinct whole-bird drawings');
-assert.equal(model.sheets.landing.src,'assets/brand/animation-v8/art/landing.png');
+assert.equal(model.sheets.landing.src,'assets/brand/animation-v8/art/landing.webp');
 const landingScale=model.geometry({sheet:'landing',index:8}).scale;
 assert(Math.abs(landingMeasured.frames[8].bodyArea*landingScale**2/bodyArea-1)<.03,'Folded landing torso retains the neutral body volume');
 for(const sheet of ['walk','landing'])for(let index=0;index<model.frames[sheet].length;index++){
@@ -299,11 +299,11 @@ function verifyEyeApertures(host,eyes){
  const eyelid=nodes.find(n=>n.tag==='circle');
  assert(eyelid&&!descendants(maskedGroup).includes(eyelid),'Blink eyelid must paint over the hole outside its mask');
 }
-async function setup(reduced=false,arrival=true,startMode,customModel,deferSource){
+async function setup(reduced=false,arrival=true,startMode,customModel,deferSource,touchOnly=false){
  const deferredLoads=[];
  let now=0,serial=0,ticks=0,requests=[],timers=new Map();const win=new Target(),doc=new Target(),media=new Target();doc.hidden=false;media.matches=reduced;
  doc.createElementNS=(_,tag)=>new El(tag);doc.createElement=tag=>new El(tag);doc.querySelector=()=>null;
- win.performance={now:()=>now};win.matchMedia=()=>media;win.setTimeout=(fn,ms)=>{let id=++serial;timers.set(id,{fn,at:now+ms});return id};win.clearTimeout=id=>timers.delete(id);
+ win.performance={now:()=>now};win.matchMedia=query=>query.includes('prefers-reduced-motion')?media:{matches:!touchOnly};win.setTimeout=(fn,ms)=>{let id=++serial;timers.set(id,{fn,at:now+ms});return id};win.clearTimeout=id=>timers.delete(id);
  win.Image=class{set src(s){requests.push(s);if(s===deferSource)deferredLoads.push(()=>this.onload());else queueMicrotask(()=>this.onload())}decode(){return Promise.resolve()}};
  const ctx={window:win,document:doc,module:{exports:{}},Map,Promise};vm.runInNewContext(fs.readFileSync('js/home-magpie.js','utf8'),ctx);
  const host=new El('div');host.ownerDocument=doc;const visit=customModel||model.createVisit(1409,{arrival,...(startMode?{startMode}:{})});let firstReady;const api=ctx.module.exports.mount(host,{model:visit,home:true,onUpdate:s=>{if(s.ready&&!firstReady)firstReady=[...requests]}});
@@ -412,6 +412,20 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
  ambient.advance(400);assert.equal(Number(lid.getAttribute('opacity')),0,'Background blink reopens its eye');
  const sleepingTicks=ambient.ticks;ambient.advance(1000);assert.equal(ambient.ticks,sleepingTicks,'Between blinks the renderer continues sleeping');
  ambient.api.destroy();
+ // Touch-only visits skip unused hover and arrival artwork, while taps still work.
+ const mobileBase=model.createVisit(24,{startMode:'perched',events:[{id:'worm',start:20}]});
+ const mobileModel={...mobileBase,chooseReaction:t=>mobileBase.canReact(t,'stretch')?mobileBase.eventCatalog.find(e=>e.id==='stretch'):null};
+ const mobile=await setup(false,false,'perched',mobileModel,undefined,true);await mobile.flush();
+ for(const sheet of ['lookUp','lookBetween','braking','brakingBridge','landing','settle'])assert(!mobile.requests.includes(model.sheets[sheet].src),'Touch-only visit skips unused '+sheet+' artwork');
+ mobile.api.seek(2);const mobileButton=mobile.host.children.find(n=>n.className==='hm-magpie-hello');
+ mobileButton.emit('click');assert(!mobile.api.react(),'Repeated mobile tap is locked while loading');await mobile.flush();
+ assert.equal(mobile.api.getState().timeline.activeEvent.id,'stretch','Touch activates and loads a non-preloaded action');
+ assert(mobile.requests.includes(model.sheets.stretch.src));mobile.api.destroy();
+ let profileCalls=0;const cachedBase=model.createDemo('blink');
+ const cached=await setup(false,false,undefined,{...cachedBase,poseProfile:p=>{profileCalls++;return cachedBase.poseProfile(p);}});
+ cached.api.seek(7);const priorCalls=profileCalls;cached.advance(120);
+ assert.equal(profileCalls,priorCalls,'Blink ticks must not rebuild unchanged head paths');
+ assert(Number(descendants(cached.host).find(n=>n.tag==='circle').getAttribute('opacity'))>.9,'Cached head still animates the eyelid');cached.api.destroy();
  const flight=await setup(false,true);
  assert(flight.firstReady.includes(model.sheets.flight.src));assert(flight.firstReady.includes(model.sheets.settle.src),'Landing recovery is ready before flying arrival starts');assert(flight.firstReady.includes(model.sheets.braking.src)&&flight.firstReady.includes(model.sheets.brakingBridge.src),'Flight waits for every braking cel before playback');assert(!flight.requests.some(p=>/flight-body|wings\.png/.test(p)),'Detached body and wing assets must not load');
  for(let index=0;index<9;index++){flight.api.seek(arrivalTime(.4+index*2.3/27+.001));assert.equal(flight.api.getState().timeline.poses[0].index,index);verifyWholeFlight(flight.host,index);}
@@ -433,7 +447,7 @@ async function setup(reduced=false,arrival=true,startMode,customModel,deferSourc
   }
   h.api.destroy();
  }
- const waking=await setup(false,false,'wake');assert.equal(waking.api.getState().timeline.poses[0].sheet,'wake');assert(waking.firstReady.some(p=>p.endsWith('wake.png')));assert(!waking.api.react(),'Do not interrupt waking');waking.advance(5100);assert.equal(waking.api.getState().timeline.poses[0].sheet,'neutral');waking.api.destroy();
+ const waking=await setup(false,false,'wake');assert.equal(waking.api.getState().timeline.poses[0].sheet,'wake');assert(waking.firstReady.some(p=>p.endsWith('wake.webp')));assert(!waking.api.react(),'Do not interrupt waking');waking.advance(5100);assert.equal(waking.api.getState().timeline.poses[0].sheet,'neutral');waking.api.destroy();
  const r=await setup(true,false);assert.equal(r.api.getState().time,.7);assert.equal(r.timers.size,0);assert(!r.requests.some(p=>/flight|wings|landing/.test(p)));assert(!imageHrefs(r.host).some(p=>/flight-body|wings/.test(p)));r.api.destroy();
- console.log(`PASS: 1,000 visits (${arrivals} flying / ${1000-arrivals} seated), start modes ${JSON.stringify(modes)}, nine original whole-bird flight cels, faster approach and recovery, two walk cycles at original cadence, six standing recovery cels, ambient4–7s blinks with idle sleep, shared beak contour and seamless solid ink, all-action eye apertures, preserved closed/frontal/waking eyes, fixed stretch supporting toe, stable walking eye registration, 180-second dwell, shared neutral boundaries, non-overlapping events, real atlas dimensions, every event, lazy initial assets, reduced motion, hidden clock, pause/replay/loop, idle sleep, random click actions without repeats across three full cycles, uninterrupted events, pending-load lock, smooth pointer gaze with event priority and playback resets.`);
+ console.log(`PASS: 1,000 visits (${arrivals} flying / ${1000-arrivals} seated), start modes ${JSON.stringify(modes)}, nine original whole-bird flight cels, faster approach and recovery, two walk cycles at original cadence, six standing recovery cels, ambient4–7s blinks with idle sleep, shared beak contour and seamless solid ink, all-action eye apertures, preserved closed/frontal/waking eyes, fixed stretch supporting toe, stable walking eye registration, 180-second dwell, shared neutral boundaries, non-overlapping events, real atlas dimensions, every event, lazy initial assets, reduced motion, hidden clock, pause/replay/loop, idle sleep, random click actions without repeats across three full cycles, uninterrupted events, pending-load lock, smooth pointer gaze with event priority playback resets, touch-only lazy assets and cached head paths.`);
 })().catch(e=>{console.error(e);process.exitCode=1});

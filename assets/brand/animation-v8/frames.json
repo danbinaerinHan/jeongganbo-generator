@@ -1739,72 +1739,72 @@
       "height": 351
     },
     "lookBetween": {
-      "src": "assets/brand/animation-v11/art/look-between.png",
+      "src": "assets/brand/animation-v11/art/look-between.webp",
       "width": 1536,
       "height": 1024
     },
     "lookUp": {
-      "src": "assets/brand/animation-v10/art/look-up.png",
+      "src": "assets/brand/animation-v10/art/look-up.webp",
       "width": 1536,
       "height": 1024
     },
     "bow": {
-      "src": "assets/brand/animation-v6/art/bow.png",
+      "src": "assets/brand/animation-v6/art/bow.webp",
       "width": 1254,
       "height": 1254
     },
     "flight": {
-      "src": "assets/brand/animation-v6/art/flight.png",
+      "src": "assets/brand/animation-v6/art/flight.webp",
       "width": 1254,
       "height": 1254
     },
     "gaze": {
-      "src": "assets/brand/animation-v6/art/gaze.png",
+      "src": "assets/brand/animation-v6/art/gaze.webp",
       "width": 1254,
       "height": 1254
     },
     "landing": {
-      "src": "assets/brand/animation-v8/art/landing.png",
+      "src": "assets/brand/animation-v8/art/landing.webp",
       "width": 1254,
       "height": 1254
     },
     "preen": {
-      "src": "assets/brand/animation-v6/art/preen.png",
+      "src": "assets/brand/animation-v6/art/preen.webp",
       "width": 1254,
       "height": 1254
     },
     "neutral": {
-      "src": "assets/brand/animation-v6/art/walk.png",
+      "src": "assets/brand/animation-v6/art/walk.webp",
       "width": 1536,
       "height": 1024
     },
     "stretch": {
-      "src": "assets/brand/animation-v6/art/stretch.png",
+      "src": "assets/brand/animation-v6/art/stretch.webp",
       "width": 1254,
       "height": 1254
     },
     "takeoff": {
-      "src": "assets/brand/animation-v6/art/takeoff.png",
+      "src": "assets/brand/animation-v6/art/takeoff.webp",
       "width": 1254,
       "height": 1254
     },
     "wake": {
-      "src": "assets/brand/animation-v6/art/wake.png",
+      "src": "assets/brand/animation-v6/art/wake.webp",
       "width": 1254,
       "height": 1254
     },
     "walk": {
-      "src": "assets/brand/animation-v6/art/walk.png",
+      "src": "assets/brand/animation-v6/art/walk.webp",
       "width": 1536,
       "height": 1024
     },
     "critters": {
-      "src": "assets/brand/animation-v3/art/critters.png",
+      "src": "assets/brand/animation-v3/art/critters.webp",
       "width": 1536,
       "height": 1024
     },
     "well": {
-      "src": "assets/brand/animation-v1/well.png",
+      "src": "assets/brand/animation-v1/well.webp",
       "width": 1254,
       "height": 1254
     }
