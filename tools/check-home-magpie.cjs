@@ -146,6 +146,10 @@ for(let seed=0;seed<1000;seed++){
  const visit=model.createVisit(seed);arrivals+=Number(visit.arrival);modes[visit.startMode]++;
  assert.equal(visit.stay,180);
  assert.equal(visit.events.filter(e=>e.id==='worm'||e.id==='butterfly').length,1);
+ const first=visit.events[0],firstWait=first.start-Math.max(visit.settled,visit.introDuration);
+ const insectIndex=visit.events.findIndex(e=>e.id==='worm'||e.id==='butterfly');
+ assert(insectIndex===1||insectIndex===2,'Insect encounter must be the second or third automatic action');
+ assert(firstWait>=7&&firstWait<=9,'First action starts 7–9 seconds after landing or waking finishes');
  for(let i=1;i<visit.events.length;i++)assert(visit.events[i-1].start+visit.events[i-1].duration<=visit.events[i].start,'Events must not overlap');
  for(const e of visit.events){assert(e.start>=visit.settled);assert(e.start+e.duration<visit.departure);}
  for(let t=0;t<visit.duration;t+=.251){

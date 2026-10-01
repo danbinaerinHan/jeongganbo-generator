@@ -116,13 +116,13 @@
   function makeEvents(seed){
     const rng=random(seed),small=['look','preen','peek','stretch','doze','hop'];
     for(let i=small.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[small[i],small[j]]=[small[j],small[i]];}
-    small.splice(2+Math.floor(rng()*2),0,rng()<.5?'worm':'butterfly');
+    small.splice(1+Math.floor(rng()*2),0,rng()<.5?'worm':'butterfly');
     // Fill eight slots with the everyday actions and one insect encounter.
     const extras=small.filter(id=>['look','preen','peek','stretch','hop'].includes(id));
     if(extras[0]===small[small.length-1])extras.push(extras.shift());
     small.push(...extras.slice(0,Math.max(0,8-small.length)));
-    const starts=[12,34,56,78,100,122,144,166];
-    const events=small.map((id,i)=>({...byId[id],start:SETTLED+starts[i]+(rng()-.5)*5}));
+    const starts=[8,34,56,78,100,122,144,166];
+    const events=small.map((id,i)=>({...byId[id],start:SETTLED+starts[i]+(rng()-.5)*(i===0?2:5)}));
     return events.sort((a,b)=>a.start-b.start);
   }
   function createVisit(seed=Date.now(),custom={}){
@@ -130,7 +130,7 @@
     const startMode=custom.startMode||(typeof custom.arrival==='boolean'?(custom.arrival?'fly':'perched'):(choice<.5?'fly':choice<.75?'perched':'wake'));
     const arrival=startMode==='fly',introDuration=startMode==='wake'?byId.wake.duration:0;
     const settled=arrival?SETTLED:0,staticTime=Math.max(settled,introDuration)+.7;
-    const events=custom.events?custom.events.map(e=>({...byId[e.id],...e})):makeEvents(seed).map(e=>({...e,start:e.start-(SETTLED-settled)}));
+    const events=custom.events?custom.events.map(e=>({...byId[e.id],...e})):makeEvents(seed).map((e,i)=>({...e,start:e.start-SETTLED+(i===0?Math.max(settled,introDuration):settled)}));
     const departure=custom.departure==null?settled+STAY:custom.departure,duration=departure+4.6;
     // Background blinking is separate from the character's scheduled actions.
     const blinkRandom=random((seed^0x2c1b3c6d)>>>0),ambientBlinks=[];
