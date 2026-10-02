@@ -6450,7 +6450,7 @@
     if (!$("btnPlay")) return;
     $("btnPlayIco").textContent = (!playing || paused) ? "▶" : "⏸";
     $("btnPlayLbl").textContent = !playing ? "재생" : (paused ? "이어하기" : "일시정지");
-    $("btnPlay").title = !playing ? "재생 (사인파·장구 소리, 시김새 제외)" : (paused ? "이어 재생" : "일시정지");
+    $("btnPlay").title = !playing ? "재생 (선율·장구 소리)" : (paused ? "이어 재생" : "일시정지");
     $("btnStop").disabled = !playing;
   }
 
