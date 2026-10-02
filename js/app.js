@@ -9211,13 +9211,27 @@
     refreshCursorBtns();
     updateHighlight();
   }
+  // 정간 서식은 켜고 끄는 도구다 — 열려 있을 때 그 버튼을 다시 누르면 닫히고, 열기 **직전에 보이던
+  // 것**으로 돌아간다(입력 팔레트였으면 그 팔레트, 선택·이동 모드라 아무 창도 없었으면 빈 채로).
+  // 다른 탭은 왼쪽 도킹에서 다시 눌러도 그대로다 — 탭 줄이 '지금 무엇을 넣나'를 늘 보여야 해서.
+  // 정간 서식은 넣는 도구가 아니라 선택 모드의 짝이라(selectModeOn) 끌 길이 버튼에 있어야 했다
+  // (2026-10-02 사용자 요청: 그만하려면 다른 탭을 눌러야 했다).
+  let panelBeforeCellStyle = null;
   document.querySelectorAll(".win-toggle").forEach(function (b) {
     b.addEventListener("click", function () {
       exitOrnEditMode();   // 도구창(율명/시김새/장단/…) 전환 시 미세조정 끔
       const tid = b.getAttribute("data-target");
       const t = $(tid);
+      const isOpen = !!(t && t.classList.contains("win-open"));
+      if (tid === "cellStyleWin") {
+        if (isOpen) { activateDirectPanel(panelBeforeCellStyle); return; }
+        const cur = document.querySelector(".direct-win.win-open, #paletteCol.win-open");
+        panelBeforeCellStyle = cur && cur.id !== "cellStyleWin" ? cur.id : null;
+        activateDirectPanel(tid);
+        return;
+      }
       const docked = document.body.classList.contains("ribbon-left");
-      activateDirectPanel(!docked && t && t.classList.contains("win-open") ? null : tid);
+      activateDirectPanel(!docked && isOpen ? null : tid);
     });
   });
   // 직접 입력 도구창마다 오른쪽 위 닫기(X) 버튼 — 누르면 그 창을 닫는다(한 번에 하나만
