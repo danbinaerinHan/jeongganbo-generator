@@ -617,20 +617,31 @@
   //      붙는다(한 음절을 여러 음에 걸쳐 부르는 자리). 남으면 그 행 마지막 음에 이어 붙인다.
   //      기호는 그 행의 **첫 실음**에 모두 — 활 표시·구음은 그 분박(=그 음의 시작)에 걸린다.
   //   ③ 그 행에 시작하는 음이 없으면(쉼표·이음·빈 정간·소리 없는 기호) 음절·기호를 버리지 않고
-  //      **같은 각 안의 다음 실음**으로 넘긴다 — 가사는 음절이 시작되는 음에 붙는 것이 악보
-  //      관행이고, 이음 자리에 적은 글자는 대개 그다음 소리에서 부르는 말이다. 각(=장단 한
-  //      주기)을 넘겨 끌고 가면 뒤 각의 가사가 줄줄이 밀리므로 각이 끝나면 버린다.
+  //      **같은 각 안의 앞 실음**에 이어 붙인다(2026-10-02 사용자 확정 — 예전엔 다음 실음이었다).
+  //      이음 자리에 적은 글자는 앞 음을 끄는 동안 부르는 말이라 그 음 밑에 서야 한다
+  //      (웃도드리 `살 | 갱 | 뜰` + 둘째 정간이 이음 → '살갱 · 뜰'. 예전엔 '살 · 갱뜰'이었다).
+  //      각에 아직 실음이 없으면(각이 쉼표·이음으로 시작) 그때만 **다음 실음**으로 넘긴다.
+  //      각(=장단 한 주기)을 넘겨 끌고 가면 뒤 각의 가사가 줄줄이 밀리므로 각이 끝나면 버린다.
   // 꾸밈음·붙임줄 뒤 조각에는 안 붙는다(그건 부르는 쪽 app.js·musicxml.js가 지킨다).
   function placeLyrics(slots, lyricGaks) {
     const out = new Array(slots.length).fill(null);
     const put = function (k, key, v) { (out[k] = out[k] || { lyric: null, marks: null })[key] = v; };
     let pending = [], pendMarks = [], pendGak = -1;
+    let lastNote = -1;   // 이 각에서 마지막으로 시작한 실음 — 음 없는 자리의 글자가 붙을 곳
+    // 앞 실음에 이어 붙이기 — 이미 붙은 음절·기호 뒤에 잇는다
+    const append = function (k, queue, mQueue) {
+      if (queue.length) {
+        const had = out[k] && out[k].lyric;
+        put(k, "lyric", joinSyllables(had ? [had].concat(queue) : queue));
+      }
+      if (mQueue.length) put(k, "marks", ((out[k] && out[k].marks) || []).concat(mQueue));
+    };
     let i = 0;
     while (i < slots.length) {
       const g = slots[i].gak, c = slots[i].cell;
       let j = i;
       while (j < slots.length && slots[j].gak === g && slots[j].cell === c) j++;
-      if (g !== pendGak) { pending = []; pendMarks = []; }
+      if (g !== pendGak) { pending = []; pendMarks = []; lastNote = -1; }
       const melRows = Math.max(1, slots[i].rows || 0);
       const text = (lyricGaks[g] && lyricGaks[g][c]) || "";
       const lyRows = String(text).split(/\s+/).filter(Boolean);
@@ -649,8 +660,14 @@
         for (let k = i; k < j; k++) {
           if ((slots[k].row || 0) === r && slots[k].kind === "note") onsets.push(k);
         }
+        if (!onsets.length) {
+          if (!queue.length && !mQueue.length) continue;
+          if (lastNote >= 0) append(lastNote, queue, mQueue);      // 앞 실음 밑에
+          else { pending = queue; pendMarks = mQueue; }             // 각 첫머리 — 다음 실음으로
+          continue;
+        }
+        lastNote = onsets[onsets.length - 1];
         if (!queue.length && !mQueue.length) continue;
-        if (!onsets.length) { pending = queue; pendMarks = mQueue; continue; }
         if (mQueue.length) put(onsets[0], "marks", mQueue);
         const n = Math.min(onsets.length, queue.length);
         for (let k = 0; k < n; k++) {
