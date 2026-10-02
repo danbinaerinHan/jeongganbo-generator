@@ -45,14 +45,14 @@
   function track(name, props) { try { if (window.jgbTrack) window.jgbTrack(name, props); } catch (e) {} }
 
   // 내용 칸의 길잡이. 오류는 되풀이해 볼 수 있어야 고칠 수 있어서 순서를 함께 묻는다.
-  const BODY_HINT = "• 질문: 무엇을 하려고 했고, 어디에서 막혔는지\n"
-    + "• 오류: 무엇을 눌렀는지(순서대로) · 어떻게 될 줄 알았는지 · 실제로는 어떻게 됐는지\n"
-    + "• 제안: 어떤 기능이 있었으면 하는지, 그게 있으면 무엇을 할 수 있게 되는지";
+  const BODY_HINT = "• 질문: 하려던 작업과 문제가 발생한 단계\n"
+    + "• 오류: 수행한 조작(순서대로) · 기대한 결과 · 실제 결과\n"
+    + "• 제안: 필요한 기능과 그 기능으로 가능해지는 작업";
 
   // ---------- 서버 ----------
   function rpc(fn, body) {
     return fetch(API + fn, { method: "POST", headers: HEADERS, body: JSON.stringify(body || {}) })
-      .catch(function () { throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요."); })
+      .catch(function () { throw new Error("서버에 연결하지 못했습니다. 인터넷 연결 상태를 확인하십시오."); })
       .then(function (res) {
         return res.json().catch(function () { return null; }).then(function (data) {
           if (res.ok) return data;
@@ -105,7 +105,7 @@
     const day = Math.floor(hr / 24);
     if (day < 30) return day + "일 전";
     const mon = Math.floor(day / 30);
-    if (mon < 12) return mon + "달 전";
+    if (mon < 12) return mon + "개월 전";
     return Math.floor(mon / 12) + "년 전";
   }
   function el(tag, cls, text) {
@@ -141,7 +141,7 @@
     btn.appendChild(thumbIcon());
     btn.appendChild(el("span", "bd-vote-n", String(n || 0)));
     btn.classList.toggle("on", !!on);
-    btn.title = on ? "공감 거두기" : "공감하기";
+    btn.title = on ? "공감 취소" : "공감";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
   }
   function envText() {
@@ -206,7 +206,7 @@
       document.querySelector("#bdAsk .sc-controls").style.display = "none";
       setMsg("bdStatusMsg", CFG.board === false
         ? "묻고 제안하기는 준비 중입니다."
-        : "게시 서버가 아직 연결되지 않았습니다.", "sc-empty");
+        : "게시 서버가 연결되어 있지 않습니다.", "sc-empty");
       return;
     }
     loading = true;
@@ -222,7 +222,7 @@
       offset += (r.items || []).length;
       if (total === 0) {
         setMsg("bdStatusMsg", q ? "조건에 맞는 글이 없습니다."
-          : "아직 올라온 글이 없습니다. 첫 글을 남겨 주세요.", "sc-empty");
+          : "등록된 글이 없습니다.", "sc-empty");
         $("bdCount").textContent = "";
       } else {
         setMsg("bdStatusMsg", "");
@@ -270,9 +270,9 @@
   function replyEl(r) {
     const li = el("li", "bd-reply" + (r.is_staff ? " bd-reply-staff" : "") + (r.hidden ? " bd-reply-hidden" : ""));
     if (r.hidden) {
-      li.appendChild(el("p", "bd-reply-body", "운영자가 내린 댓글입니다."));
+      li.appendChild(el("p", "bd-reply-body", "운영자가 게시를 중단한 댓글입니다."));
       if (staff) {
-        const un = el("button", "bd-link", "되올리기");
+        const un = el("button", "bd-link", "다시 게시");
         un.type = "button";
         un.addEventListener("click", function () { staffHideReply(r.id, false); });
         li.appendChild(un);
@@ -284,10 +284,10 @@
     if (r.is_staff) head.appendChild(el("span", "bd-meta-staff", "운영자"));
     head.appendChild(el("span", "", agoText(r.created_at)));
     if (r.mine) {
-      const del = el("button", "bd-link bd-danger", "지우기");
+      const del = el("button", "bd-link bd-danger", "삭제");
       del.type = "button";
       del.addEventListener("click", function () {
-        if (!confirm("이 댓글을 지웁니다. 되돌릴 수 없습니다.")) return;
+        if (!confirm("이 댓글을 삭제합니다. 삭제한 댓글은 복구할 수 없습니다.")) return;
         rpc("board_reply_delete", { p_reply: r.id, p_key: me().key })
           .then(function () { openPost(cur.id); })
           .catch(function (e) { alert(e.message); });
@@ -295,7 +295,7 @@
       head.appendChild(del);
     }
     if (staff && !r.is_staff) {
-      const hide = el("button", "bd-link bd-danger", "내리기");
+      const hide = el("button", "bd-link bd-danger", "게시 중단");
       hide.type = "button";
       hide.addEventListener("click", function () { staffHideReply(r.id, true); });
       head.appendChild(hide);
@@ -318,7 +318,7 @@
       const meta = $("bdPostMeta");
       meta.textContent = "";
       meta.appendChild(whoEl("bd-reply-who", p.author, p.author_tag));
-      meta.appendChild(el("span", "", agoText(p.created_at) + (p.edited_at ? " · 고침" : "")));
+      meta.appendChild(el("span", "", agoText(p.created_at) + (p.edited_at ? " · 수정됨" : "")));
       $("bdPostBody").textContent = p.body;          // 글자 그대로 — HTML로 읽지 않는다
 
       const vote = $("bdPostVote").cloneNode(false);   // 앞 글의 배선을 떼어 낸다
@@ -366,7 +366,7 @@
   $("bdPostEdit").addEventListener("click", function () { if (cur) location.hash = "#edit=" + encodeURIComponent(cur.id); });
   $("bdPostDel").addEventListener("click", function () {
     if (!cur) return;
-    if (!cur.mine || !confirm("이 글을 지웁니다. 달린 댓글도 함께 사라지고 되돌릴 수 없습니다.")) return;
+    if (!cur.mine || !confirm("이 글을 삭제합니다. 달린 댓글도 함께 삭제되며 복구할 수 없습니다.")) return;
     rpc("board_delete", { p_id: cur.id, p_key: me().key }).then(function () {
       location.hash = "#ask";
     }).catch(function (e) { alert(e.message); });
@@ -375,7 +375,7 @@
   // ---------- 운영자 ----------
   $("bdStaffHide").addEventListener("click", function () {
     if (!cur) return;
-    const why = prompt("내리는 사유 (글 주소로 들어온 사람에게 그대로 보입니다)");
+    const why = prompt("게시 중단 사유 (글 주소로 접속한 이용자에게 그대로 표시됩니다)");
     if (!why || !why.trim()) return;
     staffRpc("admin_board_set", { p_id: cur.id, p_hidden: true, p_reason: why.trim() })
       .then(function () { location.hash = "#ask"; })
@@ -383,7 +383,7 @@
   });
   function staffHideReply(id, hide) {
     let why = null;
-    if (hide) { why = prompt("댓글을 내리는 사유"); if (!why || !why.trim()) return; }
+    if (hide) { why = prompt("댓글 게시 중단 사유"); if (!why || !why.trim()) return; }
     staffRpc("admin_board_hide_reply", { p_reply: id, p_hidden: hide, p_reason: why })
       .then(function () { openPost(cur.id); })
       .catch(function (e) { alert(e.message); });
@@ -402,8 +402,8 @@
   function openNew(editId) {
     editing = editId || null;
     showErr("bdNewErr", "");
-    $("bdNewHead").textContent = editing ? "글 고치기" : "글 쓰기";
-    $("bdNewSubmit").textContent = editing ? "고친 대로 올리기" : "올리기";
+    $("bdNewHead").textContent = editing ? "글 수정" : "글쓰기";
+    $("bdNewSubmit").textContent = editing ? "수정 내용 등록" : "등록";
     $("bdNewName").parentNode.hidden = !!editing;
     if (!ON) { showErr("bdNewErr", "묻고 제안하기는 준비 중입니다."); $("bdNewSubmit").disabled = true; }
     if (editing) {
@@ -520,7 +520,7 @@
     box.hidden = !hits.length;
     if (!hits.length) return;
     const cap = document.createElement("span");
-    cap.textContent = "혹시 이 질문인가요?";
+    cap.textContent = "관련된 자주 묻는 질문";
     box.appendChild(cap);
     hits.forEach(function (x) {
       const a = document.createElement("a");
@@ -569,7 +569,7 @@
   try {
     if (localStorage.getItem("jgb_state_v1")) {
       $("scBack").textContent = "← 편집기로 돌아가기";
-      $("scBack").title = "편집하던 악보를 그대로 이어서";
+      $("scBack").title = "작성 중인 악보로 돌아갑니다";
     }
   } catch (e) {}
 
