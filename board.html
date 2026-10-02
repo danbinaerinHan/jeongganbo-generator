@@ -78,14 +78,32 @@
       <a href="#faq-g-trouble">문제 해결<span class="n"></span></a>
     </nav>
     <div class="bd-faq-main">
-    <div class="bd-faq-search">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input type="search" id="bdFaqSearch" placeholder="검색어 입력 (예: 가사, PDF, 문법 오류)" autocomplete="off" aria-label="자주 묻는 질문 검색">
+    <!-- 머리: 검색 + 자주 찾는 질문. 고객센터들(카카오·Stripe·Figma)이 공통으로 맨 위에 두는 꼴이다 —
+         찾는 사람의 절반은 몇 안 되는 질문을 찾으러 온다. 칩의 차례는 운영자가 정한다. -->
+    <div class="bd-faq-hero">
+      <div class="bd-faq-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="bdFaqSearch" placeholder="검색어 입력 (예: 가사, PDF, 문법 오류)" autocomplete="off" aria-label="자주 묻는 질문 검색">
+      </div>
+      <div class="bd-faq-popular">
+        <span class="bd-pop-cap">자주 찾는 질문</span>
+        <a href="#faq-lyrics">가사 입력</a>
+        <a href="#faq-saved">자동 저장 위치</a>
+        <a href="#faq-pdf">인쇄·PDF 저장</a>
+        <a href="#faq-red">문법 오류 표시</a>
+        <a href="#faq-send">악보 공유</a>
+      </div>
+    </div>
+    <!-- 결과 줄: 몇 개가 보이나 + 모두 펼치기/접기(GOV.UK 아코디언의 'Show all sections') -->
+    <div class="bd-faq-bar">
+      <span id="bdFaqCount" aria-live="polite"></span>
+      <button type="button" id="bdFaqAll" class="bd-faq-all">모두 펼치기</button>
     </div>
 
 
     <section class="bd-faq-group" id="faq-g-start">
       <h2>이용 및 저장</h2>
+      <p class="bd-faq-desc">설치와 요금, 자동 저장, 파일 보관, 실행 취소</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-install" data-kw="가입 회원 로그인 설치 다운로드 프로그램 앱">
         <summary>프로그램 설치나 회원 가입이 필요한가요?</summary>
@@ -134,6 +152,7 @@
 
     <section class="bd-faq-group" id="faq-g-write">
       <h2>악보 입력</h2>
+      <p class="bd-faq-desc">율명·분박·시김새·곁줄·장단·빠르기의 입력과 복사</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-yul" data-kw="율명 음이름 한자 입력 치기 옥타브 청 배 팔레트">
         <summary>율명은 어떻게 입력하나요? 한자로 입력해야 하나요?</summary>
@@ -230,6 +249,7 @@
 
     <section class="bd-faq-group" id="faq-g-look">
       <h2>악보 서식</h2>
+      <p class="bd-faq-desc">각별 정간 수, 대강, 용지와 배치, 정간 서식, 서체</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-gakbeats" data-kw="각별 정간 수 첫 각 끝 각 짧은 각 가곡 5정간 길이 다름">
         <summary>일부 각의 정간 수가 다른 악보(가곡 등)는 어떻게 작성하나요?</summary>
@@ -271,6 +291,7 @@
 
     <section class="bd-faq-group" id="faq-g-parts">
       <h2>총보와 파트보</h2>
+      <p class="bd-faq-desc">악기 편성, 총보와 파트보의 전환, 파트별 출력</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-parts" data-kw="총보 합주 여러 악기 파트 편성 추가 대금 피리 해금 가야금">
         <summary>여러 악기의 선율을 하나의 총보로 작성할 수 있나요?</summary>
@@ -296,6 +317,7 @@
 
     <section class="bd-faq-group" id="faq-g-sound">
       <h2>재생 및 오선보</h2>
+      <p class="bd-faq-desc">재생 설정, 시김새의 재생, 오선보와 MusicXML</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-play" data-kw="재생 듣기 소리 기준음 음높이 빠르기 템포 bpm 장구 소리 끄기">
         <summary>악보를 재생할 수 있나요? 기준음과 빠르기는 어떻게 변경하나요?</summary>
@@ -326,6 +348,7 @@
 
     <section class="bd-faq-group" id="faq-g-share">
       <h2>출력 및 공유</h2>
+      <p class="bd-faq-desc">인쇄와 PDF, 악보 게시, 공유마당의 이용 조건</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-pdf" data-kw="인쇄 pdf 출력 이미지 png 그림 저장 프린터">
         <summary>악보를 인쇄하거나 PDF, 이미지 파일로 저장할 수 있나요?</summary>
@@ -373,6 +396,7 @@
 
     <section class="bd-faq-group" id="faq-g-trouble">
       <h2>문제 해결</h2>
+      <p class="bd-faq-desc">문법 오류 표시, 입력란과 곁줄, 악보 복구</p>
       <div class="bd-faq-card">
       <details class="bd-faq-item" id="faq-red" data-kw="빨간색 빨갛게 오류 문법 틀림 표시 안 그려짐 소리 안 남">
         <summary>정간이 붉은색으로 표시됩니다.</summary>
@@ -407,7 +431,24 @@
     </section>
 
     <p class="bd-faq-none" id="bdFaqNone" hidden>검색 결과가 없습니다.</p>
-    <p class="bd-faq-more">원하는 답변이 없으면 <a href="#ask">질문·제안</a> 게시판을 이용하시기 바랍니다.</p>
+    <!-- 끝: 답을 못 찾았을 때 갈 곳 셋(Figma 'Couldn't find what you needed?'의 꼴) -->
+    <section class="bd-faq-help">
+      <h2>원하는 답변을 찾지 못하셨나요?</h2>
+      <div class="bd-help-cards">
+        <a class="bd-help-card" href="#ask">
+          <b>질문·제안 게시판</b>
+          <span>질문을 남기면 운영자와 다른 이용자가 답변합니다. 오류 신고와 기능 제안도 이곳에서 받습니다.</span>
+        </a>
+        <a class="bd-help-card" href="editor.html">
+          <b>편집기 도움말</b>
+          <span>편집기 오른쪽 세로 막대의 [도움말]에서 입력 문법, 단축키, 둘러보기를 확인할 수 있습니다.</span>
+        </a>
+        <a class="bd-help-card" href="policy.html">
+          <b>이용약관 및 저작권 정책</b>
+          <span>게시물의 권리와 이용 조건, 권리 침해 신고 절차를 규정합니다.</span>
+        </a>
+      </div>
+    </section>
     </div>
     </div>
   </div>

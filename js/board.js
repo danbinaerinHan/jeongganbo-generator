@@ -473,9 +473,84 @@
       g.hidden = !g.querySelector(".bd-faq-item:not([hidden])");
     });
     $("bdFaqNone").hidden = shown > 0;
+    $("bdFaqCount").textContent = terms.length
+      ? "검색 결과 " + shown + "건" : "전체 " + FAQ_ITEMS.length + "건";
+    FAQ_ITEMS.forEach(function (d, i) { markSummary(d, i, terms); });
     countToc();
     markToc();
+    syncAllBtn();
   }
+
+  // 질문 글자 가운데 검색어에 걸린 곳을 칠한다. 글자는 노드로만 다룬다(innerHTML을 안 쓴다 —
+  // 검색어가 그대로 마크업이 되면 안 되므로).
+  const SUM_TEXT = FAQ_ITEMS.map(function (d) { return d.querySelector("summary").textContent; });
+  function markSummary(d, i, terms) {
+    const sum = d.querySelector("summary");
+    const text = SUM_TEXT[i];
+    const lower = text.toLowerCase();
+    const hit = new Array(text.length).fill(false);
+    terms.forEach(function (t) {
+      for (let k = 0; k <= 2 && t.length - k >= 2; k++) {
+        const w = t.slice(0, t.length - k);
+        let at = lower.indexOf(w);
+        if (at < 0) continue;
+        while (at >= 0) { for (let x = at; x < at + w.length; x++) hit[x] = true; at = lower.indexOf(w, at + 1); }
+        break;
+      }
+    });
+    sum.textContent = "";
+    let run = "", on = false;
+    const flush = function () {
+      if (!run) return;
+      if (on) { const m = document.createElement("mark"); m.textContent = run; sum.appendChild(m); }
+      else sum.appendChild(document.createTextNode(run));
+      run = "";
+    };
+    for (let x = 0; x < text.length; x++) {
+      if (hit[x] !== on) { flush(); on = hit[x]; }
+      run += text[x];
+    }
+    flush();
+  }
+
+  // 모두 펼치기 / 모두 접기 — 보이는 질문이 하나라도 닫혀 있으면 '펼치기'다
+  let bulkToggling = false;
+  function visibleItems() { return FAQ_ITEMS.filter(function (d) { return !d.hidden; }); }
+  function syncAllBtn() {
+    const vis = visibleItems();
+    const anyClosed = vis.some(function (d) { return !d.open; });
+    $("bdFaqAll").textContent = anyClosed ? "모두 펼치기" : "모두 접기";
+    $("bdFaqAll").hidden = vis.length === 0;
+  }
+  $("bdFaqAll").addEventListener("click", function () {
+    const vis = visibleItems();
+    const open = vis.some(function (d) { return !d.open; });
+    bulkToggling = true;
+    vis.forEach(function (d) { d.open = open; });
+    // toggle 이벤트는 다음 틈에 오므로 빗장도 그 뒤에 푼다(안 그러면 주소가 마지막 항목으로 바뀐다)
+    setTimeout(function () { bulkToggling = false; syncAllBtn(); }, 0);
+  });
+
+  // 답 끝의 '링크 복사' — 게시판에 답할 때 그 질문을 바로 가리키게
+  FAQ_ITEMS.forEach(function (d) {
+    const box = d.querySelector(":scope > div");
+    if (!box || !d.id) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "bd-faq-copy";
+    btn.textContent = "링크 복사";
+    btn.addEventListener("click", function () {
+      const url = location.origin + location.pathname + "#" + d.id;
+      const done = function () {
+        btn.textContent = "복사되었습니다";
+        setTimeout(function () { btn.textContent = "링크 복사"; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function () { prompt("링크", url); });
+      } else prompt("링크", url);
+    });
+    box.appendChild(btn);
+  });
 
   // 분류 차례 — 분류마다 보이는 질문 수를 적고, 찾기로 다 걸러진 분류는 옅게 둔다
   const TOC = Array.prototype.slice.call(document.querySelectorAll(".bd-faq-toc a"));
@@ -499,17 +574,19 @@
     TOC.forEach(function (a) { a.classList.toggle("on", a === cur); });
   }
   window.addEventListener("scroll", markToc, { passive: true });
-  countToc();
-  markToc();
   $("bdFaqSearch").addEventListener("input", filterFaq);
 
   // 펼친 항목은 주소에 남긴다 — 그 주소를 복사해 게시판 답변에 붙이면 그 항목이 펼쳐져 열린다.
   // replaceState라 hashchange가 안 나 route()를 다시 안 탄다(화면이 맨 위로 튀지 않는다).
   FAQ_ITEMS.forEach(function (d) {
     d.addEventListener("toggle", function () {
+      if (bulkToggling) return;
       if (d.open && d.id && history.replaceState) history.replaceState(null, "", "#" + d.id);
+      syncAllBtn();
     });
   });
+
+  filterFaq();     // 첫 그리기 — 개수·차례·버튼을 한 번 맞춘다
 
   function showFaqTarget(id) {
     const el = document.getElementById(id);
