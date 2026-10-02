@@ -43,7 +43,7 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 /* ---------- 자주 묻는 질문 ---------- */
 .bd-faq { max-width: 1200px; margin: 0 auto; padding: 4px 24px 4px; }
 .bd-faq-item { border-bottom: 1px solid var(--line); max-width: 760px; }
-.bd-faq-item:first-child { border-top: 1px solid var(--line); }
+.bd-faq-group h2 + .bd-faq-item { border-top: 1px solid var(--line); }
 .bd-faq-item summary {
   cursor: pointer; list-style: none; padding: 10px 28px 10px 4px; position: relative;
   font-size: 14px; font-weight: 700; line-height: 1.5; word-break: keep-all;
@@ -57,6 +57,33 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 .bd-faq-item summary:hover { color: var(--accent); }
 .bd-faq-item > div { padding: 0 4px 12px; font-size: 13.5px; line-height: 1.7; color: var(--ink); word-break: keep-all; }
 .bd-faq code, .bd-body code { font-family: var(--mono); font-size: .92em; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+.bd-faq-item > div p { margin: 0 0 6px; }
+.bd-faq-item > div p:last-child { margin-bottom: 0; }
+.bd-faq-item > div ul { margin: 2px 0 8px; padding-left: 18px; }
+.bd-faq-item > div li { margin: 2px 0; }
+.bd-faq-item > div a { color: var(--accent); }
+/* 찾기 + 갈래 차례 — 질문이 마흔 개를 넘어 한 줄로 늘어놓으면 훑을 수가 없다 */
+.bd-faq-tools { max-width: 760px; display: flex; flex-direction: column; gap: 10px; margin: 4px 0 18px; }
+.bd-faq-tools .sc-search { max-width: none; flex: 0 0 auto; }
+.bd-faq-toc { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
+.bd-faq-toc a { color: var(--muted); text-decoration: none; font-weight: 600; }
+.bd-faq-toc a:hover { color: var(--ink); }
+.bd-faq-group { margin: 0 0 22px; scroll-margin-top: 12px; }
+/* 갈래 머리는 앱의 절 머리와 같은 메타 라벨 꼴(도움말 h4·팔레트 묶음 제목) */
+.bd-faq-group h2 {
+  margin: 0 0 6px 4px; font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .09em; color: var(--muted);
+}
+.bd-faq-item { scroll-margin-top: 12px; }
+.bd-faq-none { margin: 4px 4px 0; font-size: 13px; color: var(--muted); }
+/* 글 쓰기의 '혹시 이 질문인가요?' */
+.bd-faq-hint {
+  display: flex; flex-direction: column; gap: 3px; margin: -4px 0 4px;
+  padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--soft);
+  font-size: 12.5px; line-height: 1.5;
+}
+.bd-faq-hint span { color: var(--muted); font-weight: 600; }
+.bd-faq-hint a { color: var(--accent); word-break: keep-all; }
 .bd-faq-more { margin: 12px 4px 0; font-size: 13px; color: var(--muted); }
 .bd-faq-more a { color: var(--accent); }
 .bd-write, .bd-submit {

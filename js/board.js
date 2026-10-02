@@ -7,6 +7,7 @@
 
    화면은 주소 해시가 고른다(한 문서 안에서 오간다):
      ""        자주 묻는 질문
+     #faq-<id> 자주 묻는 질문의 항목 하나(펼쳐서 그 자리로) · #faq-g-<갈래>는 갈래 머리로
      #ask      질문·제안 목록
      #p=<id>   글 하나 (댓글·공감)
      #new      글쓰기 · #edit=<id> 고치기
@@ -414,6 +415,7 @@
       $("bdNewTitle").value = ""; $("bdNewBody").value = "";
       $("bdNewName").value = me().name;
     }
+    $("bdFaqHint").hidden = true;
     $("bdNewBody").placeholder = BODY_HINT;
     syncEnv();
     setTimeout(function () { $("bdNewTitle").focus(); }, 0);
@@ -439,6 +441,102 @@
   });
 
   // =========================================================================
+  // 자주 묻는 질문 — 찾기 · 항목 주소 · 글 쓰기의 '비슷한 질문'
+  // =========================================================================
+  // 목록은 board.html에 손으로 적힌 <details>다. 여기는 그것을 읽기만 한다 — 질문을 JS에 한 벌
+  // 더 적으면 두 곳이 어긋난다. 찾는 대상은 질문 + 답 + data-kw(화면에 안 나오는 별칭).
+  const FAQ_ITEMS = Array.prototype.slice.call(document.querySelectorAll("#bdFaq .bd-faq-item"));
+  const FAQ_HAY = FAQ_ITEMS.map(function (d) {
+    return (d.textContent + " " + (d.getAttribute("data-kw") || "")).toLowerCase();
+  });
+  function faqTerms(q) {
+    return String(q || "").toLowerCase().split(/[\s,.?!·]+/).filter(Boolean);
+  }
+  // 낱말 하나가 걸리나 — 조사가 붙은 말('가사를'·'빨간색으로')도 걸리게 끝 글자를 두 자까지
+  // 떼어 본다. 두 글자보다 짧게는 안 줄인다('가'만 남으면 어디에나 걸린다).
+  function faqHit(hay, t) {
+    for (let k = 0; k <= 2 && t.length - k >= 2; k++) {
+      if (hay.indexOf(t.slice(0, t.length - k)) >= 0) return true;
+    }
+    return false;
+  }
+
+  function filterFaq() {
+    const terms = faqTerms($("bdFaqSearch").value);
+    let shown = 0;
+    FAQ_ITEMS.forEach(function (d, i) {
+      const ok = terms.every(function (t) { return faqHit(FAQ_HAY[i], t); });
+      d.hidden = !ok;
+      if (ok) shown++;
+    });
+    document.querySelectorAll("#bdFaq .bd-faq-group").forEach(function (g) {
+      g.hidden = !g.querySelector(".bd-faq-item:not([hidden])");
+    });
+    $("bdFaqNone").hidden = shown > 0;
+  }
+  $("bdFaqSearch").addEventListener("input", filterFaq);
+
+  // 펼친 항목은 주소에 남긴다 — 그 주소를 복사해 게시판 답변에 붙이면 그 항목이 펼쳐져 열린다.
+  // replaceState라 hashchange가 안 나 route()를 다시 안 탄다(화면이 맨 위로 튀지 않는다).
+  FAQ_ITEMS.forEach(function (d) {
+    d.addEventListener("toggle", function () {
+      if (d.open && d.id && history.replaceState) history.replaceState(null, "", "#" + d.id);
+    });
+  });
+
+  function showFaqTarget(id) {
+    const el = document.getElementById(id);
+    if (!el || !$("bdFaq").contains(el)) return;
+    if ($("bdFaqSearch").value) { $("bdFaqSearch").value = ""; filterFaq(); }
+    if (el.tagName === "DETAILS") el.open = true;
+    el.scrollIntoView({ block: "start" });
+  }
+
+  // 글 쓰기 — 제목을 치면 비슷한 질문을 세 개까지 띄운다. 같은 질문이 게시판에 쌓이는 것을
+  // 가장 앞에서 막는 자리다. 새 탭으로 여는 것은 쓰던 글이 지워지지 않게(openNew가 칸을 비운다).
+  // 어느 질문에나 나오는 말은 고르는 데 도움이 안 되어 뺀다. 질문·별칭에 걸리면 3점, 답에만 걸리면 1점 —
+  // 답에는 곁가지 말이 많아 그것만으로 고르면 엉뚱한 질문이 앞에 선다.
+  const FAQ_STOP = /^(악보|악보를|악보가|정간|어떻게|하는|하고|싶습니다|싶어요|있나요|되나요|안|왜|좀|방법|문의|질문)$/;
+  const FAQ_HEAD = FAQ_ITEMS.map(function (d) {
+    return (d.querySelector("summary").textContent + " " + (d.getAttribute("data-kw") || "")).toLowerCase();
+  });
+  function faqSimilar(q) {
+    const terms = faqTerms(q).filter(function (t) { return t.length >= 2 && !FAQ_STOP.test(t); });
+    if (!terms.length) return [];
+    return FAQ_ITEMS.map(function (d, i) {
+      const n = terms.reduce(function (sum, t) {
+        return sum + (faqHit(FAQ_HEAD[i], t) ? 3 : faqHit(FAQ_HAY[i], t) ? 1 : 0);
+      }, 0);
+      return { d: d, n: n };
+    }).filter(function (x) { return x.n >= 3; })
+      .sort(function (a, b) { return b.n - a.n; })
+      .slice(0, 3);
+  }
+  let faqHintTimer = 0;
+  function showFaqHint() {
+    const box = $("bdFaqHint");
+    const hits = editing ? [] : faqSimilar($("bdNewTitle").value);
+    box.textContent = "";
+    box.hidden = !hits.length;
+    if (!hits.length) return;
+    const cap = document.createElement("span");
+    cap.textContent = "혹시 이 질문인가요?";
+    box.appendChild(cap);
+    hits.forEach(function (x) {
+      const a = document.createElement("a");
+      a.href = "#" + x.d.id;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = x.d.querySelector("summary").textContent;
+      box.appendChild(a);
+    });
+  }
+  $("bdNewTitle").addEventListener("input", function () {
+    clearTimeout(faqHintTimer);
+    faqHintTimer = setTimeout(showFaqHint, 250);
+  });
+
+  // =========================================================================
   // 화면 고르기 (해시)
   // =========================================================================
   function route() {
@@ -461,6 +559,7 @@
       });
       // 글을 쓰거나 지우고 돌아왔으면 목록이 낡았다 — 늘 새로 받는다
       if (ask) loadList(true);
+      if (/^#faq-/.test(h)) { showFaqTarget(decodeURIComponent(h.slice(1))); return; }
     }
     window.scrollTo(0, 0);
   }
