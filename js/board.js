@@ -531,13 +531,6 @@
     setTimeout(function () { bulkToggling = false; syncAllBtn(); }, 0);
   });
 
-  // 자주 찾는 질문 칩에 그 질문이 속한 분류의 색 점을 단다(분류는 HTML이 정한다 — 여기서 다시 적지 않는다)
-  document.querySelectorAll(".bd-faq-popular a").forEach(function (a) {
-    const it = document.querySelector(a.getAttribute("href"));
-    const g = it && it.closest(".bd-faq-group");
-    const cat = g && Array.prototype.find.call(g.classList, function (c) { return c.indexOf("cat-") === 0; });
-    if (cat) a.classList.add(cat);
-  });
 
   // 분류 차례 — 분류마다 보이는 질문 수를 적고, 찾기로 다 걸러진 분류는 옅게 둔다
   const TOC = Array.prototype.slice.call(document.querySelectorAll(".bd-faq-toc a"));
