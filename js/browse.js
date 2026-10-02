@@ -60,7 +60,7 @@
 
   function rpc(fn, body) {
     return fetch(API + fn, { method: "POST", headers: HEADERS, body: JSON.stringify(body || {}) })
-      .catch(function () { throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요."); })
+      .catch(function () { throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하십시오."); })
       .then(function (res) {
         return res.json().catch(function () { return null; }).then(function (data) {
           if (res.ok) return data;
@@ -169,7 +169,7 @@
         if (total === 0) {
           setStatus(q ? ("'" + q + "'에 해당하는 악보가 없습니다.")
                       : (tab === "ngc" ? "국악원 정악보가 아직 올라오지 않았습니다."
-                                       : "아직 올라온 악보가 없습니다. 첫 악보를 올려 보세요."), "sc-empty");
+                                       : "아직 올라온 악보가 없습니다."), "sc-empty");
         } else {
           setStatus("");
           $("scCount").textContent = total + "곡";

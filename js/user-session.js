@@ -78,10 +78,10 @@
   function toErr(data, status, fallback) {
     const code = data && (data.error_code || data.code || "");
     if (status === 429 || code === "over_email_send_rate_limit") {
-      return new Error("메일을 너무 자주 보냈습니다. 잠시 뒤에 다시 시도해 주세요.");
+      return new Error("메일 요청이 너무 잦습니다. 잠시 후 다시 시도하십시오.");
     }
     if (code === "otp_expired") {
-      return new Error("링크가 만료되었습니다. 메일을 다시 받아 주세요.");
+      return new Error("링크가 만료되었습니다. 메일을 다시 요청하십시오.");
     }
     // 대시보드에서 신규 가입이 꺼져 있으면 처음 오는 주소가 여기서 막힌다. 서버 말은
     // "Signups not allowed for otp"라 무엇을 해야 할지 알 수가 없으므로 갈아 준다.
@@ -89,7 +89,7 @@
     //   계정 기능을 켜는 날 대시보드에서 함께 열어야 한다. 자세한 것은 NEXT-SESSION.md.
     if (code === "signup_disabled" || /signups? not allowed/i.test(String(
         (data && (data.message || data.msg || data.error_description)) || ""))) {
-      return new Error("아직 새 계정을 만들 수 없습니다. 잠시 뒤에 다시 시도해 주세요.");
+      return new Error("아직 새 계정을 만들 수 없습니다. 잠시 후 다시 시도하십시오.");
     }
     const m = data && (data.message || data.error_description || data.msg ||
                        data.error || data.hint);
@@ -102,7 +102,7 @@
     return fetch(AUTH + path, {
       method: "POST", headers: h, body: JSON.stringify(body || {}),
     }).catch(function () {
-      throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
+      throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하십시오.");
     }).then(function (res) {
       return res.json().catch(function () { return null; }).then(function (data) {
         if (res.ok) return data;
@@ -122,7 +122,7 @@
       .then(function (r) { const n = mk(r); save(n); return n; })
       .catch(function () {
         save(null);
-        throw new Error("로그인이 풀렸습니다. 다시 들어와 주세요.");
+        throw new Error("로그인이 해제되었습니다. 다시 로그인하십시오.");
       });
   }
 
@@ -137,7 +137,7 @@
         },
         body: JSON.stringify(body || {}),
       }).catch(function () {
-        throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
+        throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하십시오.");
       }).then(function (res) {
         return res.json().catch(function () { return null; }).then(function (data) {
           if (res.ok) return data;
@@ -195,7 +195,7 @@
         strip();
         const c = q.get("error_code") || "";
         if (c === "otp_expired" || c === "access_denied") {
-          return { err: "링크가 만료되었거나 이미 쓰인 링크입니다. 메일을 다시 받아 주세요." };
+          return { err: "링크가 만료되었거나 이미 사용된 링크입니다. 메일을 다시 요청하십시오." };
         }
         return { err: q.get("error_description") || "들어오지 못했습니다." };
       }

@@ -67,7 +67,7 @@
       headers: { "apikey": KEY, "Content-Type": "application/json" },
       body: JSON.stringify(body || {}),
     }).catch(function () {
-      throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
+      throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하십시오.");
     }).then(function (res) {
       return res.json().catch(function () { return null; }).then(function (data) {
         if (res.ok) return data;
@@ -105,7 +105,7 @@
         },
         body: JSON.stringify(body || {}),
       }).catch(function () {
-        throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
+        throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하십시오.");
       }).then(function (res) {
         return res.json().catch(function () { return null; }).then(function (data) {
           if (res.ok) return data;

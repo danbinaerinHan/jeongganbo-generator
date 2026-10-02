@@ -28,7 +28,7 @@
     // 문서
     doc_new: "새 문서 생성",
     import_file: "파일 불러오기",
-    save_snapshot: "임시저장",
+    save_snapshot: "임시 저장",
     // 내보내기
     export_png: "PNG 내보내기",
     export_file: "파일 저장(.jgb.json)",

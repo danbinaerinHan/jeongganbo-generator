@@ -119,7 +119,7 @@
       headers: HEADERS,
       body: JSON.stringify(body || {}),
     }).catch(function () {
-      throw new Error("서버에 닿지 못했습니다. 인터넷 연결을 확인해 주세요.");
+      throw new Error("서버에 연결하지 못했습니다. 인터넷 연결을 확인하십시오.");
     }).then(function (res) {
       return res.json().catch(function () { return null; }).then(function (data) {
         if (res.ok) return data;
@@ -178,7 +178,7 @@
     return navigator.clipboard.writeText(text).then(function () {
       alert(okMsg);
     }).catch(function () {
-      prompt("자동 복사가 막혀 있습니다. 아래 주소를 직접 복사해 주세요.", text);
+      prompt("자동 복사가 차단되어 있습니다. 아래 주소를 직접 복사하십시오.", text);
     });
   }
 
@@ -321,7 +321,7 @@
   // asNew = true → 열쇠가 있어도 일부러 새 게시물로 (원본은 fork_of로 남는다)
   function doPublish(asNew) {
     if (!$("pubRights").checked) {
-      alert("이 악보를 공개할 권리가 있는지 확인해 주세요.");
+      alert("이 악보를 공개할 권리가 있는지 확인하십시오.");
       return;
     }
     const doc = window.jgbDoc.state();
@@ -473,7 +473,7 @@
       // 게다가 이 길로 들어오는 사람은 대개 주소만 얻어 걸린 경우라, 하던 일을 멈춰
       // 세울 만한 소식이 아니다.
       $("cbText").textContent =
-        "관리자로 열 수 없습니다 — 관리 화면에서 로그인한 뒤 [열기]를 눌러 주세요.";
+        "관리자로 열 수 없습니다 — 관리 화면에서 로그인한 뒤 [열기]를 선택하십시오.";
       $("cbReport").style.display = "none";
       $("cloudBanner").style.display = "";
       return true;
@@ -507,7 +507,7 @@
   function doAdminSave() {
     const note = $("pubAdminNote").value.trim();
     if (!note) {
-      alert("무엇을 왜 고쳤는지 적어 주세요.\n이 기록은 게시한 사람이 열람을 요구할 수 있습니다(약관 제5조 제6항).");
+      alert("수정한 내용과 사유를 입력하십시오.\n이 기록은 게시한 사람이 열람을 요구할 수 있습니다(약관 제5조 제6항).");
       $("pubAdminNote").focus();
       return;
     }

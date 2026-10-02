@@ -235,9 +235,9 @@
       hint.innerHTML = n > 0
         ? "<b>" + (melSelLane === "ly" ? "곁줄" : "정간") + " " + n + "칸</b> 고름" +
           (nParts > 1 ? " <b>(" + nParts + "악기)</b>" : "") + "<br>" +
-          "⌘/Ctrl + <b>C</b> 복사 · <b>X</b> 오려두기 · <b>V</b> 붙여넣기" +
+          "⌘/Ctrl + <b>C</b> 복사 · <b>X</b> 잘라내기 · <b>V</b> 붙여넣기" +
           (melSelLane === "mel" ? " · <b>Delete</b> 내용 지우기" : "")
-        : clearArmHint ? "지울 구간을 악보에서 <b>끌어 고른 뒤</b> [내용 지우기]를 다시 누르십시오" : "";
+        : clearArmHint ? "지울 구간을 악보에서 <b>끌어 선택한 뒤</b> [내용 지우기]를 다시 누르십시오" : "";
     }
   }
   let cellStylePendingColor = "#ffe08a";     // 배경색 칠하기에 쓸 현재 색(여러 색을 번갈아 칠할 수 있음)
@@ -1637,7 +1637,7 @@
   function startNewDocument() {
     if (!confirm("새 문서를 만들까요? 지금 작업 내용(제목·레이아웃 포함)은 모두 사라집니다.")) return;
     openNewDocWizard(function (answers) {
-      if (confirm("계속하기 전에 지금 상태를 임시저장할까요?")) snapSave();
+      if (confirm("계속하기 전에 지금 상태를 임시 저장할까요?")) snapSave();
       localStorage.setItem(NEWDOC_PENDING_KEY, JSON.stringify(answers));
       localStorage.removeItem(LS_KEY);
       location.reload();
@@ -2943,7 +2943,7 @@
     if (!keys.length) {
       const empty = document.createElement("div");
       empty.className = "tx-empty";
-      empty.textContent = "아직 없습니다. 악보에서 각 위 빈 곳을 클릭하거나, 위 칸에 각 번호와 이름을 적고 '추가'를 누르세요.";
+      empty.textContent = "아직 없습니다. 악보에서 각 위 빈 곳을 클릭하거나, 위 칸에 각 번호와 이름을 입력하고 '추가'를 선택합니다.";
       list.appendChild(empty);
       return;
     }
@@ -4450,7 +4450,7 @@
     if (!customTexts.length) {
       const empty = document.createElement("div");
       empty.className = "tx-empty";
-      empty.textContent = "아직 추가한 텍스트가 없습니다. 위 칸에 내용을 적고 '추가'를 누르세요.";
+      empty.textContent = "아직 추가한 텍스트가 없습니다. 위 칸에 내용을 입력하고 '추가'를 선택합니다.";
       list.appendChild(empty);
       return;
     }
@@ -8215,7 +8215,7 @@
     // 사용자 지정 종이는 60mm가 아래끝이다(그보다 좁으면 배치가 터져 기본값으로 되돌려진다).
     // 반으로 갈라 그 아래로 내려가면 나란히는 애초에 될 일이 아니다.
     if (Math.min(half.w, half.h) < 60) {
-      alert("종이가 좁아 나란히 뽑을 수 없습니다.\n종이를 키우고 다시 해보세요.");
+      alert("용지가 좁아 나란히 출력할 수 없습니다.\n용지 크기를 늘린 뒤 다시 시도하십시오.");
       return Promise.resolve([]);
     }
 
@@ -8675,7 +8675,7 @@
   }
   function saveSnaps(list) {
     try { localStorage.setItem(SNAP_KEY, JSON.stringify(list)); return true; }
-    catch (e) { alert("임시저장 실패: 브라우저 저장 공간이 가득 찼습니다. 오래된 임시저장을 지워주세요."); return false; }
+    catch (e) { alert("임시 저장 실패: 브라우저 저장 공간이 가득 찼습니다. 오래된 임시 저장을 삭제하십시오."); return false; }
   }
   function fmtSnapTime(iso) {
     const d = new Date(iso), p = function (n) { return String(n).padStart(2, "0"); };
@@ -8700,7 +8700,7 @@
     if (!list.length) {
       const d = document.createElement("div");
       d.className = "snap-empty";
-      d.textContent = "아직 임시저장이 없습니다.";
+      d.textContent = "아직 임시 저장한 항목이 없습니다.";
       wrap.appendChild(d);
       return;
     }
@@ -8716,7 +8716,7 @@
       const del = document.createElement("button");
       del.type = "button"; del.className = "snap-del"; del.textContent = "×"; del.title = "삭제";
       del.addEventListener("click", function () {
-        if (!confirm("‘" + s.name + "’ 임시저장을 삭제할까요?")) return;
+        if (!confirm("‘" + s.name + "’ 임시 저장을 삭제할까요?")) return;
         saveSnaps(loadSnaps().filter(function (x) { return x.id !== s.id; }));
         renderSnapList();
       });

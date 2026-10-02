@@ -115,7 +115,7 @@
     $("lgCodeForm").addEventListener("submit", function (e) {
       e.preventDefault();
       const code = $("lgCode").value.replace(/\D/g, "");
-      if (code.length < 6) { err("lgErr2", "여섯 자리 번호를 적어 주세요."); return; }
+      if (code.length < 6) { err("lgErr2", "여섯 자리 번호를 입력하십시오."); return; }
       err("lgErr2", "");
       busy($("lgCodeGo"), true, "확인하는 중…");
       U.verifyCode(email, code).then(function (s) {
@@ -125,7 +125,7 @@
       }).catch(function (ex) {
         // 서버는 만료와 오타를 같은 오류로 준다(번호를 훑어 맞히지 못하게) — 여기서
         // 지어내지 말고 둘 다일 수 있다고 그대로 적는다.
-        err("lgErr2", "번호가 맞지 않거나 시간이 지났습니다. 다시 보내 주세요.");
+        err("lgErr2", "번호가 일치하지 않거나 유효 시간이 지났습니다. 다시 요청하십시오.");
       }).then(function () {
         busy($("lgCodeGo"), false, "번호로 들어가기");
       });
