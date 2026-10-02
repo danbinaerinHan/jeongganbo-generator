@@ -494,7 +494,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       <div class="field">
         <label for="gakCount">총 각 수</label>
         <input type="number" id="gakCount" min="1" max="480" value="8">
-        <div class="hint"><ul class="guide-list"><li>곡 전체의 각 수입니다. 장단 줄은 여기 세지 않습니다(따로 한 각 자리를 차지합니다).</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>곡 전체의 각 수입니다. 장단 줄은 총 각 수에 포함하지 않습니다(별도로 한 각 자리를 차지합니다).</li></ul></div>
       </div>
 
       <!-- 제목·부제 — 이 두 칸이 **정본**이고(render·저장이 읽는 곳), 기능바 文 텍스트 창의
@@ -1518,7 +1518,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       <!-- 곁줄이 지금 보기에서 꺼져 있으면 이 창을 열어도 악보엔 빈 줄이 안 생긴다(장단
            스위치와 같은 규칙). 스위치는 설정 › 종이·배치 **한 곳뿐**이므로 여기서는 '어디서
            켜나'만 알린다 — 두 번째 스위치를 만들지 말 것. -->
-      <div class="lane-off-note">곁줄이 지금 보기에서 <b>꺼져 있어</b> 악보에 나오지 않습니다. 여기 적은 글자는 그대로 남으며, 설정(⚙) › 종이·배치 › <b>곁줄 표시</b>에서 다시 켤 수 있습니다.</div>
+      <div class="lane-off-note">곁줄이 지금 보기에서 <b>꺼져 있어</b> 악보에 나오지 않습니다. 입력한 글자는 그대로 보존되며, 설정(⚙) › 종이·배치 › <b>곁줄 표시</b>에서 다시 켤 수 있습니다.</div>
       <!-- 가사 기호 팔레트 — 클릭하면 지금 편집 중인 가사 칸(직접 입력) 또는 커서(에디터)에
            {기호} 토큰이 한 글자처럼 들어가고, 악보엔 그 자리에 이미지로 표시된다.
            속은 시김새·장단과 같은 공용 빌더(buildSymPalette)가 채운다 — 검색·최근·칩 모양이
@@ -1824,7 +1824,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       <div class="field">
         <label for="pubAuthor">지은이 (선택)</label>
         <input type="text" id="pubAuthor" maxlength="60" placeholder="예: 한단비">
-        <div class="hint">여기 적은 이름은 <b>공유마당 목록</b>과 <b>악보를 연 화면</b>에 표시됩니다. 본인 확인은 하지 않으니 원하는 이름을 적으시면 됩니다.</div>
+        <div class="hint">입력한 이름은 <b>공유마당 목록</b>과 <b>악보를 연 화면</b>에 표시됩니다. 별도의 본인 확인 절차가 없으므로 원하는 이름을 입력할 수 있습니다.</div>
       </div>
       <div class="field">
         <label for="pubLicense">이용 조건</label>

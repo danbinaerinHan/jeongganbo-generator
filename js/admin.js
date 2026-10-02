@@ -190,7 +190,7 @@
 
       if (total === 0) {
         setStatus(q ? ("'" + q + "'에 해당하는 악보가 없습니다.")
-                    : "여기에 해당하는 악보가 없습니다.");
+                    : "해당하는 악보가 없습니다.");
         $("adCount").textContent = "";
       } else {
         setStatus("");
