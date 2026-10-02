@@ -1,20 +1,20 @@
 /* ============================================================================
-   우물사이 — 묻고 제안하기 (board.html)
+   우물사이 — 문의·제안 (board.html)
    ============================================================================
-   탭이 둘이다: 자주 묻는 질문(운영자가 board.html에 손으로 적어 둔 답) | 질문·제안(게시판).
+   탭이 둘이다: 자주 묻는 질문(운영자가 board.html에 손으로 적어 둔 답) | 게시판.
    게시판은 갈래를 나누지 않는다 — '이건 질문인가 제안인가'를 쓰는 사람이 먼저 고민하게 하면
    안 쓰고 만다(사용자 확정, 2026-09-29).
 
    화면은 주소 해시가 고른다(한 문서 안에서 오간다):
      ""        자주 묻는 질문
      #faq-<id> 자주 묻는 질문의 항목 하나(펼쳐서 그 자리로) · #faq-g-<갈래>는 갈래 머리로
-     #ask      질문·제안 목록
+     #ask      게시판 목록
      #p=<id>   글 하나 (댓글·공감)
      #new      글쓰기 · #edit=<id> 고치기
    글 주소가 해시인 것은 공유마당·게시 악보(#v=)와 같은 까닭이다(GitHub Pages).
 
    서버와 말하는 법은 browse.js와 같다(fetch 한 덩어리). 약속은 server/schema.sql의
-   '묻고 제안하기' 절에 있다 — 표는 닫혀 있고 board_* RPC만 열려 있다.
+   '문의·제안' 절에 있다 — 표는 닫혀 있고 board_* RPC만 열려 있다.
 
    ── 글쓴이 열쇠 ───────────────────────────────────────────────────────────
    계정이 없으므로 **브라우저마다 열쇠 하나**를 둔다(jgb_board_v1.key, 처음 쓸 때 무작위로
@@ -205,7 +205,7 @@
     if (!ON) {
       document.querySelector("#bdAsk .sc-controls").style.display = "none";
       setMsg("bdStatusMsg", CFG.board === false
-        ? "묻고 제안하기는 준비 중입니다."
+        ? "문의·제안는 준비 중입니다."
         : "게시 서버가 연결되어 있지 않습니다.", "sc-empty");
       return;
     }
@@ -312,7 +312,7 @@
       const p = r.post;
       cur = p;
       setMsg("bdViewMsg", "");
-      document.title = p.title + " · 묻고 제안하기 · 우물사이";
+      document.title = p.title + " · 문의·제안 · 우물사이";
 
       $("bdPostTitle").textContent = p.title;
       const meta = $("bdPostMeta");
@@ -405,7 +405,7 @@
     $("bdNewHead").textContent = editing ? "글 수정" : "글쓰기";
     $("bdNewSubmit").textContent = editing ? "수정 내용 등록" : "등록";
     $("bdNewName").parentNode.hidden = !!editing;
-    if (!ON) { showErr("bdNewErr", "묻고 제안하기는 준비 중입니다."); $("bdNewSubmit").disabled = true; }
+    if (!ON) { showErr("bdNewErr", "문의·제안는 준비 중입니다."); $("bdNewSubmit").disabled = true; }
     if (editing) {
       if (!cur || cur.id !== editing) { location.hash = "#p=" + encodeURIComponent(editing); return; }
       $("bdNewTitle").value = cur.title;
@@ -650,7 +650,7 @@
     else if (mE) openNew(decodeURIComponent(mE[1]));
     else if (h === "#new") openNew(null);
     else {
-      document.title = "묻고 제안하기 · 우물사이";
+      document.title = "문의·제안 · 우물사이";
       $("bdFaq").hidden = ask;
       $("bdAsk").hidden = !ask;
       document.querySelectorAll("#bdList .sc-tab").forEach(function (t) {

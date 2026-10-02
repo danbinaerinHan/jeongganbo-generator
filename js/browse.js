@@ -250,7 +250,7 @@
     else if (th === "celadon") document.body.classList.add("theme-celadon");
   } catch (e) {}
 
-  // 묻고 제안하기로 가는 길 — 게시판 스위치가 켜져 있을 때만(board.js의 ON과 같은 판정)
+  // 문의·제안로 가는 길 — 게시판 스위치가 켜져 있을 때만(board.js의 ON과 같은 판정)
   if (CFG.url && KEY && CFG.board !== false) $("scBoard").hidden = false;
 
   // 첫 화면(home.html)의 찾기 칸이 ?q=로 넘겨준다 — 받은 말로 바로 찾는다

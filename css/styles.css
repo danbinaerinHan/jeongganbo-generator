@@ -1865,7 +1865,7 @@
                       border-radius: 0; padding: 7px 14px; font-size: 12px; font-weight: 600;
                       cursor: pointer; font-family: inherit; }
   .help-foot button:hover { opacity: .9; }
-  /* 도움말에서 답을 못 찾았을 때 갈 곳(묻고 제안하기) — [둘러보기] 바로 왼쪽에 글자 링크로만.
+  /* 도움말에서 답을 못 찾았을 때 갈 곳(문의·제안) — [둘러보기] 바로 왼쪽에 글자 링크로만.
      채운 버튼은 [둘러보기] 하나여야 한다(화면당 강조 한 점). */
   .help-board { margin-left: auto; font-size: 12px; color: var(--accent); text-decoration: none; }
   .help-board:hover { text-decoration: underline; text-underline-offset: 2px; }

@@ -1,5 +1,5 @@
 /* ============================================================================
-   묻고 제안하기(board.html) — 글 목록 · 글 보기 · 글쓰기
+   문의·제안(board.html) — 글 목록 · 글 보기 · 글쓰기
    ============================================================================
    머리말·탭·검색·정렬·꼬리말은 browse.css의 것을 그대로 쓴다(공유마당과 한 사이트로
    보이게). 색은 styles.css 변수만 쓰고 새 색을 만들지 않는다.
@@ -36,7 +36,7 @@ body.board .sc-make { background: transparent; color: var(--ink); border: 1px so
 body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 
 .sc-tabs a.sc-tab { text-decoration: none; display: inline-block; }
-/* 질문·제안 탭의 도구줄 — 머리말(.sc-head) 바로 아래라 위 여백을 겹쳐 두지 않는다 */
+/* 게시판 탭의 도구줄 — 머리말(.sc-head) 바로 아래라 위 여백을 겹쳐 두지 않는다 */
 .bd-ask-head { padding-top: 4px !important; }
 .bd-ask-head .sc-count { margin-left: auto; }
 
