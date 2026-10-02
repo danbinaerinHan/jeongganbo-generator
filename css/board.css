@@ -53,12 +53,12 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 /* 차례 — 번호 + 이름 + 개수, 선 하나 없이 글자만 */
 .bd-faq-toc { position: sticky; top: 84px; display: flex; flex-direction: column; }
 .bd-toc-cap {
-  padding: 0 0 10px; margin-bottom: 4px; border-bottom: 1px solid var(--ink);
-  font-size: 12px; font-weight: 700; color: var(--ink);
+  padding: 0 0 8px;
+  font-size: 12px; font-weight: 700; color: var(--muted);
 }
 .bd-faq-toc a {
   display: grid; grid-template-columns: 26px 1fr auto; align-items: baseline;
-  padding: 8px 0; border-bottom: 1px solid var(--line);
+  padding: 6px 0;
   color: var(--muted); font-size: 13.5px; font-weight: 500; text-decoration: none;
 }
 .bd-faq-toc a::before { content: attr(data-n); font-family: var(--mono); font-size: 11px; }
@@ -98,18 +98,25 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 .bd-faq-all[hidden] { display: none; }
 
 /* 분류 — 먹 선 위에 큰 번호와 이름 */
-.bd-faq-group { margin: 14px 0 44px; padding-top: 16px; border-top: 2px solid var(--ink); scroll-margin-top: 84px; }
+/* 가로선은 셋만 남긴다(2026-10-02 '선이 많아 정신없다'): 분류마다 먹 선 하나 · 질문 사이의 옅은 선 ·
+   검색 밑줄. 차례·목록 위아래·끝 블록의 선은 걷고 여백으로 가른다 — 선을 더하지 말 것. */
+.bd-faq-group { margin: 14px 0 56px; padding-top: 18px; border-top: 1px solid var(--ink); scroll-margin-top: 84px; }
 .bd-faq-group h2 {
   display: grid; grid-template-columns: 52px 1fr; align-items: baseline;
   margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink);
 }
 .bd-faq-group h2::before { content: attr(data-n); font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--muted); }
-.bd-faq-desc { margin: 6px 0 18px 52px; font-size: 13px; color: var(--muted); }
-.bd-faq-card { border-top: 1px solid var(--line); }
-.bd-faq-item { border-bottom: 1px solid var(--line); scroll-margin-top: 84px; }
+.bd-faq-desc { margin: 6px 0 10px 52px; font-size: 13px; color: var(--muted); }
+.bd-faq-item { scroll-margin-top: 84px; }
+/* 질문 사이만 — 첫 질문 위·끝 질문 아래엔 선이 없다. 찾기로 숨은 항목은 건너뛴다 */
+/* 선은 질문 글자 열에서부터 긋는다 — 번호 열은 끊김 없는 세로 띠로 남아 선이 반으로 줄어 보인다 */
+.bd-faq-item { --q-indent: 52px; }
+.bd-faq-item:not([hidden]) ~ .bd-faq-item:not([hidden]) {
+  background: linear-gradient(var(--line), var(--line)) var(--q-indent) 0 / calc(100% - var(--q-indent)) 1px no-repeat;
+}
 .bd-faq-item summary {
   display: grid; grid-template-columns: 52px 1fr 20px; align-items: baseline;
-  cursor: pointer; list-style: none; padding: 15px 0;
+  cursor: pointer; list-style: none; padding: 14px 0;
   font-size: 15px; font-weight: 500; line-height: 1.55; word-break: keep-all; color: var(--ink);
 }
 .bd-faq-item summary::-webkit-details-marker { display: none; }
@@ -139,7 +146,7 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 .bd-faq-none { margin: 24px 0 0 52px; font-size: 14px; color: var(--muted); }
 
 /* 끝 — 갈 곳 셋을 세로 가는 선으로 나눈 한 줄 */
-.bd-faq-help { margin: 64px 0 8px; padding-top: 16px; border-top: 2px solid var(--ink); }
+.bd-faq-help { margin: 72px 0 8px; padding-top: 18px; border-top: 1px solid var(--ink); }
 .bd-faq-help h2 { margin: 0 0 20px; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
 .bd-help-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .bd-help-card {
@@ -158,7 +165,7 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
   .bd-faq-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .bd-faq-toc {
     position: static; flex-direction: row; gap: 18px; overflow-x: auto;
-    padding-bottom: 8px; border-bottom: 1px solid var(--line); scrollbar-width: none;
+    padding-bottom: 4px; scrollbar-width: none;
   }
   .bd-faq-toc::-webkit-scrollbar { display: none; }
   .bd-toc-cap { display: none; }
@@ -170,6 +177,7 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
   .bd-faq-group h2, .bd-faq-help h2 { font-size: 19px; }
   .bd-faq-group h2 { grid-template-columns: 40px 1fr; }
   .bd-faq-item summary { grid-template-columns: 40px 1fr 20px; }
+  .bd-faq-item { --q-indent: 40px; }
   .bd-faq-desc { margin-left: 40px; }
   .bd-faq-item > div { padding-left: 40px; padding-right: 0; }
   .bd-help-cards { grid-template-columns: minmax(0, 1fr); gap: 16px; }
