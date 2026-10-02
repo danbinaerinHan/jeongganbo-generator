@@ -55,7 +55,7 @@
          **id(faq-…)는 바꾸지 말 것** — 게시판 답변·도움말이 `board.html#faq-…`로 링크한다.
        · `data-kw`는 화면엔 안 보이고 검색에만 걸리는 별칭이다(가사↔노랫말↔곁줄처럼 사람이
          칠 법한 다른 말). 글 쓰기 화면의 '비슷한 질문'도 이것을 본다(js/board.js).
-       · 어투는 공식적·학술적 합쇼체다(2026-10-02 사용자 요청) — 질문은 '~합니까?/~있습니까?',
+       · 어투는 공식적·학술적 합쇼체다(2026-10-02 사용자 요청) — 질문의 끝만 부드럽게 '~하나요?/~있나요?'(2026-10-02 사용자 요청),
          답은 '~합니다'. '~하세요'·'~해 주세요' 같은 권유조, '적기·쓰기·누르기' 같은 구어 대신
          '입력·선택·설정'을 쓴다. 분류 이름은 명사구('악보 입력'·'문제 해결'). 규칙은 js/tour-text.js ④와 같다.
        · 답의 꼴: 첫 문단 = 한두 문장의 답, 그다음 = 어디 → 무엇 → 결과. 버튼 이름은 화면
@@ -79,17 +79,17 @@
     <section class="bd-faq-group" id="faq-g-start">
       <h2>이용 및 저장</h2>
       <details class="bd-faq-item" id="faq-install" data-kw="가입 회원 로그인 설치 다운로드 프로그램 앱">
-        <summary>프로그램 설치나 회원 가입이 필요합니까?</summary>
+        <summary>프로그램 설치나 회원 가입이 필요한가요?</summary>
         <div><p>필요하지 않습니다. 우물사이는 웹 브라우저에서 바로 실행됩니다. 악보의 작성·저장은 물론
         공유마당 게시도 가입 없이 이용할 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-free" data-kw="무료 유료 돈 비용 가격 요금 결제">
-        <summary>이용 요금이 있습니까?</summary>
+        <summary>이용 요금이 있나요?</summary>
         <div><p>없습니다. 악보 작성, 저장, 인쇄 및 파일 내보내기, 공유마당 게시를 포함한 모든 기능을 무료로
         제공합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-saved" data-kw="자동 저장 저장 위치 날아감 사라짐 새로고침">
-        <summary>작성 중인 악보는 어디에 저장됩니까?</summary>
+        <summary>작성 중인 악보는 어디에 저장되나요?</summary>
         <div><p>현재 사용 중인 브라우저에 자동으로 저장됩니다. 창을 닫거나 새로 고침한 뒤에도 이어서 작업할 수
         있습니다.</p>
         <p>다만 브라우저의 방문 기록이나 사이트 데이터를 삭제하면 저장된 악보도 함께 삭제됩니다. 중요한 악보는
@@ -97,26 +97,26 @@
         보관한 파일은 [불러오기]로 다시 열 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-move" data-kw="다른 컴퓨터 노트북 집 학교 옮기기 이어 쓰기 기기">
-        <summary>다른 컴퓨터에서 작업을 이어 갈 수 있습니까?</summary>
+        <summary>다른 컴퓨터에서 작업을 이어 갈 수 있나요?</summary>
         <div><p>파일을 통해 옮길 수 있습니다. 기존 컴퓨터에서 오른쪽 세로 막대의 [저장]으로 파일을 내려받은 뒤,
         새 컴퓨터에서 [불러오기]로 엽니다.</p>
         <p>자동 저장은 해당 컴퓨터의 해당 브라우저에만 보관되므로 다른 브라우저에서는 확인되지 않습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-versions" data-kw="버전 백업 이전 상태 스냅샷 임시 저장 보관">
-        <summary>수정 이전의 상태를 별도로 보관할 수 있습니까?</summary>
+        <summary>수정 이전의 상태를 별도로 보관할 수 있나요?</summary>
         <div><p>[설정] › [보관] 탭의 <b>임시 저장</b> 기능을 이용합니다. 현재 상태에 이름을 붙여 여러 판본으로
         보관할 수 있으며, 목록에서 선택하여 언제든 복원할 수 있습니다.</p>
         <p>임시 저장 역시 해당 컴퓨터의 브라우저에만 보관됩니다. 장기 보관이 필요한 경우 [저장]으로 파일을
         내려받기를 권장합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-undo" data-kw="되돌리기 실행 취소 언두 undo 다시 실행 ctrl z">
-        <summary>실행 취소 버튼은 어디에 있습니까?</summary>
+        <summary>실행 취소 버튼은 어디에 있나요?</summary>
         <div><p>실행 취소는 단축키로 제공합니다. <code>⌘Z</code>(Windows는 <code>Ctrl+Z</code>)로 실행을 취소하고,
         <code>⌘⇧Z</code>(<code>Ctrl+Shift+Z</code>)로 다시 실행합니다. 입력, 서식, 악기 편성 등 악보에 대한
         모든 작업에 적용됩니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-tour" data-kw="둘러보기 안내 투어 튜토리얼 처음 사용법 설명">
-        <summary>처음 접속 시 표시된 기능 안내(둘러보기)를 다시 볼 수 있습니까?</summary>
+        <summary>처음 접속 시 표시된 기능 안내(둘러보기)를 다시 볼 수 있나요?</summary>
         <div><p>편집기 오른쪽 세로 막대 하단의 [도움말]을 열고 [둘러보기 다시 시작]을 선택합니다. 단축키와 입력
         문법도 도움말 창에 정리되어 있습니다.</p></div>
       </details>
@@ -125,7 +125,7 @@
     <section class="bd-faq-group" id="faq-g-write">
       <h2>악보 입력</h2>
       <details class="bd-faq-item" id="faq-yul" data-kw="율명 음이름 한자 입력 치기 옥타브 청 배 팔레트">
-        <summary>율명은 어떻게 입력합니까? 한자로 입력해야 합니까?</summary>
+        <summary>율명은 어떻게 입력하나요? 한자로 입력해야 하나요?</summary>
         <div><p>율명은 한글로 입력합니다. 예를 들어 <code>황</code>을 입력하면 악보에는 黃으로 표기됩니다.
         한 옥타브 위의 음은 <code>청</code>, 아래의 음은 <code>배</code>를 앞에 붙입니다(<code>청황</code>,
         <code>배임</code>).</p>
@@ -133,14 +133,14 @@
         열리며, <code>Enter</code>를 누르면 다음 정간으로 이동합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-lr" data-kw="분박 좌우 나란히 반박 한 칸에 두 음 세 음 붙여쓰기 띄어쓰기">
-        <summary>한 정간에 둘 이상의 음을 입력하려면 어떻게 합니까?</summary>
+        <summary>한 정간에 둘 이상의 음을 입력하려면 어떻게 하나요?</summary>
         <div><p>띄어쓰기는 정간을 <b>상하</b>로 나누고, 붙여 쓴 글자는 해당 행 안에서 <b>좌우</b>로 나눕니다.</p>
         <p><code>황 태</code> → 위에 황, 아래에 태 · <code>황태 중</code> → 윗행에 황·태를 좌우로, 아랫행에 중.</p>
         <p>정간보는 정간을 상하로 먼저 나누는 기보법이므로, 상하 분할 없이 <code>황태</code>와 같이 좌우로만
         나눌 수는 없습니다(문법 오류로 표시됩니다). 상하와 좌우는 각각 세 칸까지 나눌 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-hold" data-kw="이음 길게 지속 끌기 쉼표 숨표 쉬기">
-        <summary>이음, 쉼표, 숨표는 어떻게 표기합니까?</summary>
+        <summary>이음, 쉼표, 숨표는 어떻게 표기하나요?</summary>
         <div><p>앞 음을 지속하는 이음은 <code>-</code>, 쉼표는 <code>쉼</code>, 숨표는 음 뒤에 <code>&lt;</code>를
         입력합니다.</p>
         <p>예: 두 정간에 걸친 황은 첫 정간에 <code>황</code>, 다음 정간에 <code>-</code>를 입력합니다.</p></div>
@@ -151,7 +151,7 @@
         <code>{흘림표}황</code>과 같이 앞에 입력하면 시김새가 독립된 칸을 차지합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-orn-find" data-kw="시김새 찾기 검색 초성 악기별 단축키 숫자 많다">
-        <summary>원하는 시김새를 빠르게 찾을 수 있습니까?</summary>
+        <summary>원하는 시김새를 빠르게 찾을 수 있나요?</summary>
         <div><p>[율명/시김새] 창을 시김새 보기로 전환하면 상단에 검색란이 있습니다. 이름(<code>모지</code>) 외에
         초성(<code>ㅁㅈ</code>)이나 악기 이름(<code>가야금</code>)으로도 검색할 수 있습니다.</p>
         <p>악기를 선택하면 해당 악기에서 자주 쓰이는 시김새가 앞에 배열됩니다. 숫자 <code>1</code>~<code>0</code>을
@@ -159,19 +159,19 @@
         변경합니다. 최근에 사용한 시김새는 별도로 모아 표시됩니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-orn-move" data-kw="시김새 위치 옮기기 크기 키우기 줄이기 겹침 지우기 드래그">
-        <summary>시김새의 위치나 크기를 조정할 수 있습니까?</summary>
+        <summary>시김새의 위치나 크기를 조정할 수 있나요?</summary>
         <div><p>[율명/시김새] 창의 [시김새 편집(위치·삭제)]을 켠 뒤 악보의 기호를 끌어 위치를 옮깁니다.
         기호를 선택하면 크기 조절 패널이 나타나며, <code>Delete</code>로 삭제할 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-lyrics" data-kw="가사 노랫말 활 가로표 세로표 구음 곁줄 오른쪽 글자 정가 가곡">
-        <summary>가사(노랫말)나 활 표시는 어디에 입력합니까?</summary>
+        <summary>가사(노랫말)나 활 표시는 어디에 입력하나요?</summary>
         <div><p>정간 오른쪽의 <b>곁줄</b>에 입력합니다. 기능바의 [곁줄] 창을 열면 정간 오른쪽에 입력 공간이
         나타나며, 해당 칸을 <b>더블클릭</b>하여 입력합니다.</p>
         <p>활 표시는 문자로 바로 입력할 수 있습니다. <code>--</code>는 가로표, <code>|</code>는 세로표로
         변환됩니다. 그 밖의 기호와 장구 구음은 곁줄 창의 기호 목록에서 선택합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-jangdan" data-kw="장단 장구 구음 덩 기덕 쿵 프리셋 목록 여민락 가곡 도드리">
-        <summary>장단은 어떻게 입력합니까? 목록에서 선택할 수 있습니까?</summary>
+        <summary>장단은 어떻게 입력하나요? 목록에서 선택할 수 있나요?</summary>
         <div><p>목록에서 선택할 수 있습니다. 기능바의 [장단] 창에서 '장단 입력'을 켜고 장단 목록에서 곡을
         선택하면, 장단 줄과 함께 <b>한 각의 정간 수와 대강이 해당 장단에 맞게</b> 설정됩니다. 새 문서를 만들 때도
         선택할 수 있습니다.</p>
@@ -179,27 +179,27 @@
         장단이 바뀌는 곡은 첫 각의 장단이 수록되어 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-tempo" data-kw="빠르기 템포 일분 정 육십정 장 이름 대여음 1장 각 위">
-        <summary>빠르기 표기(一分・六十井)와 '1장', '대여음' 같은 각 이름은 어떻게 표기합니까?</summary>
+        <summary>빠르기 표기(一分・六十井)와 '1장', '대여음' 같은 각 이름은 어떻게 표기하나요?</summary>
         <div><p>기능바의 [빠르기/각·장] 창에서 입력합니다. 창을 연 상태에서 악보의 각 <b>위</b> 여백을 선택하면 해당
         각의 이름을 입력할 수 있고, 창 상단의 빠르기 항목에 정간 수를 입력하면 빠르기 표기가 붙습니다.</p>
         <p>빠르기는 범위로도 표기할 수 있으며(<code>六十～八十井</code>), 한자 수사는 <code>一六十</code>과
         이전 표기 방식인 <code>一六○</code> 가운데 선택할 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-title" data-kw="제목 부제 곡명 글자 텍스트 주석 메모 글씨 크기">
-        <summary>제목, 부제, 주석은 어디에 입력합니까?</summary>
+        <summary>제목, 부제, 주석은 어디에 입력하나요?</summary>
         <div><p>제목과 부제는 [설정] › [곡] 탭에서 입력합니다(<code>//</code>로 줄을 바꿉니다). 글자 크기와 위치는
         기능바의 [텍스트] 창에서 조정합니다.</p>
         <p>같은 [텍스트] 창에서 악보의 원하는 위치에 주석을 추가할 수 있으며, 창을 연 상태에서 글을 끌어 옮깁니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-hanja-paste" data-kw="한자 복사 붙여넣기 붙이기 옮기기 기존 악보">
-        <summary>한자로 된 정간보를 복사하여 붙여 넣을 수 있습니까?</summary>
+        <summary>한자로 된 정간보를 복사하여 붙여 넣을 수 있나요?</summary>
         <div><p>가능합니다. 정간에 한자 율명을 붙여 넣으면 한글 율명으로 변환되어 입력되며, 악보에는 한자로
         표기됩니다.</p>
         <p>붙여 넣지 않고 한자를 직접 입력한 경우에는 변환되지 않습니다. 이 경우 문법 오류로 표시되고 재생되지
         않으므로 한글 율명으로 수정해야 합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-copy" data-kw="복사 붙여넣기 오려두기 여러 칸 구간 선택 반복 되풀이 ctrl c v">
-        <summary>여러 정간을 복사하여 다른 위치에 붙여 넣을 수 있습니까?</summary>
+        <summary>여러 정간을 복사하여 다른 위치에 붙여 넣을 수 있나요?</summary>
         <div><p>기능바 맨 왼쪽의 마우스 [선택]을 켜고 악보에서 정간을 끌어 구간을 선택합니다. <code>⌘C</code>
         (<code>Ctrl+C</code>)로 복사하거나 <code>⌘X</code>로 잘라 낸 뒤, 붙여 넣을 첫 칸을 선택하고
         <code>⌘V</code>를 누릅니다.</p>
@@ -208,7 +208,7 @@
         전환해야 정간을 선택하여 입력할 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-clear" data-kw="지우기 삭제 한꺼번에 여러 칸 비우기 초기화 전체">
-        <summary>여러 칸의 내용을 한꺼번에 삭제할 수 있습니까?</summary>
+        <summary>여러 칸의 내용을 한꺼번에 삭제할 수 있나요?</summary>
         <div><p>마우스 [선택]으로 구간을 선택한 뒤 <code>Delete</code> 키를 누르거나 기능바의 [내용 지우기]를
         선택합니다.</p>
         <p>악보 전체를 비우려면 [설정] › [곡] 탭 하단의 초기화를 이용합니다. 이때 용지, 크기 등 배치 설정은
@@ -219,37 +219,37 @@
     <section class="bd-faq-group" id="faq-g-look">
       <h2>악보 서식</h2>
       <details class="bd-faq-item" id="faq-gakbeats" data-kw="각별 정간 수 첫 각 끝 각 짧은 각 가곡 5정간 길이 다름">
-        <summary>일부 각의 정간 수가 다른 악보(가곡 등)는 어떻게 작성합니까?</summary>
+        <summary>일부 각의 정간 수가 다른 악보(가곡 등)는 어떻게 작성하나요?</summary>
         <div><p>[설정] › [곡] 탭의 <b>각별 정간 수</b>에 정간 수가 다른 각만 <code>각 번호:정간 수</code> 형식으로
         입력합니다. 예를 들어 첫째 각이 5정간, 열여섯째 각이 11정간이면 <code>1:5, 16:11</code>로 입력합니다.</p>
         <p>해당 각의 대강은 대강 분절에 <code>5: 3 2</code>와 같이 정간 수를 지정하여 별도로 설정합니다.
         재생과 오선보에도 이 길이가 그대로 적용됩니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-daegang" data-kw="대강 굵은 가로선 마디금 분절 나누기">
-        <summary>대강(각 안의 굵은 가로선)의 위치를 변경할 수 있습니까?</summary>
+        <summary>대강(각 안의 굵은 가로선)의 위치를 변경할 수 있나요?</summary>
         <div><p>[설정] › [곡] 탭의 <b>대강 분절</b>에 각 대강의 정간 수를 입력합니다. <code>3 3 3 3</code>으로
         입력하면 12정간이 3정간씩 네 대강으로 나뉩니다. 입력한 수의 합은 한 각의 정간 수와 같아야 하며, 비워 두면
         정간 수에 따른 일반적인 분절이 적용됩니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-paper" data-kw="종이 크기 A4 B5 A5 가로 세로 방향 한 쪽 페이지 각 수 배율 크게 작게 여백">
-        <summary>용지 크기와 방향, 한 쪽에 배치되는 분량을 변경할 수 있습니까?</summary>
+        <summary>용지 크기와 방향, 한 쪽에 배치되는 분량을 변경할 수 있나요?</summary>
         <div><p>[설정] › [종이·배치] 탭에서 설정합니다. 용지 크기(A4·A5·B5·레터·정사각·사용자 지정)와 방향,
         한 줄에 배치할 각 수, 악보 전체를 일괄 확대·축소하는 <b>전체 배율</b>, 여백을 줄이는 <b>페이지 채움</b>을
         조정할 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-cellstyle" data-kw="색 칠하기 배경색 굵은 줄 점선 이중선 합치기 나누기 없애기 정간 서식">
-        <summary>정간에 배경색, 굵은 선, 칸 합치기 등의 서식을 적용할 수 있습니까?</summary>
+        <summary>정간에 배경색, 굵은 선, 칸 합치기 등의 서식을 적용할 수 있나요?</summary>
         <div><p>기능바의 [정간 서식]을 열고 악보에서 정간을 끌어 선택한 뒤 원하는 서식을 적용합니다.</p>
         <p>배경색은 [칠하기], 정간은 [합치기]·[나누기]·[없애기], 가로줄은 방향(위·아래)을 지정한 뒤
         [굵게]·[점선]·[이중선]을 선택합니다. [초기화]는 선택한 칸의 배경색과 선 서식을 함께 해제합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-font" data-kw="글씨체 서체 폰트 율명 굵기 한글로 보이기 한자 표기">
-        <summary>율명의 서체를 바꾸거나 한글로 표기할 수 있습니까?</summary>
+        <summary>율명의 서체를 바꾸거나 한글로 표기할 수 있나요?</summary>
         <div><p>[율명/시김새] 창의 율명 보기에서 설정합니다. 표기는 한자·한글, 서체는 정해체·문해체·기기 서체
         가운데 선택할 수 있으며, 설정은 악보 파일에 함께 저장됩니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-theme" data-kw="다크 모드 어두운 화면 색상 테마 눈부심">
-        <summary>화면 색상을 변경하거나 어두운 화면을 사용할 수 있습니까?</summary>
+        <summary>화면 색상을 변경하거나 어두운 화면을 사용할 수 있나요?</summary>
         <div><p>편집기 오른쪽 세로 막대 하단의 [색상]에서 미색·은청색·옥색 테마와 어두운 화면을 선택할 수 있습니다.
         어떤 색상을 선택하더라도 악보는 흰 종이로 표시되며, 인쇄와 PNG 출력에는 영향을 주지 않습니다.</p></div>
       </details>
@@ -258,14 +258,14 @@
     <section class="bd-faq-group" id="faq-g-parts">
       <h2>총보와 파트보</h2>
       <details class="bd-faq-item" id="faq-parts" data-kw="총보 합주 여러 악기 파트 편성 추가 대금 피리 해금 가야금">
-        <summary>여러 악기의 선율을 하나의 총보로 작성할 수 있습니까?</summary>
+        <summary>여러 악기의 선율을 하나의 총보로 작성할 수 있나요?</summary>
         <div><p>[설정] › [곡] 탭의 <b>악기 편성</b>에서 [＋ 악기 추가]로 악기를 추가합니다. 새 문서를 만들 때 편성을
         지정할 수도 있습니다.</p>
         <p>악기가 둘 이상이면 상단바에 보기 메뉴가 나타나 <b>총보</b>와 악기별 파트보를 전환할 수 있습니다.
         총보에서 다른 악기의 정간을 선택하면 해당 악기로 전환되어 바로 입력할 수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-partprint" data-kw="파트보 한 악기만 인쇄 따로 듣기 음소거 소리 빼기">
-        <summary>특정 악기의 악보만 인쇄하거나 재생할 수 있습니까?</summary>
+        <summary>특정 악기의 악보만 인쇄하거나 재생할 수 있나요?</summary>
         <div><p>상단바의 보기 메뉴에서 해당 악기를 선택하면 파트보로 전환됩니다. 인쇄, PNG 출력, 재생은 화면에
         표시된 악보를 기준으로 하므로, 파트보에서는 해당 악기만 인쇄되고 재생됩니다.</p>
         <p>총보를 재생하면서 특정 악기만 제외하려면 악기 편성 목록의 🔊를 선택합니다. 악보에는 그대로 남습니다.</p></div>
@@ -281,7 +281,7 @@
     <section class="bd-faq-group" id="faq-g-sound">
       <h2>재생 및 오선보</h2>
       <details class="bd-faq-item" id="faq-play" data-kw="재생 듣기 소리 기준음 음높이 빠르기 템포 bpm 장구 소리 끄기">
-        <summary>악보를 재생할 수 있습니까? 기준음과 빠르기는 어떻게 변경합니까?</summary>
+        <summary>악보를 재생할 수 있나요? 기준음과 빠르기는 어떻게 변경하나요?</summary>
         <div><p>상단바의 [재생]으로 재생합니다. 옆의 [재생 설정]에서 황종의 음높이(기준음), 빠르기(BPM, 정간 하나가
         한 박), 시김새 반영 여부, 장구 소리 여부를 설정합니다.</p>
         <p>[재생 설정]에서 BPM을 직접 변경하면 그 이후에는 악보의 빠르기 표기와 관계없이 지정한 값으로 고정됩니다.</p></div>
@@ -293,14 +293,14 @@
         <p>선율의 골격만 들으려면 [재생 설정]에서 '시김새대로 연주'를 해제합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-staff" data-kw="오선보 서양 악보 변환 보기 나란히">
-        <summary>정간보를 오선보로 변환하여 볼 수 있습니까?</summary>
+        <summary>정간보를 오선보로 변환하여 볼 수 있나요?</summary>
         <div><p>상단바의 [오선보]를 선택하면 정간보 아래에 오선보가 함께 표시됩니다. 가사와 시김새 기호도 함께
         옮겨집니다.</p>
         <p>오른쪽 세로 막대의 [출력]에서 오선보 단독, 또는 정간보와 오선보를 나란히 배치하여 인쇄하거나 PNG로 저장할
         수 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-musicxml" data-kw="musicxml mei 뮤즈스코어 musescore 피날레 finale 시벨리우스 sibelius 도리코 다른 프로그램">
-        <summary>MuseScore, Finale, Sibelius 등 다른 악보 프로그램에서 열 수 있습니까?</summary>
+        <summary>MuseScore, Finale, Sibelius 등 다른 악보 프로그램에서 열 수 있나요?</summary>
         <div><p>오른쪽 세로 막대의 [출력] › 오선보 › [MusicXML 파일]로 내려받아 해당 프로그램에서 엽니다.
         MEI 형식으로도 내보낼 수 있습니다.</p></div>
       </details>
@@ -309,13 +309,13 @@
     <section class="bd-faq-group" id="faq-g-share">
       <h2>출력 및 공유</h2>
       <details class="bd-faq-item" id="faq-pdf" data-kw="인쇄 pdf 출력 이미지 png 그림 저장 프린터">
-        <summary>악보를 인쇄하거나 PDF, 이미지 파일로 저장할 수 있습니까?</summary>
+        <summary>악보를 인쇄하거나 PDF, 이미지 파일로 저장할 수 있나요?</summary>
         <div><p>상단바의 [인쇄]를 선택한 뒤 인쇄 창의 대상을 'PDF로 저장'으로 지정하면 PDF 파일로 저장됩니다.
         이미지 파일은 오른쪽 세로 막대의 [출력] › [PNG 다운로드]로 저장합니다.</p>
         <p>[설정]에서 지정한 용지 크기와 프린터 용지를 일치시키면 화면과 같은 배치로 출력됩니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-send" data-kw="공유 보내기 주소 링크 카톡 메신저 전달 게시 다른 사람">
-        <summary>다른 사람에게 악보를 공유하려면 어떻게 합니까?</summary>
+        <summary>다른 사람에게 악보를 공유하려면 어떻게 하나요?</summary>
         <div><p>오른쪽 세로 막대의 [게시]를 선택하면 악보가 게시되고 고유 주소가 복사됩니다. 주소를 받은 사람은
         편집기에서 악보를 그대로 열 수 있습니다. '공유마당 목록에 올리기'를 해제하면 주소를 아는 사람만 열람할 수
         있습니다.</p>
@@ -323,20 +323,20 @@
         방법도 있습니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-pub-edit" data-kw="게시 수정 고치기 갱신 내리기 삭제 지우기 올린 악보">
-        <summary>게시한 악보를 수정하거나 게시를 취소할 수 있습니까?</summary>
+        <summary>게시한 악보를 수정하거나 게시를 취소할 수 있나요?</summary>
         <div><p>악보를 게시한 <b>브라우저</b>에서 악보를 열어 수정한 뒤 [게시]를 다시 선택하면 같은 주소의 악보가
         갱신됩니다. 게시를 취소하려면 같은 [게시] 창에서 '이 게시물 내리기'를 선택합니다.</p>
         <p>수정 및 게시 취소 권한은 게시한 브라우저에만 보관됩니다. 해당 브라우저의 사이트 데이터를 삭제한 경우에는
         운영자에게 문의하시기 바랍니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-fork" data-kw="공유마당 가져오기 고쳐 쓰기 원본 남의 악보 이용 조건 라이선스">
-        <summary>공유마당의 악보를 수정하여 사용할 수 있습니까?</summary>
+        <summary>공유마당의 악보를 수정하여 사용할 수 있나요?</summary>
         <div><p>공유마당에서 악보를 선택하면 편집기에서 열리며, 수정하더라도 원본은 변경되지 않습니다. 수정한 악보를
         게시하면 새 악보로 등록되고, 원본에서 파생된 악보임이 함께 표시됩니다.</p>
         <p>재게시하거나 다른 용도로 사용할 때는 게시자가 지정한 이용 조건(CC BY 등)을 따라야 합니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-ngc" data-kw="국립국악원 정악보 omr 출처 이용 조건 비영리 cc by-nc-sa 오류">
-        <summary>공유마당의 국립국악원 악보는 어떤 자료이며, 이용 범위는 어떻게 됩니까?</summary>
+        <summary>공유마당의 국립국악원 악보는 어떤 자료이며, 이용 범위는 어떻게 되나요?</summary>
         <div><p>국립국악원이 간행한 정악보를 광학 악보 인식(OMR)으로 변환한 연구 자료입니다. 이용 조건은
         CC BY-NC-SA 4.0으로, 출처를 표시하고 비영리 목적으로만 이용해야 하며, 변경한 자료도 같은 조건으로 배포해야
         합니다. 자료의 출처는 공유마당의 국립국악원 탭에 명시되어 있습니다.</p>
@@ -344,7 +344,7 @@
         알려 주시기 바랍니다.</p></div>
       </details>
       <details class="bd-faq-item" id="faq-rights" data-kw="저작권 출판 악보 옮겨 적기 올려도 되나 권리 신고">
-        <summary>출판된 악보를 옮겨 적어 게시할 수 있습니까?</summary>
+        <summary>출판된 악보를 옮겨 적어 게시할 수 있나요?</summary>
         <div><p>게시자는 스스로 처분할 권원이 있는 범위에서만 이용 조건을 선택할 수 있습니다(약관 제5조 제3항).
         타인에게 권리가 있는 악보는 권리자의 허락을 받은 뒤 게시해야 합니다.</p>
         <p>세부 기준과 권리 침해 신고 절차는 <a href="policy.html">이용약관 및 저작권 정책</a>에 규정되어 있습니다.</p></div>
