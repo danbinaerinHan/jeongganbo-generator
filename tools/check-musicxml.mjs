@@ -521,6 +521,30 @@ console.log("\n아랫수를 음표로(4/♩ · 4/♩.) — 숫자는 같은 길�
   app.fields.staffUnit = "eighth";
   ok("음표 자동 + 8분음표 단위 12정간 → 4/♩.",
      xmlOf(MEL12, 12).includes('<time symbol="dotted-note"><beats>12</beats><beat-type>8</beat-type>'));
+  // 아랫수가 음표면 **빠르기 표도 그 음표로 센다**(staff-core tempoMark) — 소리(<sound tempo>)는 그대로
+  const e12 = xmlOf(MEL12, 12);
+  ok("8분음표 정간 60 + 4/♩. → 빠르기 표 ♩. = 20, 소리는 그대로(4분음표 30)",
+     e12.includes("<beat-unit>quarter</beat-unit><beat-unit-dot/><per-minute>20</per-minute>") &&
+     e12.includes('<sound tempo="30"/>'));
+  app.fields.staffUnit = "plain";
+  app.fields.staffTime = "dq";
+  const p8 = xmlOf(MEL12, 12);
+  ok("4분음표 정간 60 + 8/♩. → ♩. = 40, 소리 60",
+     p8.includes("<beat-unit>quarter</beat-unit><beat-unit-dot/><per-minute>40</per-minute>") &&
+     p8.includes('<sound tempo="60"/>'));
+  app.fields.staffTime = "q";
+  ok("4분음표 정간 60 + 12/♩ → ♩ = 60 (점 없음)",
+     xmlOf(MEL12, 12).includes("<beat-unit>quarter</beat-unit><per-minute>60</per-minute>"));
+  eq("tempoMark — 숫자 박자표면 정간 이름·bpm 그대로",
+     JSON.stringify(C.tempoMark(C.timeSig("eighth", 12, 8), "eighth", 60)),
+     JSON.stringify({ beatUnit: "eighth", dot: false, perMinute: 60 }));
+  // 박자표 음표 그림은 머리가 위·기둥이 아래(2026-10-02) — 머리 중심이 기둥 위끝에, 기둥은 아래로 뻗는다
+  const tn = C.timeNoteSvg(true, 0, 0, 10, "t");
+  const hy = +/<ellipse[^>]*cy="([-\d.]+)"/.exec(tn)[1];
+  const st = /<rect[^>]*y="([-\d.]+)"[^>]*height="([-\d.]+)"/.exec(tn);
+  ok("박자표 음표 — 머리가 기둥 위에 있다(기둥이 아래로)", +st[1] === hy && +st[2] > 0);
+  app.fields.staffUnit = "eighth";
+  app.fields.staffTime = "na";
   // 8분음표 단위 4정간은 ♩.로 안 나눠떨어져(4/8) 다음 후보 ♩ → 2/♩
   ok("음표 자동 + 8분음표 단위 4정간 → ♩.이 안 되면 ♩ (2/♩)",
      xmlOf("황|태|중|임", 4).includes('<time symbol="note"><beats>2</beats><beat-type>4</beat-type>'));

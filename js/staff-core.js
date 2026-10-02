@@ -101,8 +101,11 @@
   // (app.js vrvSvg). 대체 경로(staff-view)도 같은 그림을 써야 두 화면이 같은 꼴이라, 그리는
   // 셈을 여기 한 곳에 둔다. 좌표는 **오선 한 칸 = SP**, top = 오선 맨 윗줄의 y.
   //   윗수: 숫자 글리프(JGB_STAFF_GLYPHS의 time0~9)를 위쪽 절반 가운데(top + SP)에
-  //   아랫수: 기둥이 위로 선 4분음표(+점) — 아래쪽 절반에 앉는다. 머리는 맨 아랫줄에 걸친다(그보다 위면 기둥이 윗수에 묻혀 기둥 없는 머리처럼 보인다).
-  const TN = { head: 0.52, headRy: 0.44, angle: -20, stem: 0.12, headY: 3.95, tipY: 2.1,
+  //   아랫수: **머리가 위, 기둥이 아래**인 4분음표(+점) — 아래쪽 절반에 앉는다(2026-10-02 사용자 요청.
+  //     예전엔 기둥이 위로 서고 머리가 맨 아랫줄에 걸쳤다). 머리는 아래에서 둘째 칸(넷째·다섯째 줄 사이)에
+  //     둔다 — 가운뎃줄 바로 아래 칸이면 윗수 글자에 맞닿았다(실측). 기둥은 아래로 향하는 기둥의 관례대로
+  //     머리 **왼쪽**에서 내려 오선 밖으로 조금 나간다.
+  const TN = { head: 0.52, headRy: 0.44, angle: -20, stem: 0.12, headY: 3.5, tipY: 5.2,
                dotGap: 0.3, dot: 0.19 };
   function glyphsOf() { return root.JGB_STAFF_GLYPHS || {}; }
   function digitsW(str) {
@@ -163,13 +166,14 @@
     out.push("<ellipse cx=\"" + r3(hx) + "\" cy=\"" + r3(hy) + "\" rx=\"" + r3(TN.head * SP) +
              "\" ry=\"" + r3(TN.headRy * SP) + "\" transform=\"rotate(" + TN.angle + " " + r3(hx) + " " +
              r3(hy) + ")\" fill=\"currentColor\"/>");
-    const sx = hx + TN.head * SP - TN.stem * SP / 2;
-    out.push("<rect x=\"" + r3(sx - TN.stem * SP / 2) + "\" y=\"" + r3(top + TN.tipY * SP) + "\" width=\"" +
-             r3(TN.stem * SP) + "\" height=\"" + r3((TN.headY - TN.tipY) * SP) + "\" fill=\"currentColor\"/>");
+    // 아래로 향하는 기둥은 머리 왼쪽 가장자리에 붙는다(회전한 타원이라 가장자리를 조금 안으로)
+    const sx = hx - TN.head * SP + TN.stem * SP / 2;
+    out.push("<rect x=\"" + r3(sx - TN.stem * SP / 2) + "\" y=\"" + r3(hy) + "\" width=\"" +
+             r3(TN.stem * SP) + "\" height=\"" + r3((TN.tipY - TN.headY) * SP) + "\" fill=\"currentColor\"/>");
     if (dot) {
-      // 점은 칸 안에 — 머리가 맨 아래 칸(넷째 줄과 다섯째 줄 사이)에 걸치므로 그 칸 가운데
+      // 점은 머리와 같은 칸 가운데
       out.push("<circle cx=\"" + r3(hx + TN.head * SP + TN.dotGap * SP + TN.dot * SP) + "\" cy=\"" +
-               r3(top + SP * 3.5) + "\" r=\"" + r3(TN.dot * SP) + "\" fill=\"currentColor\"/>");
+               r3(hy) + "\" r=\"" + r3(TN.dot * SP) + "\" fill=\"currentColor\"/>");
     }
     out.push("</g>");
     return out.join("");
@@ -177,6 +181,16 @@
 
   // 정간 하나가 4분음표의 몇 배인가 — <sound tempo>가 4분음표 기준이라 필요하다.
   function quarterRatio(unit) { return (JG[unit] || JG.dotted) / DIV; }
+  // 빠르기 표(♩. = 20)에 무엇을 적나 — 기본은 **정간 하나**의 이름과 bpm 그대로다(박자표를 숫자로
+  // 바꿔도 빠르기 표는 안 따라간다). 다만 **아랫수가 음표인 박자표**(4/♩·12/♩.)면 그 음표로 센다
+  // (2026-10-02 사용자 요청) — 박자표가 '이 음표가 한 박'이라고 말하는데 빠르기만 다른 음표로 세면
+  // 두 표기가 엇갈린다. 8분음표 정간 60 + ♩. 박자표 → ♩. = 20. 소리(<sound tempo>)는 이 값과 무관하다.
+  function tempoMark(ts, unit, bpm) {
+    if (!ts || !ts.symbol) return { beatUnit: ts.beatUnit, dot: ts.dot, perMinute: bpm };
+    const n = NOTE_TYPES[ts.noteDot ? "dq" : "q"];
+    const v = bpm * (JG[unit] || JG.dotted) / n.len;
+    return { beatUnit: n.note, dot: n.dot, perMinute: Math.round(v * 10) / 10 };
+  }
 
   const LETTERS = "CDEFGAB";
   // MusicXML의 <accidental> 이름. 0(제자리표)도 적을 것이 있으므로 '없음'은 null로만 나타낸다.
@@ -653,7 +667,7 @@
     ornMark: ornMark, ornMarks: ornMarks, marksIn: marksIn,
     DIV: DIV, JG: JG, ACC: ACC, CLEF: CLEF, CLEF_INST: CLEF_INST,
     JANGGU: JANGGU, PERC_POS: PERC_POS,
-    timeSig: timeSig, timeTop: timeTop, timeLabel: timeLabel, timeSigSvg: timeSigSvg, timeNoteSvg: timeNoteSvg, timeSigW: timeSigW, TIME_TYPES: TIME_TYPES, NOTE_TYPES: NOTE_TYPES, quarterRatio: quarterRatio,
+    timeSig: timeSig, tempoMark: tempoMark, timeTop: timeTop, timeLabel: timeLabel, timeSigSvg: timeSigSvg, timeNoteSvg: timeNoteSvg, timeSigW: timeSigW, TIME_TYPES: TIME_TYPES, NOTE_TYPES: NOTE_TYPES, quarterRatio: quarterRatio,
     ledgersFor: ledgersFor, pickClef: pickClef,
     fifthsFor: fifthsFor, pitchAt: pitchAt,
     exactValue: exactValue, nearestValue: nearestValue,

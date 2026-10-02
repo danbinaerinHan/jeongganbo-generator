@@ -393,10 +393,12 @@
           // 여기가 어긋나면 악보 프로그램에서 재생만 딴 빠르기로 돈다.
           // 범례처럼 **따로 조판되는 조각**은 빠르기를 안 적는다(noTempo) — 바로 아래 본
           // 악보에 같은 말이 또 붙어 한 화면에 ♪=60이 두 번 나온다.
+          // 아랫수가 음표인 박자표면 빠르기 표도 그 음표로 센다(staff-core tempoMark) — 소리는 그대로.
           if (pi === 0 && !s.noTempo) {
+            const tm = C.tempoMark(ts, s.unit, s.bpm);
             out.push("      <direction placement=\"above\"><direction-type><metronome>" +
-                     "<beat-unit>" + ts.beatUnit + "</beat-unit>" + (ts.dot ? "<beat-unit-dot/>" : "") +
-                     "<per-minute>" + s.bpm + "</per-minute></metronome></direction-type>" +
+                     "<beat-unit>" + tm.beatUnit + "</beat-unit>" + (tm.dot ? "<beat-unit-dot/>" : "") +
+                     "<per-minute>" + tm.perMinute + "</per-minute></metronome></direction-type>" +
                      "<sound tempo=\"" + (s.bpm * C.quarterRatio(s.unit)) + "\"/></direction>");
           }
         } else if (mb !== prevMb) {
