@@ -41,51 +41,98 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 .bd-ask-head .sc-count { margin-left: auto; }
 
 /* ---------- 자주 묻는 질문 ---------- */
-.bd-faq { max-width: 1200px; margin: 0 auto; padding: 4px 24px 4px; }
-.bd-faq-item { border-bottom: 1px solid var(--line); max-width: 760px; }
-.bd-faq-group h2 + .bd-faq-item { border-top: 1px solid var(--line); }
+/* 짜임: 왼쪽 분류 차례(따라 내려옴) + 오른쪽 본문(검색 · 분류마다 카드 하나).
+   분류 차례를 탭 아래 가로 글자 줄로 두었더니 둘째 탭 줄처럼 읽혔다(2026-10-02) — 그래서 옆으로 뺐다. */
+.bd-faq { max-width: 1200px; margin: 0 auto; padding: 8px 24px 8px; }
+.bd-faq-layout { display: grid; grid-template-columns: 188px minmax(0, 760px); gap: 40px; align-items: start; }
+
+.bd-faq-toc {
+  position: sticky; top: 76px;                 /* .sc-top(약 57px) 아래 */
+  display: flex; flex-direction: column; gap: 1px;
+}
+.bd-toc-cap {
+  margin: 4px 0 8px 12px; font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; color: var(--muted);
+}
+.bd-faq-toc a {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 7px 12px; border-left: 2px solid var(--line);
+  color: var(--muted); font-size: 13.5px; font-weight: 600; text-decoration: none;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.bd-faq-toc a:hover { color: var(--ink); background: var(--hover); }
+.bd-faq-toc a.on { color: var(--ink); border-left-color: var(--accent); }
+.bd-faq-toc a.empty { opacity: .4; }
+.bd-faq-toc .n { font-family: var(--mono); font-size: 11.5px; font-weight: 400; color: var(--muted); }
+
+.bd-faq-search { position: relative; margin: 0 0 8px; }
+.bd-faq-search svg {
+  position: absolute; left: 14px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%);
+  fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none;
+}
+.bd-faq-search input {
+  width: 100%; box-sizing: border-box; padding: 12px 14px 12px 40px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel); color: var(--ink);
+  font-size: 14px; font-family: inherit;
+}
+.bd-faq-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.bd-faq-group { margin: 28px 0 0; scroll-margin-top: 76px; }
+.bd-faq-group h2 { margin: 0 0 10px 2px; font-size: 16px; font-weight: 700; letter-spacing: .02em; color: var(--ink); }
+/* 분류 하나 = 카드 하나. 질문 사이는 가는 선, 카드 둘레는 테두리(이 앱은 밝기 차이만으로 구획이 안 선다) */
+.bd-faq-card { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow: hidden; }
+.bd-faq-item { border-top: 1px solid var(--line); scroll-margin-top: 76px; }
+.bd-faq-card > .bd-faq-item:first-child,
+.bd-faq-card > .bd-faq-item[hidden] + .bd-faq-item { border-top: 0; }
 .bd-faq-item summary {
-  cursor: pointer; list-style: none; padding: 10px 28px 10px 4px; position: relative;
-  font-size: 14px; font-weight: 700; line-height: 1.5; word-break: keep-all;
+  cursor: pointer; list-style: none; padding: 14px 46px 14px 18px; position: relative;
+  font-size: 14.5px; font-weight: 600; line-height: 1.5; word-break: keep-all;
+  transition: background .15s;
 }
 .bd-faq-item summary::-webkit-details-marker { display: none; }
+/* 펼침 표시는 꺾쇠 — 열리면 아래로 돈다 */
 .bd-faq-item summary::after {
-  content: "+"; position: absolute; right: 6px; top: 7px;
-  font-size: 18px; font-weight: 400; color: var(--muted);
+  content: ""; position: absolute; right: 20px; top: 50%; width: 7px; height: 7px; margin-top: -6px;
+  border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted);
+  transform: rotate(45deg); transition: transform .2s;
 }
-.bd-faq-item[open] summary::after { content: "−"; }
-.bd-faq-item summary:hover { color: var(--accent); }
-.bd-faq-item > div { padding: 0 4px 12px; font-size: 13.5px; line-height: 1.7; color: var(--ink); word-break: keep-all; }
-.bd-faq code, .bd-body code { font-family: var(--mono); font-size: .92em; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
-.bd-faq-item > div p { margin: 0 0 6px; }
+.bd-faq-item[open] summary::after { transform: rotate(225deg); margin-top: -2px; }
+.bd-faq-item summary:hover { background: var(--hover); }
+.bd-faq-item[open] summary { color: var(--accent); }
+.bd-faq-item > div {
+  padding: 2px 18px 16px; font-size: 14px; line-height: 1.75; color: var(--ink); word-break: keep-all;
+}
+.bd-faq-item > div p { margin: 0 0 8px; }
 .bd-faq-item > div p:last-child { margin-bottom: 0; }
-.bd-faq-item > div ul { margin: 2px 0 8px; padding-left: 18px; }
-.bd-faq-item > div li { margin: 2px 0; }
+.bd-faq-item > div ul { margin: 2px 0 10px; padding-left: 18px; }
+.bd-faq-item > div li { margin: 3px 0; }
 .bd-faq-item > div a { color: var(--accent); }
-/* 찾기 + 갈래 차례 — 질문이 마흔 개를 넘어 한 줄로 늘어놓으면 훑을 수가 없다 */
-.bd-faq-tools { max-width: 760px; display: flex; flex-direction: column; gap: 10px; margin: 4px 0 18px; }
-.bd-faq-tools .sc-search { max-width: none; flex: 0 0 auto; }
-.bd-faq-toc { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; }
-.bd-faq-toc a { color: var(--muted); text-decoration: none; font-weight: 600; }
-.bd-faq-toc a:hover { color: var(--ink); }
-.bd-faq-group { margin: 0 0 22px; scroll-margin-top: 12px; }
-/* 갈래 머리는 앱의 절 머리와 같은 메타 라벨 꼴(도움말 h4·팔레트 묶음 제목) */
-.bd-faq-group h2 {
-  margin: 0 0 6px 4px; font-family: var(--mono); font-size: 11.5px; font-weight: 700;
-  letter-spacing: .09em; color: var(--muted);
+.bd-faq code, .bd-body code { font-family: var(--mono); font-size: .9em; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+.bd-faq-none { margin: 28px 2px 0; font-size: 13.5px; color: var(--muted); }
+.bd-faq-more {
+  margin: 32px 0 8px; padding: 16px 18px; border: 1px dashed var(--line); border-radius: 10px;
+  font-size: 13.5px; color: var(--muted); text-align: center;
 }
-.bd-faq-item { scroll-margin-top: 12px; }
-.bd-faq-none { margin: 4px 4px 0; font-size: 13px; color: var(--muted); }
-/* 글 쓰기의 '혹시 이 질문인가요?' */
-.bd-faq-hint {
-  display: flex; flex-direction: column; gap: 3px; margin: -4px 0 4px;
-  padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--soft);
-  font-size: 12.5px; line-height: 1.5;
+.bd-faq-more a { color: var(--accent); font-weight: 600; }
+
+/* 좁은 화면: 차례는 위로 올라가 둥근 칩 한 줄(넘치면 칩 줄만 옆으로 민다) */
+@media (max-width: 860px) {
+  .bd-faq { padding: 4px 14px 8px; }
+  .bd-faq-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .bd-faq-toc {
+    position: static; flex-direction: row; gap: 6px; overflow-x: auto;
+    padding-bottom: 4px; scrollbar-width: none;
+  }
+  .bd-faq-toc::-webkit-scrollbar { display: none; }
+  .bd-toc-cap { display: none; }
+  .bd-faq-toc a {
+    flex: 0 0 auto; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--panel); font-size: 12.5px; white-space: nowrap;
+  }
+  .bd-faq-toc a.on { border-color: var(--accent); color: var(--accent); }
+  .bd-faq-toc .n { display: none; }
+  .bd-faq-group { margin-top: 22px; }
 }
-.bd-faq-hint span { color: var(--muted); font-weight: 600; }
-.bd-faq-hint a { color: var(--accent); word-break: keep-all; }
-.bd-faq-more { margin: 12px 4px 0; font-size: 13px; color: var(--muted); }
-.bd-faq-more a { color: var(--accent); }
 .bd-write, .bd-submit {
   flex: 0 0 auto; text-decoration: none; cursor: pointer; font-family: inherit;
   padding: 9px 18px; border: 1px solid var(--accent); border-radius: 8px;

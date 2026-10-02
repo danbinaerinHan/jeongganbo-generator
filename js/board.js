@@ -473,7 +473,34 @@
       g.hidden = !g.querySelector(".bd-faq-item:not([hidden])");
     });
     $("bdFaqNone").hidden = shown > 0;
+    countToc();
+    markToc();
   }
+
+  // 분류 차례 — 분류마다 보이는 질문 수를 적고, 찾기로 다 걸러진 분류는 옅게 둔다
+  const TOC = Array.prototype.slice.call(document.querySelectorAll(".bd-faq-toc a"));
+  function countToc() {
+    TOC.forEach(function (a) {
+      const g = document.querySelector(a.getAttribute("href"));
+      const n = g ? g.querySelectorAll(".bd-faq-item:not([hidden])").length : 0;
+      a.querySelector(".n").textContent = n;
+      a.classList.toggle("empty", n === 0);
+    });
+  }
+  // 지금 보고 있는 분류를 짚는다 — 위쪽 머리줄(약 76px) 아래를 처음 지난 분류가 '지금'이다
+  function markToc() {
+    if ($("bdFaq").hidden) return;
+    let cur = null;
+    TOC.forEach(function (a) {
+      const g = document.querySelector(a.getAttribute("href"));
+      if (g && !g.hidden && g.getBoundingClientRect().top < 120) cur = a;
+    });
+    if (!cur) cur = TOC.filter(function (a) { return !a.classList.contains("empty"); })[0] || null;
+    TOC.forEach(function (a) { a.classList.toggle("on", a === cur); });
+  }
+  window.addEventListener("scroll", markToc, { passive: true });
+  countToc();
+  markToc();
   $("bdFaqSearch").addEventListener("input", filterFaq);
 
   // 펼친 항목은 주소에 남긴다 — 그 주소를 복사해 게시판 답변에 붙이면 그 항목이 펼쳐져 열린다.
@@ -490,6 +517,7 @@
     if ($("bdFaqSearch").value) { $("bdFaqSearch").value = ""; filterFaq(); }
     if (el.tagName === "DETAILS") el.open = true;
     el.scrollIntoView({ block: "start" });
+    markToc();
   }
 
   // 글 쓰기 — 제목을 치면 비슷한 질문을 세 개까지 띄운다. 같은 질문이 게시판에 쌓이는 것을
