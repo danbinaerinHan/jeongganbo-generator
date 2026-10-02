@@ -7601,45 +7601,75 @@
   // 나란히). 재기만 하는 renderToSVG(자연 폭)는 그대로 둔다.
   // 하는 일은 하나: **아랫수를 음표로 적는 박자표(4/♩ · 4/♩.)를 바꿔 끼운다.** Verovio 6.2는
   // MusicXML의 time symbol도 MEI의 denomsym도 안 그려서(2026-09-29 실측), 조판용 XML에는
-  // 윗수 = 보이는 수, 아랫수 = 표지 숫자(VRV_MARKS — ♩. = 111, ♩ = 11)로 적어 두고
-  // (js/musicxml.js timeXml) 여기서 그 글리프를 음표로 바꾼다. 윗수는 조판기 글리프 그대로다.
-  // 1의 개수가 음표를 가른다 — '음표 자동'이면 한 곡에 ♩와 ♩.가 섞일 수 있어 마디마다 읽는다.
+  // **진짜 박자표를 덧셈꼴로**(4/♩. → 0+12 / 8, js/musicxml.js timeXml) 적어 두고 여기서 그 박자표를
+  // '윗수 + 음표'로 바꾼다. 덧셈의 `+`(E08D)가 곧 표지다 — 자동 박자표에는 덧셈꼴이 안 나온다.
+  //   · 아랫수가 음표를 가른다: 4 → ♩(윗수 = 합), 8 → ♩.(윗수 = 합 / 3). 그래서 '음표 자동'으로 한 곡에
+  //     ♩와 ♩.가 섞여도 마디마다 맞게 바뀐다.
+  //   · 박자표가 진짜 길이 그대로라 **조판·시각표는 12/8 악보와 똑같다**. 예전 표지(아랫수 111·11)는
+  //     음표 위 기호를 마디 밖으로 밀어 마디 뒤가 텅 비었다(2026-10-02 사용자 제보).
+  //   · 윗수는 조판기 글리프(Leipzig)를 그대로 쓰되 **자리만 새로** 놓는다 — 문서에 그 숫자 글리프가
+  //     없으면(defs에 안 실린 숫자) 대체 경로와 같은 staff-core 글리프로 그린다.
   // 음표 그림은 staff-core의 timeNoteSvg — 대체 경로(staff-view)와 같은 그림이다.
-  // 바꿔 끼우는 조건이 좁다: 사람이 ♩·♩.·음표 자동을 골랐고 · 박자표의 아랫줄이 정확히 그
-  // 표지일 때만.
-  // 자동으로 물러난 마디(안 나눠떨어지는 각)는 아랫수가 4나 8이라 숫자 그대로 남는다.
-  // VRV_ONE_W = Leipzig(Verovio 기본 글꼴) 박자표 '1'의 보내는 폭(칸) — 실측 241/180.
-  // 표지가 1로만 되어 있어 아랫줄 가운데를 '1의 개수 × 이 폭'으로 셈한다. 표지를 바꾸면
-  // 이 값도 다시 잴 것.
-  const VRV_ONE_W = 1.339;
+  // VRV_DIGIT_W = Leipzig 박자표 숫자의 보내는 폭(칸 = 오선 한 칸) — 2026-10-02 Verovio에서 실측
+  // (scale 100, 칸 = 180). 가운데를 '폭 합 / 2'로 셈하면 Verovio가 놓은 가운데와 3/180칸 안으로 맞는다.
+  // '+'(E08D)도 같이 잰다. 0·5는 줄 끝이라 재지 못해 이웃 숫자 폭으로 둔다.
+  const VRV_DIGIT_W = { "0": 1.67, "1": 1.339, "2": 1.767, "3": 1.644, "4": 1.706, "5": 1.68,
+                        "6": 1.683, "7": 1.772, "8": 1.611, "9": 1.7, "D": 1.011 };
   function vrvPage(i) {
     return vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {})));
   }
   function vrvTimeNotes(svg) {
-    const tt = staffTimeType();
-    if (!SC.NOTE_TYPES[tt] && tt !== "na") return svg;
-    const marks = window.JGB_MUSICXML.VRV_MARKS;
-    const dotOf = {};   // 아랫줄 글리프 → 점 있음/없음
-    Object.keys(marks).forEach(function (k) {
-      dotOf[String(marks[k]).split("").map(function (d) { return "E08" + d; }).join(",")] = SC.NOTE_TYPES[k].dot;
-    });
+    if (svg.indexOf("#E08D") < 0) return svg;   // 덧셈 박자표가 없으면 할 일이 없다
+    const rowW = function (ids) {
+      return ids.reduce(function (a, id) { return a + (VRV_DIGIT_W[id.slice(3)] || 1.7); }, 0);
+    };
     return svg.replace(/(<g[^>]*class="meterSig"[^>]*>)([\s\S]*?)(<\/g>)/g,
       function (all, open, body, close) {
         const uses = [];
-        const re = /<use xlink:href="#(E08\d)[^"]*" transform="translate\(([-\d.]+),\s*([-\d.]+)\)[^"]*"\s*\/>/g;
+        const re = /<use xlink:href="#(E08[\dD])(-[^"]*)?" transform="translate\(([-\d.]+),\s*([-\d.]+)\)\s*(scale\([^)]*\))?[^"]*"\s*\/>/g;
         let m;
-        while ((m = re.exec(body))) uses.push({ id: m[1], x: +m[2], y: +m[3], src: m[0] });
+        while ((m = re.exec(body))) uses.push({ id: m[1], sfx: m[2] || "", x: +m[3], y: +m[4], sc: m[5] || "", src: m[0] });
         if (uses.length < 2) return all;
         const ys = uses.map(function (u) { return u.y; });
         const yTop = Math.min.apply(null, ys), yLow = Math.max.apply(null, ys);
+        if (yLow === yTop) return all;
+        const tops = uses.filter(function (u) { return u.y === yTop; });
         const lows = uses.filter(function (u) { return u.y === yLow; });
-        const key = lows.map(function (u) { return u.id; }).join(",");
-        if (yLow === yTop || !(key in dotOf)) return all;
+        if (!tops.some(function (u) { return u.id === "E08D"; })) return all;   // 덧셈꼴이 아니면 그대로
+        // 합 = 진짜 윗수, 아랫수 = 음표(4 → ♩ · 8 → ♩.)
+        let sum = 0, part = "";
+        tops.forEach(function (u) {
+          if (u.id === "E08D") { sum += +part || 0; part = ""; } else part += u.id.slice(3);
+        });
+        sum += +part || 0;
+        const low = lows.map(function (u) { return u.id.slice(3); }).join("");
+        const dot = low === "8";
+        if (!dot && low !== "4") return all;
+        const top = dot ? sum / 3 : sum;
+        if (top !== Math.floor(top) || top < 1) return all;
         const SP = (yLow - yTop) / 2;
-        const cx = lows[0].x + lows.length * VRV_ONE_W * SP / 2;
-        lows.forEach(function (u) { body = body.replace(u.src, ""); });
-        return open + body +
-               SC.timeNoteSvg(dotOf[key], cx, yTop - SP, SP, "vrv-time") + close;
+        const cx = lows[0].x + rowW(lows.map(function (u) { return u.id; })) * SP / 2;
+        uses.forEach(function (u) { body = body.replace(u.src, ""); });
+        // 윗수 — 조판기 글리프가 문서에 있으면 그것을 새 자리에, 없으면 staff-core 글리프로
+        const digits = String(top).split("");
+        const sfx = uses[0].sfx;
+        const have = digits.every(function (d) { return svg.indexOf('id="E08' + d + sfx + '"') >= 0; });
+        let topSvg = "";
+        if (have) {
+          let x = cx - rowW(digits.map(function (d) { return "E08" + d; })) * SP / 2;
+          digits.forEach(function (d) {
+            topSvg += '<use xlink:href="#E08' + d + sfx + '" transform="translate(' + Math.round(x) + ", " +
+                      yTop + ") " + uses[0].sc + '" />';
+            x += VRV_DIGIT_W[d] * SP;
+          });
+          topSvg += SC.timeNoteSvg(dot, cx, yTop - SP, SP, "vrv-time");
+        } else {
+          topSvg = SC.timeSigSvg({ symbol: dot ? "dotted-note" : "note", top: top, noteDot: dot },
+                                 cx, yTop - SP, SP, "vrv-time");
+        }
+        // 화면 스타일이 path마다 1px 테두리를 준다 — 숫자 윤곽선은 scale(칸)으로 그려 그 1px이 칸만큼 굵어져
+        // 덩어리로 번졌다(실측). 스타일 규칙은 속성(stroke="none")을 이기므로 **인라인 style**로 끈다.
+        return open + body + topSvg.replace(/<path /g, '<path style="stroke:none" ') + close;
       });
   }
 

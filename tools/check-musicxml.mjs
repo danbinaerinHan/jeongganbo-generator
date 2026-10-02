@@ -20,7 +20,7 @@ const app = await loadApp(
    "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
    "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens", "stripSymBracket",
    "scaleNotes", "makeScale", "seqShare", "realizeMelody",
-   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
+   "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml", "const:VRV_DIGIT_W", "vrvTimeNotes"],
   { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
     title: "검사용", subtitle: "", staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", staffJanggu: "legend", wantJangdan: false, jangdan: "", daegang: "" },
   // 합주 파트는 이 검사의 관심 밖 — '악기 하나'로 세워 둔다(총보는 아래에서 따로 본다)
@@ -487,9 +487,11 @@ console.log("\n아랫수를 음표로(4/♩ · 4/♩.) — 숫자는 같은 길�
      dq.includes('<time symbol="dotted-note"><beats>36</beats><beat-type>8</beat-type></time>'));
   eq("♩. — 마디 길이는 그대로", durOf(dq), want);
   eq("♩. 항목 글씨", C.timeLabel(C.timeSig("dotted", 12, "dq")), "12/♩.");
-  // 조판용 XML은 윗수 = 보이는 수, 아랫수 = 표지(111) — app.js vrvPage가 이 '111'을 음표로 바꾼다
+  // 조판용 XML은 **진짜 박자표를 덧셈꼴로**(0+36 / 8) — 길이는 36/8 그대로, app.js vrvTimeNotes가 '+'를 보고
+  // 12/♩.로 바꾼다. 예전 표지(아랫수 111)는 음표 위 기호를 마디 밖으로 밀어 마디가 늘어났다(2026-10-02)
   const vrv = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { vrv: true });
-  ok("조판용은 12/111 (symbol 없음)", vrv.includes("<time><beats>12</beats><beat-type>111</beat-type></time>"));
+  ok("조판용은 0+36/8 (진짜 길이 · symbol 없음)", vrv.includes("<time><beats>0+36</beats><beat-type>8</beat-type></time>"));
+  ok("조판용에 옛 표지(111)가 안 남는다", !/<beat-type>1{2,3}<\/beat-type>/.test(vrv));
   // 4분음표 단위 12정간 = 12/4 → 12 / ♩
   app.fields.staffUnit = "plain";
   app.fields.staffTime = "q";
@@ -503,7 +505,7 @@ console.log("\n아랫수를 음표로(4/♩ · 4/♩.) — 숫자는 같은 길�
   const odd = xmlOf(Array(5).fill("황").join("|"), 5);
   ok("4분음표 단위 5정간 + ♩. → 자동(5/4)으로 물러난다",
      odd.includes("<time><beats>5</beats><beat-type>4</beat-type></time>"));
-  // 8분음표 단위 5정간을 ♩으로는 못 센다 → 자동(5/8), 조판용에서도 표지 111이 안 나온다
+  // 8분음표 단위 5정간을 ♩으로는 못 센다 → 자동(5/8), 조판용에서도 덧셈꼴이 안 나온다
   app.fields.staffUnit = "eighth";
   app.fields.staffTime = "q";
   xmlOf(Array(5).fill("황").join("|"), 5);
@@ -551,13 +553,21 @@ console.log("\n아랫수를 음표로(4/♩ · 4/♩.) — 숫자는 같은 길�
   // 둘 다 안 되면 숫자 — 8분음표 단위 5정간 = 5/8
   ok("음표 자동 + 8분음표 단위 5정간 → 숫자(5/8)로 물러난다",
      xmlOf(Array(5).fill("황").join("|"), 5).includes("<time><beats>5</beats><beat-type>8</beat-type></time>"));
-  // 한 곡에 ♩와 ♩.가 섞이면 조판용 표지도 마디마다 다르다(♩. = 111, ♩ = 11)
+  // 한 곡에 ♩와 ♩.가 섞이면 조판용 박자표도 마디마다 다르다(아랫수 4 = ♩ · 8 = ♩.)
   app.fields.gakBeats = "1:4";
   xmlOf(MEL12 + "||" + MEL12, 12);
   const mixV = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { vrv: true });
-  ok("섞인 곡: 첫 각 4정간 = 2/♩(표지 11) · 둘째 각 12정간 = 4/♩.(표지 111)",
-     mixV.includes("<time><beats>2</beats><beat-type>11</beat-type></time>") &&
-     mixV.includes("<time><beats>4</beats><beat-type>111</beat-type></time>"));
+  ok("섞인 곡: 첫 각 4정간 = 2/♩(0+2/4) · 둘째 각 12정간 = 4/♩.(0+12/8)",
+     mixV.includes("<time><beats>0+2</beats><beat-type>4</beat-type></time>") &&
+     mixV.includes("<time><beats>0+12</beats><beat-type>8</beat-type></time>"));
+  // 그린 뒤 바꿔 끼우기 — 덧셈꼴 박자표(0+12 / 8)가 '4 + ♩.'으로, 숫자 박자표는 그대로
+  const vtn = app.fn("vrvTimeNotes");
+  const u = (id, x, y) => `<use xlink:href="#${id}-s1" transform="translate(${x}, ${y}) scale(0.72, 0.72)" />`;
+  const sig = (body) => `<svg><symbol id="E084-s1"></symbol><g class="meterSig">${body}</g></svg>`;
+  const out = vtn(sig(u("E080", 100, 720) + u("E08D", 400, 720) + u("E081", 582, 720) + u("E082", 823, 720) + u("E088", 600, 1080)));
+  ok("바꿔 끼우기: 0+12/8 → 윗수 4 + 점4분음표", /#E084-s1/.test(out) && !/#E08D/.test(out) && /data-note="dq"/.test(out));
+  const keep = sig(u("E086", 100, 720) + u("E088", 100, 1080));
+  eq("바꿔 끼우기: 숫자 박자표(6/8)는 그대로", vtn(keep), keep);
   app.fields.gakBeats = "";
   app.fields.staffTime = "auto";
   app.fields.staffUnit = "dotted";
@@ -948,7 +958,7 @@ console.log("\n곁줄 가사 — 총보는 파트마다 제 곁줄");
      "const:JO_PRESETS", "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
      "parseDaegang", "const:DAEGANG_PRESET", "defBeats", "parseGakBeats", "gakBeatsMap", "beatsAt", "daegangTextFor", "matchSpecialNote", "tokenizeNotes", "parseMelodyOffsets", "groupRowTokens", "stripSymBracket",
      "scaleNotes", "makeScale", "seqShare", "realizeMelody",
-     "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "partLabel", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml"],
+     "staffHwang", "staffFifths", "staffTimeType", "staffPerLine", "staffBarMode", "dgOf", "barsOfGak", "measurePlan", "staffScoreOf", "scoreViewOn", "partLabel", "jangguStaffMode", "jangguStaffOn", "jangguScoreOf", "jangguPartScore", "jangguLegendScore", "buildStaffScores", "buildMusicXml", "const:VRV_DIGIT_W", "vrvTimeNotes"],
     { beats: "4", gakBeats: "", tempoBpm: "60", hwangPitch: "63", joPreset: "hwang-pyeong",
       title: "검사용", subtitle: "", scoreView: true, staffUnit: "dotted", staffKey: "auto", staffTime: "auto", staffPerLine: "auto", staffBar: "auto", staffJanggu: "legend", wantJangdan: false, jangdan: "", daegang: "" },
     `let parts = [{ name: "소리", abbr: "", melody: "", lyrics: "", muted: false },

@@ -42,24 +42,26 @@
   // 그래서 이 속성을 모르는 프로그램은 조용히 12/8로 읽고, 마디 길이는 어느 쪽이든 같다.
   //
   // **화면 조판용(meta.vrv)** 은 따로 적는다. Verovio 6.2는 symbol을 무시하고 숫자로 그리므로
-  // (2026-09-29 실측) app.js가 그린 뒤에 아랫수를 음표로 바꿔 끼우는데, 그러려면 ① 윗수가
-  // 이미 **보이는 수**(4/♩.의 4)여야 하고 ② 바꿔 끼울 자리를 숫자만 보고 알아봐야 한다.
-  // 그래서 윗수 = top, 아랫수 = 표지 VRV_MARKS(♩. = 111, ♩ = 11)로 적는다 — 자동 박자표는
-  // 아랫수가 늘 4나 8이고 고를 수 있는 값에도 없는 수라 곧 표지가 된다. 1의 개수가 음표를
-  // 가른다('음표 자동'이면 한 곡에 둘이 섞일 수 있어서). 여러 자리 수를 쓰는 것은
-  // **자리를 넓히려는 것**이다(♩. 4칸 · ♩ 2.7칸) — 숫자 한두 자리 폭이면 음표가 첫 음표에 바짝 붙어 가락의 한
-  // 음처럼 읽혔다(실측). Verovio는 박자표로
-  // 음 길이를 세지 않아(길이는 <duration>이 정한다) 조판·timemap이 그대로임을 실측했다.
+  // (2026-09-29 실측) app.js(vrvTimeNotes)가 그린 뒤에 '윗수 + 음표'로 바꿔 끼운다. 그러려면 바꿔 끼울
+  // 자리를 숫자만 보고 알아봐야 하므로 **실제 박자표를 덧셈꼴 `0+n`으로** 적는다(4/♩. → 0+12 / 8).
+  //   · 길이는 **진짜 박자표 그대로**다(0+12 = 12) — Verovio는 덧셈 박자표를 합으로 센다(실측: 시각표가
+  //     12/8과 같다). 예전엔 아랫수를 표지 숫자(♩. = 111, ♩ = 11)로 적었는데, Verovio가 **음표 위 기호
+  //     (<direction>)의 자리를 아랫수 단위로 셈해** 기호가 마디 밖으로 밀리고 마디가 그만큼 늘어났다
+  //     (2026-10-02 사용자 제보 — 마디 뒤가 텅 비고 시각표 끝이 6초 → 84.75초로 어긋났다).
+  //   · `+`(SMuFL E08D)가 곧 표지다 — 자동 박자표에는 덧셈꼴이 안 나온다.
+  //   · 아랫수가 음표를 가른다: 4 → ♩(보이는 윗수 = n), 8 → ♩.(보이는 윗수 = n / 3) — NOTE_TYPES의 num.
+  //   · `0+`는 **자리를 넓히는 몫**도 한다(숫자 한두 자리 폭이면 박자표의 음표가 첫 음표에 붙어 가락의
+  //     한 음처럼 읽혔다). 넓이는 0·+ 두 글자만큼(약 2.7칸)이 더해진다.
   // **파일로 나가는 MusicXML에는 이 길을 쓰지 말 것** — 거기선 12/8 + symbol이 표준이다.
   function timeXml(ts, vrv) {
     if (vrv && ts.symbol) {
-      return "<time><beats>" + ts.top + "</beats><beat-type>" +
-             VRV_MARKS[ts.noteDot ? "dq" : "q"] + "</beat-type></time>";
+      return "<time><beats>" + VRV_TIME_MARK + ts.beats + "</beats><beat-type>" + ts.type +
+             "</beat-type></time>";
     }
     return "<time" + (ts.symbol ? " symbol=\"" + ts.symbol + "\"" : "") + "><beats>" + ts.beats +
            "</beats><beat-type>" + ts.type + "</beat-type></time>";
   }
-  const VRV_MARKS = { q: 11, dq: 111 };
+  const VRV_TIME_MARK = "0+";
 
   // 곁줄 기호(활 표시·구음 등)와 음표로 안 바뀌는 선율 시김새(흘림표·요성표…) → 음표 **위**.
   // 무엇이 어느 음에 붙나는 staff-core(placeLyrics·ornMarks·marksIn)와 app.js staffScoreOf가
@@ -68,7 +70,7 @@
   // <other-technical>은 아예 안 그려지는데, direction의 words만 오선 위 그 음 자리에 선다.
   //   · **파일**: words = 기호의 표시 이름(ko) — 다른 프로그램에서 열어도 글자로 보인다.
   //   · **화면 조판용(meta.vrv)**: words = 표지 글자 한 자(보충 사용자 영역 U+F0000 + 사전 차례 n).
-  //     app.js vrvPage가 그린 뒤 그 글자를 사전의 그림으로 바꿔 끼운다(박자표 VRV_MARKS와 같은
+  //     app.js vrvPage가 그린 뒤 그 글자를 사전의 그림으로 바꿔 끼운다(박자표 VRV_TIME_MARK와 같은
   //     수법). 한 자짜리 사용자 영역 글자인 것은 **폭을 안 먹게** 하려는 것이다 — 이름을 그대로
   //     적으면 조판기가 그 글자 폭만큼 자리를 비켜 이웃 음의 기호가 층층이 위로 쌓였다(실측).
   //     BMP 사용자 영역(U+E000~)은 **쓰지 말 것** — SMuFL 악보 글리프 자리라 조판기가 빠르기
@@ -426,5 +428,5 @@
     return out.join("\n");
   }
 
-  root.JGB_MUSICXML = { build: build, VRV_MARKS: VRV_MARKS, VRV_SYM_BASE: VRV_SYM_BASE };
+  root.JGB_MUSICXML = { build: build, VRV_TIME_MARK: VRV_TIME_MARK, VRV_SYM_BASE: VRV_SYM_BASE };
 })(typeof window !== "undefined" ? window : globalThis);
