@@ -439,10 +439,10 @@
       org.style.display = forkOf ? "" : "none";
       if (forkOf) org.href = scoreUrl(forkOf);
     }
-    const forkNote = forkOf ? " · 다른 악보를 고쳐 만든 것입니다" : "";
+    const forkNote = forkOf ? " · 다른 악보를 바탕으로 만든 악보입니다" : "";
     $("cbText").textContent = mine
-      ? ("내가 게시한 악보입니다" + who + forkNote + " — 고친 뒤 오른쪽 [게시]에서 같은 주소로 갱신할 수 있습니다")
-      : ("공유받은 악보입니다" + who + lic + forkNote + " — 여기서 고쳐도 원본은 바뀌지 않습니다");
+      ? ("내가 게시한 악보입니다" + who + forkNote + " — 수정한 뒤 오른쪽 [게시]에서 같은 주소로 갱신할 수 있습니다")
+      : ("공유받은 악보입니다" + who + lic + forkNote + " — 편집한 내용은 원본에 반영되지 않습니다");
     // 내가 올린 악보를 나에게 신고하라고 할 일은 없다
     const rep = $("cbReport");
     rep.style.display = mine ? "none" : "";

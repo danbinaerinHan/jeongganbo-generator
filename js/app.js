@@ -7822,7 +7822,7 @@
       }, 0);
     }, 0);
     if (!notes) {
-      body.innerHTML = "<div class='staff-empty'>정간에 율명을 적으면 여기에 오선보로 나타납니다.</div>";
+      body.innerHTML = "<div class='staff-empty'>정간에 율명을 입력하면 이 영역에 오선보가 표시됩니다.</div>";
       return;
     }
     const width = Math.max(320, body.clientWidth - 8);
