@@ -498,12 +498,17 @@
         break;
       }
     });
+    // 글자는 span 하나 안에 담는다 — summary가 격자(번호 | 질문 | 표시)라, 조각이 맨몸으로 들어가면
+    // 조각마다 격자 칸을 하나씩 차지해 줄이 깨진다
     sum.textContent = "";
+    const q = document.createElement("span");
+    q.className = "bd-q";
+    sum.appendChild(q);
     let run = "", on = false;
     const flush = function () {
       if (!run) return;
-      if (on) { const m = document.createElement("mark"); m.textContent = run; sum.appendChild(m); }
-      else sum.appendChild(document.createTextNode(run));
+      if (on) { const m = document.createElement("mark"); m.textContent = run; q.appendChild(m); }
+      else q.appendChild(document.createTextNode(run));
       run = "";
     };
     for (let x = 0; x < text.length; x++) {
@@ -566,6 +571,15 @@
     });
   });
 
+  // 번호 — 분류는 01~, 질문은 분류 안에서 01~. 찾기로 걸러져도 바뀌지 않게 처음에 한 번 박는다
+  // (CSS 카운터는 숨은 항목을 안 세어 번호가 출렁인다). 그리는 것은 CSS의 attr(data-n).
+  const two = function (n) { return (n < 10 ? "0" : "") + n; };
+  document.querySelectorAll("#bdFaq .bd-faq-group").forEach(function (g, gi) {
+    g.querySelector("h2").setAttribute("data-n", two(gi + 1));
+    const a = document.querySelector('.bd-faq-toc a[href="#' + g.id + '"]');
+    if (a) a.setAttribute("data-n", two(gi + 1));
+    g.querySelectorAll(".bd-faq-item summary").forEach(function (s, qi) { s.setAttribute("data-n", two(qi + 1)); });
+  });
   filterFaq();     // 첫 그리기 — 개수·차례·버튼을 한 번 맞춘다
 
   function showFaqTarget(id) {

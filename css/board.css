@@ -41,186 +41,141 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
 .bd-ask-head .sc-count { margin-left: auto; }
 
 /* ---------- 자주 묻는 질문 ---------- */
-/* 색은 **강조색 하나**다 — 앱의 다른 화면(편집기·공유마당)과 같은 규칙이고, 그래야 색상 테마
-   (미색·은청색·옥색·어두운 화면)를 바꿀 때 이 페이지도 함께 따라간다. 여러 색을 분류마다 입혀
-   본 적이 있으나(2026-10-02) 이 페이지만 딴 앱처럼 보여 되돌렸다 — 되살리지 말 것.
-   심심하지 않게 하는 몫은 색의 가짓수가 아니라 ① 한 색의 농담(진한 강조 · 옅은 바탕 · 번짐)
-   ② 먹과 종이의 대비(맺음 띠) ③ 아이콘·글자 크기의 위계 ④ 井 격자 무늬가 진다. */
-.bd-cat-ic {
-  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
-  width: 30px; height: 30px; border-radius: 9px;
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.bd-cat-ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-
-/* 머리말 뒤의 옅은 井 격자 — 이름(우물 정 자 사이)에서 온 무늬. 글자 뒤로 물러나 오른쪽에서 사라진다 */
-body.board #bdList > .sc-head { position: relative; isolation: isolate; }
-body.board #bdList > .sc-head::before {
-  content: ""; position: absolute; z-index: -1; inset: 0 0 40px 45%; pointer-events: none;
-  background:
-    linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 34px 34px,
-    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 34px 34px;
-  -webkit-mask-image: radial-gradient(ellipse at 75% 40%, #000 0%, transparent 70%);
-          mask-image: radial-gradient(ellipse at 75% 40%, #000 0%, transparent 70%);
-  opacity: .9;
-}
-/* 짜임: 왼쪽 분류 차례(따라 내려옴) + 오른쪽 본문(검색 · 분류마다 카드 하나).
-   분류 차례를 탭 아래 가로 글자 줄로 두었더니 둘째 탭 줄처럼 읽혔다(2026-10-02) — 그래서 옆으로 뺐다. */
+/* 편집(editorial) 짜임 — 꾸밈이 아니라 **글자·번호·가는 선**이 구조를 맡는다.
+   2026-10-02에 둥근 카드·그림자·아이콘 타일·번짐·알약 칩·짙은 띠·격자 무늬를 다 걷었다
+   ("AI가 만든 느낌" — 2026-08-11 온보딩 때와 같은 지적이다). 되살리지 말 것:
+   ① 모서리는 각지게 ② 깊이는 그림자가 아니라 선(먹 선 = 큰 구획, 가는 선 = 항목)
+   ③ 색은 강조색 하나, 그것도 '지금'을 짚는 데만(펼친 질문·지금 분류·검색어)
+   ④ 숫자(번호·개수)만 --mono — 한글 라벨에 --mono를 걸면 자간이 벌어져 흩어진다. 위계는 크기와 굵기로만. */
 .bd-faq { max-width: 1200px; margin: 0 auto; padding: 8px 24px 8px; }
-.bd-faq-layout { display: grid; grid-template-columns: 188px minmax(0, 760px); gap: 40px; align-items: start; }
+.bd-faq-layout { display: grid; grid-template-columns: 200px minmax(0, 760px); gap: 56px; align-items: start; }
 
-.bd-faq-toc {
-  position: sticky; top: 76px;                 /* .sc-top(약 57px) 아래 */
-  display: flex; flex-direction: column; gap: 1px;
-}
+/* 차례 — 번호 + 이름 + 개수, 선 하나 없이 글자만 */
+.bd-faq-toc { position: sticky; top: 84px; display: flex; flex-direction: column; }
 .bd-toc-cap {
-  margin: 4px 0 8px 12px; font-family: var(--mono); font-size: 11px; font-weight: 700;
-  letter-spacing: .14em; color: var(--muted);
+  padding: 0 0 10px; margin-bottom: 4px; border-bottom: 1px solid var(--ink);
+  font-size: 12px; font-weight: 700; color: var(--ink);
 }
 .bd-faq-toc a {
-  display: flex; align-items: center; gap: 10px;
-  padding: 6px 12px 6px 10px; border-left: 2px solid var(--line);
-  color: var(--muted); font-size: 13.5px; font-weight: 600; text-decoration: none;
-  transition: color .15s, border-color .15s, background .15s;
+  display: grid; grid-template-columns: 26px 1fr auto; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+  color: var(--muted); font-size: 13.5px; font-weight: 500; text-decoration: none;
 }
-.bd-faq-toc a:hover { color: var(--ink); background: var(--hover); }
-.bd-faq-toc a.on { color: var(--ink); border-left-color: var(--accent); }
-.bd-faq-toc .bd-cat-ic { width: 24px; height: 24px; border-radius: 7px; }
-.bd-faq-toc .bd-cat-ic svg { width: 14px; height: 14px; }
-/* 차례의 아이콘은 지금 보는 분류만 강조색 — 나머지는 먹빛으로 물러난다 */
-.bd-faq-toc a:not(.on) .bd-cat-ic { background: var(--hover); color: var(--muted); }
-.bd-faq-toc a.empty { opacity: .4; }
-.bd-faq-toc .n { margin-left: auto; font-family: var(--mono); font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.bd-faq-toc a::before { content: attr(data-n); font-family: var(--mono); font-size: 11px; }
+.bd-faq-toc a:hover { color: var(--ink); }
+.bd-faq-toc a.on { color: var(--ink); font-weight: 700; }
+.bd-faq-toc a.on::before { color: var(--accent); }
+.bd-faq-toc a.empty { opacity: .35; }
+.bd-faq-toc .n { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--muted); }
 
-/* 머리: 검색 + 자주 찾는 질문 — 옅은 바탕 한 장에 담아 '여기서 시작한다'가 읽히게 */
-.bd-faq-hero {
-  padding: 22px; border: 1px solid var(--line); border-radius: 16px;
-  background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
-    var(--soft);
-}
+/* 검색 — 상자가 아니라 밑줄 하나. 글자를 키워 이 화면의 시작점으로 */
+.bd-faq-hero { padding: 0 0 4px; }
 .bd-faq-search { position: relative; }
-.bd-faq-popular { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 14px; }
-.bd-pop-cap { margin-right: 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
-.bd-faq-popular a {
-  display: inline-flex; align-items: center; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
-  color: var(--ink); font-size: 12.5px; text-decoration: none; transition: border-color .15s, color .15s;
-}
-.bd-faq-popular a:hover { border-color: var(--accent); color: var(--accent); }
-/* 결과 줄 */
-.bd-faq-bar { display: flex; align-items: center; justify-content: space-between; margin: 18px 2px 0; }
-#bdFaqCount { font-size: 12.5px; color: var(--muted); }
-.bd-faq-all {
-  padding: 4px 2px; border: 0; background: none; cursor: pointer; font-family: inherit;
-  font-size: 12.5px; font-weight: 600; color: var(--accent);
-}
-.bd-faq-all:hover { text-decoration: underline; }
-.bd-faq-all[hidden] { display: none; }
 .bd-faq-search svg {
-  position: absolute; left: 14px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%);
-  fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none;
+  position: absolute; left: 0; top: 50%; width: 18px; height: 18px; transform: translateY(-50%);
+  fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; pointer-events: none;
 }
 .bd-faq-search input {
-  width: 100%; box-sizing: border-box; padding: 14px 16px 14px 42px;
-  border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink);
-  font-size: 14.5px; font-family: inherit;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px -10px rgba(0,0,0,.18);
+  width: 100%; box-sizing: border-box; padding: 10px 0 12px 30px;
+  border: 0; border-bottom: 2px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink);
+  font-size: 20px; font-family: inherit; letter-spacing: -.01em;
 }
-.bd-faq-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.bd-faq-search input::placeholder { color: var(--muted); opacity: .7; }
+.bd-faq-search input:focus { outline: none; border-bottom-color: var(--accent); }
+.bd-faq-popular { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin-top: 12px; font-size: 13px; }
+.bd-pop-cap { margin-right: 14px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.bd-faq-popular a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.bd-faq-popular a:hover { border-bottom-color: var(--ink); }
+.bd-faq-popular a + a::before { content: "·"; display: inline-block; margin: 0 10px; color: var(--muted); }
 
-.bd-faq-group { margin: 28px 0 0; scroll-margin-top: 76px; }
-.bd-faq-group h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 2px 0; font-size: 16px; font-weight: 700; letter-spacing: .02em; color: var(--ink); }
-.bd-faq-desc { margin: 0 0 12px 40px; font-size: 12.5px; color: var(--muted); }
-/* 분류 하나 = 카드 하나. 질문 사이는 가는 선, 카드 둘레는 테두리(이 앱은 밝기 차이만으로 구획이 안 선다) */
-.bd-faq-card {
-  border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 10px 24px -18px rgba(0,0,0,.25);
+.bd-faq-bar { display: flex; align-items: baseline; justify-content: space-between; margin: 36px 0 0; }
+#bdFaqCount { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bd-faq-all {
+  padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit;
+  font-size: 12.5px; font-weight: 600; color: var(--ink); border-bottom: 1px solid var(--ink);
 }
-.bd-faq-item { border-top: 1px solid var(--line); scroll-margin-top: 76px; }
-.bd-faq-card > .bd-faq-item:first-child,
-.bd-faq-card > .bd-faq-item[hidden] + .bd-faq-item { border-top: 0; }
+.bd-faq-all:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.bd-faq-all[hidden] { display: none; }
+
+/* 분류 — 먹 선 위에 큰 번호와 이름 */
+.bd-faq-group { margin: 14px 0 44px; padding-top: 16px; border-top: 2px solid var(--ink); scroll-margin-top: 84px; }
+.bd-faq-group h2 {
+  display: grid; grid-template-columns: 52px 1fr; align-items: baseline;
+  margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: var(--ink);
+}
+.bd-faq-group h2::before { content: attr(data-n); font-family: var(--mono); font-size: 13px; font-weight: 400; color: var(--muted); }
+.bd-faq-desc { margin: 6px 0 18px 52px; font-size: 13px; color: var(--muted); }
+.bd-faq-card { border-top: 1px solid var(--line); }
+.bd-faq-item { border-bottom: 1px solid var(--line); scroll-margin-top: 84px; }
 .bd-faq-item summary {
-  cursor: pointer; list-style: none; padding: 14px 46px 14px 44px; position: relative;
-  font-size: 14.5px; font-weight: 600; line-height: 1.5; word-break: keep-all;
-  transition: background .15s;
+  display: grid; grid-template-columns: 52px 1fr 20px; align-items: baseline;
+  cursor: pointer; list-style: none; padding: 15px 0;
+  font-size: 15px; font-weight: 500; line-height: 1.55; word-break: keep-all; color: var(--ink);
 }
 .bd-faq-item summary::-webkit-details-marker { display: none; }
-/* 질문 머리의 Q — 국내 고객센터의 관례. 질문이 답보다 먼저 눈에 걸리게 한다 */
-.bd-faq-item summary::before {
-  content: "Q"; position: absolute; left: 18px; top: 14px;
-  font-family: var(--mono); font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--accent);
-}
-.bd-faq-item summary mark { background: var(--accent-tint); color: inherit; border-radius: 3px; padding: 0 1px; }
-/* 펼침 표시는 꺾쇠 — 열리면 아래로 돈다 */
+.bd-faq-item summary::before { content: attr(data-n); font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+/* 펼침 표시 — 가는 더하기가 빼기로 */
 .bd-faq-item summary::after {
-  content: ""; position: absolute; right: 20px; top: 50%; width: 7px; height: 7px; margin-top: -6px;
-  border-right: 1.6px solid var(--muted); border-bottom: 1.6px solid var(--muted);
-  transform: rotate(45deg); transition: transform .2s;
-}
-.bd-faq-item[open] summary::after { transform: rotate(225deg); margin-top: -2px; }
-.bd-faq-item summary:hover { background: var(--hover); }
-.bd-faq-item[open] summary { color: var(--accent); }
-.bd-faq-item > div {
-  padding: 2px 22px 16px 44px; font-size: 14px; line-height: 1.75; color: var(--ink); word-break: keep-all;
-}
-.bd-faq-item > div p { margin: 0 0 8px; }
-.bd-faq-item > div p:last-child { margin-bottom: 0; }
-.bd-faq-item > div ul { margin: 2px 0 10px; padding-left: 18px; }
-.bd-faq-item > div li { margin: 3px 0; }
-.bd-faq-item > div a { color: var(--accent); }
-.bd-faq code, .bd-body code { font-family: var(--mono); font-size: .9em; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
-.bd-faq-none { margin: 28px 2px 0; font-size: 13.5px; color: var(--muted); }
-/* 끝: 답을 못 찾았을 때 갈 곳 셋 — 짙은 띠 한 장으로 묶어 페이지가 여기서 맺히게 한다.
-   테마와 무관하게 먹색(다크에선 한 단계 밝은 먹색)이다 — 강조 띠라서. */
-.bd-faq-help {
-  margin: 44px 0 8px; padding: 28px; border-radius: 18px;
+  content: ""; justify-self: end; align-self: center; width: 11px; height: 11px;
   background:
-    radial-gradient(90% 130% at 100% 0%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 62%),
-    #1e1c18;
-  color: #f2eee6;
+    linear-gradient(currentColor, currentColor) center / 11px 1.5px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 1.5px 11px no-repeat;
+  color: var(--muted); transition: transform .2s;
 }
-body.board.dark .bd-faq-help { background-color: #302d26; border: 1px solid rgba(255,255,255,.08); }
-.bd-faq-help h2 { margin: 0 0 18px; font-size: 18px; font-weight: 700; letter-spacing: .01em; }
-.bd-help-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.bd-help-card {
-  display: flex; flex-direction: column; gap: 8px; padding: 18px;
-  border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.05);
-  color: inherit; text-decoration: none; transition: background .15s, border-color .15s, transform .15s;
+.bd-faq-item[open] summary::after { background-size: 11px 1.5px, 0 0; color: var(--accent); }
+.bd-faq-item summary:hover { color: var(--accent); }
+.bd-faq-item[open] summary { font-weight: 700; }
+.bd-faq-item[open] summary::before { color: var(--accent); }
+.bd-faq-item summary mark { background: var(--accent-tint); color: inherit; padding: 0 1px; }
+.bd-faq-item > div {
+  max-width: 62ch; padding: 0 20px 20px 52px; font-size: 14px; line-height: 1.8; color: var(--ink); word-break: keep-all;
 }
-.bd-help-card:hover { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.24); transform: translateY(-2px); }
-/* 짙은 띠 위에선 강조색을 종이 쪽으로 밝혀 쓴다(그대로면 먹 위에서 가라앉는다) */
-.bd-faq-help { --on-ink: color-mix(in srgb, var(--accent) 55%, #fff); }
-.bd-help-card .bd-cat-ic { background: rgba(255,255,255,.08); color: var(--on-ink); margin-bottom: 4px; }
-.bd-help-card b { font-size: 14.5px; }
-.bd-help-card b::after { content: " →"; color: var(--on-ink); }
-.bd-help-card span:not(.bd-cat-ic) { font-size: 12.5px; line-height: 1.65; color: rgba(242,238,230,.68); word-break: keep-all; }
+.bd-faq-item > div p { margin: 0 0 10px; }
+.bd-faq-item > div p:last-child { margin-bottom: 0; }
+.bd-faq-item > div ul { margin: 2px 0 12px; padding-left: 18px; }
+.bd-faq-item > div li { margin: 4px 0; }
+.bd-faq-item > div a { color: var(--ink); text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.bd-faq code, .bd-body code { font-family: var(--mono); font-size: .88em; background: var(--soft); padding: 1px 5px; border-radius: 0; border: 1px solid var(--line); }
+.bd-faq-none { margin: 24px 0 0 52px; font-size: 14px; color: var(--muted); }
 
-/* 좁은 화면: 차례는 위로 올라가 둥근 칩 한 줄(넘치면 칩 줄만 옆으로 민다) */
+/* 끝 — 갈 곳 셋을 세로 가는 선으로 나눈 한 줄 */
+.bd-faq-help { margin: 64px 0 8px; padding-top: 16px; border-top: 2px solid var(--ink); }
+.bd-faq-help h2 { margin: 0 0 20px; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+.bd-help-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bd-help-card {
+  display: flex; flex-direction: column; gap: 8px; padding: 2px 20px 4px;
+  border-left: 1px solid var(--line); color: var(--ink); text-decoration: none;
+}
+.bd-help-card:first-child { padding-left: 0; border-left: 0; }
+.bd-help-card b { font-size: 14.5px; }
+.bd-help-card b::after { content: " →"; transition: margin .15s; }
+.bd-help-card:hover b { color: var(--accent); }
+.bd-help-card span { font-size: 12.5px; line-height: 1.7; color: var(--muted); word-break: keep-all; }
+
+/* 좁은 화면: 차례는 위로 올라가 가로 글자 줄(넘치면 그 줄만 옆으로 민다) */
 @media (max-width: 860px) {
   .bd-faq { padding: 4px 14px 8px; }
-  .bd-faq-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .bd-faq-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .bd-faq-toc {
-    position: static; flex-direction: row; gap: 6px; overflow-x: auto;
-    padding-bottom: 4px; scrollbar-width: none;
+    position: static; flex-direction: row; gap: 18px; overflow-x: auto;
+    padding-bottom: 8px; border-bottom: 1px solid var(--line); scrollbar-width: none;
   }
   .bd-faq-toc::-webkit-scrollbar { display: none; }
   .bd-toc-cap { display: none; }
-  .bd-faq-toc a {
-    flex: 0 0 auto; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
-    background: var(--panel); font-size: 12.5px; white-space: nowrap;
-  }
-  .bd-faq-toc a.on { border-color: var(--accent); color: var(--accent); }
-  .bd-faq-toc a { gap: 6px; padding: 4px 12px 4px 5px; }
-  .bd-faq-toc .bd-cat-ic { width: 20px; height: 20px; border-radius: 999px; }
-  .bd-faq-toc .bd-cat-ic svg { width: 12px; height: 12px; }
+  .bd-faq-toc a { display: block; flex: 0 0 auto; padding: 4px 0; border: 0; white-space: nowrap; font-size: 13px; }
+  .bd-faq-toc a::before { margin-right: 6px; }
+  .bd-faq-toc a.on { box-shadow: inset 0 -2px 0 var(--ink); }
   .bd-faq-toc .n { display: none; }
-  .bd-faq-group { margin-top: 22px; }
-  .bd-faq-hero { padding: 14px; }
-  .bd-help-cards { grid-template-columns: minmax(0, 1fr); }
-  .bd-faq-help { padding: 20px; }
-  body.board #bdList > .sc-head::before { left: 30%; }
+  .bd-faq-search input { font-size: 17px; }
+  .bd-faq-group h2, .bd-faq-help h2 { font-size: 19px; }
+  .bd-faq-group h2 { grid-template-columns: 40px 1fr; }
+  .bd-faq-item summary { grid-template-columns: 40px 1fr 20px; }
+  .bd-faq-desc { margin-left: 40px; }
+  .bd-faq-item > div { padding-left: 40px; padding-right: 0; }
+  .bd-help-cards { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .bd-help-card { padding: 0; border-left: 0; }
 }
+
 .bd-write, .bd-submit {
   flex: 0 0 auto; text-decoration: none; cursor: pointer; font-family: inherit;
   padding: 9px 18px; border: 1px solid var(--accent); border-radius: 8px;
