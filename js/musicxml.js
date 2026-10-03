@@ -11,6 +11,7 @@
 //            marks = [{ id, ko, n }] — 음표 위 기호: 음표로 안 바뀌는 선율 시김새(staff-core
 //                    ornMarks)와 곁줄 기호(같은 placeLyrics). 있을 때만 그 음 앞에
 //                    <direction placement="above">로 표시 이름(ko)을 적는다(아래 marksXml).
+//                    staff:"wavy"인 기호(농음표)는 글자 대신 <wavy-line>으로 적는다(아래 '물결선').
 //            marksAt = [{ off, marks }] — 칸 시김새가 그 음의 뒤쪽 시각에 남긴 기호(off = 그 음
 //                    머리에서 단위 수). writeAs로 갈린 조각 가운데 그 시각에 서는(덮는) 조각에 붙는다.
 //            breath = true — 숨표(정간보 `<`). writeAs로 갈린 조각 가운데 **마지막 조각**에만
@@ -151,9 +152,14 @@
       if (o.tupStart) nots.push("          <tuplet type=\"start\"/>");
       if (o.tupStop) nots.push("          <tuplet type=\"stop\"/>");
       // 굴림채(더러러러) — 기둥에 얹는 사선. 한 음표 안에서 굴린다는 표시라 type="single"이다.
-      if (o.trem) {
-        nots.push("          <ornaments><tremolo type=\"single\">" + o.trem +
-                  "</tremolo></ornaments>");
+      // 물결선(농음표 등 사전 staff:"wavy") — 시작·끝 조각에 <wavy-line>을 단다(아래 '물결선' 절).
+      // 물결선이 없으면 예전 그대로의 한 줄이다(농음표 없는 문서의 출력이 한 글자도 안 바뀐다).
+      if (o.trem || o.wavyStart || o.wavyStop) {
+        nots.push("          <ornaments>" +
+                  (o.wavyStart ? "<wavy-line type=\"start\" number=\"1\"/>" : "") +
+                  (o.trem ? "<tremolo type=\"single\">" + o.trem + "</tremolo>" : "") +
+                  (o.wavyStop ? "<wavy-line type=\"stop\" number=\"1\"/>" : "") +
+                  "</ornaments>");
       }
       // 숨표 — 표준 요소 breath-mark. 화면 조판기(Verovio 6.2)도 이것을 그대로 읽어 음 뒤에
       // 숨표를 그린다(2026-10-03 실측 — MEI <breath tstamp>가 되어 따로 바꿔 끼울 것이 없다).
@@ -207,8 +213,9 @@
           // 조각 또는 그 시각을 덮는 조각 머리 위에. 고르는 셈은 staff-core marksIn 한 곳이다.
           // 여기가 마지막 가르기라 더 넘길 데가 없으므로 조각 안 뒤쪽 것(rest)도 이 머리가 진다.
           const late = C.marksIn(n.marksAt, at - off, at - off + p.units);
-          const mk = (k === 0 ? (n.marks || []) : []).concat(late.at0,
+          const all = (k === 0 ? (n.marks || []) : []).concat(late.at0,
             [].concat.apply([], late.rest.map(function (x) { return x.marks; })));
+          const mk = all.filter(function (m) { return m.staff !== "wavy"; });
           items.push({
             src: n, off: at, units: p.units, rest: !!n.rest,
             tup: p.tup ? C.tupletValue(p.units) : null,
@@ -221,6 +228,7 @@
             // 가사도 첫 조각에만 — 붙임줄로 이은 뒤 조각은 같은 음절이 이어지는 것뿐이다
             lyric: k === 0 ? n.lyric : null,
             marks: mk.length ? mk : null,
+            wavy: mk.length !== all.length,
             afters: k === pieces.length - 1 ? n.afters : null,
             // 숨표는 그 음이 끝나는 자리 — 갈린 조각 가운데 마지막 것에만(붙임줄의 끝)
             breath: k === pieces.length - 1 && !!n.breath
@@ -311,6 +319,22 @@
         }
       });
 
+      // ── 물결선 ──
+      // 사전에 staff:"wavy"가 적힌 기호(농음표)는 글자·그림 대신 **그 음 위에 가로로 늘인
+      // 물결선**으로 적는다 — 오선보에서 떠는 소리를 적는 관행이다. 시작은 기호가 선 조각,
+      // 끝은 그 음의 **붙임줄 끝 조각**(마디를 넘으면 다음 마디의 조각까지 — 그래서 열린 상태를
+      // 성부마다 마디를 건너 들고 간다, wavyOpen). 한 조각이면 같은 음에 start·stop이 함께 선다.
+      // 꼴은 trill-mark 없는 <wavy-line> 한 쌍이다. Verovio 6.2 실측(2026-10-03): 이것을 MEI
+      // <trill extender lstartsym="none">으로 읽어 'tr' 없이 물결선만 음 끝까지 긋는다
+      // (trill-mark를 곁들이면 'tr'이 앞에 붙고, stop이 없으면 '끝낼 수 없다'고 경고한다).
+      // 음 길이·마디 합계는 안 바뀐다 — 표시만 단다.
+      const wv = VOP.voice || 1;
+      items.forEach(function (it) {
+        if (it.rest || VOP.perc) return;
+        if (it.wavy && !wavyOpen[wv]) { it.wavyStart = true; wavyOpen[wv] = true; }
+        if (wavyOpen[wv] && !it.tieStart) { it.wavyStop = true; wavyOpen[wv] = false; }
+      });
+
       items.forEach(function (it) {
         graceRun(it.graces);
         // 곁줄 기호 — 꾸밈음 뒤·본음 바로 앞(그 음에 걸리게). 쉼표·장구엔 안 적는다.
@@ -322,6 +346,7 @@
           units: it.units, rest: it.rest, noAcc: it.noAcc,
           tup: it.tup, tupStart: it.tupStart, tupStop: it.tupStop,
           tieStart: it.tieStart, tieStop: it.tieStop, beams: it.beams, lyric: it.lyric,
+          wavyStart: it.wavyStart, wavyStop: it.wavyStop,
           // src에 실린 breath를 조각마다 물려받지 않게 위에서 고른 값으로 덮는다
           breath: it.breath && !it.rest && !VOP.perc,
           // 트레몰로(더러러러)는 갈린 조각 가운데 **첫 조각에만** 얹는다 — 조각마다 얹으면
@@ -367,7 +392,10 @@
     });
     out.push("  </part-list>");
 
+    // 물결선이 마디를 건너 열려 있는가(성부 번호 → 참) — 파트마다 새로 시작한다(위 '물결선').
+    let wavyOpen = {};
     list.forEach(function (s, pi) {
+      wavyOpen = {};
       const clef = C.CLEF[s.clef] || C.CLEF.G;
       out.push("  <part id=\"P" + (pi + 1) + "\">");
       // 각 하나가 한 마디인데 **각마다 정간 수가 다를 수 있다** — 그러면 박자표가 마디마다

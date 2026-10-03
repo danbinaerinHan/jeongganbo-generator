@@ -550,7 +550,14 @@
     const id = (R.lyricAlias && R.lyricAlias[nm]) || (R.byId[nm] ? nm
       : (nm in koIndex ? R.list[koIndex[nm]].id : null));
     const e = id && R.byId[id];
-    return e ? { id: e.id, ko: e.ko, n: R.list.indexOf(e) } : null;
+    return e ? markOf(e) : null;
+  }
+  // 사전 항목 → 음표 위 기호 { id, ko, n, staff? }. staff(사전에 적힌 오선보 꼴, 예 "wavy")는
+  // 있을 때만 싣는다 — 없는 기호의 그릇은 예전과 똑같다.
+  function markOf(e) {
+    const m = { id: e.id, ko: e.ko, n: root.JGB_SYM.list.indexOf(e) };
+    if (e.staff) m.staff = e.staff;
+    return m;
   }
   function lyricMarks(row) {
     const out = [];
@@ -574,7 +581,7 @@
     if (!e || !e.at || (R.sound && R.sound[id])) return null;
     const has = function (k) { return Object.prototype.hasOwnProperty.call(e.at, k); };
     if (has("tempo") || !(has("att") || has("cell"))) return null;
-    return { id: e.id, ko: e.ko, n: R.list.indexOf(e) };
+    return markOf(e);
   }
   // 한 자리(slot)에 적힌 시김새 id들 → 음표 위 기호 목록(적힌 차례). 없으면 빈 목록.
   function ornMarks(ids) {

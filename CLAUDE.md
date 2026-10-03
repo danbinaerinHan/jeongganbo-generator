@@ -1461,6 +1461,9 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
     시김새가 같은 음표 `marks` → musicxml `marksXml` → app.js `vrvSymMarks`를 지난다. 대상
     판정은 staff-core `ornMark`(잣대는 snd 하나 — 이름 목록을 박지 말 것). 기호 때문에 음을
     가르지 않는다(음 길이·마디 합계 불변). 자세한 자리 규칙은 그 문서의 '곁줄 기호' 다음 절.
+    · 예외 하나 — 사전 항목에 `staff: "wavy"`가 적힌 기호(지금 농음표)는 그림·글자 대신 그 음
+      (붙임줄 끝 조각까지) 위 **가로 물결선**(`<wavy-line>` start·stop)으로 간다. 고르는 표시는
+      사전에 둔다(이름 목록 금지) · 그 기호는 words로 다시 싣지 않는다(musicxml.js '물결선').
   (곁줄도 오선보에 실린다 — 괄호 없는 한글은 음표 **아래 가사**(`<lyric>`), 사전에 있는 괄호
   토큰(`{가로표}`·`{덩}`…)은 음표 **위 기호**(`<direction placement="above">`, 파일엔 표시 이름 ·
   화면은 app.js `vrvSymMarks`가 표지 글자를 사전 그림으로 바꿔 끼운다). 어느 음에 붙나는

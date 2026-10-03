@@ -909,8 +909,8 @@ console.log("\n선율 시김새 — 음표로 안 바뀌는 것(사전에 snd �
      ["nire", "ni", "nanina", "repeat", "점점느리게", "pause_007", "가로표", "덩"]
        .every((id) => globalThis.JGB_STAFF_CORE.ornMark(id) === null));
   eq("붙임 시김새 → 제가 붙은 본음 위",
-     ornOf("황{흘림표}|태{미는표}|중{농음표}{끊는표}|임", 4).out,
-     ["^흘림표", "^미는표", "^농음표+끊는표", ""]);
+     ornOf("황{흘림표}|태{미는표}|중{풀어내림표}{끊는표}|임", 4).out,
+     ["^흘림표", "^미는표", "^풀어내림표+끊는표", ""]);
   eq("snd 있는 시김새는 음표로 둘 뿐 위 기호로 겹쳐 그리지 않는다",
      ornOf("중{니레}|{니}|황{나니나}|임{노네}", 4).xml.includes("<words>"), false);
   eq("빠르기 기호는 대상이 아니다",
@@ -952,6 +952,95 @@ console.log("\n선율 시김새 — 음표로 안 바뀌는 것(사전에 snd �
     Object.assign(app.fields, { staffBar: "auto", daegang: "" });
     eq("마디 경계로 갈린 조각에도 같은 규칙", r.out, ["", "⌒^요성표", ""]);
     ok("마디는 둘", (r.xml.match(/<measure /g) || []).length === 2);
+  }
+}
+
+console.log("\n물결선 — 사전에 staff:\"wavy\"인 기호(농음표)는 글자 대신 음 위 가로 물결선");
+{
+  const R = globalThis.JGB_SYM;
+  function xmlOf(mel, beats, fields) {
+    Object.assign(app.fields, fields || {});
+    app.fields.beats = String(beats);
+    app.setLyrics("");
+    app.setMelody(mel);
+    const xml = buildMusicXml();
+    const vrv = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { title: "검사용", vrv: true });
+    Object.assign(app.fields, { staffBar: "auto", daegang: "" });
+    return { xml, vrv };
+  }
+  // 음표마다 "율(물결 시작 S · 끝 E · 붙임줄 ⌒)" — 꾸밈음은 뺀다
+  function wavyOf(xml) {
+    return xml.split("<note>").slice(1).filter((ch) => !ch.includes("<grace")).map((ch) => {
+      const step = ch.includes("<rest/>") ? "쉼" : "음";
+      return (ch.includes('<tie type="stop"/>') ? "⌒" : "") + step +
+             (ch.includes('<wavy-line type="start" number="1"/>') ? "S" : "") +
+             (ch.includes('<wavy-line type="stop" number="1"/>') ? "E" : "");
+    });
+  }
+  const noWavy = (xml) => xml.replace(/<wavy-line type="(start|stop)" number="1"\/>/g, "")
+    .replace(/\n\s*<ornaments><\/ornaments>/g, "")
+    .replace(/\n\s*<notations>\n\s*<\/notations>/g, "");
+
+  eq("사전 표시는 항목에 — 농음표에 staff:\"wavy\"", R.byId.vib.staff, "wavy");
+  eq("ornMark가 staff를 싣는다(없는 기호엔 속성이 없다)",
+     [globalThis.JGB_STAFF_CORE.ornMark("vib").staff, "staff" in globalThis.JGB_STAFF_CORE.ornMark("flow")],
+     ["wavy", false]);
+  {
+    // 논문 그림 6번과 같은 입력 — 한 정간, 중(2/3) + 남(1/3, 니레 꾸밈음)
+    const r = xmlOf("중{농음표} - 남{니레}", 1);
+    eq("중{농음표} - 남{니레} → 물결선이 중 음표 하나에 start·stop", wavyOf(r.xml), ["음SE", "음"]);
+    ok("농음표는 words 기호로 안 나온다(파일)", !r.xml.includes("<words>"));
+    ok("농음표는 표지 글자로도 안 나온다(조판용)", !/<words>/.test(r.vrv));
+    ok("조판용 XML에도 같은 물결선", wavyOf(r.vrv).join() === "음SE,음");
+    ok("꼴: <notations><ornaments> 안의 wavy-line 한 쌍(trill-mark 없음)",
+       r.xml.includes('<ornaments><wavy-line type="start" number="1"/><wavy-line type="stop" number="1"/></ornaments>') &&
+       !r.xml.includes("trill-mark"));
+    ok("음 길이·마디 합계 불변 — 농음표를 뺀 문서와 물결선 말고는 같다",
+       noWavy(r.xml) === xmlOf("중 - 남{니레}", 1).xml);
+  }
+  {
+    // 붙임줄로 이어지는 긴 음 — 마디를 넘으면 다음 마디의 끝 조각까지
+    const r = xmlOf("중{농음표}| | |임", 4, { staffBar: "daegang", daegang: "2 2" });
+    eq("마디를 넘는 붙임줄 → 첫 조각 start · 끝 조각 stop", wavyOf(r.xml), ["음S", "⌒음E", "음"]);
+    ok("마디는 둘", (r.xml.match(/<measure /g) || []).length === 2);
+    ok("끝 조각 뒤의 음엔 물결선이 없다", !/[SE]/.test(wavyOf(r.xml)[2]));
+    ok("길이 불변(마디 넘는 붙임줄)",
+       noWavy(r.xml) === xmlOf("중| | |임", 4, { staffBar: "daegang", daegang: "2 2" }).xml);
+  }
+  {
+    // 박 가운데서 시작해 다음 박으로 넘는 음 — writeAs가 마디 안에서 붙임줄로 가른다
+    const r = xmlOf("황 중{농음표}| |임|황", 4);
+    const w = wavyOf(r.xml);
+    const s = w.findIndex((x) => x.includes("S")), e = w.findIndex((x) => x.includes("E"));
+    ok("마디 안 붙임줄 조각 — start는 첫 조각, stop은 붙임줄 끝 조각",
+       s >= 0 && e > s && w.slice(s + 1, e + 1).every((x) => x.startsWith("⌒")) &&
+       !(w[e + 1] || "").startsWith("⌒"));
+    ok("길이 불변(마디 안 붙임줄)", noWavy(r.xml) === xmlOf("황 중| |임|황", 4).xml);
+  }
+  {
+    // 다른 위 기호와 함께 — 농음표만 물결선으로 빠지고 나머지는 그대로 words
+    const r = xmlOf("중{농음표}{끊는표}|임", 2);
+    eq("농음표 + 끊는표 → 물결선 + words 끊는표 하나",
+       [wavyOf(r.xml)[0], (r.xml.match(/<words>[^<]*<\/words>/g) || []).join()],
+       ["음SE", "<words>끊는표</words>"]);
+  }
+  {
+    // 굴림채(트레몰로)와 한 음에 — 같은 <ornaments> 안에
+    const r = xmlOf("중{농음표}|임", 2);
+    ok("물결선이 있는 음표엔 notations가 하나뿐", (r.xml.split("<note>")[1].match(/<notations>/g) || []).length === 1);
+  }
+  {
+    // 무변화 회귀 — 농음표가 없는 문서는 사전의 staff 표시가 있든 없든 한 글자도 같고 물결선이 없다
+    const docs = ["황|태 중|{니}|중{니레}\n임|- 남|쉼|황", "황{흘림표}|태{미는표}|중{풀어내림표}|임",
+                  "황| |{요성표}|임", "황 태<|중{더러러러}|임|황"];
+    const withFlag = docs.map((d) => xmlOf(d, 4));
+    const saved = R.byId.vib.staff;
+    delete R.byId.vib.staff;
+    const without = docs.map((d) => xmlOf(d, 4));
+    R.byId.vib.staff = saved;
+    ok("농음표 없는 문서 → 물결선 없음", withFlag.every((r) => !r.xml.includes("wavy-line") && !r.vrv.includes("wavy-line")));
+    ok("농음표 없는 문서 → 사전 표시 유무와 무관하게 한 글자도 같다",
+       withFlag.every((r, i) => r.xml === without[i].xml && r.vrv === without[i].vrv));
   }
 }
 
