@@ -13,6 +13,9 @@
 //                    <direction placement="above">로 표시 이름(ko)을 적는다(아래 marksXml).
 //            marksAt = [{ off, marks }] — 칸 시김새가 그 음의 뒤쪽 시각에 남긴 기호(off = 그 음
 //                    머리에서 단위 수). writeAs로 갈린 조각 가운데 그 시각에 서는(덮는) 조각에 붙는다.
+//            breath = true — 숨표(정간보 `<`). writeAs로 갈린 조각 가운데 **마지막 조각**에만
+//                    <notations><articulations><breath-mark/>로 적는다(app.js staffScoreOf가
+//                    붙임줄의 마지막 조각에 이미 몰아 두었다). 길이는 안 바뀐다.
 //   meta   = { title, subtitle, measStart }
 //            measStart = 첫 마디 번호(없으면 1) — 나란히 인쇄가 각 범위를 잘라 쪽마다
 //            따로 만들 때 마디 번호가 쪽마다 1로 되돌지 않게 하는 용도.
@@ -152,6 +155,11 @@
         nots.push("          <ornaments><tremolo type=\"single\">" + o.trem +
                   "</tremolo></ornaments>");
       }
+      // 숨표 — 표준 요소 breath-mark. 화면 조판기(Verovio 6.2)도 이것을 그대로 읽어 음 뒤에
+      // 숨표를 그린다(2026-10-03 실측 — MEI <breath tstamp>가 되어 따로 바꿔 끼울 것이 없다).
+      if (o.breath && !o.grace && !o.rest) {
+        nots.push("          <articulations><breath-mark/></articulations>");
+      }
       if (nots.length) {
         out.push("        <notations>");
         nots.forEach(function (n) { out.push(n); });
@@ -213,7 +221,9 @@
             // 가사도 첫 조각에만 — 붙임줄로 이은 뒤 조각은 같은 음절이 이어지는 것뿐이다
             lyric: k === 0 ? n.lyric : null,
             marks: mk.length ? mk : null,
-            afters: k === pieces.length - 1 ? n.afters : null
+            afters: k === pieces.length - 1 ? n.afters : null,
+            // 숨표는 그 음이 끝나는 자리 — 갈린 조각 가운데 마지막 것에만(붙임줄의 끝)
+            breath: k === pieces.length - 1 && !!n.breath
           });
           at += p.units;
         });
@@ -312,6 +322,8 @@
           units: it.units, rest: it.rest, noAcc: it.noAcc,
           tup: it.tup, tupStart: it.tupStart, tupStop: it.tupStop,
           tieStart: it.tieStart, tieStop: it.tieStop, beams: it.beams, lyric: it.lyric,
+          // src에 실린 breath를 조각마다 물려받지 않게 위에서 고른 값으로 덮는다
+          breath: it.breath && !it.rest && !VOP.perc,
           // 트레몰로(더러러러)는 갈린 조각 가운데 **첫 조각에만** 얹는다 — 조각마다 얹으면
           // 굴림이 여러 번 시작하는 것처럼 보인다.
           trem: it.noAcc ? 0 : it.src.trem

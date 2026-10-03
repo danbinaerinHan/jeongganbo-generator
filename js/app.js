@@ -6173,9 +6173,15 @@
         const rows = text.split(/\s+/).filter(Boolean);
         if (!rows.length) { push("hold", 1, g, j); continue; }
         const rowDur = 1 / rows.length;
+        // 숨표(<)는 그 정간을 다 채운 뒤 숨 쉬는 자리라 **그 정간의 마지막 자리**에 표시만 단다
+        // (아래 루프 끝). 소리·길이는 안 바뀐다 — 재생은 이 표시를 안 보고, 오선보만 그 정간의
+        // 마지막 음표에 breath-mark로 싣는다(staffScoreOf ②).
+        let cellBreath = false;
         for (let r = 0; r < rows.length; r++) {
           // 숨표(<)·빠르기(tempo) 기호는 소리에 영향 없음 — 배치·소리 계산에서 제외
-          const toks = tokenizeNotes(rows[r]).filter(function (tk) {
+          const raw = tokenizeNotes(rows[r]);
+          if (raw.some(function (tk) { return tk.breath; })) cellBreath = true;
+          const toks = raw.filter(function (tk) {
             return !tk.breath && !(tk.sym && ORN_CAT[tk.sym] === "tempo");
           });
           const groups = groupRowTokens(toks);
@@ -6192,6 +6198,8 @@
             push(res ? "note" : "hold", slotDur, g, j, res, r, rows.length, syms);   // 이음(-)·소리 없는 기호 → 지속
           }
         }
+        // 숨표가 없는 정간의 자리는 예전과 한 글자도 같게(속성 자체를 안 단다)
+        if (cellBreath) slots[slots.length - 1].breath = true;
       }
     }
     return slots;
@@ -7065,7 +7073,7 @@
 
   // 선율 하나 → 오선보 재료 하나.
   //   { name, abbr, fifths, clef, beats, bpm, measLen, measures: [[음표…]] }
-  //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop }  (units는 SC.DIV 기준)
+  //   음표 = { midi, rest, units, graces, afters, tieStart, tieStop, breath? }  (units는 SC.DIV 기준)
   function staffScoreOf(melodyText, meta) {
     const hwangMidi = staffHwang();   // 곡 하나에 기준음 하나 (위 주석)
     const beats = Math.max(1, parseInt($("beats").value) || 1);
@@ -7140,9 +7148,18 @@
     //      가르지 않는다** — 음 길이·마디 합계는 기호가 없을 때와 똑같아야 한다.
     //    · 쉼표 자리(이을 앞 음이 없거나 각이 바뀌어 끊긴 자리)의 기호는 버린다 — 떨거나 꺾을
     //      소리가 없다.
+    //    숨표(slot.breath — 그 정간의 마지막 자리에 달린 표시)는 **그 자리를 다 거친 뒤 울리고
+    //    있는 음표**에 단다: 마지막 자리가 새 음이면 그 마지막 음(독립 시김새가 가른 음이면 끝 음),
+    //    이음·빈 자리면 그것이 잇는 앞 음. 그 음이 다음 정간으로 더 이어져도 표시는 그 음을 따라가
+    //    ③·writeAs가 가른 **붙임줄의 마지막 조각**에 선다. 쉼표로 끝나는 정간의 숨표는 버린다
+    //    (이미 소리가 끊겨 있다). 음 길이·마디 합계는 안 바뀐다.
     const notes = [];
     let prev = null;
     slots.forEach(function (s, si) {
+      placeSlot(s, si);
+      if (s.breath && prev) prev.breath = true;
+    });
+    function placeSlot(s, si) {
       const cellKey = s.gak + ":" + s.cell;
       const orn = SC.ornMarks(s.syms);
       if (s.kind !== "note") {
@@ -7172,7 +7189,7 @@
         notes.push(prev);
       });
       if (s.post.length) prev.after = s.post;
-    });
+    }
 
     // ③ 마디(=각)에 채워 넣기. 마디를 넘는 음은 잘라 붙임줄로 잇는다.
     const measures = [];
@@ -7196,6 +7213,7 @@
           tieStart: left - take > 0, tieStop: !first
         };
         if (first && n.lyric) piece.lyric = n.lyric;   // 붙임줄로 이은 뒤 조각에는 안 붙인다
+        if (n.breath && left - take <= 0) piece.breath = true;   // 숨표는 붙임줄의 마지막 조각에
         if (first && n.marks) piece.marks = n.marks;
         // 칸 시김새가 남긴 뒤늦은 기호 — 이 조각 머리에 서는 것은 marks로, 조각 안 뒤쪽 것은
         // marksAt으로 넘겨 musicxml.js가 writeAs 조각에서 다시 고르게 한다(같은 marksIn).

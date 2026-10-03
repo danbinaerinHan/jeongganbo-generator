@@ -10,6 +10,7 @@
 // ④ 곁줄 가사가 제 음에 붙나(한글 음절만 · 기호 토큰 제외 · 가사 없는 문서는 한 글자도 그대로).
 // ⑤ 곁줄 기호(사전에 있는 괄호 토큰)가 음표 위 <direction>으로 실리나(파일엔 표시 이름).
 // ⑥ 음표로 안 바뀌는 선율 시김새(사전에 snd 없음)가 같은 길로 음표 위에 실리나.
+// ⑦ 숨표(<)가 그 정간의 마지막 음표에 <breath-mark/>로 실리나(길이·마디 합계 불변).
 
 import { loadApp } from "./lib/app-sandbox.mjs";
 await import("../js/staff-core.js");
@@ -1006,6 +1007,69 @@ console.log("\n곁줄 가사 — 예시 악보");
        joined === want.join(""), `${joined.slice(0, 30)} / ${want.join("").slice(0, 30)}`);
   });
   Object.keys(app.fields).forEach((k) => { app.fields[k] = keep[k]; });
+}
+
+console.log("\n숨표 — 그 정간의 마지막 음표에 breath-mark로");
+{
+  // 음표마다 "숨" 표시를 붙여 센다 — 붙임줄 뒤 조각은 ⌒, 꾸밈음은 뺀다
+  function brOf(mel, beats) {
+    const xml = xmlOf(mel, beats);
+    const out = [];
+    xml.split("<note>").slice(1).forEach((n) => {
+      if (n.includes("<grace")) return;
+      out.push((n.includes('<tie type="stop"/>') ? "⌒" : "") + (n.includes("<rest/>") ? "쉼" : "") +
+               (n.includes("<breath-mark/>") ? "숨" : "·"));
+    });
+    return { out, xml };
+  }
+  const BR = /\n\s*<notations>\n\s*<articulations><breath-mark\/><\/articulations>\n\s*<\/notations>|\n\s*<articulations><breath-mark\/><\/articulations>/g;
+  const bare = (xml) => xml.replace(BR, "");
+  {
+    const r = brOf("황<", 1);
+    eq("황< 한 정간 — breath-mark 1개", (r.xml.match(/<breath-mark\/>/g) || []).length, 1);
+    const sums = parseMeasures(r.xml).map((m) => m.filter((n) => !n.grace).reduce((a, n) => a + n.dur, 0));
+    eq("황< — 마디 합계 그대로", sums, [JG]);
+    ok("황< — 숨표를 걷으면 '황'과 한 글자도 같다", bare(r.xml) === xmlOf("황", 1));
+    ok("<notations><articulations><breath-mark/> 꼴(표준 요소)",
+       /<notations>\s*<articulations><breath-mark\/><\/articulations>\s*<\/notations>/.test(r.xml));
+  }
+  eq("황 태< — 행이 여럿이면 마지막 음표에", brOf("황 태<|중|임|남", 4).out, ["·", "숨", "·", "·", "·"]);
+  eq("황<만 있는 정간과 숨표 없는 정간이 섞여도 제 정간에만", brOf("황<|태|중<|임", 4).out,
+     ["숨", "·", "숨", "·"]);
+  eq("이음으로 끝나는 정간 — 그것이 잇는 앞 음에", brOf("황 -<|태|중|임", 4).out, ["숨", "·", "·", "·"]);
+  eq("독립 시김새가 가른 음 — 그 자리의 끝 음에", brOf("중|{니나}<|중|임", 4).out,
+     ["·", "·", "숨", "·", "·"]);
+  ok("쉼표로 끝나는 정간 — 숨 쉴 소리가 없어 버린다",
+     !brOf("황 쉼<|태|중|임", 4).xml.includes("breath"));
+  {
+    // 태가 박 한가운데서 시작해 다음 정간까지 끌리면 writeAs가 붙임줄로 가른다 — 숨표는 끝 조각에
+    const r = brOf("황 태<| |중|임", 4);
+    eq("붙임줄로 이어지면 붙임줄의 마지막 음표에", r.out, ["·", "·", "⌒숨", "·", "·"]);
+    ok("붙임줄 끝 조각의 <tied>와 breath-mark가 한 <notations> 안에",
+       /<notations>\s*<tied type="stop"\/>\s*<articulations><breath-mark\/><\/articulations>\s*<\/notations>/.test(r.xml));
+  }
+  {
+    // 마디 경계로 갈린 조각('대강마다', 4정간 = 대강 2·2)도 같은 규칙 — 끝 조각에
+    Object.assign(app.fields, { staffBar: "daegang", daegang: "2 2" });
+    const r = brOf("황|태<| |임", 4);
+    Object.assign(app.fields, { staffBar: "auto", daegang: "" });
+    eq("마디 경계를 넘는 붙임줄도 마지막 조각에", r.out, ["·", "·", "⌒숨", "·"]);
+  }
+  ok("길이·마디 합계 불변 — 숨표를 걷으면 숨표 없는 문서와 같다",
+     bare(xmlOf("황 태<| |중|임\n황<|{니나}<|중 -<|임", 4)) === xmlOf("황 태| |중|임\n황|{니나}|중 -|임", 4));
+  {
+    const a = xmlOf("황|태 중|{니}|중{니레}\n임|- 남|쉼|황", 4);
+    ok("숨표 없는 문서 → breath-mark도 notations 추가도 없다", !a.includes("breath"));
+    const realize = app.fn("realizeMelody");
+    app.setMelody("황 태|중|임|남");
+    ok("숨표 없는 문서의 자리(slot)에는 breath 속성 자체가 없다",
+       realize(63).every((x) => !("breath" in x)));
+    // 소리는 숨표를 안 본다 — 자리에서 breath 표시만 빼면 숨표 없는 문서와 똑같다
+    app.setMelody("황 태<|중<|임|남");
+    const withBr = realize(63).map((x) => { const y = Object.assign({}, x); delete y.breath; return y; });
+    app.setMelody("황 태|중|임|남");
+    eq("소리(자리 목록)는 숨표가 있어도 그대로", withBr, realize(63));
+  }
 }
 
 console.log("\n악보 꼴 — 열고 닫는 짝이 맞는가");

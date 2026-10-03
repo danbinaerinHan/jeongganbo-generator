@@ -1466,6 +1466,8 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
   화면은 app.js `vrvSymMarks`가 표지 글자를 사전 그림으로 바꿔 끼운다). 어느 음에 붙나는
   staff-core `placeLyrics` 한 곳, 무엇이 가사·기호인가는 `lyricSyllables`·`lyricMarks` 한 곳이다.
   규칙은 그 문서의 MusicXML 절.)
+  (숨표 `<`는 음표 위 기호 길이 아니라 그 정간 마지막 음표의 `<breath-mark/>`로 실린다 — 소리는 그대로.
+  규칙은 그 문서의 '숨표' 절.)
 - **재생은 선율(사인파) + 장단(장구 녹음 음원) 두 갈래**다(app.js '재생' 절).
   `buildAudioEvents`가 한 시간축에서 둘을 함께 짜는데, 장단은 음높이가 없어 `janggu:[{t,name}]`로
   따로 담는다. 장단 줄은 **한 각짜리 패턴 하나**뿐이므로(악보에도 맨 처음 각 옆에 한 번만 그린다)
