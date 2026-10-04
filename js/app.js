@@ -7664,7 +7664,7 @@
   const VRV_DIGIT_W = { "0": 1.67, "1": 1.339, "2": 1.767, "3": 1.644, "4": 1.706, "5": 1.68,
                         "6": 1.683, "7": 1.772, "8": 1.611, "9": 1.7, "D": 1.011 };
   function vrvPage(i) {
-    return vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {})));
+    return vrvWavyMarks(vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {}))));
   }
   function vrvTimeNotes(svg) {
     if (svg.indexOf("#E08D") < 0) return svg;   // 덧셈 박자표가 없으면 할 일이 없다
@@ -7734,7 +7734,7 @@
   //     비율만큼, '다'(0.23)는 점 크기. 정간보 곁줄에서 서로 견준 크기 그대로다.
   //     선율 시김새(음표로 안 바뀌는 흘림표·요성표…, staff-core ornMarks)는 곁줄 크기가 없으면
   //     곁줄의 작은 시김새류와 같은 0.4(VRV_SYM_ORN)에 정간보의 미세 배율(at.att/at.cell)을
-  //     곱한다 — 가늘고 긴 농음표류(2.5)는 상자 가득, 반길이표(0.5)는 그만큼 작게.
+  //     곱한다 — 가늘고 긴 풀어내림표·잉어질표(2.5)는 상자 가득, 반길이표(0.5)는 그만큼 작게.
   //   · 한 음에 여럿이면 옆으로 나란히(가운데 정렬).
   //   · 다크모드는 css/styles.css의 `.vrv-sym` 규칙이 뒤집는다(그림은 currentColor를 못 따른다).
   //   · 그림은 데이터 URL이라 PNG 저장(SVG → <img>)에서도 그대로 따라간다(글꼴과 달리 따로
@@ -7744,9 +7744,7 @@
     const base = window.JGB_MUSICXML.VRV_SYM_BASE;
     const MARK_RE = /[\u{F0000}-\u{FFFFD}]/u;
     if (!MARK_RE.test(svg)) return svg;   // 기호 없는 쪽은 한 글자도 안 바꾼다
-    // 칸(오선 한 칸 높이) — 첫 오선의 두 줄 사이. Verovio의 내부 단위라 쪽 안에서 같다.
-    const ln = svg.match(/class="staff"[^>]*>\s*<path d="M[\d.]+ ([\d.]+) L[^"]*"[^>]*\/>\s*<path d="M[\d.]+ ([\d.]+) /);
-    const SP = ln ? Math.abs(+ln[2] - +ln[1]) : 180;
+    const SP = vrvSpace(svg);
     return svg.replace(/<g([^>]*)class="dir"([^>]*)>\s*<text x="([-\d.]+)" y="([-\d.]+)"[^>]*>([\s\S]*?)<\/text>\s*<\/g>/g,
       function (all, a1, a2, xs, ys, body) {
         const ids = [];
@@ -7776,6 +7774,52 @@
         });
         return "<g" + a1 + "class=\"dir vrv-symdir\"" + a2 + ">" + ims.join("") + "</g>";
       });
+  }
+
+  // 물결선 기호(사전 staff:"wavy" — 지금 농음표)를 **사전 그림을 90° 눕혀 그 음 길이만큼 가로로
+  // 늘인 것**으로 바꿔 끼운다 — vrvPage의 셋째 일. 조판용 XML(js/musicxml.js '물결선')은 그 음에
+  // trill-mark 없는 <wavy-line> 한 쌍을 달아 두었고, Verovio는 그것을 음 머리부터 음 끝(붙임줄
+  // 끝)까지 물결 글리프(E59D…E59E)를 늘어놓은 <g class="trill">로 그린다. 그 가로 범위가 곧
+  // '음 길이만큼'이므로 글리프를 걷고 같은 범위에 그림을 놓는다 — 눈에 보이는 표기는 그림 하나다
+  // (파일로 나가는 MusicXML엔 wavy-line이 없고 words '농음표'뿐이라 여기를 안 지난다).
+  //   · 범위: 첫 글리프 x ~ 마지막 글리프 x + 그 글리프 폭(VRV_WIGGLE_W × 글리프 배율). 폭은
+  //     Leipzig 글리프 윤곽에서 잰 값(2026-10-04). 줄을 넘어 이어지면 Verovio가 줄마다 trill을
+  //     따로 그리므로 줄마다 제 범위에 한 장씩 놓인다.
+  //   · 세로: 바닥을 글리프 밑선(물결선이 앉은 자리 — 조판기가 음표와 안 겹치게 잡은 높이)에 대고
+  //     높이 VRV_WAVY_H칸. 그림은 비율을 지키지 않고(preserveAspectRatio none) 범위에 맞춰 늘인다.
+  //   · 눕히는 방향: 시계 반대로 90° — 정간보에서 위(먼저)였던 끝이 왼쪽(먼저)으로 온다.
+  //   · 어느 기호인가: 조판기의 trill에는 기호 id가 실리지 않는다. 지금 staff:"wavy"는 농음표
+  //     하나뿐이라 그 항목을 쓴다(둘 이상이 되면 조판용 XML에서 가를 길을 따로 마련할 것).
+  //   · 다크모드는 다른 위 기호와 같이 `.vrv-sym` 규칙이 뒤집는다.
+  const VRV_WIGGLE_W = { E59D: 306, E59E: 375 };
+  const VRV_WAVY_H = 1.0;
+  function vrvWavyMarks(svg) {
+    if (svg.indexOf('class="trill"') < 0) return svg;   // 물결선 없는 쪽은 한 글자도 안 바꾼다
+    const e = SYM_REG.list.find(function (x) { return x.staff === "wavy"; });
+    const href = e && symURL(e.id);
+    if (!href) return svg;
+    const SP = vrvSpace(svg);
+    return svg.replace(/<g([^>]*)class="trill"([^>]*)>([\s\S]*?)<\/g>/g, function (all, a1, a2, body) {
+      const re = /<use xlink:href="#(E5[0-9A-F]{2})[^"]*" transform="translate\(([-\d.]+),\s*([-\d.]+)\)\s*(?:scale\(([-\d.]+)[^)]*\))?[^"]*"\s*\/>/g;
+      const us = [];
+      let m;
+      while ((m = re.exec(body))) us.push({ id: m[1], x: +m[2], y: +m[3], sc: m[4] ? +m[4] : 1 });
+      if (!us.length) return all;
+      const last = us[us.length - 1];
+      const x0 = us[0].x, x1 = last.x + (VRV_WIGGLE_W[last.id] || VRV_WIGGLE_W.E59D) * last.sc;
+      const W = x1 - x0, H = VRV_WAVY_H * SP;
+      // 눕히기 전 그림 상자(폭 H × 높이 W)를 rotate(-90)로 돌리면 x [0,W] · y [-H,0]에 놓인다
+      const im = "<image class=\"vrv-sym vrv-wavy\" x=\"0\" y=\"0\" width=\"" + H.toFixed(1) +
+        "\" height=\"" + W.toFixed(1) + "\" preserveAspectRatio=\"none\" transform=\"translate(" +
+        x0.toFixed(1) + " " + us[0].y.toFixed(1) + ") rotate(-90)\" href=\"" + href +
+        "\" xlink:href=\"" + href + "\"/>";
+      return "<g" + a1 + "class=\"trill vrv-wavy\"" + a2 + ">" + im + "</g>";
+    });
+  }
+  // 칸(오선 한 칸 높이) — 첫 오선의 두 줄 사이. Verovio의 내부 단위라 쪽 안에서 같다.
+  function vrvSpace(svg) {
+    const ln = svg.match(/class="staff"[^>]*>\s*<path d="M[\d.]+ ([\d.]+) L[^"]*"[^>]*\/>\s*<path d="M[\d.]+ ([\d.]+) /);
+    return ln ? Math.abs(+ln[2] - +ln[1]) : 180;
   }
 
   // 장단 범례 — 장구 한 각을 **따로 한 번** 조판해 악보 위에 얹는다(jangguStaffMode "legend").

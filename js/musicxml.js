@@ -11,7 +11,8 @@
 //            marks = [{ id, ko, n }] — 음표 위 기호: 음표로 안 바뀌는 선율 시김새(staff-core
 //                    ornMarks)와 곁줄 기호(같은 placeLyrics). 있을 때만 그 음 앞에
 //                    <direction placement="above">로 표시 이름(ko)을 적는다(아래 marksXml).
-//                    staff:"wavy"인 기호(농음표)는 글자 대신 <wavy-line>으로 적는다(아래 '물결선').
+//                    staff:"wavy"인 기호(농음표)는 화면 조판용(meta.vrv)에서만 글자 대신 <wavy-line>
+//                    으로 적는다 — 범위 재기용이고 app.js가 사전 그림으로 바꿔 끼운다(아래 '물결선').
 //            marksAt = [{ off, marks }] — 칸 시김새가 그 음의 뒤쪽 시각에 남긴 기호(off = 그 음
 //                    머리에서 단위 수). writeAs로 갈린 조각 가운데 그 시각에 서는(덮는) 조각에 붙는다.
 //            breath = true — 숨표(정간보 `<`). writeAs로 갈린 조각 가운데 **마지막 조각**에만
@@ -215,7 +216,9 @@
           const late = C.marksIn(n.marksAt, at - off, at - off + p.units);
           const all = (k === 0 ? (n.marks || []) : []).concat(late.at0,
             [].concat.apply([], late.rest.map(function (x) { return x.marks; })));
-          const mk = all.filter(function (m) { return m.staff !== "wavy"; });
+          // 물결선 기호(staff:"wavy")는 **화면 조판용에서만** 걸러 물결선 자리로 돌린다 — 파일에는
+          // 다른 위 기호와 같은 words(표시 이름)로 남는다(아래 '물결선' 절).
+          const mk = meta.vrv ? all.filter(function (m) { return m.staff !== "wavy"; }) : all;
           items.push({
             src: n, off: at, units: p.units, rest: !!n.rest,
             tup: p.tup ? C.tupletValue(p.units) : null,
@@ -319,15 +322,16 @@
         }
       });
 
-      // ── 물결선 ──
-      // 사전에 staff:"wavy"가 적힌 기호(농음표)는 글자·그림 대신 **그 음 위에 가로로 늘인
-      // 물결선**으로 적는다 — 오선보에서 떠는 소리를 적는 관행이다. 시작은 기호가 선 조각,
-      // 끝은 그 음의 **붙임줄 끝 조각**(마디를 넘으면 다음 마디의 조각까지 — 그래서 열린 상태를
-      // 성부마다 마디를 건너 들고 간다, wavyOpen). 한 조각이면 같은 음에 start·stop이 함께 선다.
-      // 꼴은 trill-mark 없는 <wavy-line> 한 쌍이다. Verovio 6.2 실측(2026-10-03): 이것을 MEI
-      // <trill extender lstartsym="none">으로 읽어 'tr' 없이 물결선만 음 끝까지 긋는다
-      // (trill-mark를 곁들이면 'tr'이 앞에 붙고, stop이 없으면 '끝낼 수 없다'고 경고한다).
-      // 음 길이·마디 합계는 안 바뀐다 — 표시만 단다.
+      // ── 물결선(화면 조판용만) ──
+      // 사전에 staff:"wavy"가 적힌 기호(농음표)는 화면에서 **사전 그림을 90° 눕혀 그 음 길이만큼
+      // 가로로 늘여** 음표 위에 그린다. 그 '음 길이만큼'의 가로 범위를 조판기에게 재게 하려고
+      // **조판용 XML에만** 그 음에 <wavy-line> start·stop을 단다 — Verovio 6.2는 trill-mark 없는
+      // 쌍을 MEI <trill extender lstartsym="none">으로 읽어 물결선을 음 끝(붙임줄 끝)까지 긋고,
+      // app.js vrvWavyMarks가 그 물결선을 걷고 같은 자리에 눕힌 그림을 놓는다(눈에 보이는 표기는
+      // 그림 하나). **파일에는 wavy-line을 안 적는다** — words '농음표' 하나뿐이다(표기가 둘이면 안 된다).
+      // 시작은 기호가 선 조각, 끝은 그 음의 **붙임줄 끝 조각**(마디를 넘으면 다음 마디의 조각까지 —
+      // 그래서 열린 상태를 성부마다 마디를 건너 들고 간다, wavyOpen). 한 조각이면 같은 음에
+      // start·stop이 함께 선다. 음 길이·마디 합계는 안 바뀐다 — 표시만 단다.
       const wv = VOP.voice || 1;
       items.forEach(function (it) {
         if (it.rest || VOP.perc) return;
