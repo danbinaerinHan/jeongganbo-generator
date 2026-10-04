@@ -122,7 +122,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       <div id="inputModeGuide" class="melody-guide">
         <div class="mg-sec"><b>에디터</b><br>
           곡 전체를 텍스트로 보며 편집합니다. 줄바꿈=각 구분, <span class="mono">|</span>=정간 구분,
-          스페이스=분박 같은 문법을 알아야 하지만, 반복 구절의 복사·붙여넣기나
+          스페이스=소박 같은 문법을 알아야 하지만, 반복 구절의 복사·붙여넣기나
           일괄 수정에 적합합니다.
         </div>
         <div class="mg-sec"><b>직접 입력</b><br>
@@ -933,7 +933,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
                배율·높이(브라우저별 보기 설정)와 다르다. -->
           <label class="staff-unit tip"
             data-tip="정간 하나를 무엇으로 볼지
-· 분박이 셋이면 점4분음표, 둘이면 4분음표·8분음표로 정확히 나누어집니다
+· 소박이 셋이면 점4분음표, 둘이면 4분음표·8분음표로 정확히 나누어집니다
 · 각이 길면 8분음표 쪽이 마디가 짧아 읽기 쉽습니다
 · 각 하나가 한 마디이므로 이 설정에 따라 박자표가 정해집니다">정간
             <!-- 기본은 '자동' — 12정간 각은 8분음표(12/8), 그 밖은 점4분음표.
@@ -1142,7 +1142,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
             <div class="mg-sec"><b>왼쪽 팔레트</b><br>
               율명·시김새를 클릭하면 커서(에디터) 또는 지금 열린 칸(직접 입력)에 바로 들어갑니다.
             </div>
-            <div class="mg-sec"><p class="guide-paragraph"><b>세부 규칙(에디터)</b></p><ul class="guide-list"><li>한 정간 안에서 <span class="mono">스페이스</span> 없이 이어 쓰면 한 줄에, 띄어 쓰면 그 칸 안에서 줄이 나뉩니다(분박).</li><li>음 뒤에 공백 없이 <span class="mono">&lt;</span> 를 붙이면 그 정간 오른쪽-아래에 숨표가 표시됩니다.</li></ul></div>
+            <div class="mg-sec"><p class="guide-paragraph"><b>세부 규칙(에디터)</b></p><ul class="guide-list"><li>한 정간 안에서 <span class="mono">스페이스</span> 없이 이어 쓰면 한 줄에, 띄어 쓰면 그 칸 안에서 줄이 나뉩니다(소박).</li><li>음 뒤에 공백 없이 <span class="mono">&lt;</span> 를 붙이면 그 정간 오른쪽-아래에 숨표가 표시됩니다.</li></ul></div>
             <div class="mg-sec"><p class="guide-paragraph"><b>시김새 넣는 법</b></p><ul class="guide-list"><li>에디터 모드: 왼쪽 팔레트에서 '시김새' 탭을 클릭해 커서 자리에 입력할 수 있습니다.</li><li>직접 입력 모드: 괄호 안에 시김새 이름을 넣어 직접 텍스트로 입력하여 넣을 수 있습니다
               (예: <span class="mono">(추성)</span>, <span class="mono">{추성}</span>, <span class="mono">[추성]</span>)</li></ul></div>
           </div>
@@ -1260,10 +1260,10 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
 · 음 = 한글 율명(황·태·협…)
 · 줄바꿈 = 각 구분
 · | = 정간 구분
-· 스페이스 = 한 정간 안 분박(음 여러 개)
+· 스페이스 = 한 정간 안 소박(음 여러 개)
 · 음 뒤 < = 숨표
 · 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나
-예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)">
+예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 소박, 2번째는 협+숨표)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
               </button>
               <div class="ed-right">
@@ -1923,7 +1923,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
           <section class="help-pane active" data-help="basics">
             <h4>정간보(井間譜)란?</h4>
             <p>정간보는 조선 세종 대에 창안되어 오늘날까지 쓰이고 있는 한국 전통음악의 대표적인 기보법입니다. 우물 정(井) 자가 위아래로 이어진 형태의 악보라는 데서 이름이 왔으며, 네모 칸 하나하나를 <b>'정간'</b>이라 부릅니다.</p>
-            <p>정간 <b>한 칸은 1박</b>을 나타내며, 한 칸에 여러 음을 기록하면 정간 내 음의 위치에 따라 반 박, ⅓박과 같이 <b>분박(分拍)</b>이 되거나 두 칸에 걸쳐 1박 이상의 음길이를 가지게 됩니다. 이처럼 음의 길이를 기록할 수 있는 악보를 유량(有量)악보라 하며, 정간보는 <b>동양에서 가장 오래된 유량악보</b>로 평가됩니다.</p>
+            <p>정간 <b>한 칸은 1박</b>을 나타내며, 한 칸에 여러 음을 기록하면 정간 내 음의 위치에 따라 반 박, ⅓박과 같이 <b>소박(小拍)</b>이 되거나 두 칸에 걸쳐 1박 이상의 음길이를 가지게 됩니다. 이처럼 음의 길이를 기록할 수 있는 악보를 유량(有量)악보라 하며, 정간보는 <b>동양에서 가장 오래된 유량악보</b>로 평가됩니다.</p>
             <!-- 도해 1: 읽는 순서 — 3각×4정간 미니 격자. 색은 전부 변수라 다크 자동 대응.
                  화살표는 역할을 나눠 둘: ① 한 각 안은 위→아래(오른쪽 세로, 번호 ①→④와 같은 축),
                  ② 다음 각은 왼쪽으로(위 가로). ④→⑤·⑧→⑨ 점선이 두 축이 만나는 '건너뜀'을 그린다 —
@@ -1989,7 +1989,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
                 <line x1="96" y1="58" x2="190" y2="54" stroke="var(--line)"></line>
                 <text x="194" y="58">율명(음)</text>
                 <line x1="110" y1="76" x2="190" y2="82" stroke="var(--line)"></line>
-                <text x="194" y="86">분박 — 黃·太가</text>
+                <text x="194" y="86">소박 — 黃·太가</text>
                 <text x="194" y="100">한 박을 반씩 나눔</text>
               </g>
             </svg>
@@ -2025,10 +2025,10 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               <li>문법을 쓰지 않으려면 기능바 <b>입력</b> 그룹에서 팔레트(율명·시김새 등)를 열어 둔 상태에서 선택합니다. 팔레트를 클릭하면 지금 열린 칸에 바로 들어갑니다.</li>
             </ul>
 
-            <h4>붙임과 분박</h4>
-            <p>한 정간(칸) 안에서 <b>띄어쓰기 없이 이어 쓰면</b> 한 줄에 <b>왼→오른쪽</b>으로 나란히(붙임), <b>띄어 쓰면</b> 칸 안에서 줄이 나뉘어 <b>위→아래</b>로(분박) 들어갑니다.</p>
+            <h4>붙임과 소박</h4>
+            <p>한 정간(칸) 안에서 <b>띄어쓰기 없이 이어 쓰면</b> 한 줄에 <b>왼→오른쪽</b>으로 나란히(붙임), <b>띄어 쓰면</b> 칸 안에서 줄이 나뉘어 <b>위→아래</b>로(소박) 들어갑니다.</p>
             <!-- 정간예시① 붙임 vs 분박 -->
-            <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="붙임과 분박 예시">
+            <svg class="help-fig" viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="붙임과 소박 예시">
               <text x="82" y="15" font-size="10.5" fill="var(--muted)" text-anchor="middle">이어 쓰기 <tspan font-family="ui-monospace,monospace" fill="var(--ink)">황태</tspan></text>
               <rect x="44" y="24" width="76" height="70" fill="none" stroke="var(--ink)" stroke-width="1.5"></rect>
               <text x="70" y="68" font-size="22" fill="var(--ink)" text-anchor="middle">黃</text>
@@ -2044,7 +2044,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               <text x="238" y="86" font-size="19" fill="var(--ink)" text-anchor="middle">太</text>
               <line x1="286" y1="31" x2="286" y2="87" stroke="var(--accent)" stroke-width="1.3"></line>
               <path d="M283 81 L286 89 L289 81 Z" fill="var(--accent)"></path>
-              <text x="238" y="114" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">분박 · 위→아래</text>
+              <text x="238" y="114" font-size="10.5" font-weight="700" fill="var(--accent)" text-anchor="middle">소박 · 위→아래</text>
               <text x="238" y="129" font-size="9.5" fill="var(--muted)" text-anchor="middle">칸 안에서 줄바꿈</text>
             </svg>
 
@@ -2081,7 +2081,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
             </ul>
             <table>
               <tr><th>문법</th><th>의미</th></tr>
-              <tr><td>칸 안 공백</td><td>분박: 칸 안에서 위→아래로 줄 나눔</td></tr>
+              <tr><td>칸 안 공백</td><td>소박: 칸 안에서 위→아래로 줄 나눔</td></tr>
               <tr><td>이어 쓰기</td><td>붙임: 한 줄 안에서 왼→오른쪽 배치</td></tr>
               <tr><td>청·배 접두어</td><td>옥타브 위(청황)·아래(배임)</td></tr>
               <tr><td><span class="key">-</span></td><td>이음: 앞 음을 지속</td></tr>

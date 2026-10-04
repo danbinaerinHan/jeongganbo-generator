@@ -3211,7 +3211,7 @@
           return { id: name, ko: name, url: data[name], chip: e && e.chip };
         });
       },
-      groups: [{ title: "구음", sub: "장단 줄에 한 분박" }],
+      groups: [{ title: "구음", sub: "장단 줄에 한 소박" }],
       // 장단 토큰만 중괄호가 없다(옛 문법) — 사전이 합쳐져도 이건 그대로 두었다
       insert: function (ch) { insertJangdanToken(this.token(ch)); return true; }
     }
@@ -9916,10 +9916,10 @@
     "· 음 = 한글 율명(황·태·협…)\n" +
     "· 줄바꿈 = 각 구분\n" +
     "· | = 정간 구분\n" +
-    "· 스페이스 = 한 정간 안 분박(음 여러 개)\n" +
+    "· 스페이스 = 한 정간 안 소박(음 여러 개)\n" +
     "· 음 뒤 < = 숨표\n" +
     "· 시김새 = 음 뒤 괄호 {}·[]·() 중 아무거나\n" +
-    "예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 분박, 2번째는 협+숨표)";
+    "예: 황 태|협<|임  (정간 3개 — 1번째는 황·태 소박, 2번째는 협+숨표)";
   function applyInputMode() {
     const direct = inputMode === "direct";
     // 상단바 버튼 글씨는 배율의 '100%'처럼 지금 값을 보여준다(기호는 body.input-direct로 CSS가 바꿈)
@@ -10596,7 +10596,7 @@
       also: ["#winToggleYul", "#paletteCol .pal-views", "#paletteCol"],
       fig: [
         { t: "황", cap: "한 음", img: TOUR_CELL_IMGS.one },
-        { t: "황 태", cap: "분박", img: TOUR_CELL_IMGS.split },
+        { t: "황 태", cap: "소박", img: TOUR_CELL_IMGS.split },
         { t: "황태", cap: "붙임", img: TOUR_CELL_IMGS.joined },
         { t: "황{미는표}", cap: "시김새", img: TOUR_CELL_IMGS.orn },
         { t: "황태 -황", cap: "이음(-)", img: TOUR_CELL_IMGS.tie }
