@@ -980,7 +980,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               </optgroup>
             </select>
           </label>
-          <!-- 박자표 — 기본은 '자동'이고 정간 단위가 아랫수를 정한다(4분음표면 /4, 그 밖은 /8).
+          <!-- 박자표 — 기본은 '음표 자동'(2026-10-05, 논문 심사 R2304-6: 3소박 정간은 통상 아랫수를 ♩.로 적는다). '자동'은 정간 단위가 아랫수를 숫자로 정한다(4분음표면 /4, 그 밖은 /8).
                조표와 같은 성격의 칸이다: 자동으로 정해 주되 잠그지 않는다. 20정간 각이 자동으로
                20/8이 되는데 그런 표기를 쓰는 악보는 없어서(관행은 10/4) 연 자리다.
                **고르는 것은 아랫수뿐이고 윗수는 따라온다** — 마디 총 길이가 각의 정간 수로
@@ -1001,14 +1001,14 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
 · ♩·♩.은 아랫수를 음표로 적습니다(12/8 → 4/♩.)
 · 음표 자동은 정간 단위에 맞춰 ♩·♩. 중 하나를 선택합니다">박자표
             <select id="staffTime">
-              <option value="auto" selected>자동</option>
+              <option value="auto">자동</option>
               <option value="2">─/2</option>
               <option value="4">─/4</option>
               <option value="8">─/8</option>
               <option value="16">─/16</option>
               <option value="q">─/♩</option>
               <option value="dq">─/♩.</option>
-              <option value="na">음표 자동</option>
+              <option value="na" selected>음표 자동</option>
             </select>
           </label>
           <!-- 마디 — **각 하나가 늘 한 마디인 것은 아니다.** 기본은 각 전체가 한 마디지만
