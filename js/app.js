@@ -3961,9 +3961,11 @@
           if (corner.length) {
             const sa = Math.max.apply(null, corner.map(function (it) { return it.box; }));
             const ax = groupRight - sa * 0.7;
+            const ays = fitAttStack(corner, corner.map(function (it, ai) {
+              return yTop + cell - sa * 0.7 - (corner.length - 1 - ai) * sa * 1.08;
+            }), yTop, cell);
             corner.forEach(function (it, ai) {
-              const ay = yTop + cell - sa * 0.7 - (corner.length - 1 - ai) * sa * 1.08;
-              drawAdjSym(svg, it.tk, ax, ay, it.box, cell, gakIdx, cellIdx, pageIdx, it.k);
+              drawAdjSym(svg, it.tk, ax, ays[ai], it.box, cell, gakIdx, cellIdx, pageIdx, it.k);
             });
           }
           [false, true].forEach(function (onLeft) {
@@ -3975,9 +3977,11 @@
               ? Math.max(cx - gs * 0.47 - sa * 0.5, groupLeft + sa * 0.55)
               : Math.min(cx + gs * 0.47 + sa * 0.5, groupRight - sa * 0.55);
             const total = list.length;
+            const ays = fitAttStack(list, list.map(function (it, ai) {
+              return cyc + (ai - (total - 1) / 2) * sa * 1.08;
+            }), yTop, cell);
             list.forEach(function (it, ai) {
-              const ay = cyc + (ai - (total - 1) / 2) * sa * 1.08;
-              drawAdjSym(svg, it.tk, ax, ay, it.box, cell, gakIdx, cellIdx, pageIdx, it.k);
+              drawAdjSym(svg, it.tk, ax, ays[ai], it.box, cell, gakIdx, cellIdx, pageIdx, it.k);
             });
           });
         }
@@ -4118,6 +4122,32 @@
     im.setAttribute("href", href);
     im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
     svg.appendChild(im);
+  }
+
+  // 붙임 시김새 묶음(세로로 쌓인 것)이 정간 위아래 테두리를 넘지 않게 자리를 당긴다.
+  // 농음표처럼 키 큰 기호를 여러 행 정간의 첫 행 글자 가운데에 맞추면 윗부분이 정간 위 가로줄
+  // 밖으로 나갔다(마지막 행이면 아래로). **넘칠 때만** 움직인다 — 이미 정간 안에 든 기호는
+  // 받은 자리를 그대로 돌려주므로 기존 그림이 한 획도 안 바뀐다.
+  // · 잉크 높이는 정사각 상자(meet) 안에서 그림 비율로 잰다(box × min(1, 세로/가로)).
+  // · 그래도 정간보다 키가 크면 그 기호의 상자를 정간 높이에 맞게 줄인다(it.box를 고친다).
+  // · 사용자가 끌어 옮긴 기호(@크기,좌우,상하)는 손대지 않는다 — 그 값이 기준 삼는 자리가
+  //   바뀌면 옮겨 둔 자리가 엉뚱해진다. 묶음의 넘침 셈에서도 뺀다.
+  const ATT_FIT_INSET = 0.03;   // 테두리에서 띄울 몫(정간 높이 대비) — 선 굵기를 피하려는 것
+  function fitAttStack(items, ays, yTop, cell) {
+    const lo = yTop + cell * ATT_FIT_INSET, hi = yTop + cell * (1 - ATT_FIT_INSET);
+    let top = Infinity, bot = -Infinity;
+    items.forEach(function (it, i) {
+      if (it.tk.adj || !symURL(it.tk.sym)) return;
+      let h = it.box * Math.min(1, symAspect(it.tk.sym));
+      if (h > hi - lo) { it.box *= (hi - lo) / h; h = hi - lo; }
+      top = Math.min(top, ays[i] - h / 2); bot = Math.max(bot, ays[i] + h / 2);
+    });
+    if (top === Infinity) return ays;
+    let shift = 0;
+    if (top < lo) shift = lo - top;
+    else if (bot > hi) shift = hi - bot;
+    if (!shift) return ays;
+    return ays.map(function (y, i) { return items[i].tk.adj ? y : y + shift; });
   }
 
   // 기호(시김새) 하나를 개별 조정값(adj) 적용해 그리고, 위치를 기록(수정 모드 히트용)
