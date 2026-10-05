@@ -7745,6 +7745,7 @@
     const MARK_RE = /[\u{F0000}-\u{FFFFD}]/u;
     if (!MARK_RE.test(svg)) return svg;   // 기호 없는 쪽은 한 글자도 안 바꾼다
     const SP = vrvSpace(svg);
+    let heads = null;   // 음표머리 목록 — 옆 기호가 처음 나올 때 한 번만 훑는다
     return svg.replace(/<g([^>]*)class="dir"([^>]*)>\s*<text x="([-\d.]+)" y="([-\d.]+)"[^>]*>([\s\S]*?)<\/text>\s*<\/g>/g,
       function (all, a1, a2, xs, ys, body) {
         const ids = [];
@@ -7754,7 +7755,13 @@
           if (e && symURL(e.id)) ids.push(e);
         });
         if (!ids.length) return all;
-        const boxes = ids.map(function (e) {
+        // 옆 기호(사전 staff:"side")는 음표머리 오른쪽에 — 머리를 못 찾으면 예전처럼 위에 둔다
+        const sideIds = ids.filter(function (e) { return e.staff === "side"; });
+        if (sideIds.length && !heads) heads = vrvHeads(svg);
+        const head = sideIds.length ? vrvHeadAt(svg, heads, +xs, +ys) : null;
+        const sideSvg = head ? vrvSideImages(sideIds, head, SP) : "";
+        const upIds = head ? ids.filter(function (e) { return e.staff !== "side"; }) : ids;
+        const boxes = upIds.map(function (e) {
           const a = e.at || {};
           const lane = a.lyric || ((a.att || a.cell) ? VRV_SYM_ORN * (a.att || a.cell) : VRV_SYM_FULL);
           const k = Math.min(1, lane / VRV_SYM_FULL);
@@ -7772,8 +7779,61 @@
           x += b.s + gap;
           return im;
         });
-        return "<g" + a1 + "class=\"dir vrv-symdir\"" + a2 + ">" + ims.join("") + "</g>";
+        return "<g" + a1 + "class=\"dir vrv-symdir\"" + a2 + ">" + ims.join("") + sideSvg + "</g>";
       });
+  }
+
+  // 옆 기호(사전 staff:"side" — 지금 미는표·흘림표)를 **사전 그림을 왼쪽으로 90° 돌려 음표머리
+  // 오른쪽 옆**에 붙인다 — vrvSymMarks 안의 한 갈래. 정간보에서 율명 오른쪽에 세로로 붙던 표를
+  // 오선보의 시간축(왼→오)으로 눕힌 것이다. 돌리면 미는표는 끝이 위로 들리고(밀어 올림),
+  // 흘림표는 솟았다가 오른쪽으로 떨어진다(흘려 내림) — 두 그림 모두 같은 방향(시계 반대)으로
+  // 돌려야 뜻과 맞는다(2026-10-05 그림으로 확인). 조판용 XML은 다른 위 기호와 같은 표지 글자라
+  // 무엇이 어느 음에 붙나는 그대로이고, 여기는 **그리는 자리만** 옮긴다(음 길이·소리 불변).
+  //   · 머리 찾기(vrvHeadAt): dir 글자의 x = 그 음표머리 왼끝(조판기가 tstamp로 같은 자리에
+  //     놓는다 — 2026-10-05 실측). 같은 x의 음표머리 가운데 dir 아래에서 가장 가까운 것이
+  //     그 음이다(dir은 제 오선 위에 서고, 다른 오선·다른 줄의 머리는 더 멀다).
+  //   · 가로: 머리 오른끝(왼끝 + VRV_HEAD_W칸) — 점음표면 점 뒤 — 에서 VRV_SIDE_GAP칸 띄운다.
+  //   · 세로: 그림 상자의 가운데를 머리 가운데(SMuFL 머리 글리프의 원점)에 맞춘다.
+  //   · 크기: 긴 변 VRV_SIDE_LEN칸 정사각 상자에 비율을 지켜(meet) 넣는다. 한 음에 여럿이면 옆으로.
+  //   · 조판기는 이 자리를 비워 두지 않는다 — 촘촘한 음에서는 다음 음의 임시표에 닿을 수 있다.
+  const VRV_HEAD_W = 1.18, VRV_SIDE_GAP = 0.3, VRV_SIDE_LEN = 1.5;
+  function vrvHeads(svg) {
+    const re = /<use xlink:href="#E0A[0-9A-F][^"]*" transform="translate\(([-\d.]+),\s*([-\d.]+)\)[^"]*"\s*\/>/g;
+    const out = [];
+    let m;
+    while ((m = re.exec(svg))) out.push({ x: +m[1], y: +m[2], at: re.lastIndex });
+    return out;
+  }
+  function vrvHeadAt(svg, heads, x, y) {
+    let best = null;
+    heads.forEach(function (h) {
+      if (Math.abs(h.x - x) > 1 || h.y <= y) return;
+      if (!best || h.y < best.y) best = h;
+    });
+    if (!best) return null;
+    let m;
+    // 점: 같은 음표 묶음 안(다음 음표·쉼표·오선·마디가 서기 전)의 dots — 가장 오른쪽 점 뒤로 비킨다
+    const tail = svg.slice(best.at);
+    const stop = tail.search(/class="(note|rest|mRest|chord|staff|measure)[" ]/);
+    const own = stop < 0 ? tail : tail.slice(0, stop);
+    let dotR = -Infinity;
+    const dre = /<ellipse cx="([-\d.]+)"[^>]*rx="([-\d.]+)"/g;
+    while ((m = dre.exec(own))) dotR = Math.max(dotR, +m[1] + +m[2]);
+    return { x: best.x, y: best.y, dotR: dotR };
+  }
+  function vrvSideImages(list, head, SP) {
+    const L = VRV_SIDE_LEN * SP;
+    let x = Math.max(head.x + VRV_HEAD_W * SP, head.dotR) + VRV_SIDE_GAP * SP;
+    return list.map(function (e) {
+      const href = symURL(e.id);
+      // 돌리기 전 상자(L × L)를 rotate(-90)로 돌리면 x [0,L] · y [-L,0]에 놓인다 → 가운데를 머리에
+      const im = "<image class=\"vrv-sym vrv-side\" x=\"0\" y=\"0\" width=\"" + L.toFixed(1) +
+        "\" height=\"" + L.toFixed(1) + "\" preserveAspectRatio=\"xMidYMid meet\" transform=\"translate(" +
+        x.toFixed(1) + " " + (head.y + L / 2).toFixed(1) + ") rotate(-90)\" href=\"" + href +
+        "\" xlink:href=\"" + href + "\"/>";
+      x += L + SP * 0.2;
+      return im;
+    }).join("");
   }
 
   // 물결선 기호(사전 staff:"wavy" — 지금 농음표)를 **사전 그림을 90° 눕혀 그 음 길이만큼 가로로

@@ -988,7 +988,7 @@ console.log("\n물결선 — 사전에 staff:\"wavy\"인 기호(농음표): 파�
 
   eq("사전 표시는 항목에 — 농음표에 staff:\"wavy\"", R.byId.vib.staff, "wavy");
   eq("ornMark가 staff를 싣는다(없는 기호엔 속성이 없다)",
-     [globalThis.JGB_STAFF_CORE.ornMark("vib").staff, "staff" in globalThis.JGB_STAFF_CORE.ornMark("flow")],
+     [globalThis.JGB_STAFF_CORE.ornMark("vib").staff, "staff" in globalThis.JGB_STAFF_CORE.ornMark("shake")],
      ["wavy", false]);
   {
     // 논문 그림 6번과 같은 입력 — 한 정간, 중(2/3) + 남(1/3, 니레 꾸밈음)
@@ -1090,6 +1090,80 @@ console.log("\n물결선 — 사전에 staff:\"wavy\"인 기호(농음표): 파�
     {
       const v = screen("황{흘림표}|태|중|임", 4);
       ok("화면: 농음표 없는 쪽은 vrvWavyMarks가 한 글자도 안 바꾼다", v.svg === v.raw);
+    }
+  }
+}
+
+console.log("\n옆 기호 — 사전에 staff:\"side\"인 기호(미는표·흘림표): 파일·조판용은 그대로 · 화면엔 돌린 그림을 음표 오른쪽에");
+{
+  const R = globalThis.JGB_SYM;
+  eq("사전 표시는 항목에 — 미는표·흘림표에 staff:\"side\"",
+     [R.byId.push.staff, R.byId.flow.staff], ["side", "side"]);
+  eq("그릇에도 실린다(ornMark)",
+     [globalThis.JGB_STAFF_CORE.ornMark("push").staff, globalThis.JGB_STAFF_CORE.ornMark("flow").staff],
+     ["side", "side"]);
+  function both(mel, beats) {
+    app.fields.beats = String(beats);
+    app.setLyrics("");
+    app.setMelody(mel);
+    const xml = buildMusicXml();
+    const vrv = globalThis.JGB_MUSICXML.build(app.fn("buildStaffScores")(), { title: "검사용", vrv: true });
+    return { xml, vrv };
+  }
+  {
+    // 사전 표시를 떼고 만든 XML과 한 글자도 같다 — 파일·조판용 XML은 이 표시와 무관(바뀌는 것은 화면뿐)
+    const docs = ["황{흘림표}|태{미는표} 중|중{미는표}{끊는표}|임", "황{흘림표}| |{요성표}|임{미는표}"];
+    const a = docs.map((d) => both(d, 4));
+    const saved = [R.byId.push.staff, R.byId.flow.staff];
+    delete R.byId.push.staff; delete R.byId.flow.staff;
+    const b = docs.map((d) => both(d, 4));
+    R.byId.push.staff = saved[0]; R.byId.flow.staff = saved[1];
+    ok("파일·조판용 XML은 사전의 side 표시 유무와 무관하게 한 글자도 같다",
+       a.every((r, i) => r.xml === b[i].xml && r.vrv === b[i].vrv));
+  }
+  {
+    globalThis.window = globalThis.window || globalThis;
+    await import("../js/symbols-data.js");
+    const { createRequire } = await import("node:module");
+    const verovio = createRequire(import.meta.url)("../js/vendor/verovio-toolkit-wasm.js");
+    await new Promise((res) => {
+      if (verovio.module.calledRun) res(); else verovio.module.onRuntimeInitialized = res;
+    });
+    const tk = new verovio.toolkit();
+    tk.setOptions({ scale: 60, adjustPageHeight: true, adjustPageWidth: true, header: "none", footer: "none" });
+    const scr = await loadApp(["symURL", "vrvSpace", "const:VRV_SYM_BOX", "const:VRV_HEAD_W",
+                               "vrvHeads", "vrvHeadAt", "vrvSideImages", "vrvSymMarks"], {});
+    const symMarks = scr.fn("vrvSymMarks");
+    const headsOf = (svg) => [...svg.matchAll(/<use xlink:href="#E0A[0-9A-F][^"]*" transform="translate\(([-\d.]+),\s*([-\d.]+)\)/g)]
+      .map((m) => ({ x: +m[1], y: +m[2] }));
+    const SIDE_RE = /<image class="vrv-sym vrv-side" x="0" y="0" width="([\d.]+)" height="[\d.]+" preserveAspectRatio="xMidYMid meet" transform="translate\(([-\d.]+) ([-\d.]+)\) rotate\(-90\)" href="([^"]*)"/g;
+    function screen(mel, beats) {
+      tk.loadData(both(mel, beats).vrv);
+      const raw = tk.renderToSVG(1);
+      const svg = symMarks(raw);
+      return { raw, svg, side: [...svg.matchAll(SIDE_RE)], up: (svg.match(/<image class="vrv-sym" /g) || []).length,
+               heads: headsOf(raw), SP: scr.fn("vrvSpace")(raw) };
+    }
+    {
+      const v = screen("황{흘림표}|태{미는표}|중|임", 4);
+      ok("화면: 표지 글자는 다 걷히고 돌린 그림 둘(흘림표·미는표), 위 그림은 없음",
+         !/[\u{F0000}-\u{FFFFD}]/u.test(v.svg) && v.side.length === 2 && v.up === 0 &&
+         v.side[0][4] === globalThis.SYM_DATA.flow && v.side[1][4] === globalThis.SYM_DATA.push);
+      // 그림 i는 머리 i 오른쪽(머리 오른끝 뒤, 다음 머리 앞)에, 상자 가운데가 머리 가운데 높이
+      const okPlace = v.side.every((m, i) => {
+        const L = +m[1], x = +m[2], yc = +m[3] - L / 2, h = v.heads[i], nx = v.heads[i + 1].x;
+        return x > h.x + v.SP && x < nx && Math.abs(yc - h.y) < 1;
+      });
+      ok("화면 자리: 제 음표머리 오른쪽 · 다음 머리 앞 · 머리 가운데 높이", okPlace);
+    }
+    {
+      const v = screen("황{흘림표}{끊는표}|태|중|임", 4);
+      ok("한 음에 옆 기호와 위 기호 — 옆은 돌린 그림, 위는 예전처럼 위 그림",
+         v.side.length === 1 && v.up === 1);
+    }
+    {
+      const v = screen("황{요성표}|태|중|임", 4);
+      ok("화면: 옆 기호가 없으면 돌린 그림이 없다", v.side.length === 0 && v.up === 1);
     }
   }
 }
