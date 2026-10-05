@@ -7783,7 +7783,7 @@
       });
   }
 
-  // 옆 기호(사전 staff:"side" — 지금 미는표·흘림표)를 **사전 그림을 왼쪽으로 90° 돌려 음표머리
+  // 옆 기호(사전 staff:"side" — 지금 미는표·흘림표·겹흘림표)를 **사전 그림을 왼쪽으로 90° 돌려 음표머리
   // 오른쪽 옆**에 붙인다 — vrvSymMarks 안의 한 갈래. 정간보에서 율명 오른쪽에 세로로 붙던 표를
   // 오선보의 시간축(왼→오)으로 눕힌 것이다. 돌리면 미는표는 끝이 위로 들리고(밀어 올림),
   // 흘림표는 솟았다가 오른쪽으로 떨어진다(흘려 내림) — 두 그림 모두 같은 방향(시계 반대)으로
@@ -7796,6 +7796,9 @@
   //   · 세로: 그림 상자의 가운데를 머리 가운데(SMuFL 머리 글리프의 원점)에 맞춘다.
   //   · 크기: 긴 변 VRV_SIDE_LEN칸 정사각 상자에 비율을 지켜(meet) 넣는다. 한 음에 여럿이면 옆으로.
   //   · 조판기는 이 자리를 비워 두지 않는다 — 촘촘한 음에서는 다음 음의 임시표에 닿을 수 있다.
+  //   · 사전에 sideFlip이 붙은 기호(지금 겹흘림표)는 돌린 뒤 위아래를 뒤집는다. 겹흘림표 그림은
+  //     S자라 왼쪽·오른쪽 어느 쪽으로 돌려도 '올라갔다 내려가는' 같은 꼴이 되므로, 뒤집어야
+  //     (왼→오로 읽어) 먼저 내려갔다가 올라간다 — 저자 요청(2026-10-05).
   const VRV_HEAD_W = 1.18, VRV_SIDE_GAP = 0.3, VRV_SIDE_LEN = 1.5;
   function vrvHeads(svg) {
     const re = /<use xlink:href="#E0A[0-9A-F][^"]*" transform="translate\(([-\d.]+),\s*([-\d.]+)\)[^"]*"\s*\/>/g;
@@ -7826,10 +7829,14 @@
     let x = Math.max(head.x + VRV_HEAD_W * SP, head.dotR) + VRV_SIDE_GAP * SP;
     return list.map(function (e) {
       const href = symURL(e.id);
-      // 돌리기 전 상자(L × L)를 rotate(-90)로 돌리면 x [0,L] · y [-L,0]에 놓인다 → 가운데를 머리에
+      // 돌리기 전 상자(L × L)를 rotate(-90)로 돌리면 x [0,L] · y [-L,0]에 놓인다 → 가운데를 머리에.
+      // sideFlip이면 대각선으로 뒤집는다(matrix(0 1 1 0) = 돌린 뒤 위아래 뒤집기) — x·y [0,L]에 놓인다.
+      const tf = e.sideFlip
+        ? "translate(" + x.toFixed(1) + " " + (head.y - L / 2).toFixed(1) + ") matrix(0 1 1 0 0 0)"
+        : "translate(" + x.toFixed(1) + " " + (head.y + L / 2).toFixed(1) + ") rotate(-90)";
       const im = "<image class=\"vrv-sym vrv-side\" x=\"0\" y=\"0\" width=\"" + L.toFixed(1) +
-        "\" height=\"" + L.toFixed(1) + "\" preserveAspectRatio=\"xMidYMid meet\" transform=\"translate(" +
-        x.toFixed(1) + " " + (head.y + L / 2).toFixed(1) + ") rotate(-90)\" href=\"" + href +
+        "\" height=\"" + L.toFixed(1) + "\" preserveAspectRatio=\"xMidYMid meet\" transform=\"" +
+        tf + "\" href=\"" + href +
         "\" xlink:href=\"" + href + "\"/>";
       x += L + SP * 0.2;
       return im;

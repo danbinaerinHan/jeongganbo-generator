@@ -1094,7 +1094,7 @@ console.log("\n물결선 — 사전에 staff:\"wavy\"인 기호(농음표): 파�
   }
 }
 
-console.log("\n옆 기호 — 사전에 staff:\"side\"인 기호(미는표·흘림표): 파일·조판용은 그대로 · 화면엔 돌린 그림을 음표 오른쪽에");
+console.log("\n옆 기호 — 사전에 staff:\"side\"인 기호(미는표·흘림표·겹흘림표): 파일·조판용은 그대로 · 화면엔 돌린 그림을 음표 오른쪽에");
 {
   const R = globalThis.JGB_SYM;
   eq("사전 표시는 항목에 — 미는표·흘림표에 staff:\"side\"",
@@ -1164,6 +1164,17 @@ console.log("\n옆 기호 — 사전에 staff:\"side\"인 기호(미는표·흘�
     {
       const v = screen("황{요성표}|태|중|임", 4);
       ok("화면: 옆 기호가 없으면 돌린 그림이 없다", v.side.length === 0 && v.up === 1);
+    }
+    {
+      // 겹흘림표(sideFlip): 돌린 뒤 위아래를 뒤집어(대각선 뒤집기) 왼→오로 먼저 내려갔다 올라가게
+      const FLIP_RE = /<image class="vrv-sym vrv-side" x="0" y="0" width="([\d.]+)" height="[\d.]+" preserveAspectRatio="xMidYMid meet" transform="translate\(([-\d.]+) ([-\d.]+)\) matrix\(0 1 1 0 0 0\)" href="([^"]*)"/g;
+      tk.loadData(both("황{겹흘림표}|태|중|임", 4).vrv);
+      const raw = tk.renderToSVG(1);
+      const svg = symMarks(raw);
+      const f = [...svg.matchAll(FLIP_RE)], h = headsOf(raw), SP = scr.fn("vrvSpace")(raw);
+      ok("겹흘림표: 뒤집은 그림 하나 · 위 그림 없음 · 제 머리 오른쪽 · 머리 가운데 높이",
+         f.length === 1 && !/<image class="vrv-sym" /.test(svg) && f[0][4] === globalThis.SYM_DATA["flow-rep"] &&
+         +f[0][2] > h[0].x + SP && +f[0][2] < h[1].x && Math.abs(+f[0][3] + +f[0][1] / 2 - h[0].y) < 1);
     }
   }
 }

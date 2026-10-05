@@ -20,6 +20,8 @@
 //                    그린다(app.js vrvWavyMarks · 범위는 조판용 XML의 <wavy-line>으로 조판기가 잰다).
 //           "side" — 왼쪽으로 90° 돌려 음표머리 **오른쪽 옆**에 붙인다(app.js vrvSymMarks). 미는표는
 //                    돌리면 끝이 위로 들려(밀어 올림), 흘림표는 솟았다 오른쪽으로 떨어진다(흘려 내림).
+//           sideFlip  side 기호를 돌린 뒤 위아래를 뒤집는다. 겹흘림표는 S자라 어느 쪽으로 돌려도
+//                    '올라갔다 내려가는' 꼴이 되어, 뒤집어야 왼→오로 먼저 내려갔다 올라간다.
 //           둘 다 파일로 나가는 MusicXML에는 다른 위 기호와 같은 words(표시 이름)뿐이다.
 //
 // ── snd: 시김새를 소리로 푸는 법 ───────────────────────────────────────
@@ -66,7 +68,7 @@
     // ── 붙임표: 음표 오른쪽에 작게 ──
     { id: "push", ko: "미는표", at: { att: 1 }, attKeep: true, staff: "side" },
     { id: "flow", ko: "흘림표", at: { att: 1 }, attKeep: true, staff: "side" },
-    { id: "flow-rep", ko: "겹흘림표", at: { att: 1 } },
+    { id: "flow-rep", ko: "겹흘림표", at: { att: 1 }, staff: "side", sideFlip: true },
     // 농음표·풀어내림표·잉어질표는 가늘고 길어 다른 붙임표와 같은 상자에 넣으면 안 보인다 → 2.5배
     { id: "vib", ko: "농음표", at: { att: 2.5 }, staff: "wavy" },
     { id: "vib-long", ko: "풀어내림표", at: { att: 2.5 } },
