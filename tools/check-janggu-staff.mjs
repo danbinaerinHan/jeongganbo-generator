@@ -187,18 +187,18 @@ app.setMelody("황| | |태| | |중| | |임| | \n황| | |태| | |중| | |임| | \
   // 범례는 '종이에 몇 번 그릴까'라 파일에는 안 걸린다 — MusicXML은 곡 자체를 담는 형식이고
   // 장단은 실제로 곡 내내 치므로, 한 마디만 넣으면 '첫 각에만 장단이 있는 곡'이 된다.
   ok("첫 마디만 — 파일엔 장구가 실린다", lg.includes("percussion"));
-  eq("파일의 장구 파트는 곡 전체(3각)", lg.split('<part id="P1">')[1].split("</part>")[0]
+  eq("파일의 장구 파트는 곡 전체(3각)", lg.split('<part id="P2">')[1].split("</part>")[0]
        .split("<measure ").length - 1, 3);
-  ok("장구가 맨 위 파트(P1)",
-     lg.indexOf("<part-name>장구</part-name>") < lg.indexOf('<score-part id="P2">'));
+  ok("장구가 맨 아래 파트(P2)",
+     lg.indexOf('<score-part id="P2">') < lg.indexOf("<part-name>장구</part-name>"));
   // 이름 없는 선율은 장구가 붙어도 '선율'이다 — 장구까지 세면 '악기 2'가 된다
   ok("장구가 파트 수 셈에 안 낀다", lg.includes("<part-name>선율</part-name>"));
 
   F.staffJanggu = "part";
   const pt = buildMusicXml();
   eq("파트로 반복 — 각 수만큼 마디",
-     pt.split('<part id="P1">')[1].split("</part>")[0].split("<measure ").length - 1, 3);
-  ok("빠르기 표시는 맨 위(장구) 파트에 한 번",
+     pt.split('<part id="P2">')[1].split("</part>")[0].split("<measure ").length - 1, 3);
+  ok("빠르기 표시는 맨 위(첫 선율) 파트에 한 번",
      (pt.match(/<metronome>/g) || []).length === 1);
 
   // 장단 줄을 꺼 두면 어느 모드든 안 나온다 — 정간보에 없는 것이 오선보에 있을 수 없다

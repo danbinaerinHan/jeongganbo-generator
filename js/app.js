@@ -7307,13 +7307,14 @@
                             instrument: p.instrument,
                             lyrics: i === activePart ? lyricsFull : p.lyrics });
     });
-    // 장구는 **맨 위**에 선다 — 각(장단)이 이 기보의 뼈대라 그것부터 읽는 것이 맞고,
-    // 빠르기 표시도 맨 위 보표에 붙어야 한다(musicxml.js는 pi===0에 적는다).
+    // 장구는 **맨 아래**에 선다(2026-10-05 사용자 확정) — 관현악 총보에서 타악을 선율 악기
+    // 아래에 두는 관행대로, 선율 파트들이 위에서 이어지고 장단은 그 밑을 받친다.
+    // 빠르기 표시는 맨 위 보표(첫 선율 악기)에 붙는다(musicxml.js는 pi===0에 적는다).
     // '첫 마디만'(기본)은 여기 안 든다 — 그건 악보의 성부가 아니라 악보 앞에 붙는 안내라,
     // 따로 조판해 위에 얹는다(staffDraw·staffOnlyPages).
     if (jangguStaffOn() && jangguStaffMode() === "part") {
       const jgs = jangguPartScore();
-      if (jgs) out.unshift(jgs);
+      if (jgs) out.push(jgs);
     }
     return out;
   }
@@ -7324,7 +7325,7 @@
   //   첫 마디만(기본) — 장단 한 각을 **별도로 한 마디** 조판해 악보 위에 얹는다. 정간보가
   //     한 번만 그리는 것과 그림이 같고, 각 길이가 들쭉날쭉한 곡·'대강마다' 마디 나눔에
   //     휘둘리지 않는다. 인쇄는 **첫 쪽에만**(2026-08-21 사용자 확정).
-  //   파트로 반복 — 진짜 성부로 맨 위에 얹고 각마다 되풀이한다. 합주 총보를 뮤즈스코어로
+  //   파트로 반복 — 진짜 성부로 맨 아래에 두고 각마다 되풀이한다. 합주 총보를 뮤즈스코어로
   //     넘길 때 쓴다. 각 길이가 표준과 다른 각에서는 패턴이 그 길이만큼만 실리고 남는
   //     자리는 쉼표가 된다(재생이 각마다 같은 칸을 얹는 것과 같은 규칙).
   // **총보든 파트보든 나온다**(2026-08-21 사용자 확정) — 장단은 곡에 하나뿐이라 정간보에도
@@ -7469,7 +7470,7 @@
     // 옮긴다. 화면과 다른 것이 아니라 같은 말의 다른 적기다.
     if (jangguStaffOn() && jangguStaffMode() === "legend") {
       const jgs = jangguPartScore();
-      if (jgs) scores.unshift(jgs);
+      if (jgs) scores.push(jgs);
     }
     return window.JGB_MUSICXML.build(scores,
       { title: $("title").value, subtitle: $("subtitle").value });
