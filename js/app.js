@@ -7664,7 +7664,19 @@
   const VRV_DIGIT_W = { "0": 1.67, "1": 1.339, "2": 1.767, "3": 1.644, "4": 1.706, "5": 1.68,
                         "6": 1.683, "7": 1.772, "8": 1.611, "9": 1.7, "D": 1.011 };
   function vrvPage(i) {
-    return vrvWavyMarks(vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {}))));
+    return vrvTempoLift(vrvWavyMarks(vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {})))));
+  }
+  // 빠르기 표(♩. = 55)를 **화면에서만** 조금 위로 — Verovio는 그것을 박자표·첫 음표 바로 위에 붙여
+  // 놓아 박자표 윗수와 한 덩이처럼 읽혔다(2026-10-05 저자 요청). 묶음째 VRV_TEMPO_LIFT칸 올린다.
+  // 파일로 나가는 MusicXML(<metronome>)·소리는 그대로이고, 조판(줄 간격)도 건드리지 않는다.
+  const VRV_TEMPO_LIFT = 1;
+  function vrvTempoLift(svg) {
+    if (svg.indexOf('class="tempo"') < 0) return svg;
+    const dy = -Math.round(VRV_TEMPO_LIFT * vrvSpace(svg));
+    return svg.replace(/<g([^>]*)\bclass="tempo"([^>]*)>/g, function (all, a1, a2) {
+      if (/transform=/.test(a1 + a2)) return all;   // 조판기가 이미 옮겨 둔 묶음은 건드리지 않는다
+      return "<g" + a1 + "class=\"tempo\"" + a2 + " transform=\"translate(0 " + dy + ")\">";
+    });
   }
   function vrvTimeNotes(svg) {
     if (svg.indexOf("#E08D") < 0) return svg;   // 덧셈 박자표가 없으면 할 일이 없다
