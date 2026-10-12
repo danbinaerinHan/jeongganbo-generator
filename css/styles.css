@@ -769,6 +769,8 @@
               background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
               padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); width: 224px; font-size: 12px; }
   .play-pop.on { display: block; }
+  /* 휴대전화에선 상단바가 접혀 재생 바가 왼쪽 끝에 오므로, 오른쪽 맞춤이면 왼쪽 화면 밖으로 잘린다 */
+  @media (max-width: 600px) { .play-pop { left: 0; right: auto; } }
   .play-pop .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
   /* 체크박스는 빼야 한다 — 여기 걸리면 토글 트랙이 96px로 늘어나는데 손잡이는 12px만
      움직이도록 만들어져 있어, 켜도 손잡이가 왼쪽 끝에 붙어 꺼진 것처럼 보였다. */
@@ -2442,6 +2444,51 @@
   }
   @media (prefers-reduced-motion: reduce) {
     #tourLayer *, #tourLayer *::after, #tourLayer.tour-enter * { animation: none !important; transition: none !important; }
+  }
+
+  /* ── 휴대전화 둘러보기 (2026-10-12, app.js tourPhone·tourPhoneSide) ──
+     폭 600px 이하에서는 카드가 작업 화면을 밀어 올리지 않고 위에 뜬다(body 아래 여백 없음).
+     상단바·기능바가 접혀 화면 절반을 먹는데 카드가 아래 띠 440px를 또 차지하면 악보·팔레트가
+     거의 안 보였다. 높이는 내용만큼(빈 칸 없이) · 비추는 자리가 화면 아래쪽이면 위로 올린다
+     (.tour-card-top). 미디어 쿼리 폭을 바꾸면 app.js TOUR_PHONE_MQ도 함께. */
+  .welcome-mobile-note, .tour-mobile-note { display: none; }
+  @media (max-width: 860px) {
+    .welcome-mobile-note { display: block; margin: 12px 0 0; padding: 9px 12px; font-size: 12.5px;
+      line-height: 1.6; color: var(--ink); background: var(--soft); border-left: 2px solid var(--accent);
+      word-break: keep-all; }
+  }
+  @media (max-width: 600px) {
+    body.tour-active { padding-bottom: 0; }
+    body.tour-active #tourCard {
+      inset: auto 6px 6px 6px; height: auto; max-height: min(54dvh, 460px);
+      padding: 14px 16px; border-radius: 10px;
+      transition: top .25s ease, bottom .25s ease;
+    }
+    body.tour-active.tour-card-top #tourCard { inset: 6px 6px auto 6px; }
+    #tourChips { margin: -14px -16px 0; }
+    #tourChips button { padding: 8px 2px; }
+    #tourProgress { margin: 0 -16px 10px; }
+    .tour-btns { margin: 2px -16px -14px; padding: 9px 16px; }
+    body.tour-active #tourCard .tour-btns { padding-top: 9px; }
+    body.tour-active #tourCard h4 { font-size: 17px; margin: 3px 0 8px; }
+    #tourBody { font-size: 14px; line-height: 1.65; }
+    #tourBody div + div { margin-top: 8px; }
+    #tourMore { margin: 8px 0 2px; }
+    #tourDemo { margin: 0 0 10px; padding: 8px 8px 6px; }
+    #tourDemo.tall .td-stage { min-height: 112px; }
+    #tourDemo.tall .td-cell { width: 58px; height: 112px; }
+    #tourDemo.tall .td-cell img { max-height: 112px; max-width: 58px; }
+    .tour-btns button { min-height: 42px; padding: 0 14px; }
+    .tour-btns #tourNext { min-width: 92px; }
+    /* 장 고르기 — 두 칸이면 설명이 낱말마다 접혀 카드가 길어진다. 한 칸 목록으로 */
+    #tourCard.tour-panel #tourBody { display: block; }
+    #tourCard.tour-panel .tour-panel-sub { margin: -2px 0 8px; font-size: 13px; }
+    #tourCard.tour-panel .tour-opt { margin: 0 0 6px; padding: 8px 12px; gap: 10px; }
+    .tour-opt .to-main b { font-size: 14px; }
+    .tour-opt .to-main small { font-size: 12px; }
+    .tour-opt .to-num { width: 22px; height: 22px; }
+    .tour-mobile-note { display: block; margin: 0 0 10px; padding: 7px 10px; font-size: 12px; line-height: 1.55;
+      color: var(--ink); background: var(--soft); border-left: 2px solid var(--accent); word-break: keep-all; }
   }
 
   /* 편집 컨트롤: 옅은 면과 얇은 경계, 선택된 항목만 한 단계 선명하게. */

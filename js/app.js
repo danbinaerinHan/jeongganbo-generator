@@ -11103,11 +11103,25 @@
     }, delay);
   }
   let tourPosStep = -1;
+  // ── 휴대전화(좁은 창)의 둘러보기 (2026-10-12) ──
+  // 폭 600px 이하에서는 카드가 작업 화면을 밀어 올리지 않고 그 위에 떠 있다 — 상단바·기능바가
+  // 세 줄로 접혀 화면 절반을 먹는 데다 카드가 아래 띠를 또 차지하면 악보·팔레트가 한 뼘도 안
+  // 남았다. 대신 비추는 자리의 가운데가 화면 아래쪽 절반에 있으면 카드를 위로 올린다.
+  // 카드 자리가 레이아웃을 안 바꾸므로(밀어내기 없음) 재고 옮기는 일이 되먹임 없이 한 번에 끝난다.
+  const TOUR_PHONE_MQ = "(max-width: 600px)";
+  function tourPhone() {
+    try { return window.matchMedia(TOUR_PHONE_MQ).matches; } catch (_e) { return false; }
+  }
+  function tourPhoneSide(r) {
+    const top = !!r && tourPhone() && (r.top + r.height / 2) > window.innerHeight / 2;
+    document.body.classList.toggle("tour-card-top", top);
+  }
   function positionTour() {
     if (tourIdx < 0) return;
     const step = TOUR_STEPS[tourIdx];
     const r = tourRect(step);
     if (!r) { endTour(); return; }
+    tourPhoneSide(r);
     const fresh = tourPosStep !== tourIdx;
     if (fresh) { tourPosStep = tourIdx; buildTourRings(step); }
     const rings = tourRingTargets();
@@ -11271,6 +11285,7 @@
     $("tourHole").style.display = "none";
     document.querySelectorAll(".tour-ring").forEach(function (n) { n.remove(); });
     tourApplySnap(tourNeedSnap(null, tourSnap()));   // 창·설정 패널은 닫아 둔다
+    tourPhoneSide(null);   // 고르기·끝 화면은 늘 아래
     $("tourFig").style.display = "none";
     const more = $("tourMore"); if (more) more.style.display = "none";
     const card = $("tourCard");
@@ -11298,6 +11313,11 @@
       $("tourStepNum").textContent = "둘러보기";
       $("tourTitle").textContent = T.title || "무엇부터 알아볼까요?";
       sub.textContent = T.sub || "";
+      if (tourPhone() && T.mobileNote) {
+        const note = document.createElement("div"); note.className = "tour-mobile-note";
+        note.textContent = T.mobileNote;
+        body.appendChild(note);
+      }
       TOUR_CHAPTERS.forEach(function (_n, ch) {
         body.appendChild(opt(ch, function () { tourScope = ch; tourGo(tourChRange(ch).first, 1); }));
       });
@@ -12006,6 +12026,8 @@
     };
     viewFitMode = null;
     document.body.classList.add("tour-active");
+    // 휴대전화에선 150% 악보가 화면 밖으로 넘쳐 '악보' 단계에 흰 종이만 보였다 — 폭에 맞춘다(끝나면 되돌림)
+    if (tourPhone()) fitZoom("width");
     track("tour_start");
     clearTimeout(tourHideTimer);
     tourIdx = -1; tourGeom = null; tourPosStep = -1;
@@ -12070,7 +12092,7 @@
     clearTimeout(tourHideTimer);
     if (tourReduceMotion()) hideLayer();
     else { layer.classList.add("tour-leave"); tourHideTimer = setTimeout(hideLayer, 240); }
-    document.body.classList.remove("tour-active");
+    document.body.classList.remove("tour-active", "tour-card-top");
     const workspace = tourWorkspace; tourWorkspace = null;
     if (workspace) {
       lastDirectPanel = workspace.lastPanel;
