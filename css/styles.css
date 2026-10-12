@@ -2588,3 +2588,19 @@
   }
 
   body.ribbon-left #paletteTabs .ribbon-btn .palette-tab-label.multiline { line-height: 14px; }
+
+  /* ── 휴대전화 화면 (2026-10-12) ──
+     · 한글은 어절 단위로 줄을 바꾼다(keep-all) — 기본값은 글자 단위라 '둘러보기 다 / 시 시작'
+       '한단비내린 제 / 작'처럼 낱말 한가운데서 끊겼다. 너무 긴 덩이만 break-word로 끊는다.
+     · 상단바·기능바는 줄이 바뀌면 왼쪽에 몰려 오른쪽이 비었다 — 가운데로 모으고, 줄 끝에
+       홀로 남는 세로 구분선은 숨긴다(줄바꿈이 이미 무리를 가른다). */
+  @media (max-width: 600px) {
+    body { word-break: keep-all; overflow-wrap: break-word; }
+    #topBar { justify-content: center; row-gap: 6px; padding: 6px 10px; }
+    #brandBox { flex: 1 0 100%; justify-content: center; margin-right: 0; }
+    #melodyRibbon { justify-content: center; }
+    #melodyRibbon .ribbon-sep { display: none; }
+    .help-foot { flex-wrap: wrap; justify-content: center; text-align: center; row-gap: 8px; }
+    .help-maker { flex: 1 0 100%; text-align: center; }
+    .help-foot button { white-space: nowrap; }
+  }
