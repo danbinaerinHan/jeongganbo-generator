@@ -2515,22 +2515,50 @@
       color: var(--ink); background: var(--soft); border-left: 2px solid var(--accent); word-break: keep-all; }
   }
 
-  /* 편집 컨트롤: 옅은 면과 얇은 경계, 선택된 항목만 한 단계 선명하게. */
-  body.ribbon-left #melodyRibbon .mouse-mode-tabs {
-    gap: 2px; padding: 2px; border-radius: 8px; background: var(--soft);
-    box-shadow: inset 0 0 0 1px var(--line);
+  /* ── 고르는 칸 두 곳(마우스 모드 · 설정 탭) — '매끈한 손잡이' (2026-10-12 사용자 확정, 시안 A) ──
+     바탕을 한 톤 짙게 깔고, 고른 칸은 테두리 없이 흰 손잡이 + 옅은 그림자만. 칸 사이엔 가는
+     구분선(고른 칸 양옆에선 숨는다). 손잡이는 app.js segThumb가 **한 조각으로 미끄러뜨린다**
+     (.seg-thumb · .has-thumb) — JS가 없으면 .on/.active 칸이 같은 꼴로 제자리에 칠해진다.
+     예전엔 옅은 바탕 + 흰 손잡이 + 테두리·그림자였다. */
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs, #sidebar > .tabs {
+    position: relative; gap: 0; padding: 3px; border: none; border-radius: 9px;
+    background: color-mix(in srgb, var(--track) 55%, var(--soft)); box-shadow: none;
   }
-  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn {
-    border: 1px solid transparent; border-radius: 6px; min-height: 28px;
-    background: transparent; color: var(--muted); padding: 4px 7px;
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn, #sidebar > .tabs .tab {
+    position: relative; z-index: 1; border: none; border-radius: 7px; margin: 0;
+    background: transparent; color: var(--muted); box-shadow: none;
   }
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn { min-height: 28px; padding: 4px 8px; }
+  #sidebar > .tabs .tab { padding: 7px 4px; }
   body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn span { color: inherit; }
-  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn.on {
-    background: var(--panel); color: var(--ink); border-color: var(--line);
-    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn:hover,
+  #sidebar > .tabs .tab:hover { color: var(--ink); background: transparent; }
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn.on, #sidebar > .tabs .tab.active {
+    background: var(--panel); color: var(--ink); font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 .5px rgba(0,0,0,.06);
   }
   body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn.on svg { color: var(--accent); }
-  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn:hover { background: var(--hover); }
+  /* 칸 사이 가는 구분선 — 고른 칸과 그 오른쪽 이웃에서는 숨긴다(손잡이 옆에 선이 붙지 않게) */
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn + .cursor-btn::before,
+  #sidebar > .tabs .tab + .tab::before {
+    content: ""; position: absolute; left: 0; top: 28%; bottom: 28%; width: 1px;
+    background: color-mix(in srgb, var(--muted) 30%, transparent); transition: opacity .2s ease;
+  }
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn.on::before,
+  body.ribbon-left #melodyRibbon .mouse-mode-tabs .cursor-btn.on + .cursor-btn::before,
+  #sidebar > .tabs .tab.active::before, #sidebar > .tabs .tab.active + .tab::before { opacity: 0; }
+  /* 미끄러지는 손잡이 — 손잡이가 있으면 칸 자신은 바탕을 비운다 */
+  .seg-thumb { position: absolute; z-index: 0; left: 0; top: 0; width: 0; height: 0; pointer-events: none;
+    border-radius: 7px; background: var(--panel);
+    box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 .5px rgba(0,0,0,.06);
+    transition: transform .26s cubic-bezier(.3,.7,.2,1), width .26s cubic-bezier(.3,.7,.2,1); }
+  .seg-thumb.no-anim { transition: none; }
+  body.ribbon-left .mouse-mode-tabs.has-thumb > .on, #sidebar > .tabs.has-thumb > .active {
+    background: transparent !important; box-shadow: none !important; }
+  /* 에디터 입력 방식(왼쪽 패널 없음)의 마우스 모드는 예전 꼴(강조색 채움) 그대로 — 손잡이를 숨긴다 */
+  body:not(.ribbon-left) .mouse-mode-tabs > .seg-thumb { display: none; }
+  body.dark .seg-thumb { box-shadow: 0 1px 2px rgba(0,0,0,.35), 0 0 0 .5px rgba(255,255,255,.04); }
+  @media (prefers-reduced-motion: reduce) { .seg-thumb { transition: none; } }
   body.ribbon-left #paletteDockBody :is(select, input[type="text"], input[type="number"]),
   #sidebar :is(select, input[type="text"], input[type="number"]) {
     border-radius: 6px; background-color: var(--soft);
@@ -2556,7 +2584,7 @@
   @media (prefers-reduced-motion: reduce) { #paletteToggle .palette-chevron { transition: none; } }
 
   /* 한 값을 조절하거나 한 보기를 선택하는 컨트롤은 같은 바탕 위에 묶는다. */
-  #zoomBar, .stepper-buttons, .cs-seg, #sidebar > .tabs {
+  #zoomBar, .stepper-buttons, .cs-seg {
     background: var(--soft); border: 1px solid var(--line); border-radius: 8px;
     padding: 2px; gap: 2px;
   }
@@ -2579,12 +2607,6 @@
     border-color: var(--line); background: var(--panel); color: var(--accent);
     box-shadow: 0 1px 3px rgba(0,0,0,.07);
   }
-  #sidebar > .tabs .tab { border: 1px solid transparent; border-radius: 6px; margin: 0; padding: 7px 4px; }
-  #sidebar > .tabs .tab.active {
-    border-color: var(--line); background: var(--panel); color: var(--ink);
-    box-shadow: 0 1px 3px rgba(0,0,0,.07);
-  }
-  #sidebar > .tabs .tab:hover { background: var(--hover); }
 
   /* 문서·도움말 창도 편집 컨트롤과 같은 모서리·경계를 사용한다. */
   :is(#newDocModal, #helpModal, #pubModal) .modal-box {

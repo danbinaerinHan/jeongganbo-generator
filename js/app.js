@@ -1718,6 +1718,33 @@
   // 그건 '고른 구간에 무엇을 하나'라 선택 모드의 짝이므로 모드를 바꿔도 닫지 않는다.
   const CURSOR_INPUT_WINS = ["paletteCol", "lyricsArea", "jangdanArea", "gakNameArea", "textArea"];
   function selectModeOn() { return cursorMode === "select" || cellStyleMode(); }
+  // ── 미끄러지는 손잡이(.seg-thumb, 2026-10-12) — 마우스 모드·설정 탭 두 곳 ──
+  // 고른 칸 뒤에 흰 손잡이 한 조각을 깔고, 고른 칸이 바뀌면 그 자리로 미끄러뜨린다.
+  // 칸이 줄바꿈·폭 변화로 움직일 수 있어 ResizeObserver로 다시 맞춘다(그때는 미끄러지지 않고
+  // 곧장 앉는다 — 레이아웃이 바뀌는 중에 손잡이만 따로 움직이면 어색하다).
+  function segThumb(wrap, onSel) {
+    if (!wrap) return;
+    let th = wrap.querySelector(":scope > .seg-thumb");
+    if (!th) {
+      th = document.createElement("span"); th.className = "seg-thumb no-anim"; th.setAttribute("aria-hidden", "true");
+      wrap.insertBefore(th, wrap.firstChild);
+      wrap.classList.add("has-thumb");
+      if (window.ResizeObserver) new ResizeObserver(function () { segThumbPlace(wrap, onSel, false); }).observe(wrap);
+    }
+    segThumbPlace(wrap, onSel, true);
+  }
+  function segThumbPlace(wrap, onSel, animate) {
+    const th = wrap.querySelector(":scope > .seg-thumb");
+    const on = wrap.querySelector(":scope > " + onSel);
+    if (!th) return;
+    if (!on || !on.offsetWidth) { th.style.opacity = "0"; return; }
+    if (!animate || th.style.opacity === "0" || !th.style.width) th.classList.add("no-anim");
+    th.style.opacity = "";
+    th.style.width = on.offsetWidth + "px";
+    th.style.height = on.offsetHeight + "px";
+    th.style.transform = "translate(" + on.offsetLeft + "px," + on.offsetTop + "px)";
+    if (th.classList.contains("no-anim")) { void th.offsetWidth; th.classList.remove("no-anim"); }
+  }
   function refreshCursorBtns() {
     const pan = cursorMode === "pan", sel = !pan && selectModeOn();
     if ($("cursorInput")) $("cursorInput").classList.toggle("on", !pan && !sel);
@@ -1731,6 +1758,7 @@
       sb.classList.toggle("on", sel);
     }
     if ($("cursorPan")) $("cursorPan").classList.toggle("on", pan);
+    segThumb(document.querySelector(".mouse-mode-tabs"), ".cursor-btn.on");
   }
   function setCursorMode(mode) {
     if (mode !== "input" && cellEditInput) commitCellEditor(false);   // 편집 카드 열려 있으면 정리
@@ -8904,6 +8932,7 @@
     document.querySelectorAll(".tabpanel").forEach(function (p) {
       p.classList.toggle("active", p.getAttribute("data-tab") === name);
     });
+    segThumb(document.querySelector("#sidebar > .tabs"), ".tab.active");
   }
 
   // 되돌리기(Cmd/Ctrl+Z)는 '문서 내용' 변경만 밟는다 — 지금 보고 있는 탭, 입력 방식,
@@ -9462,6 +9491,7 @@
       saveState();
     });
   });
+  segThumb(document.querySelector("#sidebar > .tabs"), ".tab.active");
 
   // 설정 폼 접기/펼치기
   // 설정 패널 — 상단바 버튼은 늘 보이는 토글(열려 있으면 .on), 사이드바 안 ✕는 닫기 전용.
