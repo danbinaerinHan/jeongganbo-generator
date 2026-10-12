@@ -252,7 +252,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
          붙는 상시 토글이다. 사이드바 안 ✕(#sidebarToggle)는 닫기 전용으로 그대로 둔다. -->
     <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
       data-tip="설정 패널 열기 / 닫기
-· 곡 · 종이·배치 · 보관">
+· 곡 · 악기 · 종이·배치">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span class="lbl">설정</span>
     </button>
@@ -293,22 +293,49 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
        둘 명령이 아니다). 인쇄·새 문서는 상단바의 1급 버튼 그대로 — 그 예외는 CLAUDE.md에
        못 박혀 있다. no-print: 종이에는 악보만. -->
   <nav id="appRail" class="no-print" aria-label="파일 · 앱">
-      <button type="button" id="btnImport" class="topbar-cmd tip"
-        data-tip="불러오기
-· 저장해 둔 .jgb.json 파일을 엽니다">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-        <span class="lbl">불러오기</span>
-      </button>
-      <!-- 숨은 파일 고르기 입력 — btnImport가 이걸 대신 클릭한다. display:none이라 어디
-           있든 상관없지만 주인 버튼 옆에 둬야 다음 사람이 찾는다. -->
+      <!-- 불러오기·저장 — 여는 길과 저장하는 길을 **한 자리씩**으로(2026-10-12 사용자 확정).
+           예전엔 파일은 레일, 임시 저장은 설정 › '보관' 탭이라 '어디서 여나'의 답이 둘이었다.
+           보관 탭을 없애고 임시 저장을 이 두 메뉴 안으로 들였다: [불러오기] = 파일 + 임시 저장
+           목록, [저장] = 파일로 저장 + 임시 저장. 임시 저장이 하나도 없으면 [불러오기]는 메뉴
+           없이 곧장 파일 고르기를 연다(app.js — 고를 것이 하나뿐이면 한 단계를 줄인다). -->
+      <div id="importBoxRail">
+        <button type="button" id="btnImport" class="topbar-cmd tip"
+          data-tip="불러오기
+· 저장해 둔 .jgb.json 파일을 엽니다
+· 이 브라우저에 임시 저장한 악보를 되불러옵니다">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <span class="lbl">불러오기</span>
+        </button>
+        <div id="importPop" class="tb-menu">
+          <div class="tb-menu-cap">파일</div>
+          <button type="button" id="importFileBtn">파일에서 열기 (.jgb.json)</button>
+          <hr>
+          <div class="tb-menu-cap">임시 저장 (이 브라우저)</div>
+          <div id="snapList"></div>
+        </div>
+      </div>
+      <!-- 숨은 파일 고르기 입력 — importFileBtn·btnImport가 이걸 대신 클릭한다 -->
       <input type="file" id="fileImport" accept=".json,.jgb,application/json" style="display:none">
-      <button type="button" id="btnExport" class="topbar-cmd tip"
-        data-tip="저장
-· 문서 전체를 JSON 파일(.jgb.json)로 저장합니다
-· 불러오면 이어서 편집할 수 있습니다">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        <span class="lbl">저장</span>
-      </button>
+      <div id="exportBoxRail">
+        <button type="button" id="btnExport" class="topbar-cmd tip"
+          data-tip="저장
+· 문서 전체를 파일(.jgb.json)로 저장합니다
+· 이 브라우저에 임시 저장해 둘 수도 있습니다">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span class="lbl">저장</span>
+        </button>
+        <div id="exportPop" class="tb-menu">
+          <div class="tb-menu-cap">파일</div>
+          <button type="button" id="exportFileBtn">파일로 저장 (.jgb.json)</button>
+          <hr>
+          <div class="tb-menu-cap">임시 저장 (이 브라우저)</div>
+          <div class="snap-new">
+            <input type="text" id="snapName" placeholder="이름 (비우면 제목·시간)">
+            <button type="button" id="snapSaveBtn" class="at-add">임시 저장</button>
+          </div>
+          <div class="snap-note">다른 컴퓨터로 옮기거나 남에게 보내려면 파일로 저장합니다.</div>
+        </div>
+      </div>
       <!-- 출력 — 종이·그림·오선보 파일로 나가는 길을 **한 자리에** 모은다(2026-08-26).
            예전엔 정간보 인쇄(상단바) · PNG·MusicXML(레일) · 오선보 인쇄/PNG/MusicXML과
            나란히 인쇄/PNG(오선보 창 [출력 ▾])로 **10개가 세 자리**에 흩어져 있었고,
@@ -456,12 +483,12 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
 
     <div class="tabs">
       <button type="button" class="tab active" data-tab="doc">곡</button>
+      <!-- 악기 탭(2026-10-12) — 악기 편성은 총보 작업 중 수시로 만지는 목록이라 곡 탭 아래에
+           묻혀 있으면 안 됐다(1280px에서 스크롤해야 보였다). '보관' 탭(data-tab="out")은 없앴다 —
+           임시 저장은 레일 [불러오기]·[저장] 메뉴로 갔다. 저장된 activeTab이 "out"이면
+           applyActiveTab이 '곡'으로 돌려 연다. -->
+      <button type="button" class="tab" data-tab="parts">악기</button>
       <button type="button" class="tab" data-tab="layout">종이·배치</button>
-      <!-- data-tab은 "out"인 채로 둔다 — 저장된 상태(activeTab)에 이 문자열이 들어 있어서
-           바꾸면 '출력' 탭을 보던 사람이 다음 실행에 '문서' 탭으로 튕긴다(applyActiveTab의
-           폴백). 라벨만 '보관'으로: 인쇄·PNG·저장·불러오기는 상단바로 갔고 여기 남은 건
-           임시 저장 관리뿐이라 더는 '출력'이 아니다. -->
-      <button type="button" class="tab" data-tab="out">보관</button>
     </div>
 
     <!-- ===== 곡 (data-tab="doc") =====
@@ -511,16 +538,6 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <input type="text" id="subtitle" placeholder="예: (한송정)">
         <div class="hint"><ul class="guide-list"><li>제목과 부제목은 기능바 <b>文 텍스트</b> 창에서 서식과 위치를 편집할 수 있습니다.</li><li><b>//</b>를 통해 줄바꿈할 수 있습니다.</li></ul></div>
       </div>
-      <!-- 악기 편성(총보) — 목록을 여기 **늘 펼쳐 둔다**(2026-09-30 사용자 확정). 예전엔
-           [악기 관리…] 버튼이 독립 창(#partsWin)을 띄웠는데, 작업 중에 떠 있는 창이 그것
-           하나만 남아 있었고 누르기 전엔 악기가 몇인지도 안 보였다. 도로 창으로 빼지 말 것.
-           목록은 app.js renderPartsList()가 그린다(악기 하나 = 두 줄 — 사이드바 폭 때문). -->
-      <div class="sec">악기 편성</div>
-      <div class="field">
-        <div id="partsList"></div>
-        <button type="button" id="partAddBtn" class="at-add parts-add">＋ 악기 추가</button>
-        <div class="hint"><ul class="guide-list"><li>◉로 <b>지금 편집할 악기</b>를 선택합니다. 목록 위의 악기가 총보에서 오른쪽 열에 배치됩니다.</li><li>악기(파트)마다 선율·곁줄·정간 서식이 따로 있고, 레이아웃·장단·각 이름은 모든 악기가 공유합니다.</li><li>🔊를 누르면 재생에서만 그 악기 소리가 빠집니다(악보에는 그대로).</li></ul></div>
-      </div>
       <!-- 전체 초기화 — 예전엔 파일 메뉴(⋯) 안이었는데 그 메뉴를 없애며 이리로 왔다
            (2026-08-25). 오른쪽 레일에 두지 않은 건 **늘 보이는 자리에 둘 명령이 아니어서**다
            (빈도×위험도). 위험하지만 resetAllContent가 confirm()으로 한 번 더 묻고 되돌리기
@@ -535,6 +552,20 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <div class="hint"><ul class="guide-list"><li>지움: 선율·장단·곁줄·텍스트·정간 서식</li><li>유지: 종이 방향·정간 크기 등 레이아웃</li><li>실행 전에 한 번 더 확인하며, 되돌리기(⌘Z)로 복구할 수 있습니다.</li></ul></div>
       </div>
 
+    </div>
+
+    <!-- ===== 악기 (data-tab="parts") ===== -->
+    <div class="tabpanel" data-tab="parts">
+      <!-- 악기 편성(총보) — 목록을 여기 **늘 펼쳐 둔다**(2026-09-30 사용자 확정). 예전엔
+           [악기 관리…] 버튼이 독립 창(#partsWin)을 띄웠는데, 작업 중에 떠 있는 창이 그것
+           하나만 남아 있었고 누르기 전엔 악기가 몇인지도 안 보였다. 도로 창으로 빼지 말 것.
+           목록은 app.js renderPartsList()가 그린다(악기 하나 = 두 줄 — 사이드바 폭 때문). -->
+      <div class="sec">악기 편성</div>
+      <div class="field">
+        <div id="partsList"></div>
+        <button type="button" id="partAddBtn" class="at-add parts-add">＋ 악기 추가</button>
+        <div class="hint"><ul class="guide-list"><li>◉로 <b>지금 편집할 악기</b>를 선택합니다. 목록 위의 악기가 총보에서 오른쪽 열에 배치됩니다.</li><li>악기(파트)마다 선율·곁줄·정간 서식이 따로 있고, 레이아웃·장단·각 이름은 모든 악기가 공유합니다.</li><li>🔊를 누르면 재생에서만 그 악기 소리가 빠집니다(악보에는 그대로).</li></ul></div>
+      </div>
     </div>
 
     <!-- ===== 종이·배치 (data-tab="layout") ===== -->
@@ -702,23 +733,6 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       </div>
     </div>
 
-    <!-- ===== 출력 ===== -->
-    <!-- 보관 — 인쇄·PNG·파일로 저장·불러오기는 상단바(인쇄 버튼 / 파일 메뉴)로 옮겼다.
-         명령은 상단바, 설정·관리는 사이드바로 선을 그은 것. 여기 남은 임시 저장은 목록을
-         띄워놓고 고르는 관리 UI라 드롭다운에 못 들어가서 패널에 남는다. -->
-    <div class="tabpanel" data-tab="out">
-      <div class="hint"><ul class="guide-list"><li>인쇄는 <b>상단바</b>, 파일로 저장·불러오기·PNG 같은 출력은 화면 <b>오른쪽 세로 막대</b>에 있습니다.</li><li>작업은 자동 저장되어 새로고침해도 유지됩니다.</li></ul></div>
-
-      <div class="sec">임시 저장 (이 컴퓨터)</div>
-      <div class="field">
-        <div class="row">
-          <input type="text" id="snapName" placeholder="이름 (비우면 제목·시간)" style="flex:1; min-width:0;">
-          <button type="button" id="snapSaveBtn" class="at-add">임시 저장</button>
-        </div>
-        <div id="snapList"></div>
-        <div class="hint"><ul class="guide-list"><li>지금 상태를 <b>이 컴퓨터에</b> 저장해두고 언제든 되불러옵니다.</li><li>불러오기는 되돌리기(⌘/Ctrl+Z)로 취소할 수 있습니다.</li><li><b>다른 컴퓨터로 옮기거나 남에게 보내려면</b> 오른쪽 세로 막대의 <b>저장</b>으로 파일을 만들어 전달할 수 있습니다.</li></ul></div>
-      </div>
-    </div>
     <!-- 저작권 — 사이드바 맨 아래에 상시(어느 탭이든). 화면 UI에만, 악보(인쇄/PNG)엔 안 나온다.
          margin-top:auto로 아래에 붙는다(#sidebar는 flex 세로열). -->
     <div class="side-copy">© 2026 한단비내린</div>
@@ -2011,7 +2025,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               <li><b>입력 방식 고르기</b> — 상단바 왼쪽, 문패 옆에서 <b>직접 입력</b>(악보 칸을 클릭해 그 자리에서 입력, 기본)과 <b>에디터</b>(곡 전체를 텍스트로 편집) 중 하나를 고릅니다. 언제든 바꿀 수 있습니다.</li>
               -->
               <li><b>선율 입력</b> — 악보의 정간을 클릭해 입력 카드에 쓰고, 팔레트(율명·시김새)를 열어 클릭으로 넣을 수도 있습니다. 장단·곁줄도 같은 방식입니다.</li>
-              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 사이드바 <b>보관</b> 탭의 <b>임시 저장</b>, 다른 컴퓨터로 옮기려면 오른쪽 세로 막대의 <b>저장</b>(.jgb.json)을 이용합니다.</li>
+              <li><b>저장</b> — 입력하는 즉시 브라우저에 자동 저장되어 새로고침해도 유지됩니다. 여러 버전을 남기려면 오른쪽 세로 막대 <b>저장</b>의 <b>임시 저장</b>(되불러오기는 <b>불러오기</b>), 다른 컴퓨터로 옮기려면 같은 메뉴의 <b>파일로 저장</b>(.jgb.json)을 이용합니다.</li>
               <li><b>인쇄·내보내기</b> — 상단바의 <b>인쇄</b> 버튼으로 인쇄(PDF 저장)하고, 오른쪽 세로 막대의 <b>출력</b>에서 PNG 이미지로 내보냅니다.</li>
             </ol>
             <p>화면 구성이 궁금하면 아래의 <b>둘러보기 다시 시작</b>을 눌러 주요 영역을 하나씩 확인할 수 있습니다.</p>

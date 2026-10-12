@@ -9050,30 +9050,36 @@
       wrap.appendChild(d);
       return;
     }
+    // 레일 [불러오기] 메뉴 안의 목록(2026-10-12 — 예전 설정 › 보관 탭). 줄 전체가 '불러오기'
+    // 버튼이고(누르면 메뉴가 닫힌다) ×만 메뉴를 열어 둔 채 지운다(data-keep, wireTopMenu).
     list.forEach(function (s) {
       const row = document.createElement("div"); row.className = "snap-item";
-      const nm = document.createElement("span"); nm.className = "snap-name";
-      nm.textContent = s.name; nm.title = s.name;
-      const tm = document.createElement("span"); tm.className = "snap-time";
-      tm.textContent = fmtSnapTime(s.time);
       const load = document.createElement("button");
-      load.type = "button"; load.className = "snap-load"; load.textContent = "불러오기";
+      load.type = "button"; load.className = "snap-load"; load.title = s.name + " 불러오기";
+      const nm = document.createElement("span"); nm.className = "snap-name"; nm.textContent = s.name;
+      const tm = document.createElement("span"); tm.className = "snap-time"; tm.textContent = fmtSnapTime(s.time);
+      load.appendChild(nm); load.appendChild(tm);
       load.addEventListener("click", function () { restoreFromState(s.state); });
       const del = document.createElement("button");
       del.type = "button"; del.className = "snap-del"; del.textContent = "×"; del.title = "삭제";
+      del.setAttribute("data-keep", "");
       del.addEventListener("click", function () {
         if (!confirm("‘" + s.name + "’ 임시 저장을 삭제할까요?")) return;
         saveSnaps(loadSnaps().filter(function (x) { return x.id !== s.id; }));
         renderSnapList();
+        if (!loadSnaps().length) { $("importPop").classList.remove("on"); $("btnImport").classList.remove("on"); }
       });
-      row.appendChild(nm); row.appendChild(tm); row.appendChild(load); row.appendChild(del);
+      row.appendChild(load); row.appendChild(del);
       wrap.appendChild(row);
     });
   }
   $("snapSaveBtn").addEventListener("click", snapSave);
   $("snapName").addEventListener("keydown", function (e) {
     if (e.isComposing || e.keyCode === 229) return;   // 한글 IME 조합 중 Enter 무시
-    if (e.key === "Enter") { e.preventDefault(); snapSave(); }
+    if (e.key === "Enter") {
+      e.preventDefault(); snapSave();
+      $("exportPop").classList.remove("on"); $("btnExport").classList.remove("on");
+    }
   });
   renderSnapList();
 
@@ -9469,7 +9475,16 @@
     $("sidebarOpen").classList.toggle("on", !document.body.classList.contains("sidebar-collapsed"));
   }
   // remember=false면 상태만 바꾸고 기억은 안 한다(투어가 잠깐 열었다 닫을 때)
+  // 좁은 창(900px 이하, 직접 입력)에서는 설정 패널과 왼쪽 입력 패널이 둘 다 악보 위에 겹쳐
+  // 떠서, 둘을 함께 열면 악보가 176px만 남았다(2026-10-12 검토). 그 폭에서는 **한쪽을 열면
+  // 다른 쪽을 닫는다.** 둘러보기는 제가 펼 것을 스스로 정하므로 비켜선다.
+  function narrowPanels() {
+    // (tourWorkspace는 아래에서 let으로 선언돼 init 중엔 TDZ — 둘러보기 여부는 DOM으로 본다)
+    return inputMode === "direct" && $("tourLayer").style.display !== "block" &&
+      window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+  }
   function setSidebarOpen(on, remember) {
+    if (on && narrowPanels() && document.querySelector(".direct-win.win-open")) activateDirectPanel(null);
     document.body.classList.toggle("sidebar-collapsed", !on);
     if (remember) { try { localStorage.setItem(SIDE_LS_KEY, on ? "1" : "0"); } catch (e) {} }
     applySidebarBtn();
@@ -9521,6 +9536,7 @@
   let lastInputPanel = "paletteCol";
   function activateDirectPanel(targetId) {
     if (targetId) lastDirectPanel = targetId;
+    if (targetId && narrowPanels() && !document.body.classList.contains("sidebar-collapsed")) setSidebarOpen(false, false);
     const openingInput = CURSOR_INPUT_WINS.includes(targetId);
     const resetSelection = openingInput && $("tourLayer").style.display !== "block" && hasSel();
     if (openingInput) {
@@ -10384,7 +10400,7 @@
     $(popId).addEventListener("click", function (e) {
       // 메뉴 안의 고르는 칸(오선보 출력의 '오선 크기')은 누른다고 닫히면 안 된다 — 열자마자
       // 닫혀 값을 고를 수가 없다. 명령 버튼만 누르면 닫히는 것이 이 메뉴의 규칙이다.
-      if (e.target.closest && e.target.closest("select, label, input")) return;
+      if (e.target.closest && e.target.closest("select, label, input, [data-keep]")) return;
       $(popId).classList.remove("on");
       $(btnId).classList.remove("on");
     });
@@ -10411,7 +10427,7 @@
     if (over > 0) pop.style.left = (-over) + "px";
   });
   // 팝오버의 '지금 파일로 저장' — 레일의 [저장](#btnExport)을 그대로 실행(팝오버는 클릭 시 닫힘)
-  if ($("betaSaveBtn")) $("betaSaveBtn").addEventListener("click", function () { $("btnExport").click(); });
+  if ($("betaSaveBtn")) $("betaSaveBtn").addEventListener("click", function () { exportFile(); });
   // btnPrint(상단바 1급 버튼)·btnPng/btnExport/btnImport(오른쪽 레일)는 각자 제자리에 살고
   // 여기가 유일한 배선이다. 예전엔 사이드바 '출력' 탭에 진짜 버튼이 있고 상단바 더보기의
   // m* 항목이 그걸 대신 눌러주는 위임 구조였는데, 같은 명령이 두 군데 있는 게 헷갈려
@@ -10447,10 +10463,23 @@
     printOpenedAt = 0;
     track("print_closed", { v: sec < PRINT_QUICK_SEC ? "quick" : "used" });
   });
-  $("btnExport").addEventListener("click", exportFile);
+  // [저장]은 메뉴(파일로 저장 · 임시 저장)를 연다 — 2026-10-12, 임시 저장이 보관 탭에서 옮겨 왔다
+  $("exportFileBtn").addEventListener("click", exportFile);
+  wireTopMenu("btnExport", "exportPop");
+  $("btnExport").addEventListener("click", function () {
+    if ($("exportPop").classList.contains("on")) setTimeout(function () { $("snapName").focus({ preventScroll: true }); }, 0);
+  });
   $("btnMusicXml").addEventListener("click", exportMusicXml);
   if ($("btnMei")) $("btnMei").addEventListener("click", exportMei);
-  $("btnImport").addEventListener("click", function () { $("fileImport").click(); });
+  // [불러오기] — 임시 저장이 하나도 없으면 고를 것이 파일뿐이라 메뉴 없이 곧장 파일 고르기를 연다.
+  // 있으면 메뉴(파일에서 열기 + 임시 저장 목록)를 연다. 이 처리가 wireTopMenu보다 **먼저** 붙어야
+  // 메뉴가 열리기 전에 가로챌 수 있다.
+  $("btnImport").addEventListener("click", function (e) {
+    if (!loadSnaps().length) { e.stopImmediatePropagation(); $("fileImport").click(); return; }
+    renderSnapList();
+  });
+  wireTopMenu("btnImport", "importPop");
+  $("importFileBtn").addEventListener("click", function () { $("fileImport").click(); });
   $("fileImport").addEventListener("change", function (e) {
     if (e.target.files && e.target.files[0]) importFile(e.target.files[0]);
     e.target.value = "";
@@ -11301,7 +11330,7 @@
     text: [null, null, null, { union: ".ribbon-slider-group" }],
     sheet: [{ union: ".tour-lane-mel" }, null, { union: ".tour-lane-mel" }],
     // 설정의 문서·레이아웃 줄은 그 탭을 눌러 전환한 뒤(TOUR_BEAT_TAB) 탭 **내용**을 비춘다
-    Setting: [null, '#sidebar .tabpanel.active', '#sidebar .tabpanel.active'],
+    Setting: [null, '#sidebar .tabpanel.active', '#sidebar .tabpanel.active', '#sidebar .tabpanel.active'],
     // 율명 네 줄은 모두 팔레트 — 예시는 카드의 무대가 보여 주므로 악보(첫 각)로 옮겨 가지 않는다
     yul: ["#paletteCol", "#paletteCol", "#paletteCol", "#paletteCol"],
     ornPalette: [null, "#paletteCol .orn-instrument", "#paletteCol .sym-search", "#paletteCol"],
@@ -11767,7 +11796,7 @@
   // 줄에 딸린 탭 전환 — 설정 단계의 '문서' 줄은 문서 탭을, '레이아웃' 줄은 레이아웃 탭을 눌러
   // 보여 준다(2026-09-29 사용자 지적: 문서 줄을 읽는데 레이아웃 탭이 떠 있었다). 원래 탭은
   // endTour가 tourPrevTab으로 되돌린다.
-  const TOUR_BEAT_TAB = { Setting: { 1: "doc", 2: "layout" } };
+  const TOUR_BEAT_TAB = { Setting: { 1: "doc", 2: "parts", 3: "layout" } };
   let tourMenuTok = 0;
   function tourMenuOpen(name) { const m = TOUR_MENUS[name], p = m && document.querySelector(m.pop); return !!(p && p.classList.contains("on")); }
   function tourMenusClose(except) {
