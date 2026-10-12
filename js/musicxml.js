@@ -375,12 +375,14 @@
     out.push("  <part-list>");
     // 이름 없는 파트를 뭐라 부를까는 **선율 파트끼리** 센다 — 장구(perc)는 제 이름이 있고,
     // 그것까지 세면 악기 하나짜리 악보에 장구가 붙는 순간 선율이 '악기 2'가 된다.
+    // 악기가 하나뿐이고 이름이 없으면 **이름을 비운다**(2026-10-12 사용자 요청) — 예전엔 '선율'이라
+    // 적혀 오선 앞에 뜻 없는 이름이 섰다. 빈 <part-name/>은 MusicXML에서 허용된다.
     let melN = 0;
     const melCount = list.filter(function (x) { return !x.perc; }).length;
     list.forEach(function (s, i) {
       const nth = s.perc ? 0 : ++melN;
       out.push("    <score-part id=\"P" + (i + 1) + "\">");
-      out.push("      <part-name>" + esc(s.name || (melCount > 1 ? "악기 " + nth : "선율")) +
+      out.push("      <part-name>" + esc(s.name || (melCount > 1 ? "악기 " + nth : "")) +
                "</part-name>");
       if (s.abbr) out.push("      <part-abbreviation>" + esc(s.abbr) + "</part-abbreviation>");
       // 장구는 **타악기라고 말해 두어야** 악보 프로그램에서 음높이 없는 소리로 울린다
