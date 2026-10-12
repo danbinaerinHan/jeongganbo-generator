@@ -2487,7 +2487,7 @@
     .tour-opt .to-main b { font-size: 14px; }
     .tour-opt .to-main small { font-size: 12px; }
     .tour-opt .to-num { width: 22px; height: 22px; }
-    .tour-mobile-note { display: block; margin: 0 0 10px; padding: 7px 10px; font-size: 12px; line-height: 1.55;
+    #tourBody .tour-mobile-note { display: block; margin: 0 0 10px; padding: 7px 10px; font-size: 12px; line-height: 1.55;
       color: var(--ink); background: var(--soft); border-left: 2px solid var(--accent); word-break: keep-all; }
   }
 
@@ -2618,7 +2618,20 @@
     body.ribbon-left #melodyRibbon > .ribbon-group:has(.mouse-mode-tabs) { order: 0; }
     body.ribbon-left #melodyRibbon > .ribbon-slider-group { order: 1; }
     body.ribbon-left #melodyRibbon .mouse-mode-tabs .ribbon-btn { padding: 4px 4px; }
+    #brandBox img { height: 28px; }
     .help-foot { flex-wrap: wrap; justify-content: center; text-align: center; row-gap: 8px; }
     .help-maker { flex: 1 0 100%; text-align: center; }
     .help-foot button { white-space: nowrap; }
+  }
+  /* 360px대 폭(작은 안드로이드·아이폰 SE 가로 아님) — 위 두 줄 짜임이 1~2px 차로 넘쳐 한 줄이
+     더 생겼다(실측). 버튼·손잡이를 한 번 더 좁힌다. */
+  @media (max-width: 380px) {
+    .topbar-cmd { min-width: 36px; }
+    #topBar { gap: 4px; }
+    body.ribbon-left #melodyRibbon { gap: 4px 6px; }
+    body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 34px; }
+    body.ribbon-left #melodyRibbon .mouse-mode-tabs .ribbon-btn { padding: 4px 3px; }
+    body.ribbon-left #melodyRibbon .ribbon-btn { padding: 4px 3px; gap: 2px; }
+    body.ribbon-left #melodyRibbon .ribbon-btn span { font-size: 11px; }
+    #melodyRibbon #gakInsertN { width: 34px; }
   }
