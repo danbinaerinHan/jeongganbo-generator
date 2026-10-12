@@ -2596,10 +2596,28 @@
        홀로 남는 세로 구분선은 숨긴다(줄바꿈이 이미 무리를 가른다). */
   @media (max-width: 600px) {
     body { word-break: keep-all; overflow-wrap: break-word; }
-    #topBar { justify-content: center; row-gap: 6px; padding: 6px 10px; }
-    #brandBox { flex: 1 0 100%; justify-content: center; margin-right: 0; }
-    #melodyRibbon { justify-content: center; }
+    /* 상단바는 두 줄로 — 윗줄 = 문패 + 문서 명령(새 문서·인쇄·설정, 오른쪽 끝) /
+       아랫줄 = 듣기·보기(재생·정지·재생 설정·배율·오선보, 가운데). 버튼 폭을 46 → 40px로 줄여
+       390px 폭에서 두 줄에 다 든다(실측). 줄이 셋이면 악보 자리가 그만큼 준다. */
+    #topBar { justify-content: center; gap: 4px 6px; padding: 4px 6px; }
+    #brandBox { order: 0; margin-right: 0; gap: 6px; }
+    #outBox { order: 1; margin-left: auto; }
+    #sidebarOpen { order: 2; }
+    #playBar, #zoomBar, #btnStaff, #viewToggle { order: 3; }
+    .topbar-cmd { min-width: 40px; padding: 4px 3px 3px; }
+    #playBar, #outBox { gap: 1px; }
+    /* 기능바도 두 줄 — 글자·여백을 한 단계 줄이고 구분선은 숨긴다(줄바꿈이 무리를 가른다) */
+    body.ribbon-left #melodyRibbon { justify-content: center; gap: 4px 10px; padding: 4px 6px; }
     #melodyRibbon .ribbon-sep { display: none; }
+    body.ribbon-left #melodyRibbon .ribbon-btn { min-height: 30px; padding: 4px 5px; gap: 3px; }
+    body.ribbon-left #melodyRibbon .ribbon-btn span { font-size: 11.5px; }
+    body.ribbon-left #melodyRibbon .ribbon-btn svg { width: 15px; height: 15px; }
+    body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 44px; }
+    /* 윗줄 = 마우스 모드 + 크기 손잡이 / 아랫줄 = 각 추가·삭제 + 내용 지우기·정간 서식 */
+    body.ribbon-left #melodyRibbon > .ribbon-group { order: 2; }
+    body.ribbon-left #melodyRibbon > .ribbon-group:has(.mouse-mode-tabs) { order: 0; }
+    body.ribbon-left #melodyRibbon > .ribbon-slider-group { order: 1; }
+    body.ribbon-left #melodyRibbon .mouse-mode-tabs .ribbon-btn { padding: 4px 4px; }
     .help-foot { flex-wrap: wrap; justify-content: center; text-align: center; row-gap: 8px; }
     .help-maker { flex: 1 0 100%; text-align: center; }
     .help-foot button { white-space: nowrap; }
