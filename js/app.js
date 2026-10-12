@@ -7665,7 +7665,149 @@
   const VRV_DIGIT_W = { "0": 1.67, "1": 1.339, "2": 1.767, "3": 1.644, "4": 1.706, "5": 1.68,
                         "6": 1.683, "7": 1.772, "8": 1.611, "9": 1.7, "D": 1.011 };
   function vrvPage(i) {
-    return vrvTempoLift(vrvWavyMarks(vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {})))));
+    return vrvLyricClear(vrvTempoLift(vrvWavyMarks(vrvSymMarks(vrvTimeNotes(vrvTk.renderToSVG(i, {}))))));
+  }
+  // ── 낮은 음 아래 가사 비키기 (2026-10-12 사용자 제보) ──
+  // Verovio는 덧줄 아래로 내려간 낮은 음이 있으면 가사 줄을 내리긴 하지만 **덜 내린다** —
+  // 가사 윗부분이 음표 머리에 걸친다(한글뿐 아니라 로마자도 같다 · lyricTopMinMargin은 6.2에서
+  // 아무 효과가 없음을 실측). 그래서 그린 뒤에 **실제 글자 상자를 재서** 고친다:
+  //   · 줄(system)마다·보표마다 그 줄 가사의 윗변과, 같은 보표에서 가장 낮은 음표 요소의
+  //     아랫변을 견준다. 걸치면 **그 줄 가사 전체를** 필요한 만큼 한꺼번에 내린다(줄 안에서
+  //     가사 높이가 들쭉날쭉하지 않게). 안 걸치는 줄은 한 획도 안 바뀐다.
+  //   · 내린 만큼 그 아래(같은 줄의 아래 보표·다음 줄들)를 밀어 내리고, 위아래를 잇는 선
+  //     (줄 왼쪽 세로선·묶인 마디줄)은 늘인다. 쪽 높이도 그만큼 키운다.
+  // 재생 하이라이트는 id로 요소를 찾으므로 영향이 없다. MusicXML 파일은 그대로다.
+  // 잴 때 문서에 잠시 붙여야 한다(getBoundingClientRect) — 화면 밖 숨은 상자에 붙였다 뗀다.
+  const VRV_LYRIC_GAP = 0.5;   // 음표와 가사 사이 최소 틈(오선 한 칸 대비)
+  let vrvMeasureHost = null;
+  function vrvLyricClear(svg) {
+    if (svg.indexOf('class="verse"') < 0 || typeof document === "undefined") return svg;
+    if (!vrvMeasureHost) {
+      vrvMeasureHost = document.createElement("div");
+      vrvMeasureHost.setAttribute("aria-hidden", "true");
+      vrvMeasureHost.style.cssText = "position:absolute;left:-200000px;top:0;visibility:hidden;pointer-events:none;";
+      document.body.appendChild(vrvMeasureHost);
+    }
+    const host = vrvMeasureHost;
+    try {
+      host.innerHTML = svg;
+      const out = vrvLyricClearDom(host.firstElementChild, vrvSpace(svg));
+      return out == null ? svg : out;
+    } catch (e) {
+      return svg;   // 재다가 어긋나면 손대지 않은 그림이 낫다
+    } finally {
+      host.innerHTML = "";
+    }
+  }
+  function vrvLyricClearDom(root, space) {
+    const inner = root && root.querySelector("svg.definition-scale");
+    const pm = inner && inner.querySelector("g.page-margin");
+    if (!pm || !pm.getScreenCTM()) return null;
+    const inv = pm.getScreenCTM().inverse();
+    // 요소의 위·아래·가운데를 page-margin 좌표로(경로 d·글자 y가 쓰는 바로 그 좌표)
+    const ext = function (el) {
+      const r = el.getBoundingClientRect();
+      if (!r.width && !r.height) return null;
+      const a = new DOMPoint(r.left, r.top).matrixTransform(inv);
+      const b = new DOMPoint(r.right, r.bottom).matrixTransform(inv);
+      return { top: Math.min(a.y, b.y), bottom: Math.max(a.y, b.y) };
+    };
+    const NOTE_SEL = ".notehead, .stem, .flag, .accid, .dots, .rest, .mRest, .ledgerLines, .artic, " +
+                     ".clef, .keySig, .meterSig, .tuplet, .beam > polygon, .beam > path, g.staff > path";
+    const gap = VRV_LYRIC_GAP * space;
+    const cuts = [];   // { y, dy } — y 아래의 것은 dy만큼 내려간다
+    pm.querySelectorAll("g.system").forEach(function (sys) {
+      const staffRows = [];
+      sys.querySelectorAll("g.measure").forEach(function (m) {
+        Array.from(m.children).filter(function (c) { return c.classList.contains("staff"); })
+          .forEach(function (st, k) { (staffRows[k] = staffRows[k] || []).push(st); });
+      });
+      staffRows.forEach(function (row) {
+        const verses = [];
+        row.forEach(function (st) { st.querySelectorAll("g.verse").forEach(function (v) { verses.push(v); }); });
+        if (!verses.length) return;
+        let lyTop = Infinity, lyBot = -Infinity, noteBot = -Infinity;
+        verses.forEach(function (v) {
+          v.querySelectorAll("text").forEach(function (t) {
+            const e = ext(t); if (!e) return;
+            lyTop = Math.min(lyTop, e.top); lyBot = Math.max(lyBot, e.bottom);
+          });
+        });
+        row.forEach(function (st) {
+          st.querySelectorAll(NOTE_SEL).forEach(function (el) {
+            if (el.closest(".verse")) return;
+            const e = ext(el); if (e) noteBot = Math.max(noteBot, e.bottom);
+          });
+        });
+        if (!isFinite(lyTop) || !isFinite(noteBot)) return;
+        const dy = Math.ceil(noteBot + gap - lyTop);
+        if (dy <= 0) return;
+        verses.forEach(function (v) { vrvShiftEl(v, dy); });
+        cuts.push({ y: lyBot, dy: dy });
+      });
+    });
+    if (!cuts.length) return null;
+    const shiftAt = function (y) {
+      let d = 0;
+      cuts.forEach(function (c) { if (y > c.y) d += c.dy; });
+      return d;
+    };
+    // 위아래로 걸친 선은 늘이고(좌표 쌍마다 제 자리의 몫만큼), 그 밖의 것은 통째로 옮긴다
+    const stretchPath = function (p) {
+      const d = p.getAttribute("d") || "";
+      p.setAttribute("d", d.replace(/([-\d.]+)([ ,]+)([-\d.]+)/g, function (all, x, sep, y) {
+        return x + sep + (+y + shiftAt(+y));
+      }));
+    };
+    const moveRigid = function (el, anchorY) {
+      const d = shiftAt(anchorY);
+      if (d) vrvShiftEl(el, d);
+    };
+    const piece = function (el) {
+      const e = ext(el);
+      if (!e) return;
+      const spans = shiftAt(e.top) !== shiftAt(e.bottom);
+      if (spans && el.tagName.toLowerCase() === "path" && !el.getAttribute("transform")) stretchPath(el);
+      else moveRigid(el, spans ? e.top : (e.top + e.bottom) / 2);
+    };
+    const oldBottom = (ext(pm) || { bottom: 0 }).bottom;
+    pm.querySelectorAll("g.system").forEach(function (sys) {
+      Array.from(sys.children).forEach(function (c) {
+        if (c.classList.contains("measure")) {
+          Array.from(c.children).forEach(function (mc) {
+            if (mc.classList.contains("staff")) {
+              const line = mc.querySelector(":scope > path");
+              const e = line ? ext(line) : ext(mc);
+              if (e) moveRigid(mc, e.top);   // 보표는 맨 윗줄 자리로 — 가사가 위로 튀어나와도 제 몫만
+            } else if (mc.classList.contains("barLine")) {
+              Array.from(mc.children).forEach(piece);
+            } else piece(mc);
+          });
+        } else if (c.classList.contains("label") || c.classList.contains("labelAbbr")) {
+          c.querySelectorAll("text").forEach(piece);
+        } else if (c.classList.contains("grpSym")) {
+          Array.from(c.children).forEach(piece);
+        } else piece(c);
+      });
+    });
+    // 쪽 높이 — 늘어난 만큼(아래 여백은 예전 그대로, 쪽 종이면 남는 여백부터 쓴다)
+    const vb = (inner.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+    const newBottom = (ext(pm) || { bottom: oldBottom }).bottom;
+    if (vb.length === 4 && vb[3] > 0) {
+      const ty = pm.transform.baseVal.consolidate() ? pm.transform.baseVal.consolidate().matrix.f : 0;
+      const keep = Math.max(0, Math.min(vb[3] - (oldBottom + ty), 500));
+      const H2 = Math.max(vb[3], Math.ceil(newBottom + ty + keep));
+      if (H2 > vb[3]) {
+        const hpx = parseFloat(root.getAttribute("height")) || 0;
+        inner.setAttribute("viewBox", vb[0] + " " + vb[1] + " " + vb[2] + " " + H2);
+        if (hpx) root.setAttribute("height", (Math.round(hpx * H2 / vb[3] * 100) / 100) + "px");
+      }
+    }
+    return root.outerHTML;
+  }
+  function vrvShiftEl(el, dy) {
+    const t = el.getAttribute("transform");
+    el.setAttribute("transform", "translate(0 " + dy + ")" + (t ? " " + t : ""));
   }
   // 빠르기 표(♩. = 55)를 **화면에서만** 조금 위로 — Verovio는 그것을 박자표·첫 음표 바로 위에 붙여
   // 놓아 박자표 윗수와 한 덩이처럼 읽혔다(2026-10-05 저자 요청). 묶음째 VRV_TEMPO_LIFT칸 올린다.
@@ -8214,10 +8356,12 @@
       const mm = svg.match(/^<svg width="([\d.]+)px" height="([\d.]+)px"/);
       if (!mm) continue;
       const W = parseFloat(mm[1]), H = parseFloat(mm[2]);
+      // 가사 비키기(vrvLyricClear)가 쪽을 늘였으면 종이 높이를 넘지 않게 줄여 앉힌다
+      const fitH = Math.min(box.w * H / W, box.h), fitW = fitH * W / H;
       pages.push({
         svg: svg.replace(/^<svg width="[\d.]+px" height="[\d.]+px"/,
-          "<svg x=\"" + box.x + "\" y=\"" + box.y + "\" width=\"" + box.w +
-          "\" height=\"" + (box.w * H / W) + "\" viewBox=\"0 0 " + W + " " + H + "\"")
+          "<svg x=\"" + box.x + "\" y=\"" + box.y + "\" width=\"" + fitW +
+          "\" height=\"" + fitH + "\" viewBox=\"0 0 " + W + " " + H + "\"")
       });
     }
     return pages;
