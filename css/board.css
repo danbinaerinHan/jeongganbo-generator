@@ -297,3 +297,17 @@ body.board .sc-make:hover { background: var(--hover); opacity: 1; }
   .bd-page { padding: 18px 14px 8px; }
   .bd-nav { gap: 12px; }
 }
+
+/* ---------- 본문 열 하나 — 머리말·탭·게시판을 FAQ 본문 열에 맞춘다(2026-10-12 사용자 지적) ----------
+   탭(자주 묻는 질문 | 게시판)이 페이지 맨 왼쪽에 있으면 바로 아래 분류 차례와 같은 세로줄에 서서
+   '차례의 머리'처럼 읽혔다. 탭은 본문을 고르는 것이라 **본문 열 위**(검색칸 위)가 제자리다.
+   그래서 넓은 화면에선 분류 차례를 '여백의 차례'로 두고, 머리말·탭·게시판 목록을 모두 같은 본문 열
+   (왼쪽 들여쓰기 = 차례 200 + 간격 56, 폭 최대 760)에 세운다 — 탭을 오가도 글줄이 안 튄다.
+   들여쓰기 값은 .bd-faq-layout의 열 폭·간격과 짝이다. 한쪽을 바꾸면 --bd-col도 함께. */
+@media (min-width: 861px) {
+  body.board { --bd-col: 256px; }
+  body.board #bdList > .sc-head { padding-left: calc(24px + var(--bd-col)); }
+  body.board #bdList > .sc-head > * { max-width: 760px; }
+  body.board #bdAsk { box-sizing: border-box; max-width: 1200px; margin: 0 auto; padding: 0 24px 0 calc(24px + var(--bd-col)); }
+  body.board #bdAsk > * { max-width: 760px; margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+}
