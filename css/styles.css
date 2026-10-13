@@ -911,10 +911,8 @@
        모드가 셋이 되며 다시 잼 — 예전엔 951/545였다) — 문턱을 1010px로 둔 값이 그것이다.
        **버튼 폭·그룹을 손보면 이 값을 반드시 다시 잴 것**: 자연 한 줄 폭보다 문턱이 낮으면
        그 사이 폭에서 flex-wrap이 먼저 제멋대로 줄을 갈라 이 규칙이 통째로 헛돈다.
-     · **곁줄이 켜진 문서는 그룹이 하나 더 붙는다**(#lyricsScaleGroup, body.want-lyrics) —
-       자연 폭이 1127px로 늘어나므로 문턱도 그만큼 올린 짝을 따로 둔다. 하나로 두면 곁줄
-       악보의 1011~1127px 구간이 예전처럼 제멋대로 갈렸다(예전 문턱 950 시절에도 곁줄
-       악보의 자연 폭은 1066이라 같은 틈이 있었다 — 이번에 함께 메운다).
+     · 예전엔 곁줄이 켜진 문서에 [곁줄 크기] 슬라이더가 붙어 문턱이 둘(1010/1130)이었다 —
+       두 슬라이더를 [글자 크기] 버튼 하나로 접으며(2026-10-13) 그 짝을 걷었다.
        에디터는 '입력' 그룹이 없어 이 문턱까지 갈 일이 거의 없고,
        가더라도 줄을 가를 짝(마우스|입력)이 없으므로 **직접 입력에서만** 자리를 못 박는다.
      · 왼쪽 세로 도킹은 애초에 세로로 쌓이므로 대상이 아니다(container-type도 안 준다 —
@@ -927,11 +925,6 @@
     body.input-direct .rb-break { display: block; }
     body.input-direct .rb-break-sep { display: none; }
     body.input-direct .rb-break + .ribbon-group { margin-left: 26px; }
-  }
-  @container (max-width: 1130px) {
-    body.input-direct.want-lyrics .rb-break { display: block; }
-    body.input-direct.want-lyrics .rb-break-sep { display: none; }
-    body.input-direct.want-lyrics .rb-break + .ribbon-group { margin-left: 26px; }
   }
   /* 도킹 컨트롤 묶음 — 가로 배치에선 앞쪽 아이콘, 세로 도킹에선 맨 위 한 줄(헤더).
      예전의 기능바 접기(.ribbon.collapsed)는 없앴다 — index.html 주석 참고. */
@@ -958,7 +951,7 @@
        열이 높아져도 악보가 안 움직이므로 이 문제가 없다. 가로 배치에서는 [선택] 툴팁이
        같은 말을 진다.
      · 폭은 그룹 버튼 두 개(58×2+gap)에 맞춰 묶는다 — 이 줄 때문에 그룹이 넓어지면
-       기능바 한 줄 폭이 달라져 .rb-break 문턱(1010/1130px)을 다시 재야 한다. */
+       기능바 한 줄 폭이 달라져 .rb-break 문턱(1010px)을 다시 재야 한다. */
   .rb-selhint { display: none; max-width: 122px; margin: 4px auto 0;
                 font-size: 9.5px; line-height: 1.35; color: var(--muted);
                 text-align: center; white-space: normal; word-break: keep-all; }
@@ -994,12 +987,25 @@
   .ribbon-btn:disabled { opacity: .4; cursor: default; background: none; }
   .ribbon-num { width: 38px; padding: 4px 2px; border: 1px solid var(--line); border-radius: 5px;
                 font-family: inherit; font-size: 12.5px; text-align: center; align-self: center; }
-  .ribbon-slider-group { display: flex; align-items: center; gap: 7px; font-size: 12.5px;
-                         font-weight: 600; color: var(--muted); white-space: nowrap; }
-  .ribbon-slider-group input[type="range"] { width: 88px; margin: 0; }
-  .ribbon-slider-group #noteScaleVal,
-  .ribbon-slider-group #lyricsScaleVal { font-weight: 400; min-width: 32px; }
-  /* 곁줄 글자 크기 슬라이더 — 곁줄이 악보에 나와 있을 때만(render가 body.want-lyrics를 관리) */
+  /* 글자 크기 팝업(#sizeToggle → #sizePop) — 율명·곁줄 크기 슬라이더 둘을 담는다(2026-10-13).
+     fixed로 뜨고 자리는 app.js '글자 크기 팝업'이 버튼 아래에 잰다(에디터 독처럼 넘침을 자르는
+     상자 안에서도 안 잘리게 — 레일 메뉴·도구창 ? 안내와 같은 수법). 꼴은 재생 설정 팝오버와 한 벌. */
+  #sizeToggle.on { background: var(--hover); border-color: var(--line); }
+  .size-pop { position: fixed; z-index: 60; display: none; width: 248px; padding: 10px 12px 10px;
+              background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
+              box-shadow: 0 2px 10px rgba(0,0,0,.15); font-size: 12px; color: var(--ink); }
+  .size-pop.on { display: block; }
+  .size-pop .sp-row { display: grid; grid-template-columns: 58px 1fr 36px; align-items: center;
+                      gap: 8px; margin-bottom: 8px; white-space: nowrap; }
+  .size-pop .sp-row label { font-weight: 600; color: var(--muted); }
+  .size-pop input[type="range"] { width: 100%; margin: 0; }
+  .size-pop #noteScaleVal, .size-pop #lyricsScaleVal { text-align: right; font-variant-numeric: tabular-nums; }
+  .size-pop .sp-foot { display: flex; justify-content: flex-end; padding-top: 2px; }
+  #sizeReset { padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+               color: var(--muted); font-family: inherit; font-size: 11.5px; cursor: pointer; }
+  #sizeReset:hover { border-color: var(--muted); color: var(--ink); background: var(--hover); }
+  @media print { .size-pop { display: none !important; } }
+  /* 곁줄 크기 줄 — 곁줄이 악보에 나와 있을 때만(render가 body.want-lyrics를 관리) */
   body:not(.want-lyrics) #lyricsScaleGroup { display: none; }
   .ribbon-select-group { display: flex; align-items: center; gap: 6px; font-size: 11px;
                         font-weight: 600; color: var(--muted); white-space: nowrap; }
@@ -1129,7 +1135,6 @@
   body.ribbon-left #melodyRibbon .rb-break,
   body.ribbon-left #melodyRibbon .rb-selhint,
   body.ribbon-left #melodyRibbon .win-toggle-sep { display: none; }
-  body.ribbon-left #melodyRibbon .ribbon-slider-group .rb-cap { display: block; padding: 0; font-size: 11px; }
   body.ribbon-left #melodyRibbon .rb-items { gap: 3px; }
   body.ribbon-left #melodyRibbon .ribbon-btn {
     flex-direction: row; width: auto; min-height: 32px; padding: 6px; gap: 5px; font-size: 17px;
@@ -1137,7 +1142,6 @@
   body.ribbon-left #melodyRibbon .ribbon-btn span { font-size: 12px; }
   body.ribbon-left #melodyRibbon .ribbon-btn svg { width: 17px; height: 17px; }
   body.ribbon-left #melodyRibbon .ribbon-sep { height: 24px; align-self: center; margin: 0; }
-  body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 68px; }
   /* 입력 도구 패널 손잡이 — 악보 열 왼쪽 끝에 붙은 작은 탭(‹ / ›). 패널이 열려 있으면 패널과
      악보의 경계에, 접혀 있으면 화면 왼쪽 끝에 선다(#sheetCol 기준이라 둘 다 같은 규칙이다).
      예전 글자 버튼 [입력 도구]를 바꾼 것이다(2026-10-02) — 기능바엔 도로 넣지 말 것. */
@@ -2659,11 +2663,10 @@
     body.ribbon-left #melodyRibbon .ribbon-btn { min-height: 30px; padding: 4px 5px; gap: 3px; }
     body.ribbon-left #melodyRibbon .ribbon-btn span { font-size: 11.5px; }
     body.ribbon-left #melodyRibbon .ribbon-btn svg { width: 15px; height: 15px; }
-    body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 44px; }
-    /* 윗줄 = 마우스 모드 + 크기 손잡이 / 아랫줄 = 각 추가·삭제 + 내용 지우기·정간 서식 */
+    /* 윗줄 = 마우스 모드 + 글자 크기 / 아랫줄 = 각 추가·삭제 + 내용 지우기·정간 서식 */
     body.ribbon-left #melodyRibbon > .ribbon-group { order: 2; }
     body.ribbon-left #melodyRibbon > .ribbon-group:has(.mouse-mode-tabs) { order: 0; }
-    body.ribbon-left #melodyRibbon > .ribbon-slider-group { order: 1; }
+    body.ribbon-left #melodyRibbon > #sizeGroup { order: 1; }
     body.ribbon-left #melodyRibbon .mouse-mode-tabs .ribbon-btn { padding: 4px 4px; }
     #brandBox img { height: 28px; }
     .help-foot { flex-wrap: wrap; justify-content: center; text-align: center; row-gap: 8px; }
@@ -2676,7 +2679,6 @@
     .topbar-cmd { min-width: 36px; }
     #topBar { gap: 4px; }
     body.ribbon-left #melodyRibbon { gap: 4px 6px; }
-    body.ribbon-left #melodyRibbon .ribbon-slider-group input[type="range"] { width: 34px; }
     body.ribbon-left #melodyRibbon .mouse-mode-tabs .ribbon-btn { padding: 4px 3px; }
     body.ribbon-left #melodyRibbon .ribbon-btn { padding: 4px 3px; gap: 2px; }
     body.ribbon-left #melodyRibbon .ribbon-btn span { font-size: 11px; }

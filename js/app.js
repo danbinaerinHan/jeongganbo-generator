@@ -10398,6 +10398,41 @@
       $("playSettingsToggle").classList.remove("on");
     }
   });
+  // 글자 크기 팝업(기능바 #sizeToggle → #sizePop) — 율명·곁줄 크기 슬라이더 둘을 담는다.
+  // 재생 설정과 같은 문법(안을 눌러도 안 닫힘 — 슬라이더를 끄는 자리라서)이고, 자리만 fixed로
+  // 버튼 아래에 잰다: 기능바는 에디터 독 안에도 들어가는데 그 상자가 넘침을 자르면 absolute
+  // 팝업이 잘린다. 아래가 모자라면 위로 뒤집고 좌우는 화면 안으로 당긴다.
+  function placeSizePop() {
+    const pop = $("sizePop"), r = $("sizeToggle").getBoundingClientRect();
+    const w = pop.offsetWidth, h = pop.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+    let top = r.bottom + 8;
+    if (top + h > vh - 8 && r.top - h - 8 >= 8) top = r.top - h - 8;
+    pop.style.left = Math.max(8, Math.min(r.left, vw - w - 8)) + "px";
+    pop.style.top = Math.max(8, top) + "px";
+  }
+  function setSizePop(on) {
+    $("sizePop").classList.toggle("on", on);
+    $("sizeToggle").classList.toggle("on", on);
+    if (on) placeSizePop();
+  }
+  $("sizeToggle").addEventListener("click", function (e) {
+    e.stopPropagation();
+    setSizePop(!$("sizePop").classList.contains("on"));
+  });
+  $("sizeReset").addEventListener("click", function () {
+    $("noteScale").value = 1; $("lyricsScale").value = 1;
+    render();
+  });
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest("#tourLayer")) return;
+    if ($("sizePop").classList.contains("on") && !$("sizePop").contains(e.target) && !$("sizeToggle").contains(e.target)) setSizePop(false);
+  });
+  // 열려 있는 동안 버튼이 움직이면(창 크기·스크롤) 따라간다 — fixed라 가만두면 따로 논다
+  window.addEventListener("resize", function () { if ($("sizePop").classList.contains("on")) placeSizePop(); });
+  document.addEventListener("scroll", function () { if ($("sizePop").classList.contains("on")) placeSizePop(); }, true);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && $("sizePop").classList.contains("on")) setSizePop(false);
+  });
   // 상단바 드롭다운(배율 ▾·파일 ⋯) — 재생 설정 팝오버와 같은 열고닫기 문법.
   // 차이 하나: 메뉴는 항목을 고르면 할 일이 끝나므로 안을 클릭해도 닫는다.
   function wireTopMenu(btnId, popId) {
@@ -11357,7 +11392,7 @@
     // 본문(tour-text.js)의 줄 차례를 바꾸면 여기도 함께 바꿀 것.
     ribbon: ["#paletteToggle", ".mouse-mode-tabs", ".ribbon-group:has(#gakInsertBtn)",
              ".ribbon-group:has(#rangeClearToggle)"],
-    text: [null, null, null, { union: ".ribbon-slider-group" }],
+    text: [null, null, null, "#sizePop"],
     sheet: [{ union: ".tour-lane-mel" }, null, { union: ".tour-lane-mel" }],
     // 설정의 문서·레이아웃 줄은 그 탭을 눌러 전환한 뒤(TOUR_BEAT_TAB) 탭 **내용**을 비춘다
     Setting: [null, '#sidebar .tabpanel.active', '#sidebar .tabpanel.active', '#sidebar .tabpanel.active'],
@@ -11820,9 +11855,10 @@
   // 안 닫히게 해 두었다(재생 설정·wireTopMenu의 바깥 클릭 처리).
   const TOUR_MENUS = {
     play: { btn: "#playSettingsToggle", pop: "#playPop" },
-    out: { btn: "#outToggle", pop: "#outPop" }
+    out: { btn: "#outToggle", pop: "#outPop" },
+    size: { btn: "#sizeToggle", pop: "#sizePop" }
   };
-  const TOUR_BEAT_MENU = { play: { 1: "play", 2: "play", 3: "play" }, files: { 2: "out" } };
+  const TOUR_BEAT_MENU = { play: { 1: "play", 2: "play", 3: "play" }, files: { 2: "out" }, text: { 3: "size" } };
   // 줄에 딸린 탭 전환 — 설정 단계의 '문서' 줄은 문서 탭을, '레이아웃' 줄은 레이아웃 탭을 눌러
   // 보여 준다(2026-09-29 사용자 지적: 문서 줄을 읽는데 레이아웃 탭이 떠 있었다). 원래 탭은
   // endTour가 tourPrevTab으로 되돌린다.
