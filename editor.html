@@ -188,7 +188,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         data-tip="총보 / 파트보 전환
 · 총보 = 모든 악기를 한 악보에 나란히
 · 파트를 선택하면 그 악기만 보며 편집합니다
-· 레이아웃(배치·크기·간격·종이)은 총보와 파트보에 따로 저장됩니다">
+· 레이아웃(배치·크기·간격·용지)은 총보와 파트보에 따로 저장됩니다">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="4" width="4.6" height="16"></rect><rect x="9.7" y="4" width="4.6" height="16"></rect><rect x="15.9" y="4" width="4.6" height="16"></rect></svg>
         <span class="lbl" id="viewLbl">총보</span>
       </button>
@@ -252,7 +252,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
          붙는 상시 토글이다. 사이드바 안 ✕(#sidebarToggle)는 닫기 전용으로 그대로 둔다. -->
     <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
       data-tip="설정 패널 열기 / 닫기
-· 곡 · 악기 · 종이·배치">
+· 곡 · 악기 · 용지·배치">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span class="lbl">설정</span>
     </button>
@@ -488,12 +488,12 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
            임시 저장은 레일 [불러오기]·[저장] 메뉴로 갔다. 저장된 activeTab이 "out"이면
            applyActiveTab이 '곡'으로 돌려 연다. -->
       <button type="button" class="tab" data-tab="parts">악기</button>
-      <button type="button" class="tab" data-tab="layout">종이·배치</button>
+      <button type="button" class="tab" data-tab="layout">용지·배치</button>
     </div>
 
     <!-- ===== 곡 (data-tab="doc") =====
          탭은 "무엇을 정하나"로 가른다(2026-09-29): 곡 = 악보의 **내용과 짜임**(총보·파트보가
-         함께 쓰는 값), 종이·배치 = 그것을 **종이에 어떻게 앉히나**(대부분 보기별 — VIEW_LAYOUT_IDS).
+         함께 쓰는 값), 용지·배치 = 그것을 **종이에 어떻게 앉히나**(대부분 보기별 — VIEW_LAYOUT_IDS).
          data-tab 값은 저장된 activeTab과 둘러보기가 읽으므로 이름만 바꾸고 값은 그대로 둔다. -->
     <div class="tabpanel active" data-tab="doc">
       <div class="sec">곡의 짜임</div>
@@ -549,7 +549,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <button type="button" id="btnResetContent" class="orn-reset danger-btn"
           title="선율·장단·곁줄·텍스트·정간 서식을 모두 지웁니다 (레이아웃은 유지)">
           ⟲ 전체 초기화</button>
-        <div class="hint"><ul class="guide-list"><li>지움: 선율·장단·곁줄·텍스트·정간 서식</li><li>유지: 종이 방향·정간 크기 등 레이아웃</li><li>실행 전에 한 번 더 확인하며, 되돌리기(⌘Z)로 복구할 수 있습니다.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>지움: 선율·장단·곁줄·텍스트·정간 서식</li><li>유지: 용지 방향·정간 크기 등 레이아웃</li><li>실행 전에 한 번 더 확인하며, 되돌리기(⌘Z)로 복구할 수 있습니다.</li></ul></div>
       </div>
 
     </div>
@@ -568,20 +568,20 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       </div>
     </div>
 
-    <!-- ===== 종이·배치 (data-tab="layout") ===== -->
+    <!-- ===== 용지·배치 (data-tab="layout") ===== -->
     <div class="tabpanel" data-tab="layout">
       <!-- 현재 짜임 보고(#readout) — 아래 값들을 바꾸면 각 너비·페이지 장수·A4 맞춤 배율이
            어떻게 나왔는지 여기서 바로 확인한다. 예전엔 '출력' 탭에 있었는데, 인쇄 결과가
            아니라 '레이아웃 설정의 결과'라 조절하는 값들 바로 위가 제 집이다. -->
       <div class="readout" id="readout"></div>
-      <div class="sec">종이</div>
+      <div class="sec">용지</div>
       <!-- 종이 크기 — 사실상 '비율'을 정하는 자리다. 정간보에 A4가 당연하지 않다(전통 악보는
            가로로 긴 첩(帖)이 많고, 교재·논문 삽화는 A5나 정사각이 알맞다). 짧은 곡을 A4에
            담으면 종이가 비어 보이는 문제도 여기서 풀린다.
            표준 규격은 @page에 **이름 그대로** 넘겨(size: B5 …) 인쇄 대화상자가 그 용지를 고르게
            하고, '사용자 지정'만 mm로 넘긴다 — 배선은 app.js render()의 pageStyle 부분. -->
       <div class="field">
-        <label for="paperSize">종이 크기</label>
+        <label for="paperSize">용지 크기</label>
         <select id="paperSize">
           <option value="A4" selected>A4 (210 × 297)</option>
           <option value="A5">A5 (148 × 210)</option>
@@ -601,7 +601,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <div class="hint">화면·PNG·PDF는 선택한 비율로, 실제 인쇄는 프린터 용지에 맞게 출력됩니다.</div>
       </div>
       <div class="field">
-        <label for="orientation">종이 방향</label>
+        <label for="orientation">용지 방향</label>
         <select id="orientation">
           <option value="portrait" selected>세로 (Portrait)</option>
           <option value="landscape">가로 (Landscape)</option>
@@ -625,7 +625,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
           <input type="number" id="stackCount" min="1" max="12" value="2" style="flex:1;">
           <label class="chk"><input type="checkbox" id="stackAuto" checked> 자동</label>
         </div>
-        <div class="hint"><ul class="guide-list"><li>위에서 만든 줄(단)을 한 페이지에 <b>세로로 최대 몇 개 쌓을지</b>입니다.</li><li><b>자동</b>을 켜면 종이에 들어가는 만큼 자동으로 배치합니다. 일반적으로 켜 둡니다.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>위에서 만든 줄(단)을 한 페이지에 <b>세로로 최대 몇 개 쌓을지</b>입니다.</li><li><b>자동</b>을 켜면 용지에 들어가는 만큼 자동으로 배치합니다. 일반적으로 켜 둡니다.</li></ul></div>
       </div>
 
       <!-- 표시 — 곁줄·테두리는 보기별(VIEW_LAYOUT_IDS), 쪽·각 번호는 두 보기가 함께 쓴다.
@@ -700,7 +700,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
           <!-- '인쇄영역을 넘으면 자동 축소' 안내는 예전에 이 세부 조정 묶음 맨 아래 홀로 떠
                있던 줄이다. 안내(?)는 항목 이름에 붙는데 그 줄엔 붙을 이름이 없어(제 .field가
                없다) 여기 첫 수치 항목으로 합쳤다 — 아래 간격 값들에도 함께 걸리는 말이다. -->
-          <div class="hint"><ul class="guide-list"><li>정간 한 칸의 크기(정사각형)이며, 각의 너비이기도 합니다.</li><li>선택한 종이의 인쇄 영역을 넘으면 이 값과 아래 간격은 전체 비율을 유지한 채 자동 축소됩니다.</li></ul></div>
+          <div class="hint"><ul class="guide-list"><li>정간 한 칸의 크기(정사각형)이며, 각의 너비이기도 합니다.</li><li>선택한 용지의 인쇄 영역을 넘으면 이 값과 아래 간격은 전체 비율을 유지한 채 자동 축소됩니다.</li></ul></div>
         </div>
 
         <!-- 두 간격 안내는 원래 .two 아래 한 줄로 붙어 있었는데, 안내(?)가 항목 이름에
@@ -867,7 +867,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
            곡마다 한 번 맞추고 마는 값이라 기능바에 늘 펼쳐 둘 까닭이 없었고, 곁줄 슬라이더가
            곁줄 유무에 따라 나타났다 사라져 기능바 폭이 들썩였다. 두 값은 고른 칸과 무관하게
            **악보 전체**에 걸린다(정간 서식과 달리 선택이 필요 없다). 정간 크기(각 너비)는
-           설정 › 종이·배치 몫이라 여기 넣지 않는다 — 같은 값을 바꾸는 자리가 둘이 된다.
+           설정 › 용지·배치 몫이라 여기 넣지 않는다 — 같은 값을 바꾸는 자리가 둘이 된다.
            팝업은 position:fixed로 뜬다(app.js '글자 크기 팝업') — 에디터 독 안에서도 안 잘리게. -->
       <div class="ribbon-group" id="sizeGroup">
         <div class="rb-cap">크기</div>
@@ -1543,9 +1543,9 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       </div>
       <div class="gak-warn" id="lyricsGakWarn"></div>
       <!-- 곁줄이 지금 보기에서 꺼져 있으면 이 창을 열어도 악보엔 빈 줄이 안 생긴다(장단
-           스위치와 같은 규칙). 스위치는 설정 › 종이·배치 **한 곳뿐**이므로 여기서는 '어디서
+           스위치와 같은 규칙). 스위치는 설정 › 용지·배치 **한 곳뿐**이므로 여기서는 '어디서
            켜나'만 알린다 — 두 번째 스위치를 만들지 말 것. -->
-      <div class="lane-off-note">곁줄이 지금 보기에서 <b>꺼져 있어</b> 악보에 나오지 않습니다. 입력한 글자는 그대로 보존되며, 설정(⚙) › 종이·배치 › <b>곁줄 표시</b>에서 다시 켤 수 있습니다.</div>
+      <div class="lane-off-note">곁줄이 지금 보기에서 <b>꺼져 있어</b> 악보에 나오지 않습니다. 입력한 글자는 그대로 보존되며, 설정(⚙) › 용지·배치 › <b>곁줄 표시</b>에서 다시 켤 수 있습니다.</div>
       <!-- 가사 기호 팔레트 — 클릭하면 지금 편집 중인 가사 칸(직접 입력) 또는 커서(에디터)에
            {기호} 토큰이 한 글자처럼 들어가고, 악보엔 그 자리에 이미지로 표시된다.
            속은 시김새·장단과 같은 공용 빌더(buildSymPalette)가 채운다 — 검색·최근·칩 모양이
@@ -1630,7 +1630,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
           <label>자간(mm)<input type="number" id="titleSpacing" min="-5" max="30" step="0.5" value="0"></label>
           <!-- 칸 폭 — 세로 칸 제목이 첫 페이지에서 차지하는 각 수. '가로 위' 제목엔 의미가
                없어 render()가 숨긴다. 각 단위로만 움직여 격자 정렬이 유지된다. -->
-          <label id="titleGakWidthWrap" title="세로 칸 제목이 차지하는 각 수 — 넓게 잡으면 그만큼 첫 페이지에 들어가는 각이 줄고, 각 너비는 종이에 맞춰 자동으로 조정됩니다">칸 폭
+          <label id="titleGakWidthWrap" title="세로 칸 제목이 차지하는 각 수 — 넓게 잡으면 그만큼 첫 페이지에 들어가는 각이 줄고, 각 너비는 용지에 맞춰 자동으로 조정됩니다">칸 폭
             <select id="titleGakWidth">
               <option value="auto" selected>자동</option>
               <option value="1">1각</option>
