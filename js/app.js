@@ -8,7 +8,7 @@
     try { if (window.jgbTrack) window.jgbTrack(name, props); } catch (e) { /* 통계는 앱 동작에 영향 주지 않음 */ }
   };
 
-  // 종이 크기(mm) — 사이드바 '종이 크기'가 고르는 값. A4가 기본이고, 여기 없는 비율은
+  // 종이 크기(mm) — 사이드바 '용지 크기'가 고르는 값. A4가 기본이고, 여기 없는 비율은
   // '사용자 지정'으로 폭·높이를 직접 적는다.
   // `css`는 @page에 넘길 이름 — 표준 규격은 **이름 그대로** 넘겨야 인쇄 대화상자가 그 용지를
   // 고른다(mm로 넘기면 브라우저가 맞는 용지를 못 찾아 A4에 축소해 앉히는 일이 생긴다).
@@ -1497,7 +1497,7 @@
     refreshEditorSlices();
   }
 
-  // ---------- 상단 바: 새 문서 / 전체 초기화 ----------
+  // ---------- 상단 바: 새 문서 / 전체 초기화(새 문서 창 안) ----------
   // 종이 방향·정간 크기·간격 등 '레이아웃'은 그대로 두고, 선율·장단·가사·텍스트·셀 서식처럼
   // 곡마다 달라지는 '내용'만 지운다. 앱 전체 되돌리기(Cmd/Ctrl+Z)가 render()마다 스냅샷을
   // 찍어두므로 이 초기화도 그걸로 되돌릴 수 있다.
@@ -1524,8 +1524,18 @@
   // '새 문서' 버튼과, 저장된 작업이 전혀 없는 첫 실행 둘 다에서 쓴다. 정간보의 가장 기본적인
   // 뼈대(정간 수·대강·총 각 수·제목·부제·장단 사용 여부)를 먼저 정하고 시작하게 한다.
   const NEWDOC_PENDING_KEY = "jgb_newdoc_pending_v1";
-  function openNewDocWizard(onCreate) {
+  // opts.fromNewDoc — 상단바 [새 문서]로 연 경우. 그때만 ① 창 아래 [지금 틀 그대로 내용만 지우기]
+  // (전체 초기화, 2026-10-13 설정 › 기본 탭에서 이리로)를 보이고 ② [기본 틀 만들기]에서 '지금 작업이
+  // 사라진다'를 묻는다. 예전엔 창을 열기 **전에** 물었는데, 그러면 내용만 지우는 길을 고를 때
+  // 확인 창이 두 번 뜬다. 첫 실행(지울 것이 없다)에는 둘 다 없다.
+  function openNewDocWizard(onCreate, opts) {
     const modal = $("newDocModal");
+    const fromNewDoc = !!(opts && opts.fromNewDoc);
+    $("ndResetContent").style.display = fromNewDoc ? "" : "none";
+    $("ndResetContent").onclick = function () {
+      modal.style.display = "none";
+      resetAllContent();   // 제 confirm + ⌘Z가 안전장치
+    };
     modal.querySelector(".nd-optional").open = false;
     $("ndBeats").value = "12";
     $("ndDaegang").value = "";
@@ -1573,6 +1583,7 @@
     $("ndPartAdd").onclick = ndAddPartRow;
     modal.style.display = "flex";
     $("ndCreate").onclick = function () {
+      if (fromNewDoc && !confirm("새 문서를 만들까요? 지금 작업 내용(제목·레이아웃 포함)은 모두 사라집니다.")) return;
       const answers = {
         beats: Math.max(1, parseInt($("ndBeats").value) || 12),
         daegang: $("ndDaegang").value.trim(),
@@ -1635,15 +1646,13 @@
   // 새 문서 — 다른 프로그램의 'File > New'처럼, 마법사로 뼈대를 정하고, 임시저장 여부를 물은 뒤
   // 제목·레이아웃까지 포함해 모두 처음 상태(localStorage 없는 첫 실행과 동일)로 되돌린다.
   function startNewDocument() {
-    if (!confirm("새 문서를 만들까요? 지금 작업 내용(제목·레이아웃 포함)은 모두 사라집니다.")) return;
     openNewDocWizard(function (answers) {
       if (confirm("계속하기 전에 지금 상태를 임시 저장할까요?")) snapSave();
       localStorage.setItem(NEWDOC_PENDING_KEY, JSON.stringify(answers));
       localStorage.removeItem(LS_KEY);
       location.reload();
-    });
+    }, { fromNewDoc: true });
   }
-  $("btnResetContent").addEventListener("click", resetAllContent);
   $("btnNewDoc").addEventListener("click", startNewDocument);   // 상단바 1급 버튼
   // 실행 취소/다시 실행 버튼은 없앴다 — ⌘/Ctrl+Z·⇧Z 단축키로만 한다(문패 옆을 비우려고).
   // 단축키 배선은 아래 '되돌리기' 절에 그대로 있고, 도움말 '단축키' 탭이 안내한다.
@@ -6773,9 +6782,9 @@
     ornInstrument = p.instrument;
   }
 
-  // ---------- 악기 편성 목록 (총보 파트 목록, 설정 › 곡 탭 #partsList) ----------
+  // ---------- 악기 편성 목록 (총보 파트 목록, 설정 › 기본 탭 #partsList) ----------
   // 피날레 Score Manager 같은 자리 — 파트 추가·삭제·이름·악기·순서·'지금 편집할 악기'를
-  // 한 목록에서. 예전엔 독립 창(#partsWin)이었는데 설정 › 곡 탭 안으로 들였다(2026-09-30
+  // 한 목록에서. 예전엔 독립 창(#partsWin)이었는데 설정 › 기본 탭 안으로 들였다(2026-09-30
   // 사용자 확정 — 작업 중에 떠 있는 창이 이것 하나만 남아 있었다). 도로 창으로 빼지 말 것.
   // 목록 순서 = 나중 총보에서 악기 열이 서는 순서(오른쪽→왼쪽으로 읽으니 위 = 오른쪽).
   // 부르는 이름: 지은 이름 → 악기 이름 → "파트 N". 편성 목록·보기 메뉴·총보 열 이름이 같이 쓴다.
@@ -6952,7 +6961,7 @@
     });
   }
 
-  // 목록은 설정 › 곡 탭에 늘 펼쳐져 있다(2026-09-30 — 예전 독립 창 #partsWin을 걷었다).
+  // 목록은 설정 › 기본 탭에 늘 펼쳐져 있다(2026-09-30 — 예전 독립 창 #partsWin을 걷었다).
   // 창을 열 때 그리던 것을 이제 처음부터 그려 둔다. 문서를 들이면 applyState가 다시 그린다.
   $("partAddBtn").addEventListener("click", addPart);
   renderPartsList();

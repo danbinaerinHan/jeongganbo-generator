@@ -608,6 +608,10 @@
   /* 보조 버튼은 강조색을 안 쓴다 — 강조색을 둘이 나눠 가지면 어느 쪽이 '진행'인지 안 보인다 */
   .btns button.secondary { background: var(--panel); border-color: var(--line); color: var(--muted); }
   .btns button.secondary:hover { border-color: var(--muted); color: var(--ink); background: var(--hover); }
+  /* 새 문서 창의 [내용만 지우기] — 버튼줄 아래 글자 버튼(강조색은 [기본 틀 만들기] 하나뿐) */
+  .nd-reset { display: block; margin: 10px auto 0; padding: 4px 8px; background: none; border: none;
+              color: var(--danger); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .nd-reset:hover { text-decoration: underline; text-underline-offset: 3px; }
   .btns button:hover { opacity: .9; }
   /* 서버에 다녀오는 동안(게시·갱신·삭제) 누름을 막는다 — 두 번 눌러 두 번 올라가지 않게 */
   .btns button:disabled, .pub-del:disabled { opacity: .5; cursor: default; }

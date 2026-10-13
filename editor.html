@@ -182,7 +182,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
          버튼 글씨 자리에 지금 보기(총보 또는 활성 파트 이름)가 뜬다 — 배율·입력 방식과 같은
          .topbar-cmd + .tb-menu 문법. 메뉴 항목(총보 ── 파트들)은 JS가 그린다.
          총보 여부의 정본은 숨은 #scoreView 체크박스(문서에 저장, CTRL_IDS라 지우지 말 것) —
-         예전엔 악기 관리 창(지금은 설정 › 곡 탭의 목록) 머리줄의 체크박스였는데 상단바로 일원화했다(같은 스위치 둘 금지). -->
+         예전엔 악기 관리 창(지금은 설정 › 기본 탭의 목록) 머리줄의 체크박스였는데 상단바로 일원화했다(같은 스위치 둘 금지). -->
     <div id="viewBox" style="display:none;">
       <button type="button" id="viewToggle" class="topbar-cmd tip"
         data-tip="총보 / 파트보 전환
@@ -252,7 +252,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
          붙는 상시 토글이다. 사이드바 안 ✕(#sidebarToggle)는 닫기 전용으로 그대로 둔다. -->
     <button type="button" id="sidebarOpen" class="side-open topbar-cmd tip"
       data-tip="설정 패널 열기 / 닫기
-· 곡 · 악기 · 용지·배치">
+· 기본 · 악기 · 용지·배치">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       <span class="lbl">설정</span>
     </button>
@@ -289,7 +289,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
        ② 앱 자체(공유마당·색상·도움말·설정)를 둔다.
        파일 메뉴(⋯)는 없앴다 — 열기 전엔 뭐가 든지 모르는 서랍이라 이름을 '파일'로 바꿔도
        근본은 그대로였다. 세로는 가로와 달리 자리가 남아 접을 까닭이 없다.
-       위험한 [전체 초기화]만 레일에 안 두고 설정 › 곡 탭 맨 아래로 갔다(늘 보이는 자리에
+       위험한 [전체 초기화]만 레일에 안 두고 설정 › 기본 탭 맨 아래로 갔다(늘 보이는 자리에
        둘 명령이 아니다). 인쇄·새 문서는 상단바의 1급 버튼 그대로 — 그 예외는 CLAUDE.md에
        못 박혀 있다. no-print: 종이에는 악보만. -->
   <nav id="appRail" class="no-print" aria-label="파일 · 앱">
@@ -482,7 +482,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
     </div>
 
     <div class="tabs">
-      <button type="button" class="tab active" data-tab="doc">곡</button>
+      <button type="button" class="tab active" data-tab="doc">기본</button>
       <!-- 악기 탭(2026-10-12) — 악기 편성은 총보 작업 중 수시로 만지는 목록이라 곡 탭 아래에
            묻혀 있으면 안 됐다(1280px에서 스크롤해야 보였다). '보관' 탭(data-tab="out")은 없앴다 —
            임시 저장은 레일 [불러오기]·[저장] 메뉴로 갔다. 저장된 activeTab이 "out"이면
@@ -491,8 +491,8 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
       <button type="button" class="tab" data-tab="layout">용지·배치</button>
     </div>
 
-    <!-- ===== 곡 (data-tab="doc") =====
-         탭은 "무엇을 정하나"로 가른다(2026-09-29): 곡 = 악보의 **내용과 짜임**(총보·파트보가
+    <!-- ===== 기본 (data-tab="doc") =====
+         탭은 "무엇을 정하나"로 가른다(2026-09-29): 기본 = 악보의 **짜임과 제목**(총보·파트보가
          함께 쓰는 값), 용지·배치 = 그것을 **종이에 어떻게 앉히나**(대부분 보기별 — VIEW_LAYOUT_IDS).
          data-tab 값은 저장된 activeTab과 둘러보기가 읽으므로 이름만 바꾸고 값은 그대로 둔다. -->
     <div class="tabpanel active" data-tab="doc">
@@ -537,19 +537,6 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <label for="subtitle">부제 (선택)</label>
         <input type="text" id="subtitle" placeholder="예: (한송정)">
         <div class="hint"><ul class="guide-list"><li>제목과 부제목은 기능바 <b>文 텍스트</b> 창에서 서식과 위치를 편집할 수 있습니다.</li><li><b>//</b>를 통해 줄바꿈할 수 있습니다.</li></ul></div>
-      </div>
-      <!-- 전체 초기화 — 예전엔 파일 메뉴(⋯) 안이었는데 그 메뉴를 없애며 이리로 왔다
-           (2026-08-25). 오른쪽 레일에 두지 않은 건 **늘 보이는 자리에 둘 명령이 아니어서**다
-           (빈도×위험도). 위험하지만 resetAllContent가 confirm()으로 한 번 더 묻고 되돌리기
-           (⌘Z)도 먹어 안전장치가 둘이라, 설정 안쪽 자리면 충분하다. -->
-      <!-- 제 묶음 제목을 둔다 — 이름표 없는 칸의 설명(?)은 바로 위 .sec에 붙으므로(foldSidebarHints),
-           제목이 없으면 이 설명이 '악기 편성' 옆에 두 번째 ?로 붙는다. -->
-      <div class="sec">초기화</div>
-      <div class="field">
-        <button type="button" id="btnResetContent" class="orn-reset danger-btn"
-          title="선율·장단·곁줄·텍스트·정간 서식을 모두 지웁니다 (레이아웃은 유지)">
-          ⟲ 전체 초기화</button>
-        <div class="hint"><ul class="guide-list"><li>지움: 선율·장단·곁줄·텍스트·정간 서식</li><li>유지: 용지 방향·정간 크기 등 레이아웃</li><li>실행 전에 한 번 더 확인하며, 되돌리기(⌘Z)로 복구할 수 있습니다.</li></ul></div>
       </div>
 
     </div>
@@ -1580,7 +1567,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
             <div class="mg-sec"><p class="guide-paragraph"><b>목록</b></p><ul class="guide-list"><li>제목·부제·자유 텍스트가 <b>한 목록에 한 줄씩</b> 놓입니다 — 위 칸에
                 내용을 입력하고 '추가'를 선택하면 목록에 줄이 추가됩니다.</li><li>줄마다 내용·방향·크기·자간을 그 자리에서 고칩니다.</li><li>글씨체는 <b>창 상단</b>에서 제목·자유 텍스트에 일괄 적용됩니다.</li></ul></div>
             <div class="mg-sec"><p class="guide-paragraph"><b>제목 · 부제</b></p><ul class="guide-list"><li>곡에 하나뿐이므로 목록 <b>맨 위</b>에 고정됩니다 (빠르기/각/장 창의
-                '빠르기' 줄과 같은 규칙).</li><li>내용은 <b>설정 › 곡 탭</b>과 같은 값이며 서로 연동됩니다. 비우면
+                '빠르기' 줄과 같은 규칙).</li><li>내용은 <b>설정 › 기본 탭</b>과 같은 값이며 서로 연동됩니다. 비우면
                 목록에서 사라집니다.</li></ul></div>
             <div class="mg-sec"><p class="guide-paragraph"><b>자유 텍스트</b></p><ul class="guide-list"><li>악보 위에 배치하는 자유 텍스트입니다 (대여음 등).</li><li>악보 위에서 직접 끌어 위치를 옮길 수 있습니다.</li></ul></div>
           </div>
@@ -1609,18 +1596,18 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
           <input type="text" id="textAddInput" placeholder="예: 대여음">
           <button type="button" id="textAddBtn" class="at-add">추가</button>
         </div>
-        <div class="hint"><ul class="guide-list"><li>제목·부제는 <b>설정 › 곡 탭</b>과 같은 값이며, 비우면 목록에서 사라집니다.</li><li>악보 위 글자를 <b>직접 끌어</b> 위치를 옮길 수 있습니다.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>제목·부제는 <b>설정 › 기본 탭</b>과 같은 값이며, 비우면 목록에서 사라집니다.</li><li>악보 위 글자를 <b>직접 끌어</b> 위치를 옮길 수 있습니다.</li></ul></div>
         <!-- 제목·부제 항목 — 곡에 하나뿐이라 목록 맨 위에 고정으로 세운다(#tempoItem과 같은
              규칙). **마크업에서 지우지 말 것**: collectState가 CTRL_IDS를 돌며 $(id).value를
              널 검사 없이 읽어, titleSize 등이 없으면 저장이 통째로 터진다. 내용이 비면
              render()가 style.display로 숨길 뿐이다.
-             내용 칸(#titleMirror)은 설정 › 곡 탭 #title의 양방향 미러 — 정본은 #title이고
+             내용 칸(#titleMirror)은 설정 › 기본 탭 #title의 양방향 미러 — 정본은 #title이고
              (render·저장이 그걸 읽음) 여기서 고치면 그쪽에 써넣는다. #tempoBpmGak ↔ #tempoBpm
              과 같은 방식. 줄모양을 자유 텍스트 항목과 같게 하려고 둔 것이니 정본을 여기로
              옮기지 말 것. -->
         <div id="txTitleItem" class="tx-item">
           <span class="gn-gak">제목</span>
-          <input type="text" id="titleMirror" title="제목 내용 — 설정 › 곡 탭과 같은 값입니다">
+          <input type="text" id="titleMirror" title="제목 내용 — 설정 › 기본 탭과 같은 값입니다">
           <label>방향
             <select id="titleLayout" title="제목 표기 방향">
               <option value="side" selected>세로 칸</option>
@@ -1645,7 +1632,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         </div>
         <div id="txSubItem" class="tx-item">
           <span class="gn-gak">부제</span>
-          <input type="text" id="subMirror" title="부제 내용 — 설정 › 곡 탭과 같은 값입니다">
+          <input type="text" id="subMirror" title="부제 내용 — 설정 › 기본 탭과 같은 값입니다">
           <label>크기(mm)<input type="number" id="subSize" min="1" max="20" step="0.5" value="5"></label>
           <label>자간(mm)<input type="number" id="subSpacing" min="-5" max="30" step="0.5" value="0"></label>
           <input type="number" id="subOffset" step="1" value="0" hidden>
@@ -1808,13 +1795,18 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <label>악기 편성 (선택)</label>
         <div id="ndParts"></div>
         <button type="button" id="ndPartAdd" class="at-add" style="margin-top:4px;">＋ 악기 추가</button>
-        <div class="hint"><ul class="guide-list"><li>비워 두면 악기 구분 없이 시작합니다 — 나중에 <b>설정 › 곡 › 악기 편성</b>에서 더할 수 있습니다.</li><li>둘 이상 선택하면 <b>총보</b>로 시작하고, 상단바에서 총보/파트보를 오갈 수 있습니다.</li></ul></div>
+        <div class="hint"><ul class="guide-list"><li>비워 두면 악기 구분 없이 시작합니다 — 나중에 <b>설정 › 악기</b>에서 더할 수 있습니다.</li><li>둘 이상 선택하면 <b>총보</b>로 시작하고, 상단바에서 총보/파트보를 오갈 수 있습니다.</li></ul></div>
       </div>
       </details>
+      <!-- [지금 틀 그대로 내용만 지우기] — 전체 초기화(2026-10-13 설정 탭에서 이리로). 둘 다 '처음부터
+           다시'이고 틀을 새로 정하나(새 문서) 그대로 두나(초기화)만 다르다. 상단바 [새 문서]로 열 때만
+           보인다(app.js openNewDocWizard). 강조색은 [기본 틀 만들기] 하나뿐이라 버튼줄 아래 글자 버튼으로 둔다. -->
       <div class="btns">
         <button type="button" id="ndCancel" class="secondary">취소</button>
         <button type="button" id="ndCreate">기본 틀 만들기</button>
       </div>
+      <button type="button" id="ndResetContent" class="nd-reset" style="display:none;"
+        title="선율·장단·곁줄·텍스트·정간 서식을 모두 지웁니다 — 정간 수·각 수·용지·배치 등 틀은 그대로 둡니다. 되돌리기(⌘Z)로 복구할 수 있습니다.">⟲ 지금 틀 그대로 내용만 지우기</button>
     </div>
   </div>
 
@@ -1990,7 +1982,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               <li>세로 한 줄을 <b>각</b>이라 합니다. 오른쪽부터 1각, 2각 순서로 세며, 보통 <b>한 각에 한 장단</b>이 들어갑니다.</li>
               <li>세로쓰기 글을 읽듯 <b>오른쪽 각부터 위에서 아래로</b> 읽고, 한 각을 다 읽으면 <b>왼쪽 각</b>으로 넘어갑니다.</li>
               <li>한 정간 안에 음이 여럿이면 가로쓰기처럼 <b>왼쪽에서 오른쪽으로</b>, 줄이 나뉘면 <b>위에서 아래로</b> 읽습니다.</li>
-              <li>각 안을 굵은 가로선으로 나눈 단위를 <b>대강</b>이라 합니다. 설정 › 곡 탭의 '대강 분절'에서 대강을 표기할 수 있습니다.</li>
+              <li>각 안을 굵은 가로선으로 나눈 단위를 <b>대강</b>이라 합니다. 설정 › 기본 탭의 '대강 분절'에서 대강을 표기할 수 있습니다.</li>
             </ul>
             <h4>12율명 — 음이름</h4>
             <p>서양의 음이름(C, D, E…) 대신 12개의 율명을 사용하여 절대음을 표현합니다: <b>황·대·태·협·고·중·유·임·이·남·무·응</b> — 전통 악보에서는 한자 <b>黃·大·太·夾·姑·仲·蕤·林·夷·南·無·應</b>으로 적습니다. 옥타브(±2옥타브)는 이 한자에 <b>변(部首)을 더해</b> 나타냅니다:</p>
