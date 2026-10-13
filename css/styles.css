@@ -991,6 +991,11 @@
      fixed로 뜨고 자리는 app.js '글자 크기 팝업'이 버튼 아래에 잰다(에디터 독처럼 넘침을 자르는
      상자 안에서도 안 잘리게 — 레일 메뉴·도구창 ? 안내와 같은 수법). 꼴은 재생 설정 팝오버와 한 벌. */
   #sizeToggle.on { background: var(--hover); border-color: var(--line); }
+  /* 아이콘은 큰 '가' + 작은 '가' — 앱에 영어가 없어 'Aa'는 혼자 튀었다. 텍스트 탭의 '가'(한 글자)와
+     크기 차이로 갈린다. 글꼴은 UI 글꼴 그대로(궁서 계열은 '종이에 실릴 글자' 표시라 쓰지 않는다). */
+  #sizeToggle .sz-ic { font-style: normal; font-size: 17px; font-weight: 400; line-height: 1;
+                       letter-spacing: -.02em; color: var(--ink); }
+  #sizeToggle .sz-ic small { font-size: .62em; margin-left: 1px; }
   .size-pop { position: fixed; z-index: 60; display: none; width: 248px; padding: 10px 12px 10px;
               background: var(--overlay); border: 1px solid var(--line); border-radius: 10px;
               box-shadow: 0 2px 10px rgba(0,0,0,.15); font-size: 12px; color: var(--ink); }
