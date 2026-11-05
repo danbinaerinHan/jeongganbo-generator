@@ -392,6 +392,48 @@
     return { g, endY: endY };
   }
 
+  // 세로 제목·부제가 칸 아래끝(bottom)을 넘지 않을 글자 크기 — 넘칠 때만 줄이고 안 넘치면
+  // font를 그대로 돌려준다(짧은 제목·부제는 한 획도 안 바뀐다). 예전엔 칸 '폭'에만 맞추고
+  // 세로 길이는 재지 않아, 긴 부제(늴리리야 샘플의 '출처: 2022 국립국악원 교과서
+  // 표준악보집')가 테두리와 종이 아래로 빠져나갔다(2026-11-04 사용자 제보 — 인쇄·PNG도 잘렸다).
+  // 셈은 verticalText의 자리 셈 그대로다: 첫 글자 밑선 = base + font*lead, 한 글자 자리 =
+  // font*1.12 + spacing, 빈칸은 그 0.55. '//'로 나눈 줄 중 가장 긴 줄이 기준이다.
+  // VERT_INK_BELOW는 마지막 글자 밑선 아래로 내려가는 잉크(받침·획) 몫이다.
+  // **줄이기 전에 먼저 끌어올린다**: 사용자가 상하 위치로 아래로 내려 둔 몫(lift, 0 이상)만큼은
+  // 글줄을 위로 당겨 끝을 아래끝에 맞추고, 그래도 모자랄 때만 글자를 줄인다 — 늴리리야 샘플은
+  // 부제를 123mm 내려 칸 아래쪽에 붙여 두었는데, 그 자리에서 바로 줄이면 글자가 깨알이 됐다.
+  // 돌려주는 것은 { font, shift }(shift = 위로 당긴 양, base에서 뺄 값)다.
+  const VERT_INK_BELOW = 0.15;
+  function vertFit(str, font, base, lead, bottom, spacing, lift) {
+    const need = vertNeed(str, font, base, lead, spacing);
+    if (need <= bottom) return { font: font, shift: 0 };
+    const shift = Math.min(need - bottom, Math.max(0, lift || 0));
+    return { font: vertFitFont(str, font, base - shift, lead, bottom, spacing), shift: shift };
+  }
+  function vertNeed(str, font, base, lead, spacing) {
+    const u = vertUnits(str);
+    if (u <= 0) return base;
+    return base + font * lead + (u - 1) * (font * 1.12 + (spacing || 0)) + font * VERT_INK_BELOW;
+  }
+  function vertUnits(str) {
+    let u = 0;
+    String(str).split("//").map(function (x) { return x.trim(); }).filter(Boolean).forEach(function (part) {
+      let n = 0;
+      for (const ch of Array.from(part)) n += ch === " " ? 0.55 : 1;
+      if (n > u) u = n;
+    });
+    return u;
+  }
+  function vertFitFont(str, font, base, lead, bottom, spacing) {
+    const u = vertUnits(str);
+    if (u <= 0) return font;
+    const sp = spacing || 0;
+    if (vertNeed(str, font, base, lead, sp) <= bottom) return font;
+    const f = (bottom - base - (u - 1) * sp) / (lead + 1.12 * (u - 1) + VERT_INK_BELOW);
+    // 아주 긴 글이라도 읽을 수 없게까지 줄이지는 않는다(그때는 넘치는 쪽을 택한다)
+    return Math.max(font * 0.35, Math.min(font, f));
+  }
+
   // 가로쓰기 자유 텍스트 — verticalText와 같은 꼴로 {g} 반환 (cx가 가로 중심)
   function horizontalText(cx, y, str, font, weight, color, family, spacing) {
     const g = el("g", {});
@@ -2237,7 +2279,14 @@
     });
     inp.addEventListener("keydown", function (e) {
       if (e.isComposing || e.keyCode === 229) return;
-      if (e.key === "Escape") { e.preventDefault(); closeCellEditor(); return; }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        // 끝 공백으로 잡아 둔 '빈 아래 분박'(drawCell)을 걷으려면 다시 그려야 한다
+        const pending = domain === "mel" && /\S\s+$/.test(inp.value);
+        closeCellEditor();
+        if (pending) render();
+        return;
+      }
       // 방향키로 인접 칸 이동 — 위/아래는 텍스트 입력창에서 원래 아무 동작이 없어 늘 가로채고,
       // 좌/우는 글자 편집(커서 이동)과 겹치므로 커서가 글자 맨 앞/뒤에 있을 때만 칸 이동으로 쓴다.
       let arrowKey = null;
@@ -3054,7 +3103,9 @@
     if (caption) item.classList.add("has-cap");
     if (file) {
       const img = document.createElement("img");
-      img.src = (window.NOTE_DATA && window.NOTE_DATA[file]) ? window.NOTE_DATA[file] : NOTE_DIR + file + ".png";
+      // 악보와 같은 그림을 쓴다(symURL — SVG가 있으면 그쪽이 먼저). 쉼표(pause_007)는 예전
+      // NOTE_DATA의 41×33 PNG라 확대하면 흐렸는데, 이제 SYM_DATA의 SVG가 이긴다.
+      img.src = symURL(file) || (NOTE_DIR + file + ".png");
       img.alt = label;
       item.appendChild(img);
     } else {
@@ -3887,6 +3938,14 @@
   function drawCell(svg, x, yTop, cell, content, gakIdx, cellIdx, pageIdx) {
     const rows = content.split(/\s+/).filter(Boolean);
     if (!rows.length) return;
+    // 입력 카드에서 '중 '처럼 띄어쓰기로 끝나면 **치는 동안만** 빈 아래 분박을 하나 더 잡아,
+    // 윗글자가 위 분박 자리로 올라가 '아래 칸에 이어 쓰면 된다'가 보이게 한다.
+    // 저장되는 글자는 setCellText가 끝 공백을 걷으므로 그대로이고, 카드를 닫거나
+    // 다른 칸으로 가면 다시 그려지며 가운데로 돌아온다. 활성 파트 열(ornCollect)에만.
+    if (ornCollect && cellEditInput && cellEditDomain === "mel" &&
+        cellEditGi === gakIdx && cellEditCi === cellIdx && /\S\s+$/.test(cellEditInput.value)) {
+      rows.push("");
+    }
     const nRows = rows.length;
     // 기호 순번(k)은 **원문 등장 순서**로 미리 매긴다 — getOrnToken이 원문의 괄호 토큰을
     // 앞에서부터 세어 k번째를 고르므로, 그리는 차례(좌/우 배치, 행 순서)로 매기면 어긋난다.
@@ -5343,25 +5402,29 @@
           // **크기·자간 모두 제 것(tempoSize·tempoSpacing)**을 쓴다: 각/장 이름은 여러 개를 머리줄
           // 값으로 한꺼번에 맞추는 반면 템포는 곡에 하나뿐이라 따로 조절한다(각/장 창의 템포 항목).
           // 장단이 있으면 장단 칸 위에서 그리므로 여기(첫 각 위)는 장단이 없을 때만.
-          function drawTempoLabel(cx, topY) {
+          // lift: 표기 아래끝을 각 윗선에서 더 올릴 몫(총보 악기 이름 자리). 위끝은 그대로 두고
+          // 그만큼 글자를 줄인다 — 위끝을 따라 올리면 테두리 윗선(빠르기 높이 예약으로 정해짐)을 뚫는다.
+          function drawTempoLabel(cx, topY, lift) {
+            lift = lift || 0;
             const chars = Array.from(tempoStr);
             const mul = tempoMul;
             const gap = tempoGap;   // 위 예약(tempoH)과 같은 값 — 어긋나면 잘리거나 뜬다
             const avail = (b === 0 ? Math.max(2, topY - 1) : Math.max(2, bandGap * 0.9)) - gap;
             const nGaps = chars.length - 1;
             const perF = 0.85 + TEMPO_LEAD * nGaps;         // f에 비례하는 몫(자간 0일 때 총 높이)
-            const f = Math.min(cell * TEMPO_F * mul, Math.max(1, avail) / perF);
+            const f0 = Math.min(cell * TEMPO_F * mul, Math.max(1, avail) / perF);
+            const f = lift > 0 ? Math.max(f0 * 0.5, f0 - lift / perF) : f0;
             // 자간(#tempoSpacing)은 글자 크기와 무관한 고정 mm라, 글자를 놓고 **남는 높이까지만**
             // 벌어진다. 안 막으면 표기가 각 위 여백을 넘어 종이 밖으로 올라가 잘린다(높이 예약
             // tempoH는 밴드 사이 간격을 나눌 때만 쓰여 여기를 지켜주지 못한다).
             // 좁히는 쪽(음수)은 넘칠 일이 없으니 그대로 통과시킨다.
-            const spMax = nGaps > 0 ? Math.max(0, (avail - perF * f) / nGaps) : 0;
+            const spMax = nGaps > 0 ? Math.max(0, (avail - lift - perF * f) / nGaps) : 0;
             const sp = Math.min(tempoSpacing, spMax);
             // verticalText는 한 글자 자리를 font*1.12로 잡는다 — 빠르기 표기는 그보다 촘촘히
             // (TEMPO_LEAD) 세우므로 그 차이를 자간에 실어 넘긴다(사용자 자간은 그 위에 얹힌다).
             const spV = sp + f * (TEMPO_LEAD - 1.12);
             const lineH = f * TEMPO_LEAD + sp;               // 높이 예약(tempoLineH)과 같은 셈
-            const startY = topY - gap + f * 0.06 - nGaps * lineH;
+            const startY = topY - lift - gap + f * 0.06 - nGaps * lineH;
             // 좌우 오프셋(숨은 #tempoOffX, mm) — 드래그가 써 주는 값. 상하는 숨은 #tempoGap이
             // 담당(높이 예약과 한 값이라야 잘리지 않으므로 별도 dy를 두지 않는다).
             const tOffX = (parseFloat($("tempoOffX") && $("tempoOffX").value) || 0) * scale;
@@ -5389,7 +5452,18 @@
             });
           }
           if (wantTempo && pageIdx === 0 && melIdx === 0 && !wantJangdan && pi === 0) {
-            drawTempoLabel(x + cell / 2, bandTop);
+            // 총보 곡 머리에서는 이 열 바로 위에 악기 이름(위 '악기 이름' 블록, 같은 lf 셈)이 선다 —
+            // 빠르기 표기를 그 이름 위로 올린다. 예전엔 둘 다 각 윗선에 붙어 '대금'과 겹쳤다
+            // (수제천 총보, 2026-11-04 사용자 제보). 위끝은 그대로 두고 올린 만큼 글자를 줄인다(lift).
+            let tempoTop = bandTop;
+            if (scoreMode && !wantHeader && pageIdx === 0 && b === 0) {
+              const lbl0 = partLabel(partList[pi], pi);
+              if (lbl0) {
+                const lf0 = Math.min(cell * 0.3, (cell * 0.94) / Math.max(1, Array.from(lbl0).length));
+                tempoTop = bandTop - lf0 * 1.35;
+              }
+            }
+            drawTempoLabel(x + cell / 2, bandTop, bandTop - tempoTop);
           }
 
           // 각 이름(대여음·一章 등) — 그 각 위 여백에 세로쓰기. 첫 각의 템포 표시와
@@ -5748,9 +5822,14 @@
         const panelW = panelRight - panelX;
         // '//'로 여러 세로줄이면 줄 묶음 전체가 제목 칸 폭에 들어가게 글자를 줄인다
         const titleCols = Math.max(1, titleParts.length);
-        const titleFont = Math.min(desiredTitle * scale,
-          titleCols > 1 ? panelW * 0.92 / (1.18 * titleCols) : panelW * 0.78);
-        const startY = gridY + headH + titleFont * 1.05 + desiredTitleOff * scale;
+        // 세로로 넘치지 않게 — 아래끝은 테두리 안쪽 여백(INNER_PAD의 6할)까지
+        const textBottom = pBottom - INNER_PAD * 0.6;
+        const titleFit = vertFit(titleTxt, Math.min(desiredTitle * scale,
+          titleCols > 1 ? panelW * 0.92 / (1.18 * titleCols) : panelW * 0.78),
+          gridY + headH + desiredTitleOff * scale, 1.05, textBottom, desiredTitleSpacing * scale,
+          desiredTitleOff * scale);
+        const titleFont = titleFit.font;
+        const startY = gridY + headH + titleFont * 1.05 + desiredTitleOff * scale - titleFit.shift;
         const tt = verticalTextML(cx + desiredTitleOffX * scale, startY, titleTxt, titleFont, 700, "#000", titleFontFam, desiredTitleSpacing * scale);
         const ttHolder = el("g", {});
         ttHolder.appendChild(tt.g);
@@ -5758,12 +5837,15 @@
         attachTitleDrag(ttHolder, tt.g, titleFont * 0.28, svg, scale, "titleOffset", "titleOffsetX", textWinOpen);
         if (subTxt) {
           const subCols = Math.max(1, subParts.length);
-          const subFont = Math.min(desiredSub * scale,
-            subCols > 1 ? panelW * 0.92 / (1.18 * subCols) : panelW * 0.72);
+          const subBase0 = tt.endY - Math.min(desiredTitleOff * scale, 0) + titleFont * 0.5 + desiredSubOff * scale;
+          const subFit = vertFit(subTxt, Math.min(desiredSub * scale,
+            subCols > 1 ? panelW * 0.92 / (1.18 * subCols) : panelW * 0.72),
+            subBase0, 1, textBottom, desiredSubSpacing * scale, desiredSubOff * scale);
+          const subFont = subFit.font;
           // 부제 기준점은 '상황에 맞게' — 제목이 부제 쪽(아래)으로 내려오면 겹치지 않게
           // 따라 밀리고, 위로 올라가면 따라가지 않고 제자리(따로 조절 유지).
           // tt.endY에는 제목 상하 이동이 포함돼 있으므로 위로 간 만큼만 되돌린다.
-          const subStart = tt.endY - Math.min(desiredTitleOff * scale, 0) + titleFont * 0.5 + subFont + desiredSubOff * scale;
+          const subStart = subBase0 - subFit.shift + subFont;
           if (subStart < pBottom) {
             const st = verticalTextML(cx + desiredSubOffX * scale, subStart, subTxt, subFont, 400, "#333", titleFontFam, desiredSubSpacing * scale);
             const stHolder = el("g", {});

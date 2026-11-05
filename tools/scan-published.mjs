@@ -23,7 +23,7 @@
 import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { loadApp } from "./lib/app-sandbox.mjs";
+import { loadLinter } from "./lib/lint-doc.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -82,64 +82,13 @@ async function post(path, body, auth) {
 const rpc = (fn, body) => post("/rest/v1/rpc/" + fn, body, true);
 
 // ---------- 앱의 눈으로 재기 ----------
-// melodyBadFlags가 쓰는 표와 함수만 떼어 온다. symURL이 그림 사전 셋을 뒤지므로
-// (SYM_DATA·NOTE_DATA·JANGGU_DATA) 그 데이터도 브라우저에서처럼 window에 올려 둔다 —
-// 키 목록을 여기 따로 적으면 그것이 곧 두 번째 사전이 된다.
-await import("../js/symbols-data.js");
-await import("../js/notes-data.js");
-await import("../js/janggu-data.js");
-
-const app = await loadApp(
-  ["const:SPECIAL_NOTES", "const:SYM_MARK", "const:ORN_BRACKET_CLOSE",
-   "const:PRE2", "const:PRE2U", "const:PRE1U", "const:PRE1D",
-   "const:OCT_ROWS", "octPrefix",
-   // 칸 나눔 규칙(좌우는 상하가 있을 때만)이 쓰는 것들 — melodyBadFlags가 안에서 부른다
-   "parseMelodyOffsets", "tokenizeNotes", "groupRowTokens", "cellSplitBad",
-   "matchSpecialNote", "symURL", "melodyBadFlags"],
-  {}
-);
-const melodyBadFlags = app.fn("melodyBadFlags");
-
-// ★ 빗장 하나. app.js는 BASESET(성립하는 율명 낱자)을 YUL에서 뽑는데, 검사 상자는 그것을
-//   **손으로 박아 둔 대역**으로 건네준다(tools/lib/app-sandbox.mjs). 둘이 어긋나면 멀쩡한
-//   율명이 죄다 '틀림'으로 잡혀 **모든 악보가 통째로 오류로 보고된다** — 조용히 틀리느니
-//   여기서 멈춘다. 견주는 값은 js/app.js의 YUL을 그 자리에서 읽어 온 것이라 사본이 아니다.
-{
-  const src = readFileSync(join(ROOT, "js/app.js"), "utf8");
-  const m = src.match(/\n  const YUL = \{([\s\S]*?)\n?\s*\};/);
-  if (!m) { console.error("js/app.js에서 const YUL을 못 찾았습니다."); process.exit(1); }
-  const keys = [...m[1].matchAll(/([가-힣])\s*:/g)].map((x) => x[1]);
-  const stale = keys.filter((k) => melodyBadFlags(k).bad.some(Boolean));
-  if (!keys.length || stale.length) {
-    console.error("app.js의 율명과 검사 상자의 BASESET이 어긋났습니다" +
-                  (stale.length ? ": " + stale.join(" ") : "(율명을 하나도 못 읽음)"));
-    console.error("tools/lib/app-sandbox.mjs의 BASESET을 js/app.js의 YUL과 맞춰 주세요.");
-    process.exit(1);
-  }
-}
-
-// 잘못된 글자를 '이어진 덩이'로 묶어 돌려준다 — 한 글자씩 세어 봐야 어디가 틀렸는지
-// 알 수 없고, 사람이 고칠 단위는 토큰이다.
-function badRuns(text) {
-  const { a, bad } = melodyBadFlags(text);
-  const runs = [];
-  let i = 0;
-  while (i < a.length) {
-    if (!bad[i]) { i++; continue; }
-    let j = i;
-    while (j < a.length && bad[j]) j++;
-    // 줄·글자 자리 — 편집기가 textarea라 이대로 찾아갈 수 있다
-    let line = 1, col = 1;
-    for (let k = 0; k < i; k++) { if (a[k] === "\n") { line++; col = 1; } else col++; }
-    runs.push({
-      line, col,
-      text: a.slice(i, j).join(""),
-      around: a.slice(Math.max(0, i - 6), Math.min(a.length, j + 6)).join("").replace(/\n/g, "⏎"),
-    });
-    i = j;
-  }
-  return runs;
-}
+// 편집기가 빨간 바탕을 깔 때 쓰는 그 함수(melodyBadFlags)를 js/app.js에서 떼어 와 그대로
+// 돌린다 — 재는 자는 tools/lib/lint-doc.mjs 한 곳에 있다(손에 있는 파일을 재는
+// tools/edit-local-scores.mjs가 같은 눈으로 봐야 하므로). BASESET 빗장도 그 안에 있다.
+let linter;
+try { linter = await loadLinter(); }
+catch (e) { console.error(e.message); process.exit(1); }
+const { app, melodyBadFlags, badRuns, scanDoc } = linter;
 
 // ---------- 손대도 되는 교정 (--fix-safe) ----------
 // **답이 하나로 정해지는 것만** 고친다. 검사기가 아는 것은 '앱이 이 글자를 못 읽는다'까지고
@@ -320,21 +269,6 @@ function fixSafely(text) {
   const after = melodyBadFlags(r.text).bad.filter(Boolean).length;
   if (after >= before) return null;
   return { text: r.text, hanja: r.hanja, spaces: r.spaces, splits: r.splits, before, after };
-}
-
-// 문서 하나 — 총보면 파트마다 따로 센다. 옛 v1은 루트 melody 하나뿐이다.
-function scanDoc(doc) {
-  const parts = Array.isArray(doc && doc.parts) && doc.parts.length
-    ? doc.parts
-    : [{ name: "", melody: (doc && doc.melody) || "" }];
-  const out = [];
-  parts.forEach((p, i) => {
-    const t = (p && typeof p.melody === "string") ? p.melody : "";
-    if (!t) return;
-    const runs = badRuns(t);
-    if (runs.length) out.push({ part: p.name || p.instrument || ("파트 " + (i + 1)), runs });
-  });
-  return out;
 }
 
 // 문서를 통째로 고쳐 본다. 파트마다 따로 재고, 하나라도 고쳐졌으면 새 문서를 돌려준다.
