@@ -10259,6 +10259,20 @@
     if (!playing) playMelody(); else togglePause();
   });
   $("btnStop").addEventListener("click", stopPlayback);
+  // 재생 중에는 스페이스바로 일시정지 ↔ 이어하기(멈춰 있을 땐 아무 일도 안 한다 — 시작은
+  // 버튼으로). 글자를 치는 자리에서는 띄어쓰기라 비켜선다. 방금 누른 버튼에 포커스가 남아
+  // 있으면 브라우저가 스페이스를 그 버튼 클릭으로도 처리해 두 번 뒤집히므로 포커스를 뗀다.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== " " || !playing) return;
+    if (e.isComposing || e.keyCode === 229 || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+    const t = e.target;
+    const tag = (t && t.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (t && t.isContentEditable)) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (t && t !== document.body && typeof t.blur === "function") t.blur();
+    togglePause();
+  });
   // 기준음(황 음고) 변경 → 저장 + 팔레트의 황 음고 셀렉트·피아노 건반 라벨도 따라감
   $("hwangPitch").addEventListener("change", function () {
     $("pianoBase").value = $("hwangPitch").value;
