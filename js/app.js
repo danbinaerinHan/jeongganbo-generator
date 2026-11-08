@@ -5958,11 +5958,12 @@
       ornInstances.forEach(function (o) {
         const svg = pageSvgs[o.page]; if (!svg) return;
         const selected = ornSel && ornSel.gak === o.gak && ornSel.cell === o.cell && ornSel.k === o.k;
-        svg.appendChild(rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, 0.4,
-          selected
-            ? { fill: "none", stroke: "#c0392b", class: "no-print" }
-            : { fill: "none", stroke: "#c0392b", "stroke-opacity": "0.32",
-                "stroke-dasharray": "1.1,0.9", class: "no-print" }));
+        // 꼴은 텍스트·章 이름의 끌 수 있는 상자와 같다(옅은 바탕 + 갈색 점선, 고른 것은 빨강) —
+        // 예전엔 옅은 빨간 점선뿐(불투명도 0.32)이라 어느 기호를 만질 수 있는지 잘 안 보였다.
+        svg.appendChild(rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, selected ? 0.3 : 0.2,
+          { fill: selected ? "rgba(192,57,43,.08)" : "rgba(138,109,59,.08)",
+            stroke: selected ? "#c0392b" : "#8a6d3b", "stroke-dasharray": "1.4,1.1",
+            class: "no-print" }));
         const hit = rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, 0,
           { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
         hit.style.cursor = "move";

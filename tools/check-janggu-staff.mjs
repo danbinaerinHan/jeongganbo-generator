@@ -191,8 +191,10 @@ app.setMelody("황| | |태| | |중| | |임| | \n황| | |태| | |중| | |임| | \
        .split("<measure ").length - 1, 3);
   ok("장구가 맨 아래 파트(P2)",
      lg.indexOf('<score-part id="P2">') < lg.indexOf("<part-name>장구</part-name>"));
-  // 이름 없는 선율은 장구가 붙어도 '선율'이다 — 장구까지 세면 '악기 2'가 된다
-  ok("장구가 파트 수 셈에 안 낀다", lg.includes("<part-name>선율</part-name>"));
+  // 이름 없는 선율 하나는 장구가 붙어도 이름이 비어 있다(악기 하나면 이름을 안 적는다 —
+  // musicxml.js 2026-10-12) — 장구까지 세면 '악기 1'·'악기 2'가 붙는다
+  ok("장구가 파트 수 셈에 안 낀다",
+     lg.includes('<score-part id="P1">\n      <part-name></part-name>') && !lg.includes("악기 "));
 
   F.staffJanggu = "part";
   const pt = buildMusicXml();
