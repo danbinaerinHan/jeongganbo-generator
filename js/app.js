@@ -5966,14 +5966,19 @@
         const hit = rect(o.x - 0.6, o.y - 0.6, o.w + 1.2, o.h + 1.2, 0,
           { fill: "transparent", stroke: "none", "pointer-events": "all", class: "no-print" });
         hit.style.cursor = "move";
-        (function (sel) {
+        (function (sel, page) {
           hit.addEventListener("mousedown", function (e) {
             e.preventDefault(); e.stopPropagation();
+            // 누른 자리는 **다시 그리기 전에** 잰다. selectOrn·setOrnPositionAbsolute가 render()로
+            // 쪽 SVG를 통째로 새로 만들어, 여기 잡힌 svg는 곧 문서에서 떨어진다 — 떨어진 SVG의
+            // getScreenCTM은 viewBox 배율이 빠져 화면 px를 mm로 읽고(약 10배), 끌면 기호가
+            // 곧장 ±90 끝으로 튀었다. 끄는 동안엔 그때그때 지금 쪽 SVG(pageSvgs)로 잰다.
+            const startPt = svgPointFromEvent(svg, e);
             selectOrn(sel);
             // 악보에서 직접 끌어서 위치를 옮긴다 — 다른 팔레트의 위치 버튼 없이도 바로 조정
             const t0 = getOrnToken(sel);
             if (!t0) return;
-            const startPt = svgPointFromEvent(svg, e);
+            const liveSvg = function () { return pageSvgs[page] || svg; };
             const startDx = t0.dx, startDy = t0.dy;
             let pending = null, raf = null;
             function flush() {
@@ -5981,7 +5986,7 @@
               if (pending) setOrnPositionAbsolute(pending.dx, pending.dy);
             }
             function onMove(e2) {
-              const pt = svgPointFromEvent(svg, e2);
+              const pt = svgPointFromEvent(liveSvg(), e2);
               pending = { dx: startDx + ((pt.x - startPt.x) / cell) * 100,
                           dy: startDy + ((pt.y - startPt.y) / cell) * 100 };
               if (raf == null) raf = requestAnimationFrame(flush);
@@ -5994,7 +5999,7 @@
             document.addEventListener("mousemove", onMove);
             document.addEventListener("mouseup", onUp);
           });
-        })({ gak: o.gak, cell: o.cell, k: o.k });
+        })({ gak: o.gak, cell: o.cell, k: o.k }, o.page);
         svg.appendChild(hit);
       });
     }
