@@ -10592,18 +10592,7 @@
   wireTopMenu("viewToggle", "viewPop");   // 보기 전환(총보/파트보) — 악기 둘 이상일 때만 노출
   wireTopMenu("modeToggle", "modePop");
   wireTopMenu("screenToggle", "screenPop");   // 색상 메뉴 — 색상 테마 + 다크 전환
-  wireTopMenu("betaBadge", "betaPop");   // 베타 배지 → 저장 주의 안내
-  // 좁은 창에서 팝오버(왼쪽 정렬)가 오른쪽으로 넘치면 그만큼 왼쪽으로 당겨 화면 안에 둔다.
-  // wireTopMenu가 먼저 .on을 토글하므로(같은 요소의 다른 리스너는 stopPropagation과 무관) 그 뒤 재보정.
-  if ($("betaBadge")) $("betaBadge").addEventListener("click", function () {
-    const pop = $("betaPop");
-    if (!pop.classList.contains("on")) return;   // 닫히는 클릭이면 무시
-    pop.style.left = "0";
-    const over = pop.getBoundingClientRect().right - (window.innerWidth - 8);
-    if (over > 0) pop.style.left = (-over) + "px";
-  });
-  // 팝오버의 '지금 파일로 저장' — 레일의 [저장](#btnExport)을 그대로 실행(팝오버는 클릭 시 닫힘)
-  if ($("betaSaveBtn")) $("betaSaveBtn").addEventListener("click", function () { exportFile(); });
+  // BETA 배지·저장 안내 팝오버는 타악 정간보(js/percussion.js)로 옮겼다(2026-11-16).
   // btnPrint(상단바 1급 버튼)·btnPng/btnExport/btnImport(오른쪽 레일)는 각자 제자리에 살고
   // 여기가 유일한 배선이다. 예전엔 사이드바 '출력' 탭에 진짜 버튼이 있고 상단바 더보기의
   // m* 항목이 그걸 대신 눌러주는 위임 구조였는데, 같은 명령이 두 군데 있는 게 헷갈려

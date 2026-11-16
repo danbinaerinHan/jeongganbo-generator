@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>타악 정간보 · 우물사이 Umulsai</title>
+<meta name="description" content="꽹과리·장구·북·징을 한 장에 적는 가로형 정간보 편집기. 정간 수·대강·한 줄 장단 수를 정해 인쇄하거나 그림으로 저장합니다.">
+<!-- 편집기(editor.html)와 **같은 짜임**이다: 상단바(#topBar) · 기능바(.ribbon) · 오른쪽 설정 패널
+     (#sidebar, 상단바 [설정]으로 여닫음). id·클래스를 편집기 것 그대로 써서 styles.css의 꼴을 그대로
+     받는다 — 여기서 새로 그리면 두 화면이 딴 앱처럼 보인다. 이 페이지만의 것은 percussion.css.
+     app.js는 싣지 않는다 — 세로쓰기·율명·시김새를 하나도 안 쓰는 별개 악보라서. -->
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/percussion.css?v=20261116r">
+<style id="pcPageStyle"></style>
+</head>
+<body class="perc">
+
+<div id="topBar">
+  <div id="brandBox" title="우물사이 Umulsai — 타악 정간보">
+    <a class="brand-home" href="index.html" title="우물사이 — 첫 화면으로">
+      <img id="brandLogo" src="" alt="우물사이 로고" hidden>
+      <div class="brand-txt">
+        <h1 class="brand-word"></h1>
+        <span>타악 정간보</span>
+      </div>
+    </a>
+    <!-- 베타 배지 — 편집기에 있던 것을 옮겨 왔다(2026-11-16 사용자 요청 — 시험 중인 것은 이제 이쪽이다).
+         누르는 것이라 첫 화면 링크(<a>) **밖**에 둔다. 꼴은 styles.css #betaBox·.beta-pop 그대로.
+         편집기와 달리 아직 파일 저장이 없어, 단추는 [지금 PNG로 저장]이다. -->
+    <div id="betaBox">
+      <button type="button" id="betaBadge" title="베타 버전 · 저장 안내">BETA</button>
+      <div id="betaPop" class="tb-menu beta-pop">
+        <div class="bp-title"><b>베타 버전입니다</b></div>
+        <p>타악 정간보는 아직 시험 중인 기능입니다.</p>
+        <p>작업은 이 브라우저에 <b>자동 저장</b>되지만, 브라우저·기기 환경에 따라 <b>저장이 사라질 수 있습니다.</b></p>
+        <p>아직 파일로 저장·불러오기가 없으므로, 중요한 악보는 <b>PNG·인쇄</b>로 남겨 두십시오.</p>
+        <button type="button" id="betaSaveBtn" class="bp-save">지금 PNG로 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 듣기 — 편집기 #playBar와 같은 짜임(재생·정지·재생 설정). 음원(js/perc-audio.js, 1MB)은
+       미리 싣지 않고 첫 재생 때 붙인다. 북은 좌고 녹음을 쓴다(북 테를 치는 딱은 녹음이 없다). -->
+  <div id="playBar" class="topbar-box">
+    <button type="button" id="btnPlay" class="topbar-cmd" title="재생 (스페이스바)"><span id="btnPlayIco">▶</span><span class="lbl" id="btnPlayLbl">재생</span></button>
+    <button type="button" id="btnStop" class="topbar-cmd" title="정지" disabled>■<span class="lbl">정지</span></button>
+    <button type="button" id="playSettingsToggle" class="topbar-cmd" title="재생 설정 (빠르기·반복)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line></svg>
+      <span class="lbl">재생 설정</span></button>
+    <div id="playPop" class="play-pop">
+      <div class="pp-row"><span>빠르기 (정간/분)</span><input type="number" id="pcBpm" min="20" max="400"></div>
+      <div class="pp-row"><span>반복 재생</span><input type="checkbox" id="pcLoop"></div>
+      <div class="pp-row"><span>선택한 정간부터</span><input type="checkbox" id="pcFromSel"></div>
+      <div class="pp-sec">악기별 음량 <small>· 이름 더블클릭 = 100%</small></div>
+      <div id="pcVols"></div>
+      <div class="hint">정간 하나가 한 박입니다. 칸 안을 띄어 나눈 구음은 그 박을 고르게 나눠 울립니다.<br>
+        지갱·기덕은 뒷소리(갱·덕)가 박에 오도록 앞소리를 당겨 울립니다. 북 소리는 좌고 녹음이며, 딱은 소리가 나지 않습니다.</div>
+    </div>
+  </div>
+
+  <!-- 배율 — 편집기와 같은 −/값/+ 꼴. 값을 누르면 100%·가로 맞춤 -->
+  <div id="zoomBar" class="topbar-box">
+    <button type="button" id="zoomOut" title="축소">−</button>
+    <button type="button" class="zval" id="zoomVal" title="보기 배율 · 맞춤">맞춤</button>
+    <button type="button" id="zoomIn" title="확대">+</button>
+    <div id="zoomPop" class="tb-menu">
+      <button type="button" id="zoom100">100%</button>
+      <button type="button" id="zoomFitW" title="페이지 너비를 화면에 맞춤">가로 맞춤</button>
+    </div>
+  </div>
+
+  <!-- 표기 — 칸에 적은 구음을 글자로 둘지, 교과서식 기호로 둘지, 둘 다 둘지. 예전엔 설정 패널 안에
+       있었는데 악보가 어떻게 읽히는지를 통째로 바꾸는 갈림이라 상단바로 올렸다(2026-11-16 사용자 요청).
+       '이 악보를 어떻게 볼지'의 무리(배율·오선보) 안에 둔다. 버튼 글씨 = 지금 표기(다르면 '악기별').
+       칸에 적는 것은 늘 구음이고 바뀌는 것은 그리는 꼴뿐이라, 바꿔도 적어 둔 내용·재생은 그대로다. -->
+  <div id="ntBox" class="topbar-box">
+    <button type="button" id="ntToggle" class="topbar-cmd" aria-haspopup="true" aria-controls="ntPop" title="표기 — 구음 · 기호 · 기호 + 구음 (전체 또는 악기별)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="6.5" cy="8" r="3.6"></circle><circle cx="17.5" cy="8" r="3.6" fill="currentColor" stroke="none"></circle>
+        <line x1="3" y1="17" x2="10" y2="17"></line><line x1="6.5" y1="14.5" x2="6.5" y2="20.5"></line>
+        <line x1="14" y1="15" x2="21" y2="15"></line><line x1="14" y1="19" x2="21" y2="19"></line>
+      </svg>
+      <span class="lbl" id="ntToggleLbl">구음</span>
+    </button>
+    <div id="ntPop" class="play-pop" role="dialog" aria-label="표기">
+      <div class="nt-row nt-all" id="ntAll"></div>
+      <div class="pp-sec">악기별</div>
+      <div id="pcNotation"></div>
+      <label class="chk pc-chk"><input type="checkbox" id="pcMakeum"> 꽹과리 막음새 표시 (×)</label>
+      <!-- 장구 넘겨치는 궁(궁채로 채편을 침, 칸에는 궁' 꼴로 적는다) — 위 점은 임수정 『장구교본』(1999)의
+           '궁 위 점'(이상규 2023 표5), 회색 칸은 그 몫만 옅게 칠한다(2026-11-16 사용자 요청) -->
+      <div class="nt-row" id="ovRow"><span class="nt-name">넘겨치는 궁</span><div class="pal-seg nt-seg">
+        <button type="button" class="seg-btn" data-ov="dot">위 점</button><button type="button" class="seg-btn" data-ov="shade">회색 칸</button></div></div>
+      <p class="hint">꽹과리·북·징의 기호는 중학교 음악 교과서의 장단 기보를, 장구 기호는 편집기 장단 줄과 같은 정악 장구 기호를 따릅니다. 기호가 없는 구음은 글자로 적습니다. 기호 + 구음은 그 악기 줄을 높여 위에 기호, 아래에 구음을 적습니다. 막음새 표시는 막음새를 넣고 치는 소리 앞에 빨간 ×를, 막음새를 붙인 채 이어지는 듭에 가로선을 긋습니다. 장구의 넘겨치는 궁(궁채로 채편을 침)은 칸에 <b>궁'</b>처럼 작은따옴표를 붙여 적고(구궁'·덩'도 같습니다), 악보에는 위 점 또는 회색 칸으로 표시합니다.</p>
+    </div>
+  </div>
+
+  <!-- 오선보 보기 — 편집기 #btnStaff와 같은 꼴·같은 자리(배율 옆: '이 악보를 어떻게 볼지'의 짝).
+       누르면 정간보 아래에 일선보 칸이 열린다. 조판기(6.7MB)는 이때 처음 불러온다. -->
+  <div id="staffBox" class="topbar-box">
+    <button type="button" id="pcStaff" class="topbar-cmd" aria-pressed="false" title="오선보 보기 — 악기마다 한 줄 보표(일선보)로 옮겨 정간보 아래에 표시합니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+        <line x1="3" y1="14" x2="21" y2="14"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+        <ellipse cx="9" cy="15.5" rx="2.4" ry="1.8" fill="currentColor" stroke="none"></ellipse>
+        <line x1="11.4" y1="15.5" x2="11.4" y2="7"></line>
+      </svg>
+      <span class="lbl">오선보</span>
+    </button>
+  </div>
+
+  <div id="outBox" class="topbar-box">
+    <button type="button" id="pcReset" class="topbar-cmd" title="적어 둔 구음을 모두 지웁니다 · 정간 수·대강·악기 설정은 그대로">＋<span class="lbl">새 악보</span></button>
+    <button type="button" id="pcPrint" class="topbar-cmd" title="인쇄 — 종이에는 악보만 나갑니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      <span class="lbl">인쇄</span></button>
+  </div>
+
+  <!-- 설정 패널 토글 — 편집기처럼 상단바 오른쪽 끝 -->
+  <button type="button" id="sidebarOpen" class="side-open topbar-cmd" title="설정 패널 열기 / 닫기 · 장단·악기·용지">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    <span class="lbl">설정</span>
+  </button>
+</div>
+
+<!-- 주소로 받은 악보 배너 — 편집기 #cloudBanner와 같은 마크업(내용은 js/cloud.js가 채운다) -->
+  <div id="cloudBanner" class="cloud-banner no-print" style="display:none;">
+    <span id="cbText"></span>
+    <!-- 신고 — 남이 올린 악보를 보고 있는 바로 이 자리가 '문제가 있다'고 알릴 유일한 자리다.
+         누르면 그 악보의 주소가 담긴 편지가 열린다(js/cloud.js가 주소를 채운다). 내가 올린
+         악보를 보고 있을 때는 숨긴다. -->
+    <!-- 출처 — 다른 게시물을 고쳐 만든 악보(fork_of)일 때만. 공유마당 카드에는 '다른
+         악보에서' 태그가 붙는데 정작 악보를 열었을 때는 안 보였다(2026-08-26 사용자 지적).
+         누르면 그 원본 게시물로 간다. -->
+    <a id="cbOrigin" class="cb-report" href="#" style="display:none;"
+       title="이 악보의 바탕이 된 원래 게시물을 엽니다">원본 보기</a>
+    <a id="cbReport" class="cb-report" href="#" target="_blank" rel="noopener"
+       title="저작권 등 문제가 있는 악보를 신고합니다">신고</a>
+    <button type="button" id="cbClose" class="icon-btn" title="닫기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+  </div>
+
+<div id="appRow">
+  <main id="main">
+    <!-- 기능바 — 편집기와 같은 '이름표 + 버튼' 그룹 한 줄. 좁으면 줄바꿈 -->
+    <div class="ribbon" id="pcRibbon">
+      <!-- '선택한 정간' 묶음은 없앴다(2026-11-16 사용자 확정) — 악기 이름은 구음 이름표로('장구 구음'),
+           칸 자리·낱 구음 크기 값은 아래 점검 줄 앞머리로 옮겼다. 고른 칸은 악보에 테두리로 이미 보인다. -->
+      <div class="ribbon-group">
+        <div class="rb-cap"><span id="pcGuCap">구음</span> <small>· ⇧+누르기 = 같은 칸에 더하기</small></div>
+        <div class="rb-items pc-gu" id="pcGu"></div>
+      </div>
+      <div class="ribbon-sep"></div>
+      <div class="ribbon-group">
+        <div class="rb-cap">장단</div>
+        <div class="rb-items">
+          <button type="button" id="pcRepeat" class="ribbon-btn" title="바로 앞 장단을 지금 장단에 그대로 옮겨 적고 다음 장단으로 갑니다"><i class="pc-ic">⟲</i><span>앞 장단 반복</span></button>
+          <button type="button" id="pcClearJd" class="ribbon-btn" title="지금 장단의 모든 악기 칸을 비웁니다"><i class="pc-ic">⌫</i><span>장단 비우기</span></button>
+        </div>
+      </div>
+      <div class="ribbon-sep"></div>
+      <div class="ribbon-group">
+        <div class="rb-cap">크기</div>
+        <div class="rb-items">
+          <button type="button" id="sizeToggle" class="ribbon-btn" aria-haspopup="true" aria-controls="sizePop"
+            title="구음·악기 이름·제목 글자 크기"><i class="sz-ic" aria-hidden="true">가<small>가</small></i><span>글자 크기</span></button>
+        </div>
+        <div id="sizePop" class="size-pop" role="dialog" aria-label="글자 크기">
+          <div class="sp-row"><label for="pcFsGu">구음</label><input type="range" id="pcFsGu" min="50" max="200" step="5"><span id="pcFsGuV"></span></div>
+          <div class="sp-row"><label for="pcFsName">악기 이름</label><input type="range" id="pcFsName" min="50" max="200" step="5"><span id="pcFsNameV"></span></div>
+          <div class="sp-row"><label for="pcFsTitle">제목·부제</label><input type="range" id="pcFsTitle" min="50" max="200" step="5"><span id="pcFsTitleV"></span></div>
+          <div class="sp-sec">구음별 <small>· 이름 더블클릭 = 100%</small></div>
+          <div id="pcGuSizes" class="pc-gusizes"></div>
+          <p class="pc-pop-note">100% = 칸에 맞춘 기본 크기. 키워도 칸 폭을 넘지 않습니다.<br>
+            한 구음만: 입력칸에서 그 구음에 커서를 두고 <kbd>⌥↑</kbd> <kbd>⌥↓</kbd> · 되돌리기 <kbd>⌥0</kbd></p>
+          <div class="sp-foot"><button type="button" id="sizeReset" class="secondary">기본값으로</button></div>
+        </div>
+      </div>
+      <!-- '입력' 안내 묶음(단축키·색 설명)은 없앴다(2026-11-16 사용자 요청 — 쓰다 보면 저절로 아는 것들이라
+           늘 펼쳐 둘 까닭이 없었다). 단축키는 입력 카드의 툴팁에, 색의 뜻은 문제가 생길 때 뜨는 말풍선에 있다. -->
+    </div>
+
+    <div id="sheetArea">
+      <div class="pc-pages" id="pcPages"></div>
+    </div>
+
+    <!-- 오선보 칸 — 편집기 #staffPane과 같은 id·꼴(styles.css의 .vrv-out 다크모드 규칙을 그대로 받는다).
+         종이에는 안 나간다(no-print) — 인쇄는 정간보 그대로다. MusicXML은 조판기 없이도 만든다. -->
+    <section id="staffPane" class="no-print" hidden>
+      <div id="staffResizer" title="위아래로 끌어 높이 조절"></div>
+      <div class="staff-head">
+        <b>오선보</b>
+        <!-- MusicXML 저장은 오른쪽 레일 [출력]으로 모았다(편집기와 같이 내보내기는 한 자리) -->
+      </div>
+      <div id="staffBody"></div>
+    </section>
+  </main>
+
+  <!-- 설정 패널 — 편집기처럼 오른쪽. 위에서 아래로 '장단의 틀 → 악기 → 종이' -->
+  <aside id="sidebar">
+    <div class="side-head">
+      <h2 class="side-title">설정</h2>
+      <button type="button" id="sidebarToggle" class="icon-btn" title="설정 패널 닫기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="sec">기본</div>
+    <div class="field"><label for="pcTitle">제목</label><input type="text" id="pcTitle" placeholder="예: 웃다리 풍물 길군악"></div>
+    <div class="field"><label for="pcSub">부제</label><input type="text" id="pcSub" placeholder="예: 출처·편곡"></div>
+    <div class="pc-grid2">
+      <div class="field"><label for="pcBeats">장단 정간 수</label><input type="number" id="pcBeats" min="2" max="48"></div>
+      <div class="field"><label for="pcDaegang">대강</label><input type="text" id="pcDaegang" placeholder="3 3 3 3"></div>
+      <div class="field"><label for="pcPerLine">한 줄 장단 수</label><input type="number" id="pcPerLine" min="1" max="12"></div>
+      <div class="field"><label for="pcTotal">총 장단 수</label><input type="number" id="pcTotal" min="1" max="400"></div>
+    </div>
+    <p class="pc-note" id="pcDgWarn" hidden></p>
+    <p class="hint">대강은 정간 수를 나눈 숫자를 띄어 적습니다(합이 정간 수와 같아야 합니다). 비우면 장단 하나가 대강 하나입니다.</p>
+
+    <div class="sec">악기</div>
+    <div id="pcInsts" class="pc-insts"></div>
+    <p class="hint">끈 악기는 악보에서 빠집니다. 적어 둔 내용은 그대로 남습니다.</p>
+
+    <!-- 표기(구음·기호·막음새)는 상단바 [표기]로 옮겼다(2026-11-16) — 여기에 도로 두지 말 것 -->
+
+    <div class="sec">정간 모양</div>
+    <div class="pc-slider"><label for="pcCellFill">너비</label><input type="range" id="pcCellFill" min="40" max="100" step="1"><span id="pcCellFillV"></span></div>
+    <div class="pc-slider"><label for="pcCellRatio">세로 비율</label><input type="range" id="pcCellRatio" min="0.4" max="3" step="0.05"><span id="pcCellRatioV"></span></div>
+    <button type="button" id="pcCellAuto" class="pc-small-btn">자동으로 되돌리기</button>
+    <p class="hint">너비는 정간 줄이 종이 폭을 채우는 정도(줄이면 가운데에 섭니다), 세로 비율은 정간 높이가 가로의 몇 배인지입니다. 높이는 한 단이 한 쪽에 들어가는 데까지만 늘어납니다.</p>
+
+    <div class="sec">용지</div>
+    <div class="pc-grid2">
+      <div class="field"><label for="pcPaper">크기</label>
+        <select id="pcPaper">
+          <option value="A4">A4</option><option value="B4">B4</option><option value="A3">A3</option>
+          <option value="B5">B5</option><option value="Letter">레터</option>
+        </select></div>
+      <div class="field"><label for="pcOrient">방향</label>
+        <select id="pcOrient"><option value="landscape">가로</option><option value="portrait">세로</option></select></div>
+    </div>
+    <p class="pc-readout" id="pcReadout"></p>
+  </aside>
+  <!-- 오른쪽 세로 레일 — 편집기 #appRail과 같은 꼴·같은 무리 나눔(2026-11-16 사용자 요청). 이 페이지에
+       있는 기능만 담는다: ① 출력(정간보 인쇄·PNG · 오선보 MusicXML) ② 게시·공유마당 ③ 맨 아래 색상·문의·제안.
+       불러오기·저장·계정·도움말은 아직 이 페이지에 없는 기능이라 비워 둔다(생기면 편집기와 같은 자리에).
+       레일의 메뉴는 position:fixed로 떠서 버튼 왼쪽에 붙는다(styles.css #appRail .tb-menu — 자리는 JS). -->
+  <nav id="appRail" class="no-print" aria-label="출력 · 앱">
+    <div id="outBoxRail">
+      <button type="button" id="outToggle" class="topbar-cmd" title="출력 — 인쇄 · PNG · MusicXML">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <span class="lbl">출력</span>
+      </button>
+      <div id="outPop" class="tb-menu">
+        <div class="tb-menu-cap">정간보</div>
+        <!-- 상단바 [인쇄]와 같은 명령(지름길이 밖에 하나 더 있는 것 — 편집기와 같다) -->
+        <button type="button" id="outPrintPc">인쇄</button>
+        <button type="button" id="pcPng" title="쪽마다 PNG 그림으로 저장(300dpi)">PNG 다운로드</button>
+        <hr>
+        <div class="tb-menu-cap">오선보</div>
+        <button type="button" id="staffXml" title="악기마다 한 줄 보표로 적은 MusicXML 파일로 저장합니다 (뮤즈스코어 등에서 열 수 있습니다)">MusicXML 파일</button>
+      </div>
+    </div>
+    <hr class="rail-sep">
+    <!-- 게시 — 편집기와 같은 버튼·같은 창(js/cloud.js). 서버 설정이 비면 cloud.js가 숨긴다 -->
+    <button type="button" id="btnPublish" class="topbar-cmd" title="게시 — 공유마당에서 사람들과 공유합니다 · 짧은 주소가 생기고, 올린 뒤에도 같은 주소로 고칠 수 있습니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>
+      <span class="lbl">게시</span>
+    </button>
+    <a id="btnBrowse" class="topbar-cmd" href="browse.html" title="공유마당 — 사람들이 공유한 악보를 둘러봅니다">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span class="lbl">공유마당</span>
+    </a>
+    <div class="rail-foot">
+      <hr class="rail-sep">
+      <div id="screenBox">
+        <button type="button" id="screenToggle" class="topbar-cmd" title="색상 테마 · 다크 전환 (악보 종이는 늘 흰색)">
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <span class="lbl">색상</span>
+        </button>
+        <div id="screenPop" class="tb-menu">
+          <button type="button" id="themeHanji">미색</button>
+          <button type="button" id="themeCrystal">은청색</button>
+          <button type="button" id="themeCeladon">옥색</button>
+          <hr>
+          <button type="button" id="darkModeItem">어두운 화면으로</button>
+        </div>
+      </div>
+      <!-- 문의·제안 — JGB_CLOUD.board가 켜져 있을 때만 보인다(편집기와 같은 규칙, js/percussion.js) -->
+      <a id="btnBoard" class="topbar-cmd" href="board.html" style="display:none" title="문의·제안 — 자주 묻는 질문 · 궁금한 점이나 바라는 기능 남기기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <span class="lbl">문의·제안</span>
+      </a>
+    </div>
+  </nav>
+</div>
+
+<!-- 악보 게시 창 — 편집기(editor.html #pubModal)에서 그대로 옮긴 사본. 창의 상태 전환은 js/cloud.js가
+     하므로 id를 바꾸지 말 것. 편집기의 창을 고치면 여기도 함께. -->
+  <div id="pubModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <!-- 제목줄 — 남의 악보를 열어 둔 채로 올리려는 것이면 **제목 옆에 붉게** 표시한다
+           (2026-08-26 사용자 요청). 예전엔 아래쪽 안내(.hint) 한 줄이라 [게시]를 누르기 전에
+           읽힐 자리가 아니었다. 문구에서 '열쇠'라는 말은 걷었다 — 그건 게시할 때 서버가 딱
+           한 번 주고 올린 사람 브라우저에만 남는 수정 토큰을 가리키는 이 리포의 은유인데,
+           처음 보는 사람에게는 무슨 소리인지 알 길이 없다(사용자 제보). -->
+      <div class="pub-head-row">
+        <h3 id="pubHead">악보 게시</h3>
+        <span id="pubForkTag" class="pub-fork-tag" style="display:none;">다른 사람의 악보</span>
+      </div>
+      <!-- 이미 올라가 있는 악보일 때만 — 주소를 다시 찾으러 딴 데 가지 않게 -->
+      <div class="field" id="pubExisting" style="display:none;">
+        <label for="pubUrl">이 악보의 주소</label>
+        <div class="row">
+          <input type="text" id="pubUrl" readonly style="flex:1; min-width:0;">
+          <button type="button" id="pubCopy" class="pub-copy">복사</button>
+        </div>
+      </div>
+      <!-- 왜 '갱신'이 아니라 '게시'인지 미리 말해 준다. 위 붉은 표시와 한 짝이다. -->
+      <div class="hint" id="pubForkNote" style="display:none;"><ul class="guide-list"><li>남이 올린 악보를 열어 고친 것이라 <b>원본은 바뀌지 않습니다</b> — 내 것으로 <b>새 주소</b>에 올라가고, 원래 악보가 출처로 남습니다.</li></ul></div>
+      <!-- 앱이 못 읽는 자리가 있으면 올리기 전에 한 줄로 알려 준다. **막지는 않는다** —
+           무엇을 쓰려던 것인지는 앱이 모르고, 일부러 그렇게 둔 악보일 수도 있다.
+           문구는 담백하게 사실만: 무엇이 어떻게 안 된다는 설명은 여기서 할 말이 아니다. -->
+      <div class="warn" id="pubSyntax" style="display:none;"></div>
+      <div class="field">
+        <label for="pubAuthor">지은이 (선택)</label>
+        <input type="text" id="pubAuthor" maxlength="60" placeholder="예: 홍길동">
+        <div class="hint">입력한 이름은 <b>공유마당 목록</b>과 <b>악보를 연 화면</b>에 표시됩니다. 별도의 본인 확인 절차가 없으므로 원하는 이름을 입력할 수 있습니다.</div>
+      </div>
+      <div class="field">
+        <label for="pubLicense">이용 조건</label>
+        <select id="pubLicense">
+          <option value="none">저작권 유보 — 이용하려면 게시자의 허락이 필요합니다</option>
+          <option value="cc-by">CC BY — 출처만 밝히면 자유롭게</option>
+          <option value="cc-by-nc">CC BY-NC — 출처를 밝히고 비영리로</option>
+          <option value="cc-by-sa">CC BY-SA — 출처를 밝히고 같은 조건으로</option>
+          <!-- 국악원 OMR 데이터셋(CC BY-NC-SA)을 고쳐 다시 올릴 때 같은 조건을 고를 수
+               있어야 해서 열어 둔 값 — 서버 제약(server/schema.sql)에도 같이 있다 -->
+          <option value="cc-by-nc-sa">CC BY-NC-SA — 출처를 밝히고 비영리·같은 조건으로</option>
+          <option value="cc0">CC0 — 아무 조건 없이</option>
+        </select>
+      </div>
+      <!-- 공개가 기본 — 여기는 '나눠 보는 곳'이라 올리는 이의 보통 뜻이 그쪽이다.
+           끄면 주소를 아는 사람만 보는 옛 방식(unlisted)이 된다. -->
+      <div class="field">
+        <label class="chk"><input type="checkbox" id="pubPublic" checked> 공유마당 목록에 올리기</label>
+        <div class="hint">끄면 <b>주소를 아는 사람만</b> 볼 수 있습니다(목록에 오르지 않습니다).</div>
+      </div>
+      <!-- 권리 확인 — **체크 한 칸 + 조항으로 가는 길 한 줄**이 전부다. 예전엔 무엇이 왜 안
+           되는지를 여기서 두 줄로 설명했는데(원곡 저작권 · 남의 채보), 올리려는 사람 앞에
+           경고문을 쌓아 두는 꼴이라 **아무도 안 올리게 만드는 쪽**으로 작용했다(2026-08-26
+           사용자 판단). 저작권법 제102·103조가 요구하는 것은 **'신고 수령인 공지'**이고 그건
+           policy.html에 있다 — 게시 창의 경고문이 아니다. 그러니 줄여도 지킬 것은 지킨다.
+           확인 자체(체크박스)는 그대로 둔다: 올리는 사람이 권리를 확인했다는 기록이라서. -->
+      <div class="field">
+        <label class="chk"><input type="checkbox" id="pubRights"> 이 악보를 공개할 권리가 있습니다</label>
+        <div class="hint"><ul class="guide-list"><li>올릴 수 있는 악보의 범위는 <a href="policy.html" target="_blank" rel="noopener">이용약관 및 저작권 정책 →</a>에 있습니다.</li></ul></div>
+      </div>
+      <div class="hint" id="pubKeyNote"><ul class="guide-list"><li>수정·삭제 열쇠는 <b>이 브라우저에만</b> 저장됩니다 — 지우면 되돌릴 수 없습니다.</li></ul></div>
+      <!-- 관리자로 연 악보(#va=)일 때만 보인다. 여느 칸을 다 감추고 이것만 남기는 까닭은,
+           남의 악보를 열어 둔 채 [게시]를 누르면 그 사람 것을 베낀 새 게시물이 하나 더
+           생기기 때문이다. 여기서 할 수 있는 일은 '그 악보를 고쳐 같은 자리에 두는 것'
+           하나여야 한다. 메모가 필수인 것은 약관 제5조 제5항이 사유를 기록하라고 정해
+           두었고, 게시자가 제6항으로 그 기록을 열람할 수 있어서다. -->
+      <div id="pubAdmin" style="display:none;">
+        <div class="field">
+          <label for="pubAdminNote">무엇을 왜 고쳤나</label>
+          <input type="text" id="pubAdminNote" maxlength="200" placeholder="예: 흘림표 토큰 오기 교정 · 3각 2정간">
+          <div class="hint"><ul class="guide-list"><li>이 악보의 판과 함께 기록되며, <b>게시한 사람이 열람을 요구할 수 있습니다</b>(약관 제5조 제6항).</li><li>고칠 수 있는 범위는 <b>명백한 표기 오류</b>뿐입니다 — <a href="policy.html#" target="_blank" rel="noopener">약관 제5조 제4항 →</a></li></ul></div>
+        </div>
+      </div>
+      <div class="btns">
+        <button type="button" id="pubCancel" class="secondary">취소</button>
+        <button type="button" id="pubNew" class="secondary" style="display:none;">새로 게시</button>
+        <button type="button" id="pubAdminGo" style="display:none;">관리자 갱신</button>
+        <button type="button" id="pubGo">게시</button>
+      </div>
+      <button type="button" id="pubDelete" class="pub-del" style="display:none;">이 게시물 내리기</button>
+    </div>
+  </div>
+
+<script src="js/analytics.js"></script>
+<script src="js/cloud-config.js"></script>
+<script src="js/doc-brand.js"></script>
+<!-- 정악 장구 기호 그림(편집기 장단 줄과 같은 데이터, 2.7KB) — 작아서 지연 로드하지 않는다 -->
+<script src="js/janggu-data.js"></script>
+<!-- ?v= 판 번호 — 이 페이지는 자주 바뀌는데 브라우저가 옛 JS·CSS를 캐시에서 쓰면 새 HTML과 어긋나
+     화면이 반쯤 멈춘다(2026-11-16: 없앤 칸을 옛 JS가 찾다 멈춤). 두 파일을 고치면 이 번호도 올릴 것. -->
+<!-- 오선보 밑감·MusicXML 쓰기(편집기와 같은 파일) — 작아서 미리 싣는다. 조판기(verovio)는 칸을 열 때만. -->
+<script src="js/staff-core.js?v=20261116p"></script>
+<script src="js/musicxml.js?v=20261116p"></script>
+<script src="js/percussion.js?v=20261116y"></script>
+<!-- 게시 — percussion.js가 내놓는 window.jgbDoc을 쓰므로 반드시 뒤에. 관리 세션은 cloud.js보다 먼저(#va= 관리자 열기) -->
+<script src="js/admin-session.js"></script>
+<script src="js/cloud.js?v=20261116a"></script>
+</body>
+</html>

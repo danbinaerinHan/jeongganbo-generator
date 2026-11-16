@@ -40,6 +40,22 @@
   const AHASH_RE = /^#va=([a-z0-9]{4,32})$/;
 
   function $(id) { return document.getElementById(id); }
+  // ---------- 악보 종류 ----------
+  // 이 파일은 두 페이지가 함께 싣는다: 정악 정간보(editor.html, app.js의 jgbDoc) · 타악 정간보
+  // (percussion.html, percussion.js의 jgbDoc — kind: "perc"). 서버엔 둘이 같은 표에 오르고
+  // 문서 안의 `kind`로 갈린다(server/schema.sql의 scores.kind). 주소로 받은 악보가 **다른 종류**면
+  // 그 종류의 페이지로 넘긴다 — 퍼진 주소(umulsai.com/#v=…)는 전부 편집기로 오기 때문이다.
+  const PAGE = { jeongak: "editor.html", perc: "percussion.html" };
+  function myKind() { return (window.jgbDoc && window.jgbDoc.kind) || "jeongak"; }
+  function docKind(d) { return d && d.kind === "perc" ? "perc" : "jeongak"; }
+  function siteBase() { return location.origin + location.pathname.replace(/[^/]*$/, ""); }
+  // 받은 악보가 이 페이지의 종류가 아니면 맞는 페이지로 보내고 true
+  function bounce(doc, hash) {
+    const k = docKind(doc);
+    if (k === myKind()) return false;
+    location.replace(siteBase() + PAGE[k] + hash);
+    return true;
+  }
   // 통계는 앱 동작에 영향 주지 않는다 (app.js의 track과 같은 성격)
   function track(name, props) { try { if (window.jgbTrack) window.jgbTrack(name, props); } catch (e) {} }
   function stripHash() {
@@ -170,7 +186,8 @@
 
   // 나눠 줄 주소는 **사이트 루트**로 만든다(umulsai.com/#v=…) — 편집기가 editor.html로 옮겨 간
   // 뒤에도 주소가 짧고 옛 주소와 같은 꼴이다. 루트의 첫 화면(index.html)이 #v=를 보고 편집기로 넘긴다.
-  function scoreUrl(id) { return location.origin + location.pathname.replace(/[^/]*$/, "") + "#v=" + id; }
+  // 타악보는 처음부터 제 페이지 주소로 준다 — 루트로 주면 첫 화면 → 편집기 → 타악보로 두 번 넘어간다.
+  function scoreUrl(id) { return siteBase() + (myKind() === "perc" ? PAGE.perc : "") + "#v=" + id; }
 
   // 자동 복사가 막힌 환경(권한 없음·비보안 출처)에서는 손으로 복사할 수 있게 보여준다
   // — app.js의 링크 복사와 같은 폴백.
@@ -190,7 +207,9 @@
   const THUMB_W = 300;
   function makeThumb() {
     return new Promise(function (res) {
-      const svg = document.querySelector("#sheet .page svg");
+      // 페이지가 그림 원본을 따로 줄 수 있다(타악보는 화면 표시가 없는 깨끗한 첫 쪽을 새로 그려 준다)
+      const svg = (window.jgbDoc && window.jgbDoc.thumbSvg && window.jgbDoc.thumbSvg()) ||
+                  document.querySelector("#sheet .page svg");
       if (!svg) { res(null); return; }
       let node, xml;
       try {
@@ -479,6 +498,7 @@
       return true;
     }
     window.jgbAdmin.rpc("admin_get_score", { p_id: id }).then(async function (r) {
+      if (bounce(r.doc, "#va=" + id)) return;    // 관리 세션은 같은 탭이라 따라간다(sessionStorage)
       if (!(await window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),
             "게시된 악보를 관리자로 엽니다.", "관리자 열기 전 자동 저장"))) return;
       window.jgbDoc.setPubId(id);
@@ -536,6 +556,7 @@
     // 게시본으로 되돌아가면 안 된다(#s=·?first=1과 같은 규칙).
     stripHash();
     rpc("fetch_score", { p_id: id }).then(async function (r) {
+      if (bounce(r.doc, "#v=" + id)) return;
       const mine = !!tokenFor(id);
       // 작업 중이던 문서가 있으면 묻고 보관함에 자동 저장한다 — 절차는 링크 열기와 한 몸(app.js)
       if (!(await window.jgbDoc.adopt(r.doc, window.jgbDoc.hasSavedWork(),

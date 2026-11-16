@@ -52,7 +52,8 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
 옮기면 이 script/link 태그도 같이 고쳐야 한다.
 
 - `index.html` + `css/home.css` + `js/home.js` — **첫 화면**(사이트 루트, 2026-09-29 신설).
-  가운데 문패(井 전체 + 까치 로고 · 워드마크 · 부제) 아래 **문 두 짝**(편집기 | 공유마당) — 칸 전체가
+  가운데 문패(井 전체 + 까치 로고 · 워드마크 · 부제) 아래 **문 셋**(편집기 | 타악 정간보 BETA | 공유마당 —
+  2026-11-16에 둘에서 셋, 사용자 확정) — 칸 전체가
   링크이고 칸마다 선 그림 하나 + 이름 + 한 줄뿐이다. **[문의·제안]는 두 문 아래 길게 한 줄**
   (`.hm-bar`, 2026-10-01 — 예전 윗줄 글자 링크는 눈에 안 띄어 없앴다). 윗줄(`.hm-top`)은 이제 없다
   (공유마당 링크도 가운데 문과 겹쳐 뺐었다 — 되살리지 말 것).
@@ -65,7 +66,17 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
   · 로고는 `tools/gen-home-logo.py`(원본 → 2.7KB), 워드마크는 editor.html #brandWord의 **복사본**
     (fetch로 가져오면 편집기 HTML 190KB를 통째로 받는다) — 워드마크를 다시 뜨면 두 곳을 함께.
   · 모든 페이지의 문패(`.sc-brandlink`)는 첫 화면으로, [편집기로]·[악보 만들기]는 editor.html로 간다.
-    편집기 안에서는 로고+이름(`#brandBox .brand-home`)이 첫 화면으로 가는 링크다(BETA 단추는 링크 밖).
+    편집기 안에서는 로고+이름(`#brandBox .brand-home`)이 첫 화면으로 가는 링크다.
+    **BETA 배지는 편집기에서 빼 타악 정간보(`percussion.html` 문패 옆)로 옮겼다**(2026-11-16 사용자 요청 —
+    시험 중인 것은 이제 그쪽이다). 꼴은 styles.css `#betaBox`·`.beta-pop` 한 벌, 배선은 js/percussion.js.
+- `percussion.html` + `css/percussion.css` + `js/percussion.js` — **타악 정간보**(BETA, 2026-11-16 신설).
+  꽹과리·장구·북·징의 가로 정간보. app.js를 안 싣는 별개 페이지(styles.css의 상단바·기능바·사이드바·레일 꼴만 빌림).
+  · **게시·공유마당은 편집기와 같은 `js/cloud.js`를 쓴다** — percussion.js가 `window.jgbDoc`(kind: "perc")을
+    내놓고, 게시 창(#pubModal)·배너(#cloudBanner) 마크업은 editor.html에서 옮긴 **사본**이다(편집기 창을 고치면 함께).
+  · 서버 문서 꼴: `{ v:1, kind:"perc", controls:{title,subtitle}, perc:<페이지 상태> }` — controls는 서버가
+    제목을 뽑는 자리라 한 벌 더 적는 것. 서버는 `scores.kind`(문서에서 저절로 뽑는 generated 칸)로 가르고
+    공유마당 카드가 그것을 보고 percussion.html로 연다. 퍼진 루트 주소(#v=)로 오면 cloud.js `bounce`가 넘긴다.
+    서버 고침은 `server/perc-kind.sql`(schema.sql에서 뗀 사본).
 - `editor.html` (루트) — **편집기** 마크업 전부. 패널·버튼마다 "왜 이렇게 뒀는지" 주석이 붙어 있음.
   · **준비되기 전엔 #appRow를 감춘다**(head의 인라인 `jgb-boot`, 2026-10-02). 지금 모양은 app.js가
     body에 클래스를 붙여야 서므로, 그 전엔 '에디터' 방식의 옛 모양이 잠깐 비쳤다(새로 켠 크롬에서
@@ -173,11 +184,18 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
 - `js/janggu-audio.js` (window.JANGGU_AUDIO) — 장구 구음 **소리**(mp3 데이터 URL). 위 그림
   데이터와 달리 **editor.html이 미리 싣지 않는다** — [재생]을 눌러야 쓰이므로 app.js의
   `loadJangguAudio()`가 첫 재생 때 `<script>`로 붙인다(그래도 데이터 URL이라 경로·CORS를 안 탄다).
-  원본은 `장구단음/<구음>_<세기>.wav`(git 미추적, 12MB) — 그대로는 못 쓴다. **앞에 무음이
+  원본은 `타악단음/장구/<구음>_<세기>.wav`(git 미추적, 12MB) — 그대로는 못 쓴다. **앞에 무음이
   0.2초** 붙어 있어 박에 맞춰 울리면 그만큼 늦고, 4초짜리 파일이 스무 개다. 재생성은
   `python3 tools/gen-janggu-audio.py`(ffmpeg 필요)가 앞뒤 무음을 떼고 모노 96k mp3로 줄여
   다 합쳐 85KB로 만든다. 키 = 장단 줄에 적히는 구음 이름이고 `궁←쿵_중`·`작은덩←덩_약`
   대응은 생성기 주석 참고(나머지는 '중' 세기만 쓴다 — 구음 기호는 세기를 적지 않으므로).
+  · **타악 음원 원본은 `타악단음/` 한 곳에 악기별 폴더**(`장구/`·`꽹과리/`·`북/`·`징/`, 2026-11-12 —
+    예전 `장구단음/` 안에 꽹과리·징이 섞여 들어가 갈랐다). 이름은 모두 `<구음>_<세기>.wav`이고 세기는
+    강·중·약, 몰아치는 녹음은 `연속연주`. 꽹과리는 받아 온 원본의 번호를 구음으로 바꿔 달았다:
+    1 갱 · 2 지 · 3 개-ㅅ · 4 객 · 5 갯 · 6 게르르르 · 7 그라갱 · 8 그랑(연속연주만) · 9 지갱(+연속연주),
+    끝 번호 1/2/3/4 = 강/중/약/연속연주. 징은 Jing_1 = 강, Jing_2 = 약. **북은 북 녹음이 없어 좌고 단음**을
+    쓴다(Jwago_1/2/3 = 둥_강/중/약 — 번호의 뜻은 받은 자료에 없어 크기 차례로 정했다: 봉우리 0.2 > −0.3 > −3.6dB).
+    타악 정간보 재생은 `tools/gen-perc-audio.py` → `js/perc-audio.js`가 이 폴더를 통째로 담는다.
 - `js/symbols-registry.js` (window.JGB_SYM) — **기호 사전**. 위 그림 데이터에 이름과 '놓일 자리'를
   붙이는 표라 **사람이 직접 고친다**(생성 파일 아님). 시김새·가사 기호·장구 구음이 여기 한 곳에
   모여 있다 — 예전엔 팔레트마다 목록이 따로라(ORN_LIST / LYRIC_SYMS+별칭표 / JANGGU_NAMES)
@@ -509,7 +527,6 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
     · 임시 저장이 하나도 없으면 [불러오기]는 메뉴 없이 곧장 파일 고르기를 연다(고를 것이 하나뿐).
       그 가로채기가 `wireTopMenu`보다 **먼저** 붙어야 한다(stopImmediatePropagation).
     · 메뉴 안에서 눌러도 안 닫힐 버튼(목록의 ×)은 `data-keep`을 단다(wireTopMenu가 비켜선다).
-    · BETA 팝오버의 [지금 파일로 저장]은 `exportFile()`을 바로 부른다([저장]이 이제 메뉴라서).
     · 저장된 activeTab이 옛 "out"이면 applyActiveTab이 '곡'으로 연다(없는 탭은 doc으로 폴백).
     #readout(각 너비·페이지 수·A4 맞춤 배율)은 레이아웃 설정의 결과 보고라 '용지·배치' 탭 맨 위에 있다.
 - **설정 탭은 '무엇을 정하나'로 가른다**(2026-09-29 사용자 요청 · 2026-10-12 셋으로 재편): **기본**(`data-tab="doc"`, 2026-10-13 '곡'에서 — 안에 든 것이 틀과 제목이라 '곡'은 선율까지 담는 것처럼 읽혔다) =

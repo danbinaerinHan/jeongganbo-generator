@@ -457,7 +457,11 @@
         prevMb = mb;
         // 마디 몸통 — 장구만 성부가 둘이다(채편 위 · 북편 아래). <backup>으로 시간축을
         // 마디 머리로 되돌린 뒤 아래 성부를 다시 적는다.
-        if (s.perc) {
+        // 성부가 **하나뿐인** 타악(lanes 길이 1 — 타악 정간보의 꽹과리·북·징)은 손 구별이 없어
+        // 기둥을 위로만 세우고 <backup>도 안 쓴다. 장구(lanes 둘)는 아래 두 성부 길 그대로다.
+        if (s.perc && s.lanes && s.lanes.length === 1) {
+          emitVoice(m, s, mi, mb, { voice: 1, stem: "up", perc: true });
+        } else if (s.perc) {
           const total = mb * (s.jg || C.JG[s.unit] || C.JG.dotted);
           emitVoice(m, s, mi, mb, { voice: 1, stem: "up", perc: true });
           out.push("      <backup><duration>" + total + "</duration></backup>");

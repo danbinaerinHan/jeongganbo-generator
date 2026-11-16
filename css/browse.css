@@ -100,6 +100,8 @@ body.browse {
 /* 악보는 늘 흰 종이다(다크모드에서도) — 미리보기 그림도 그 규칙을 따른다 */
 .sc-thumb { background: #fff; aspect-ratio: 210 / 297; overflow: hidden; display: block; }
 .sc-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+/* 타악보는 가로 종이라 세로 카드에 왼쪽 위(제목·악기 이름·첫 장단)가 보이게 */
+.sc-thumb-perc img { object-position: top left; }
 /* 그림 없이 올라온 것 — 빈 사각형 대신 '井'을 옅게 */
 .sc-thumb-none {
   display: flex; align-items: center; justify-content: center;
@@ -121,6 +123,8 @@ body.browse {
   background: var(--accent-tint); color: var(--accent);
 }
 .sc-tag-fork { background: var(--soft); color: var(--muted); }
+/* 타악 정간보 — 정악 카드 사이에서 한눈에 갈리게 먹색으로(태그 중 이것만 '종류'를 말한다) */
+.sc-tag-perc { background: var(--ink); color: var(--panel); }
 .sc-views { margin-left: auto; font-size: 10.5px; color: var(--muted); }
 
 /* ---------- 상태 · 더 보기 · 꼬리말 ---------- */

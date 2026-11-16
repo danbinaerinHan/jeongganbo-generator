@@ -338,6 +338,9 @@ for (const s of list) {
   try { r = await rpc("admin_get_score", { p_id: s.id }); }
   catch (e) { console.log("  ! " + s.id + " — " + e.message); continue; }
 
+  // 타악 정간보(kind: "perc")는 선율이 없어 이 잣대가 안 맞는다 — 건너뛴다. 그 악보의 lint_bad는
+  // 올릴 때 타악보 페이지가 잰 값(그 악기의 구음이 아닌 칸 수) 그대로 둔다.
+  if (r.doc && r.doc.kind === "perc") continue;
   let doc = r.doc, fixed = null;
   if (FIX) {
     fixed = fixDoc(doc);

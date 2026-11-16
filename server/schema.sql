@@ -98,6 +98,13 @@ alter table public.scores add column if not exists hidden_at     timestamptz;
 alter table public.scores add column if not exists hidden_reason text;
 alter table public.scores add column if not exists hidden_note   text;
 alter table public.scores add column if not exists lint_bad      smallint;
+
+-- 악보 종류(2026-11-16) — 정악 정간보(editor.html) | 타악 정간보(percussion.html). 공유마당 카드가
+-- 어느 페이지로 열지·'타악' 표시를 붙일지를 이것으로 가른다. 문서 안의 `kind`에서 **저절로** 뽑는
+-- 칸(generated)이라 게시·갱신·관리자 되쓰기·되돌리기 함수를 하나도 안 고쳤다 — 쓰는 길이 몇이든
+-- 문서와 어긋날 수가 없다. 옛 문서엔 kind가 없으므로 모두 'jeongak'이다.
+alter table public.scores add column if not exists kind text
+  generated always as (case when doc ->> 'kind' = 'perc' then 'perc' else 'jeongak' end) stored;
 alter table public.scores add column if not exists lint_at       timestamptz;
 
 -- 3단계(이용자 계정)에서 더한 칸.
@@ -721,6 +728,7 @@ begin
            'license',    h.license,
            'thumb',      h.thumb,
            'fork_of',    h.fork_of,
+           'kind',       h.kind,
            'view_count', h.view_count,
            'created_at', h.created_at
          ) order by

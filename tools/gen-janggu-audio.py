@@ -1,6 +1,6 @@
 # 장구 구음 음원 → js/janggu-audio.js 생성기 (리포 루트에서 `python3 tools/gen-janggu-audio.py`, ffmpeg 필요)
 #
-# 원본은 `장구단음/<구음>_<세기>.wav` (44.1kHz 스테레오, 한 파일 4초). 그대로 못 쓰는 이유가 둘이다:
+# 원본은 `타악단음/장구/<구음>_<세기>.wav` (44.1kHz 스테레오, 한 파일 4초). 그대로 못 쓰는 이유가 둘이다:
 #   1) 앞에 무음이 0.2초 붙어 있다 — 그 상태로 박에 맞춰 울리면 소리가 0.2초씩 늦게 난다.
 #   2) 뒤가 3초 넘게 비어 있고 전부 합치면 12MB다 — 앞뒤 무음을 떼고 모노 mp3로 줄이면
 #      다 합쳐도 100KB 아래로 내려간다.
@@ -20,7 +20,7 @@ import subprocess
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC_DIR = os.path.join(ROOT, "장구단음")
+SRC_DIR = os.path.join(ROOT, "타악단음", "장구")
 OUT = os.path.join(ROOT, "js", "janggu-audio.js")
 
 MAP = [
@@ -60,7 +60,7 @@ with tempfile.TemporaryDirectory() as tmp:
 body = ",\n".join("  %s: %s" % (json.dumps(k, ensure_ascii=False), json.dumps(v)) for k, v in entries)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(
-        "// 자동 생성 — 장구 구음 음원(장구단음/*.wav)의 앞뒤 무음을 떼고 모노 mp3로 줄여 내장.\n"
+        "// 자동 생성 — 장구 구음 음원(타악단음/장구/*.wav)의 앞뒤 무음을 떼고 모노 mp3로 줄여 내장.\n"
         "// 직접 편집 금지. 다시 만들려면 리포 루트에서 `python3 tools/gen-janggu-audio.py`.\n"
         "// 키 = 장단 줄에 적히는 구음 이름(JANGGU_DATA와 같음). 궁←쿵, 작은덩←덩_약 대응은 생성기 주석 참고.\n"
         "// 이 파일은 index.html이 아니라 app.js가 첫 재생 때 불러온다(loadJangguAudio) — 소리는\n"

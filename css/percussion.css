@@ -1,0 +1,261 @@
+/* ============================================================================
+   타악 정간보(percussion.html) — 꽹과리·장구·북·징 가로형 정간보
+   ============================================================================
+   짜임은 편집기와 같다(#topBar · .ribbon · #sheetArea · 오른쪽 #sidebar) — 그 꼴은 styles.css가
+   그대로 준다. 여기는 이 페이지에만 있는 것(구음 단추·악기 목록·종이·입력칸)만 둔다.
+   색은 styles.css 변수만 쓴다. 악보(종이)는 늘 흰 종이 — 편집기와 같은 규칙이다.
+   ============================================================================ */
+
+body.perc input, body.perc textarea { -webkit-user-select: text; user-select: text; }
+
+/* ---------- 기능바 ---------- */
+#pcRibbon { flex: 0 0 auto; margin: 6px 10px 0; }
+.rb-cap small { font-weight: 500; opacity: .8; }
+.pc-gu { flex-wrap: wrap; justify-content: flex-start; padding: 0 2px; }
+.pc-gu button { min-width: 40px; height: 34px; padding: 0 9px; border: 1px solid var(--line);
+                border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit;
+                font-size: 15px; font-weight: 600; cursor: pointer; }
+.pc-gu button:hover { background: var(--hover); border-color: var(--accent); }
+.pc-gu button.pc-rest { color: var(--muted); font-weight: 400; font-size: 12px; }
+#pcRibbon.idle .pc-gu, #pcRibbon.idle #pcRepeat, #pcRibbon.idle #pcClearJd { opacity: .45; pointer-events: none; }
+.pc-ic { font-style: normal; font-size: 18px; line-height: 1; }
+.pc-pop-note { margin: 2px 0 8px; font-size: 11px; color: var(--muted); line-height: 1.45; }
+.size-pop .sp-row { grid-template-columns: 64px 1fr 40px; }
+.size-pop .sp-row > span { text-align: right; font-variant-numeric: tabular-nums; }
+/* 좁은 창: 입력 안내는 접는다(단추 title에 같은 말이 있다) */
+/* 좁을 때의 짜임은 파일 끝 '창 폭에 따른 짜임' 절에 모았다(기능바는 창 폭이 아니라 제 폭을 본다) */
+
+/* ---------- 종이 ---------- */
+/* 종이 묶음은 제 폭(max-content)으로 서고 margin auto로 가운데 — 확대해 화면보다 넓어지면 왼쪽
+   끝부터 스크롤된다(flex 가운데 정렬은 넘친 왼쪽이 잘려 스크롤로도 못 간다). */
+body.perc #sheetArea { display: block; }
+.pc-pages { position: relative; width: max-content; margin: 0 auto; }
+.pc-sheets { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.pc-page { display: block; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.14); flex: 0 0 auto; }
+.pc-page .hit { fill: transparent; cursor: text; }
+.pc-page .hit:hover { fill: rgba(80,120,200,.08); }
+.pc-empty { color: var(--muted); font-size: 14px; padding: 60px 20px; }
+
+/* 정간 입력 카드 — 편집기 .cell-editor와 같은 꼴(종이 위 고정색: 흰 바탕·갈색 머리줄). 크기·자리는 JS placeInput */
+.pc-card { position: absolute; z-index: 6; box-sizing: border-box; display: flex; flex-direction: column;
+           background: #fff; border: 1px solid rgba(138,109,59,.45); overflow: hidden;
+           box-shadow: 0 4px 14px rgba(31,26,18,.28); }
+.pc-card[hidden] { display: none; }
+.pc-card-cap { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 6px;
+               line-height: 1.55; font-weight: 600; letter-spacing: .04em; color: #8a6d3b; background: #f7f3ea;
+               border-bottom: 1px solid rgba(138,109,59,.18); white-space: nowrap; }
+.pc-card-cap span { overflow: hidden; text-overflow: ellipsis; }
+.pc-card-cap button { border: none; background: none; color: #8a6d3b; font-weight: 700; cursor: pointer;
+                      font-size: inherit; font-family: inherit; padding: 0 2px; line-height: inherit; flex: 0 0 auto; }
+.pc-input { flex: 1 1 auto; min-height: 0; width: 100%; box-sizing: border-box; margin: 0;
+            border: none !important; outline: none; border-radius: 0 !important; box-shadow: none !important;
+            background: #fff !important; color: #1f1a12 !important; text-align: center; line-height: 1;
+            font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif; }
+
+/* ---------- 설정 패널 ---------- */
+#sidebar .side-head { margin-bottom: 4px; }
+.pc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+#sidebar .field input, #sidebar .field select { width: 100%; box-sizing: border-box; }
+.pc-note { margin: -6px 0 8px; font-size: 12px; color: var(--danger-2, #b3261e); }
+.pc-readout { margin: 0; font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.pc-insts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; }
+.pc-inst { display: flex; align-items: center; gap: 6px; }
+.pc-inst input[type=checkbox] { flex: 0 0 auto; margin: 0; }
+/* 악기 이름 칸은 .field 밖이라 사이드바 입력칸 꼴(styles.css .field input)을 손수 맞춘다 */
+.pc-inst input[type=text] { flex: 1 1 auto; min-width: 0; box-sizing: border-box; height: 32px;
+                            padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px;
+                            font: inherit; font-size: 13px; background: var(--soft); color: var(--ink); }
+.pc-inst.off input[type=text] { color: var(--muted); text-decoration: line-through; }
+.pc-inst button { flex: 0 0 26px; height: 28px; border: 1px solid var(--line); border-radius: 6px;
+                  background: var(--panel); color: var(--ink); cursor: pointer; font-size: 12px; }
+.pc-inst button:hover:not(:disabled) { background: var(--hover); }
+.pc-inst button:disabled { opacity: .35; cursor: default; }
+
+/* ---------- 인쇄: 종이만 ---------- */
+@media print {
+  html, body.perc { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }
+  body.perc #topBar, body.perc #sidebar, body.perc #pcRibbon, body.perc .pc-card, body.perc .pc-check, body.perc .size-pop { display: none !important; }
+  body.perc #appRow, body.perc #main, body.perc #sheetArea { display: block !important; overflow: visible !important;
+                                                              padding: 0 !important; margin: 0 !important; background: #fff !important; }
+  body.perc .pc-pages { width: auto !important; }
+  body.perc .pc-sheets { display: block; }
+  body.perc .pc-page { box-shadow: none; width: var(--pw) !important; height: var(--ph) !important;
+                       break-after: page; page-break-after: always; }
+  body.perc .pc-page:last-child { break-after: auto; page-break-after: auto; }
+  body.perc .pc-page .hit:hover { fill: transparent; }
+  body.perc .pc-sel { display: none; }
+}
+
+/* 글자 크기 팝업 — 전체 세 줄 아래 '구음별' 목록. 구음이 많으면 그 목록만 스크롤 */
+.size-pop .sp-sec { margin: 8px 0 6px; padding-top: 8px; border-top: 1px solid var(--line);
+                    font-size: 11px; font-weight: 700; color: var(--muted); }
+.size-pop .sp-sec small { font-weight: 500; opacity: .8; }
+.pc-gusizes { max-height: 210px; overflow-y: auto; }
+.pc-gusizes .sp-row label { color: var(--ink); font-size: 13px; cursor: default; }
+.pc-pop-note kbd { font-family: inherit; font-size: 10.5px; padding: 0 4px; border: 1px solid var(--line);
+                   border-radius: 3px; background: var(--soft); color: var(--ink); }
+
+/* 설정 › 정간 모양 — 이름 · 막대 · 값 한 줄 */
+.pc-slider { display: grid; grid-template-columns: 64px 1fr 66px; align-items: center; gap: 8px;
+             margin-bottom: 10px; font-size: 13px; }
+.pc-slider label { font-weight: 600; }
+.pc-slider input { width: 100%; margin: 0; accent-color: var(--accent); }
+.pc-slider span { text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pc-small-btn { padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+                color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; margin-bottom: 4px; }
+.pc-small-btn:hover:not(:disabled) { background: var(--hover); }
+.pc-small-btn:disabled { opacity: .4; cursor: default; }
+
+/* 녹음 음원이 없는 구음 단추 — 표기는 되고 소리는 안 난다(점선 테두리로만 구별) */
+.pc-gu button.pc-nosnd { border-style: dashed; color: var(--muted); }
+
+/* 재생 중 지금 박 — 모든 악기 줄을 덮는 세로 띠(화면에만) */
+.pc-playhi { position: absolute; z-index: 3; pointer-events: none; background: rgba(60, 110, 210, .14);
+             box-shadow: inset 0 0 0 1.5px rgba(60, 110, 210, .55); border-radius: 2px; }
+.pc-playhi[hidden] { display: none; }
+#playPop { width: 250px; position: fixed; right: auto; overflow-y: auto; box-sizing: border-box; }  /* 자리는 JS placePlayPop */
+#playPop .hint { font-size: 11px; margin-top: 4px; }
+@media print { body.perc #playBar, body.perc .pc-playhi { display: none !important; } }
+
+/* 재생 설정 › 악기별 음량 — 이름 · 막대 · 값 한 줄 */
+#playPop .pp-sec { margin: 10px 0 6px; padding-top: 8px; border-top: 1px solid var(--line);
+                   font-size: 11px; font-weight: 700; color: var(--muted); }
+#playPop .pp-sec small { font-weight: 500; opacity: .8; }
+#playPop .pc-vol { display: grid; grid-template-columns: 78px 1fr 40px; gap: 8px; }
+#playPop .pc-vol label { font-size: 12px; cursor: default; white-space: nowrap; }
+#playPop .pc-vol label small { color: var(--muted); font-size: 10px; }
+#playPop .pc-vol input[type=range] { width: 100%; margin: 0; padding: 0; border: none; accent-color: var(--accent); }
+#playPop .pc-vol span { text-align: right; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+#playPop .pc-vol.off { opacity: .45; }
+
+/* 구음 점검 — 화면에서만. 빨강 = 그 악기의 구음 아님(칸 바탕도 옅게), 회색 = 음원 없음 */
+.pc-page text.tk-bad { fill: #c62828; }
+.pc-page text.tk-nosnd { fill: #8d8d8d; }
+.pc-page .tk-badbg { fill: rgba(198, 40, 40, .10); }
+.pc-card:has(.pc-input.bad) { border-color: #c62828; box-shadow: 0 0 0 1px #c62828, 0 4px 14px rgba(31,26,18,.28); }
+.pc-input.bad { color: #c62828 !important; }
+.pc-check { position: absolute; z-index: 7; max-width: 340px; width: max-content; padding: 6px 10px;
+            border-radius: 6px; font-size: 12px; line-height: 1.5; pointer-events: none; word-break: keep-all;
+            color: #555; background: #fff; border: 1px solid rgba(0,0,0,.12); box-shadow: 0 3px 10px rgba(0,0,0,.14); }
+.pc-check-list { color: #6b6b6b; }
+.pc-check[hidden] { display: none; }
+.pc-check b { color: var(--ink); }
+.pc-check.bad { color: #b71c1c; background: #fff5f5; border-color: rgba(198, 40, 40, .35); }
+.pc-check.bad b { color: #b71c1c; }
+.pc-check.nosnd b { color: #6b6b6b; }
+@media print {
+  body.perc .pc-page text.tk-bad, body.perc .pc-page text.tk-nosnd { fill: #000 !important; }
+  body.perc .pc-page .tk-badbg { display: none; }
+}
+
+/* 문패 부제 '타악 정간보' — 편집기 부제('정간보 편집기', 7자)는 자간 .5em으로 워드마크(18px, 93.0px)와
+   양 끝이 맞는데, 이쪽은 6자라 같은 자간이면 15px 짧게 끝나 왼쪽으로 쏠려 보였다(2026-11-16 사용자 제보).
+   풀어 맞춘 값: 자간 없는 폭 50.5px(11px) + 5 × 자간 = 93.0 → 8.5px = .773em. 꼬리 자간은 음수 마진으로 걷는다.
+   부제 문구·크기나 워드마크 높이를 바꾸면 다시 풀 것(styles.css .brand-txt span 주석과 같은 셈). */
+body.perc .brand-txt span { letter-spacing: .773em; margin-right: -.773em; }
+
+/* 설정 › 표기 — 악기별 고르개(2열) · 막음새 체크. 끈 악기의 고르개는 흐리게(악보에 안 나오므로) */
+/* 표기 팝업(상단바 [표기]) — 한 줄 = 이름 · 세 칸 분할 버튼(.pal-seg 꼴 그대로). 맨 위 [전체]는
+   굵은 이름 + 아래 가는 선으로 악기별 줄과 가른다. 켠 악기가 모두 같은 표기일 때만 [전체]에 불이 들어온다. */
+#ntPop { width: 300px; position: fixed; right: auto; overflow-y: auto; box-sizing: border-box; z-index: 40; }  /* 자리는 JS placeNtPop · 좁은 창에서 설정 패널(z 20) 위로 */
+#ntPop .nt-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; margin-bottom: 6px; }
+#ntPop .nt-name { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ntPop .nt-all .nt-name { font-weight: 700; }
+#ntPop .nt-row.off { opacity: .45; }
+#ntPop .nt-seg .seg-btn { padding: 4px 9px; }
+#ntPop .pp-sec { margin: 8px 0 6px; padding-top: 8px; border-top: 1px solid var(--line);
+                 font-size: 11px; font-weight: 700; color: var(--muted); }
+#ntPop .pc-chk { display: block; margin: 8px 0 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+#ntPop .hint { font-size: 11px; margin: 4px 0 0; line-height: 1.5; }
+.pc-chk { margin: 2px 0 8px; font-size: 13px; }
+
+/* 기호 표기의 화면 전용 색 — 글자(tk-nosnd)와 같은 회색. 도형은 currentColor로 그리므로 color만 바꾸고,
+   정악 그림(<image>)은 색을 못 바꿔 옅게 한다. 인쇄에선 검정으로 되돌린다(PNG는 애초에 안 붙는다). */
+.pc-page g.tk-nosnd { color: #8d8d8d; }
+.pc-page g.tk-nosnd image { opacity: .45; }
+@media print {
+  body.perc .pc-page g.tk-nosnd { color: #000 !important; }
+  body.perc .pc-page g.tk-nosnd image { opacity: 1 !important; }
+}
+
+/* ============================================================================
+   창 폭에 따른 짜임 (2026-11-16 — 창을 줄이면 묶음이 들쭉날쭉 꺾이고 [설정]이 혼자 떨어졌다)
+   ============================================================================
+   ① 기능바는 **제 폭**을 본다(컨테이너 쿼리) — 설정 패널이 열리고 닫히는 데 따라 같은 창에서도
+      받는 폭이 다르다(편집기 기능바 .rb-break와 같은 까닭).
+      · 넓을 때: 한 줄.
+      · 좁을 때: 윗줄 = 선택한 정간 · 장단 · 크기 / 아랫줄 = 구음 단추 한 줄 통째로 — 구음 단추가
+        묶음째 떨어져야 이름표와 단추가 갈라지지 않는다. 구분선은 줄 끝에 홀로 남으니 숨긴다.
+   ② 상단바는 900px 아래에서 간격·버튼 폭을 줄여 한 줄을 지킨다(600px 아래는 styles.css의
+      휴대전화 두 줄 짜임이 그대로 걸린다 — 같은 id를 쓰므로).
+   ③ 설정 패널은 900px 아래에서 악보 옆자리를 먹지 않고 **위에 떠서** 열린다(편집기 1280px 규칙과
+      같은 수법). 옆자리를 먹으면 악보가 36%까지 쪼그라들었다. 600px 아래는 화면 폭 전체. */
+#pcRibbon { container-type: inline-size; }
+/* 기능바는 **늘 한 줄**(2026-11-16 사용자 요청 — 좁아지면 구음 단추가 아랫줄로 떨어지며 큰 빈자리가
+   생겼다). 좁아질수록 ① 단추·글자를 한 단계씩 줄이고 ② 그래도 모자라면 **구음 단추 줄만** 옆으로
+   스크롤한다(장단·크기 묶음은 제자리). 편집기 기능바는 '스크롤 금지'지만 이 페이지는 구음 단추가
+   악기마다 많아(꽹과리 11개) 줄을 가르면 더 손해다. */
+#pcRibbon { flex-wrap: nowrap; }
+#pcRibbon > .ribbon-group:has(.pc-gu) { flex: 1 1 auto; min-width: 0; }
+.pc-gu { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: thin;
+         padding-bottom: 2px; }
+.pc-gu button { flex: 0 0 auto; }
+@container (max-width: 860px) {
+  #pcRibbon .rb-cap small { display: none; }
+  .pc-gu { gap: 4px; }
+  .pc-gu button { min-width: 34px; height: 32px; padding: 0 7px; font-size: 14px; }
+  #pcRibbon .ribbon-btn { min-width: 50px; padding-left: 3px; padding-right: 3px; }
+}
+@container (max-width: 600px) {
+  #pcRibbon { gap: 0; padding-left: 4px; padding-right: 4px; }
+  #pcRibbon > .ribbon-sep { margin: 3px 2px; }
+  .pc-gu { gap: 3px; }
+  .pc-gu button { min-width: 30px; height: 30px; padding: 0 5px; font-size: 13px; }
+  .pc-gu button.pc-rest { font-size: 11px; }
+  #pcRibbon .ribbon-btn { min-width: 44px; }
+  #pcRibbon .ribbon-btn span { font-size: 10px; }
+}
+@media (max-width: 900px) and (min-width: 601px) {
+  body.perc #topBar { gap: 8px; padding: 6px 10px; }
+  body.perc #brandBox { margin-right: 4px; }
+  body.perc .topbar-cmd { min-width: 40px; padding: 4px 4px 3px; }
+  body.perc #zoomBar .zval { min-width: 44px; }
+}
+@media (max-width: 900px) {
+  body.perc #appRow { position: relative; }
+  /* 오른쪽 레일(#appRail, 폭 --rail-w)은 덮지 않는다 — 레일의 [출력]·[색상]이 패널 밖에 남아야 한다 */
+  body.perc #sidebar { position: absolute; right: var(--rail-w, 65px); top: 0; bottom: 0; z-index: 20; width: 340px;
+                       max-width: calc(100% - var(--rail-w, 65px)); box-shadow: -8px 0 24px rgba(0,0,0,.12); box-sizing: border-box; }
+  #pcRibbon { margin: 6px 6px 0; }
+  body.perc #sheetArea { padding: 10px 8px; }
+}
+@media (max-width: 600px) {
+  /* 상단바 두 줄을 폭과 무관하게 못 박는다: 윗줄 = 문패 + 새 악보·PNG·인쇄·설정(오른쪽 끝) /
+     아랫줄 = 재생·배율(가운데). 편집기의 휴대전화 짜임은 폭이 버튼을 밀어내는 데 맡겨, 이 페이지에선
+     600px 근처에서 재생이 윗줄 끝에 붙고 배율만 아랫줄에 홀로 섰다. 줄바꿈 자리는 빈 ::after 하나. */
+  body.perc #playBar { margin-left: 0; order: 4; }
+  body.perc #zoomBar { order: 4; }
+  body.perc #ntBox { order: 4; }
+  body.perc #outBox { margin-left: auto; }
+  body.perc #topBar::after { content: ""; order: 3; flex: 0 0 100%; height: 0; }
+  body.perc #sidebar { width: calc(100% - var(--rail-w, 65px)); box-shadow: none; }
+  .pc-gu button { min-width: 36px; height: 32px; padding: 0 7px; font-size: 14px; }
+}
+
+/* ============================================================================
+   오선보 칸(일선보 보기) — 꼴은 styles.css의 #staffPane·.staff-head·#staffBody .vrv-out을 그대로 받는다
+   (id를 편집기와 같게 둔 까닭). 여기는 이 페이지에만 있는 것: [MusicXML 저장] 단추·좁은 창·인쇄.
+   높이는 JS가 인라인으로 정한다(#staffResizer로 끌어 조절).
+   ============================================================================ */
+body.perc #staffPane { flex: 0 0 auto; }
+body.perc .staff-tools .pc-small-btn { margin: 0; padding: 3px 10px; white-space: nowrap; }
+body.perc #staffBody .staff-empty { margin: 0; }
+@media (max-width: 600px) {
+  body.perc #staffBox { order: 4; }
+  body.perc .staff-head { padding: 4px 8px; }
+}
+/* 인쇄는 정간보만 — 오선보 칸은 화면 전용이다(.no-print가 이미 숨기지만 위 인쇄 규칙이 #main 안을
+   display:block으로 펴므로 확실히 못 박는다) */
+@media print {
+  body.perc #staffPane, body.perc #staffBox { display: none !important; }
+}

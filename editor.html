@@ -55,8 +55,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
          assets/를 제외해도 항상 보이게. 페이지의 h1은 여기 하나뿐(사이드바 머리글은 h2). -->
     <div id="brandBox" title="우물사이 Umulsai — 정간보 편집기">
       <!-- 로고·이름은 첫 화면(index.html)으로 가는 길이다(2026-09-29 첫 화면이 생기며). 쓰던 악보는
-           자동 저장되므로 나갔다 와도 그대로다. BETA 단추는 누르는 것이 따로 있어 링크 **밖**에 둔다
-           (링크 안에 단추를 넣을 수 없다). -->
+           자동 저장되므로 나갔다 와도 그대로다. -->
       <a class="brand-home" href="index.html" title="우물사이 — 첫 화면으로">
       <img id="brandLogo" src="data:image/png;base64,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" alt="우물사이 로고">
       <div class="brand-txt">
@@ -74,17 +73,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <span>정간보 편집기</span>
       </div>
       </a>
-      <!-- 베타 배지 — 누르면 저장 주의 안내 팝오버가 열린다(wireTopMenu, 배율·파일 메뉴와 같은 토글).
-           자동 저장은 브라우저·기기 환경에 따라 사라질 수 있어 파일 저장(.json)을 권한다. -->
-      <div id="betaBox">
-        <button type="button" id="betaBadge" title="베타 버전 · 저장 안내">BETA</button>
-        <div id="betaPop" class="tb-menu beta-pop">
-          <div class="bp-title"><b>베타 버전입니다</b></div>
-          <p>작업은 이 브라우저에 <b>자동 저장</b>되지만, 브라우저·기기 환경에 따라 <b>저장이 사라질 수 있습니다.</b></p>
-          <p>중요한 작업은 수시로 <b>파일로 저장(.json)</b>으로 내려받아 두세요 — 오른쪽 레일 <b>[저장]</b>에도 있습니다.</p>
-          <button type="button" id="betaSaveBtn" class="bp-save">지금 파일로 저장</button>
-        </div>
-      </div>
+      <!-- BETA 배지는 타악 정간보(percussion.html)로 옮겼다(2026-11-16 사용자 요청) — 시험 중인 것은 이제 그쪽이다. -->
     </div>
     <!-- 예전엔 여기(문패 바로 옆)에 새 문서·실행 취소·다시 실행이 줄지어 있었다. 지금은:
          · 실행 취소/다시 실행 → 버튼 없앰. ⌘/Ctrl+Z·⇧Z로 한다(도움말 '단축키' 탭 참고).

@@ -37,9 +37,10 @@
     "cc-by-sa": "CC BY-SA", "cc-by-nc-sa": "CC BY-NC-SA", "cc0": "CC0",
   };
 
-  function editorUrl(id) {
-    // 같은 폴더의 편집기로 넘긴다(브라우저가 알아서 절대 주소로 만든다)
-    return "editor.html#v=" + encodeURIComponent(id);
+  function editorUrl(id, kind) {
+    // 같은 폴더의 편집기로 넘긴다(브라우저가 알아서 절대 주소로 만든다). 타악 정간보는 제 페이지로 —
+    // kind는 서버가 문서에서 뽑아 준다(scores.kind). 옛 서버라 없으면 편집기로 가고, 거기서 cloud.js가 다시 넘긴다.
+    return (kind === "perc" ? "percussion.html" : "editor.html") + "#v=" + encodeURIComponent(id);
   }
 
   // "3일 전"처럼 — 목록에서는 정확한 시각보다 얼마나 됐는지가 알고 싶은 것이다
@@ -73,10 +74,10 @@
   function cardEl(s) {
     const a = document.createElement("a");
     a.className = "sc-card";
-    a.href = editorUrl(s.id);
+    a.href = editorUrl(s.id, s.kind);
 
     const thumb = document.createElement("div");
-    thumb.className = "sc-thumb";
+    thumb.className = "sc-thumb" + (s.kind === "perc" ? " sc-thumb-perc" : "");
     if (s.thumb) {
       const img = document.createElement("img");
       img.src = s.thumb;
@@ -108,6 +109,13 @@
     lic.className = "sc-tag";
     lic.textContent = LICENSE_KO[s.license] || s.license;
     tags.appendChild(lic);
+    if (s.kind === "perc") {
+      const k = document.createElement("span");
+      k.className = "sc-tag sc-tag-perc";
+      k.textContent = "타악";
+      k.title = "타악 정간보 — 꽹과리·장구·북·징";
+      tags.insertBefore(k, lic);
+    }
     if (s.fork_of) {
       const f = document.createElement("span");
       f.className = "sc-tag sc-tag-fork";

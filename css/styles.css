@@ -199,7 +199,8 @@
                     white-space: nowrap; letter-spacing: .5em; margin-right: -.5em; }
   /* 로고 잉크는 순검정(흰 배경 투명) — 다크모드에선 invert로 순백이 된다 */
   body.dark #brandBox img { filter: invert(1); }
-  /* 베타 배지 — 문패 옆 작은 알약. 누르면 저장 주의 팝오버(.beta-pop)를 연다. */
+  /* 베타 배지 — 문패 옆 작은 알약. 누르면 저장 주의 팝오버(.beta-pop)를 연다.
+     지금은 타악 정간보(percussion.html)에만 있다(2026-11-16 편집기에서 옮김) — 꼴은 여기 한 벌. */
   #betaBox { position: relative; align-self: flex-start; margin-top: 1px; }
   #betaBadge { font-size: 9px; font-weight: 800; letter-spacing: .06em; padding: 2px 6px;
     border-radius: 999px; border: 1px solid var(--accent); color: var(--accent);
