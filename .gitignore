@@ -65,3 +65,6 @@ server/admin.local.json
 
 # 까치 제자리 뛰기 최종 편집 원본
 !/assets/brand/animation-v14/art/hop.png
+
+# 교과서 표준악보집 변환 작업 폴더 — 원본 PDF에서 뜬 쪽 그림·중간 산출물·변환된 악보. tools/edu-standard/run.sh가 만든다.
+교과서표준악보집/

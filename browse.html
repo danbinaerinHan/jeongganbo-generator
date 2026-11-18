@@ -56,6 +56,9 @@
   <div class="sc-tabs">
     <button type="button" class="sc-tab on" data-tab="all">올라온 악보</button>
     <button type="button" class="sc-tab" data-tab="ngc">국악원 정악보</button>
+    <!-- 교과서 표준악보(2026-11-18) — 『교과서 표준악보집』(2022)의 단소·소금 정간보 42곡.
+         tools/publish-edu-standard.mjs가 지은이 EDU_AUTHOR로 올린다(js/browse.js). -->
+    <button type="button" class="sc-tab" data-tab="edu">교과서 표준악보</button>
   </div>
 
   <!-- 탭마다 안내문이 다르다(js/browse.js가 표시를 갈아끼움). 국악원 탭의 출처·이용 조건
@@ -64,6 +67,9 @@
        국악원 탭의 안내문은 CC BY-NC-SA가 요구하는 출처 표기라 남긴다. -->
   <p class="sc-lead" id="scLeadNgc" style="display:none">국립국악원 간행 정악보를 OMR로 읽어 우물사이 악보로 옮긴 것입니다. 카드를 누르면 그대로 열립니다.<br>
   <span class="sc-lead-src">자료 출처: Kim, Han, Jeong &amp; Valero-Mas, <i>On the Automatic Recognition of Jeongganbo Music Notation</i> (ACM JOCCH 18(3), 2025) · <b>CC BY-NC-SA 4.0</b> · 인코딩: Han et al., <i>Six Dragons Fly Again</i> (TISMIR 9(1), 2026)</span></p>
+
+  <p class="sc-lead" id="scLeadEdu" style="display:none">국립국악원 『교과서 표준악보집』의 단소·소금 정간보를 우물사이 악보로 옮긴 것입니다. 카드를 누르면 그대로 열립니다.<br>
+  <span class="sc-lead-src">자료 출처: 국립국악원, 『국악교육안내서 4: 2022 개정 교육과정 국립국악원 교과서 표준악보집』(2022)</span></p>
 
   <div class="sc-controls">
     <input type="search" id="scSearch" class="sc-search" placeholder="제목·지은이로 찾기" autocomplete="off">

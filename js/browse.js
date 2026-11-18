@@ -26,10 +26,14 @@
   const PAGE = 24;
   let sort = "recent", q = "", offset = 0, total = 0, loading = false;
 
-  // 탭 — "all"(올라온 악보) | "ngc"(국악원 정악보). 가르는 열쇠는 지은이 한 값이고 서버가
-  // 거른다(list_scores의 p_author/p_author_not). ★ 이 문자열은 게시 스크립트
-  // (tools/publish-ngc-omr.mjs의 AUTHOR)와 글자까지 같아야 한다 — 어긋나면 탭이 빈다.
+  // 탭 — "all"(올라온 악보) | "ngc"(국악원 정악보) | "edu"(교과서 표준악보). 가르는 열쇠는
+  // 지은이 한 값이고 서버가 거른다(list_scores의 p_author/p_author_not). ★ 이 문자열들은 게시
+  // 스크립트의 AUTHOR와 글자까지 같아야 한다 — 어긋나면 탭이 빈다.
+  //   NGC_AUTHOR ↔ tools/publish-ngc-omr.mjs · EDU_AUTHOR ↔ tools/publish-edu-standard.mjs
+  // '올라온 악보' 탭은 둘 다 뺀다 — p_author_not에 줄바꿈으로 이어 보낸다(server/edu-tab.sql).
   const NGC_AUTHOR = "국립국악원 (OMR)";
+  const EDU_AUTHOR = "국립국악원 (교과서 표준악보집)";
+  const TAB_AUTHOR = { ngc: NGC_AUTHOR, edu: EDU_AUTHOR };
   let tab = "all";
 
   const LICENSE_KO = {
@@ -163,8 +167,8 @@
 
     rpc("list_scores", {
       p_sort: sort, p_q: q, p_limit: PAGE, p_offset: offset,
-      p_author: tab === "ngc" ? NGC_AUTHOR : null,        // 국악원 탭 = 그 지은이 것만
-      p_author_not: tab === "all" ? NGC_AUTHOR : null,    // 올라온 악보 탭 = 그것만 빼고
+      p_author: TAB_AUTHOR[tab] || null,                  // 국악원 탭들 = 그 지은이 것만
+      p_author_not: tab === "all" ? NGC_AUTHOR + "\n" + EDU_AUTHOR : null,   // 올라온 악보 = 둘 다 빼고
     })
       .then(function (r) {
         loading = false;
@@ -177,6 +181,7 @@
         if (total === 0) {
           setStatus(q ? ("'" + q + "'에 해당하는 악보가 없습니다.")
                       : (tab === "ngc" ? "국악원 정악보가 아직 올라오지 않았습니다."
+                       : tab === "edu" ? "교과서 표준악보가 아직 올라오지 않았습니다."
                                        : "아직 올라온 악보가 없습니다."), "sc-empty");
         } else {
           setStatus("");
@@ -200,8 +205,9 @@
       document.querySelectorAll(".sc-tab").forEach(function (o) { o.classList.remove("on"); });
       b.classList.add("on");
       tab = b.getAttribute("data-tab");
-      // 국악원 탭에만 안내문이 있다 — 출처·CC BY-NC-SA 표기가 그 안내문에 있다
+      // 국악원 탭들에만 안내문이 있다 — 출처(정악보는 CC BY-NC-SA 표기까지)가 거기 있다
       $("scLeadNgc").style.display = tab === "ngc" ? "" : "none";
+      $("scLeadEdu").style.display = tab === "edu" ? "" : "none";
       track("browse_tab", { v: tab });
       load(true);
     });
