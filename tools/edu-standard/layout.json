@@ -1,0 +1,170 @@
+{
+ "단소 01 새야새야": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 02 매롱이소리": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 03 꿩꿩장서방": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 04 나물노래": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 05 개구리소리": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 06 한글뒤풀이": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 07 천년만세 중 계면가락도드리(초급)": {
+  "gakPerRow": "5",
+  "titleGakWidth": "auto"
+ },
+ "단소 08 (현악) 영산회상 중 타령 초장(초급)": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "단소 09 구아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "단소 10 너영나영": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "단소 11 도라지타령": {
+  "gakPerRow": "11",
+  "titleGakWidth": "1"
+ },
+ "단소 12 밀양아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "단소 13 아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "단소 14 늴리리야": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 15 베틀가": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "단소 16 태평가": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "단소 17 몽금포타령": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 18 오나라": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 19 천년만세 중 계면가락도드리(중급)": {
+  "gakPerRow": "5",
+  "titleGakWidth": "auto"
+ },
+ "단소 20 (현악) 영산회상 중 타령 초장(중급)": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "단소 21 뱃노래": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 22 북천이 맑다커늘": {
+  "gakPerRow": "6",
+  "titleGakWidth": "1"
+ },
+ "단소 23 어이 얼어자리": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "단소 24 천년만세 중 계면가락도드리(고급)": {
+  "gakPerRow": "5",
+  "titleGakWidth": "auto"
+ },
+ "단소 25 (현악) 영산회상 중 타령 초장(고급)": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "소금 01 새야새야": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "소금 02 개구리소리": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "소금 03 어깨동무": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "소금 04 취타 중 초장(초급)": {
+  "gakPerRow": "4",
+  "titleGakWidth": "auto"
+ },
+ "소금 05 구아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "소금 06 도라지타령": {
+  "gakPerRow": "11",
+  "titleGakWidth": "1"
+ },
+ "소금 07 밀양아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "소금 08 아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "소금 09 해주아리랑": {
+  "gakPerRow": "8",
+  "titleGakWidth": "auto"
+ },
+ "소금 10 늴리리야": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "소금 11 태평가": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "소금 12 옹헤야": {
+  "gakPerRow": "7",
+  "titleGakWidth": "auto"
+ },
+ "소금 13 몽금포타령": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "소금 14 오나라": {
+  "gakPerRow": "6",
+  "titleGakWidth": "auto"
+ },
+ "소금 15 취타 중 초장(중급)": {
+  "gakPerRow": "4",
+  "titleGakWidth": "auto"
+ },
+ "소금 16 북천이 맑다커늘": {
+  "gakPerRow": "6",
+  "titleGakWidth": "1"
+ },
+ "소금 17 취타 중 초장(고급)": {
+  "gakPerRow": "4",
+  "titleGakWidth": "auto"
+ }
+}
