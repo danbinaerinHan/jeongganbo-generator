@@ -2287,6 +2287,20 @@
         if (pending) render();
         return;
       }
+      // Shift + ↑/↓ — 커서 바로 앞(또는 커서가 걸친) 율명의 옥타브를 한 칸 올리고 내린다
+      // (임 → 청임 → 중청임 / 임 → 배임 → 하배임). 마우스로 팔레트를 오가지 않고 치려는
+      // 제안(2026-11-19 게시판)으로 넣었다. 선율 칸에서만 — 곁줄·장단은 글자를 적는 자리다.
+      if (domain === "mel" && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey &&
+          (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        const nv = shiftOctaveAt(inp.value, inp.selectionEnd, e.key === "ArrowUp" ? 1 : -1);
+        if (nv) {
+          inp.value = nv.value;
+          inp.setSelectionRange(nv.caret, nv.caret);
+          inp.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        return;
+      }
       // 방향키로 인접 칸 이동 — 위/아래는 텍스트 입력창에서 원래 아무 동작이 없어 늘 가로채고,
       // 좌/우는 글자 편집(커서 이동)과 겹치므로 커서가 글자 맨 앞/뒤에 있을 때만 칸 이동으로 쓴다.
       let arrowKey = null;
@@ -2739,6 +2753,28 @@
   function octPrefix(oct) {
     const row = OCT_ROWS.find(function (r) { return r.oct === oct; });
     return row ? row.prefix : "";
+  }
+  // 글 value의 caret 바로 앞(또는 caret이 걸친) 율명 하나의 옥타브를 dir(±1)만큼 옮긴다.
+  // 정간 입력 카드의 Shift+↑/↓가 쓴다. 바꿀 율명이 없거나 끝 옥타브(하배·중청)면 null.
+  // 앞머리는 긴 것부터 맞춘다 — '중청황'의 '중'을 율명 중(仲)으로 읽지 않게.
+  function shiftOctaveAt(value, caret, dir) {
+    const re = /(하배|중청|배|청)?(황|대|태|협|고|중|유|임|이|남|무|응)/g;
+    // 괄호 속은 시김새 이름이라 건너뛴다({떠이어표}의 '이'를 율명으로 읽지 않게)
+    const inBr = new Uint8Array(value.length);
+    value.replace(/[{\[(][^{}\[\]()]*[}\])]/g, function (t, at) { inBr.fill(1, at, at + t.length); return t; });
+    let m, hit = null;
+    while ((m = re.exec(value))) {
+      if (m.index >= caret) break;
+      if (!inBr[m.index]) hit = m;   // caret 앞에서 시작하는 것 중 마지막(커서가 그 율명 안이나 바로 뒤)
+    }
+    if (!hit) return null;
+    const row = OCT_ROWS.find(function (r) { return r.prefix === (hit[1] || ""); });
+    const to = OCT_ROWS.find(function (r) { return r.oct === (row ? row.oct : 0) + dir; });
+    if (!to) return null;
+    const tok = to.prefix + hit[2];
+    const end = hit.index + hit[0].length;
+    return { value: value.slice(0, hit.index) + tok + value.slice(end),
+             caret: caret + (tok.length - hit[0].length) };
   }
 
   // ---------- 한자 율명 붙여넣기 ----------
@@ -3579,6 +3615,7 @@
   let previewCtx = null;
   function previewNote(midi) {
     if (!$("palSound").checked) return;   // 소리 미리듣기 토글 (표/건반 공통)
+    if (window.jgbAudioSession) window.jgbAudioSession.begin(true);   // iOS 무음 모드에서도 들리게(js/ios-audio.js)
     try {
       if (!previewCtx) previewCtx = new (window.AudioContext || window.webkitAudioContext)();
       const ctx = previewCtx;
@@ -6622,6 +6659,7 @@
     playing = false; paused = false; playState = null;
     if (playTimer) { clearTimeout(playTimer); playTimer = null; }
     if (audioCtx) { audioCtx.close(); audioCtx = null; }
+    if (window.jgbAudioSession) window.jgbAudioSession.end();
     playHi.forEach(function (arr) { arr.forEach(function (h) { h.style.display = "none"; }); });
     staffPlayMark(null);
     updatePlayButtons();
@@ -6673,6 +6711,8 @@
     if (playing || playPending) return;
     const built = buildAudioEvents();
     if (!built.events.length) return;
+    // iOS 무음 모드에서도 스피커로 나게 — 버튼을 누른 이 자리(사용자 동작 안)여야 한다(js/ios-audio.js)
+    if (window.jgbAudioSession) window.jgbAudioSession.begin();
     if (!built.janggu.length) { startPlayback(built, null, null); return; }
     playPending = true;
     loadJangguAudio().then(function (data) {
@@ -9510,6 +9550,22 @@
   function setZoom(v) { viewFitMode = null; viewZoom = Math.max(0.3, Math.min(6, +v.toFixed(2))); applyZoom(); }
   $("zoomIn").addEventListener("click", () => setZoom(viewZoom + 0.1));
   $("zoomOut").addEventListener("click", () => setZoom(viewZoom - 0.1));
+  // Ctrl/⌘ + 휠 — 브라우저 화면 확대 대신 악보 배율을 바꾼다(맥 트랙패드의 오므리기·벌리기도
+  // ctrlKey가 붙은 wheel로 들어온다). 아래 Ctrl/⌘ + −/＋ 와 같은 까닭이다(2026-11-19 게시판 제안).
+  // 커서 아래 자리가 제자리에 남도록 배율을 바꾼 뒤 스크롤을 같은 비율로 옮긴다.
+  $("sheetArea").addEventListener("wheel", function (e) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const area = $("sheetArea"), r = area.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    const before = viewZoom;
+    setZoom(viewZoom * Math.exp(-e.deltaY * 0.0025));
+    const k = viewZoom / before;
+    if (k !== 1) {
+      area.scrollLeft = (area.scrollLeft + px) * k - px;
+      area.scrollTop = (area.scrollTop + py) * k - py;
+    }
+  }, { passive: false });
   // Ctrl/⌘ + − / ＋ 를 브라우저 확대 대신 '보기 배율'(악보 줌)에 연결한다. 종이(SVG)는 높이가
   // 뷰포트(100vh) 기준이라 브라우저 줌을 하면 종이와 고정 px UI가 서로 반대로 어긋난다 —
   // 여기서 가로채(preventDefault) −/＋ 버튼처럼 악보만 매끄럽게 확대·축소한다.
@@ -10260,11 +10316,12 @@
     if (!playing) playMelody(); else togglePause();
   });
   $("btnStop").addEventListener("click", stopPlayback);
-  // 재생 중에는 스페이스바로 일시정지 ↔ 이어하기(멈춰 있을 땐 아무 일도 안 한다 — 시작은
-  // 버튼으로). 글자를 치는 자리에서는 띄어쓰기라 비켜선다. 방금 누른 버튼에 포커스가 남아
-  // 있으면 브라우저가 스페이스를 그 버튼 클릭으로도 처리해 두 번 뒤집히므로 포커스를 뗀다.
+  // 스페이스바 = 재생 버튼과 같다: 멈춰 있으면 재생, 재생 중이면 일시정지 ↔ 이어하기.
+  // (예전엔 재생 중에만 먹었는데 '스페이스로 재생도 시작하게' 해 달라는 제안이 있었다 — 2026-11-19
+  // 문의·제안 게시판.) 글자를 치는 자리에서는 띄어쓰기라 비켜선다. 방금 누른 버튼에 포커스가
+  // 남아 있으면 브라우저가 스페이스를 그 버튼 클릭으로도 처리해 두 번 뒤집히므로 포커스를 뗀다.
   document.addEventListener("keydown", function (e) {
-    if (e.key !== " " || !playing) return;
+    if (e.key !== " ") return;
     if (e.isComposing || e.keyCode === 229 || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
     const t = e.target;
     const tag = (t && t.tagName) || "";
@@ -10272,7 +10329,10 @@
     e.preventDefault();
     if (e.repeat) return;
     if (t && t !== document.body && typeof t.blur === "function") t.blur();
-    togglePause();
+    // 모달(새 문서·도움말·게시 창 등)이 떠 있으면 재생을 시작하지 않는다 — 거기서 친 스페이스다
+    if (!playing && [].some.call(document.querySelectorAll(".modal-overlay"), function (m) {
+      return getComputedStyle(m).display !== "none"; })) return;
+    if (!playing) playMelody(); else togglePause();
   });
   // 기준음(황 음고) 변경 → 저장 + 팔레트의 황 음고 셀렉트·피아노 건반 라벨도 따라감
   $("hwangPitch").addEventListener("change", function () {

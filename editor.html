@@ -1118,6 +1118,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               <div class="mg-sec"><b>직접 입력 카드</b><br>
                 다음 정간 <span class="mono">Enter</span> / <span class="mono">Tab</span> ·
                 인접 정간 이동 <span class="mono">방향키</span><br>
+                율명 옥타브 올리기·내리기 <span class="mono">⇧+↑</span> / <span class="mono">⇧+↓</span><br>
                 닫기 <span class="mono">Esc</span>
               </div>
               <div class="mg-sec"><b>텍스트 에디터(선율·장단·가사)</b><br>
@@ -2111,7 +2112,9 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
               <tr><td>방향키</td><td>인접 정간 이동(직접 입력 카드)</td></tr>
               <tr><td><span class="key">Esc</span></td><td>입력 카드 닫기</td></tr>
               <tr><td><span class="key">?</span></td><td>이 단축키 표 열고 닫기</td></tr>
-              <tr><td><span class="key">Space</span></td><td>재생 중 일시정지 / 이어 재생</td></tr>
+              <tr><td><span class="key">Space</span></td><td>재생 / 일시정지 / 이어 재생</td></tr>
+              <tr><td><span class="key">⇧+↑</span> / <span class="key">⇧+↓</span></td><td>커서 앞 율명의 옥타브 올리기 / 내리기(직접 입력 카드 — 임→청임, 임→배임)</td></tr>
+              <tr><td><span class="key">⌘/Ctrl</span>+휠</td><td>악보 확대 / 축소</td></tr>
               <tr><td><span class="key">1</span>~<span class="key">0</span></td><td>시김새 고르기(직접 입력, 팔레트 배지)</td></tr>
               <tr><td><span class="key">Backspace</span>/<span class="key">Delete</span></td><td>선택한 시김새 삭제(시김새 편집 모드)</td></tr>
               <tr><td><span class="key">⌘/Ctrl</span>+클릭·드래그</td><td>떨어져 있는 자리를 <b>더 고르기</b>(흩어진 칸에 한꺼번에 서식·복사)</td></tr>
@@ -2207,6 +2210,7 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
 
 <!-- 익명 사용 통계 래퍼(쿠키·개인정보 없음) — app.js보다 먼저 로드해 window.jgbTrack 준비 -->
 <script src="js/analytics.js"></script>
+<script src="js/ios-audio.js"></script>
 <script src="js/notes-data.js"></script>
 <script src="js/symbols-data.js"></script>
 <script src="js/janggu-data.js"></script>

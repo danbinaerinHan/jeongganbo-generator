@@ -1192,6 +1192,7 @@
   async function startPlay() {
     if (playing || startPlay.busy) return;
     startPlay.busy = true;
+    if (window.jgbAudioSession) window.jgbAudioSession.begin();   // iOS 무음 모드에서도 들리게(js/ios-audio.js)
     try {
       const data = await loadPercAudio();
       if (!data) { alert("음원을 불러오지 못했습니다(js/perc-audio.js)."); return; }
@@ -1225,6 +1226,7 @@
     try { playing.bus.gain.setValueAtTime(playing.bus.gain.value, playCtx.currentTime); playing.bus.gain.linearRampToValueAtTime(0, playCtx.currentTime + 0.05); } catch (e) {}
     const b = playing.bus; setTimeout(() => { try { b.disconnect(); } catch (e) {} }, 120);
     playing = null;
+    if (window.jgbAudioSession) window.jgbAudioSession.end();
     playHi.hidden = true;
     setPlayUi(false);
   }
