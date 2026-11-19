@@ -53,20 +53,47 @@ def durl_orig(rel):
     return "data:image/svg+xml;base64," + base64.b64encode(b).decode()
 
 
-def card(key, opt, src, ghost, rec, is_hanja, labels=None):
+def card(key, opt, src, ghost, rec, is_hanja, labels=None, applied=None):
     label = (labels or {}).get(opt) or (OPT_NAME_HANJA.get(opt) if is_hanja else None) or OPT_NAME.get(opt, opt)
     tag = '<span class="rec">추천</span>' if opt == rec else ""
+    if opt == applied:
+        tag += '<span class="applied">적용됨</span>'
+    on = opt == (applied or rec)
     gh = f'<img class="ghost" src="{ghost}" alt="">' if ghost else ""
-    return f"""<label class="card{' is-rec' if opt == rec else ''}">
-  <input type="radio" name="{html.escape(key)}" value="{opt}"{' checked' if opt == rec else ''}>
+    return f"""<label class="card{' is-rec' if opt == rec else ''}{' is-applied' if opt == applied else ''}">
+  <input type="radio" name="{html.escape(key)}" value="{opt}"{' checked' if on else ''} data-default="{'1' if on else ''}">
   <span class="cap">{label}{tag}</span>
   <span class="paper big">{gh}<img class="sym" src="{src}" alt=""></span>
   <span class="paper mini"><span class="yul">黃</span><img src="{src}" class="s1" alt=""><span class="yul">林</span><img src="{src}" class="s2" alt=""></span>
 </label>"""
 
 
+def applied_opt(r):
+    """지금 assets/의 파일이 어느 안과 같은가 — 대조표가 '적용됨'을 실제 파일에서 읽는다."""
+    cur = open(os.path.join(SYM, r["targets"][0] + ".svg"), "rb").read()
+    for opt in sorted(os.listdir(CAND)):
+        p = os.path.join(CAND, opt, r["stem"] + ".svg")
+        if os.path.exists(p) and open(p, "rb").read() == cur:
+            return opt
+    b = subprocess.run(["git", "show", f"{ORIG_REV}:assets/symbol_svgs/{r['targets'][0]}.svg"], cwd=ROOT,
+                       capture_output=True).stdout
+    return "O" if b == cur else None
+
+
+def requests():
+    """choices/*.json에 남은 메모(사용자 요청) — 날짜 순으로 모은다."""
+    d = os.path.join(HERE, "choices"); out = {}
+    for f in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if f.endswith(".json"):
+            for k, v in json.load(open(os.path.join(d, f), encoding="utf-8")).items():
+                if v.get("memo"):
+                    out.setdefault(k, []).append((f[:-5], v["memo"], v.get("opt")))
+    return out
+
+
 def main():
     rows_html, total = [], 0
+    REQ = requests(); n_applied = 0
     for gi, (gname, gdesc, rows) in enumerate(GROUPS):
         is_hanja = gname == "한자 기호"
         rows_html.append(f'<section class="grp"><h2><span class="num">{gi + 1:02d}</span>{html.escape(gname)}'
@@ -75,16 +102,23 @@ def main():
             total += 1
             t0 = r["targets"][0]
             orig = durl_orig(t0)
-            cards = [card(r["stem"], "O", orig, None, r["rec"], is_hanja)]
+            ap = applied_opt(r); n_applied += ap not in (None, "O")
+            labels = r.get("labels") or {}
+            cards = [card(r["stem"], "O", orig, None, r["rec"], is_hanja, None, ap)]
             opts = sorted(d for d in os.listdir(CAND) if os.path.isdir(os.path.join(CAND, d)))  # A B B2 B3 B4 C
             for opt in opts:
                 p = os.path.join(CAND, opt, r["stem"] + ".svg")
                 if os.path.exists(p):
-                    cards.append(card(r["stem"], opt, durl(p), orig, r["rec"], is_hanja, r.get("labels")))
+                    cards.append(card(r["stem"], opt, durl(p), orig, r["rec"], is_hanja, labels, ap))
             tg = " · ".join(t + ".svg" for t in r["targets"])
+            req = "".join(
+                f'<div class="req"><span class="rq-k">요청 {html.escape(day)}</span><q>{html.escape(m)}</q>'
+                f'<span class="rq-to">→ {html.escape(labels.get(o) or OPT_NAME.get(o, o))}'
+                f'{" · 적용됨" if o == ap else ""}</span></div>' for day, m, o in REQ.get(r["stem"], []))
+            apl = labels.get(ap) or (OPT_NAME_HANJA.get(ap) if is_hanja else None) or OPT_NAME.get(ap, ap or "알 수 없음")
             rows_html.append(f"""<article class="row" data-key="{html.escape(r['stem'])}">
-  <header><h3>{html.escape(r['ko'])}</h3><code>{html.escape(tg)}</code><span class="at">{html.escape(r['at'])}</span></header>
-  <p class="note">{html.escape(r['note'])}</p>
+  <header><h3>{html.escape(r['ko'])}</h3><code>{html.escape(tg)}</code><span class="at">{html.escape(r['at'])}</span><span class="now">지금: {html.escape(apl)}</span></header>
+  <p class="note">{html.escape(r['note'])}</p>{req}
   <div class="cards">{''.join(cards)}</div>
   <div class="memo"><textarea rows="1" placeholder="이 기호에 대한 메모 — 아래 표현을 눌러 넣거나 직접 적으십시오"></textarea>
   <div class="chips">{CHIPS_HTML}</div></div>
@@ -92,7 +126,7 @@ def main():
         rows_html.append("</section>")
     targets = {r["stem"]: r["targets"] for _, _, rows in GROUPS for r in rows}
     page = TEMPLATE.replace("%%ROWS%%", "\n".join(rows_html)).replace("%%TOTAL%%", str(total)) \
-        .replace("%%TARGETS%%", json.dumps(targets, ensure_ascii=False))
+        .replace("%%TARGETS%%", json.dumps(targets, ensure_ascii=False)).replace("%%APPLIED%%", str(n_applied))
     open(OUT, "w", encoding="utf-8").write(page)
     print(f"{total}개 → {os.path.relpath(OUT, ROOT)} ({len(page) // 1024}KB)")
 
@@ -136,6 +170,14 @@ h1{font-size:22px;margin:0 0 6px}
 .cap::before{content:"";width:12px;height:12px;border-radius:50%;border:1.5px solid var(--muted);flex:none}
 .card:has(input:checked) .cap::before{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,transparent 50%)}
 .rec{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 4px;margin-left:auto}
+.applied{font-size:10px;color:#fff;background:var(--accent);border-radius:3px;padding:0 5px;margin-left:4px}
+.card .cap .rec{margin-left:auto}
+.card:not(.is-rec) .cap .applied{margin-left:auto}
+.card.is-applied{border-color:var(--accent)}
+.row .now{font-size:12px;color:var(--accent);margin-left:auto}
+.req{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;font-size:13px;background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:4px;padding:6px 10px;margin:0 0 10px}
+.req .rq-k{font-family:var(--mono);font-size:11px;color:var(--accent)}
+.req .rq-to{font-weight:600;color:var(--accent)}
 .paper{background:var(--paper);border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative}
 .big{height:170px}
 .big img{max-width:80%;max-height:140px;position:absolute;inset:0;margin:auto}
@@ -169,11 +211,12 @@ body.ghost-on .big:has(.ghost) .sym{opacity:.8}
 <div class="wrap">
 <h1>시김새 다듬기 대조</h1>
 <p class="lead">원본 그림에서 따 온 시김새 SVG 중 테두리가 거칠거나 굵기가 고르지 않은 %%TOTAL%%개를 골라 후보를 만들었습니다.
-칸을 눌러 쓸 안을 고르십시오. 추천안이 미리 골라져 있습니다. 칸 아래 작은 줄은 율명 옆에 실제 크기 가까이 놓아 본 모습입니다.<br>더 손볼 곳이 있으면 기호마다 메모를 남기십시오. [결과 복사]에 고른 안과 메모가 함께 담깁니다.</p>
+<b>지금 기호 파일에 들어가 있는 안</b>에 '적용됨' 표시가 붙고(%%APPLIED%%개), 처음엔 그 안이 골라져 있습니다. 남기신 메모는 기호 이름 아래 <b>요청</b> 줄에, 그 메모를 반영한 칸은 '메모 반영'으로 나옵니다. 다른 안으로 바꾸려면 칸을 눌러 고르십시오. 칸 아래 작은 줄은 율명 옆에 실제 크기 가까이 놓아 본 모습입니다.<br>더 손볼 곳이 있으면 기호마다 메모를 남기십시오. [결과 복사]에 고른 안과 메모가 함께 담깁니다.</p>
 <div class="legend"><span><b>A</b>가장자리 다듬기 — 모양은 그대로, 잔물결만 걷음</span><span><b>B</b>새로 그리기(도형) · 정해체 굵기 맞춤(한자)</span><span><b>C</b>정해체 원래 굵기(한자)</span></div>
 <div class="bar">
   <label><input type="checkbox" id="ghost"> 원본 겹쳐 보기(빨강 = 원본)</label>
   <span class="sp"></span>
+  <button type="button" data-all="default">지금 적용된 대로</button>
   <button type="button" data-all="rec">모두 추천안</button>
   <button type="button" data-all="O">모두 원본</button>
   <button type="button" id="theme" aria-label="밝게/어둡게">◐</button>
@@ -189,10 +232,10 @@ body.ghost-on .big:has(.ghost) .sym{opacity:.8}
 <script>
 (function(){
   const TARGETS = %%TARGETS%%;
-  const KEY = "jgb_sigimsae_refine_v1";
+  const KEY = "jgb_sigimsae_refine_v2";  // v2: 적용 뒤 — 예전 선택이 적용됨 표시를 가리지 않게
   const rows = [...document.querySelectorAll(".row")];
   const recOf = r => (r.querySelector(".card.is-rec input") || r.querySelector("input")).value;
-  const MKEY = "jgb_sigimsae_refine_memo_v1";
+  const MKEY = "jgb_sigimsae_refine_memo_v2";
   const ta = r => r.querySelector(".memo textarea");
   try { const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
     rows.forEach(r => { const v = saved[r.dataset.key]; const i = v && r.querySelector(`input[value="${v}"]`); if (i) i.checked = true; });
@@ -202,9 +245,9 @@ body.ghost-on .big:has(.ghost) .sym{opacity:.8}
   const grow = el => { el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; };
   function pick(){ const o = {}; rows.forEach(r => { o[r.dataset.key] = r.querySelector("input:checked").value; }); return o; }
   function update(){
-    const p = pick(); const n = {O:0,A:0,B:0,C:0}; Object.values(p).forEach(v => n[v[0]]++);
+    const p = pick(); const n = {O:0,A:0,B:0,C:0,R:0}; Object.values(p).forEach(v => n[v[0]]++);
     const ch = Object.keys(p).length - n.O;
-    document.getElementById("sum").innerHTML = `바꿀 기호 <b>${ch}</b> / ${rows.length} · A ${n.A} · B ${n.B} · C ${n.C} · 원본 ${n.O}`;
+    document.getElementById("sum").innerHTML = `바꿀 기호 <b>${ch}</b> / ${rows.length} · A ${n.A} · B ${n.B} · C ${n.C} · 메모 반영 ${n.R} · 원본 ${n.O}`;
     const memos = {}; rows.forEach(r => { const m = ta(r).value.trim(); r.classList.toggle("has-memo", !!m); if (m) memos[r.dataset.key] = m; });
     const out = {}; Object.entries(p).forEach(([k,v]) => { if (v !== "O" || memos[k]) out[k] = {opt: v, targets: TARGETS[k]}; if (memos[k]) out[k].memo = memos[k]; });
     const nm = Object.keys(memos).length;
@@ -223,7 +266,7 @@ body.ghost-on .big:has(.ghost) .sym{opacity:.8}
   });
   rows.forEach(r => { if (ta(r).value) grow(ta(r)); });
   document.querySelectorAll("[data-all]").forEach(b => b.onclick = () => {
-    rows.forEach(r => { const v = b.dataset.all === "rec" ? recOf(r) : "O"; r.querySelector(`input[value="${v}"]`).checked = true; }); update(); });
+    rows.forEach(r => { const v = b.dataset.all === "rec" ? recOf(r) : b.dataset.all === "default" ? r.querySelector("input[data-default='1']").value : "O"; r.querySelector(`input[value="${v}"]`).checked = true; }); update(); });
   document.getElementById("ghost").onchange = e => document.body.classList.toggle("ghost-on", e.target.checked);
   document.getElementById("show").onclick = () => document.getElementById("out").classList.toggle("open");
   document.getElementById("copy").onclick = async () => {
