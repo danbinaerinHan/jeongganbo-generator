@@ -1,0 +1,223 @@
+{
+ "튕김": {
+  "opt": "B",
+  "targets": [
+   "special/튕김"
+  ]
+ },
+ "연튕김": {
+  "opt": "A",
+  "targets": [
+   "special/연튕김"
+  ]
+ },
+ "늘임표": {
+  "opt": "B",
+  "targets": [
+   "special/늘임표",
+   "symbols/fermata"
+  ]
+ },
+ "뜰": {
+  "opt": "B",
+  "targets": [
+   "special/뜰"
+  ]
+ },
+ "sigimsae-00": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-00"
+  ]
+ },
+ "staccato": {
+  "opt": "B",
+  "targets": [
+   "symbols/staccato"
+  ]
+ },
+ "neunareunani": {
+  "opt": "B2",
+  "targets": [
+   "symbols/neunareunani"
+  ]
+ },
+ "naneuna": {
+  "opt": "R",
+  "targets": [
+   "symbols/naneuna"
+  ],
+  "memo": "좀 더 가운데이 있는 3자의 가운데 부분의 각도가 안쪽으로 모였으면 좋겟음. 거의 나니나에 중간에 금 그은 것처럼."
+ },
+ "nanina": {
+  "opt": "B",
+  "targets": [
+   "symbols/nanina"
+  ]
+ },
+ "naniro": {
+  "opt": "R",
+  "targets": [
+   "symbols/naniro"
+  ],
+  "memo": "좀 더 90의 각도가 강하고, 둥글기가 줄어들었으면 좋겠음. 그냥 ㄷ 자처럼."
+ },
+ "neunira": {
+  "opt": "R",
+  "targets": [
+   "symbols/neunira"
+  ],
+  "memo": "ㄷ자 위의 획의 휜 각도가 반대쪽이어으면 좋겟음. 위쪽으로 휘어진겡 아니라 아래쪽이 휘어지게."
+ },
+ "flow": {
+  "opt": "A",
+  "targets": [
+   "symbols/flow"
+  ]
+ },
+ "sigimsae-24": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-24"
+  ]
+ },
+ "sigimsae-01": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-01"
+  ]
+ },
+ "sigimsae-02": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-02"
+  ]
+ },
+ "sigimsae-03": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-03"
+  ]
+ },
+ "sigimsae-04": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-04"
+  ]
+ },
+ "sigimsae-05": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-05"
+  ]
+ },
+ "sigimsae-06": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-06"
+  ]
+ },
+ "sigimsae-07": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-07"
+  ]
+ },
+ "sigimsae-08": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-08"
+  ]
+ },
+ "sigimsae-10": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-10"
+  ]
+ },
+ "sigimsae-11": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-11"
+  ]
+ },
+ "sigimsae-12": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-12"
+  ]
+ },
+ "sigimsae-13": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-13"
+  ]
+ },
+ "sigimsae-14": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-14"
+  ]
+ },
+ "sigimsae-15": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-15"
+  ]
+ },
+ "sigimsae-16": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-16"
+  ]
+ },
+ "sigimsae-17": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-17"
+  ]
+ },
+ "sigimsae-18": {
+  "opt": "B",
+  "targets": [
+   "symbols/sigimsae-18"
+  ]
+ },
+ "push": {
+  "opt": "A",
+  "targets": [
+   "symbols/push"
+  ]
+ },
+ "noraneuni": {
+  "opt": "A",
+  "targets": [
+   "symbols/noraneuni"
+  ]
+ },
+ "pizzicato": {
+  "opt": "A",
+  "targets": [
+   "symbols/pizzicato"
+  ]
+ },
+ "roll-str": {
+  "opt": "A",
+  "targets": [
+   "symbols/roll-str"
+  ]
+ },
+ "none": {
+  "opt": "R",
+  "targets": [
+   "symbols/none"
+  ],
+  "memo": "오른쪽 위쪽이 둥글어졌으면 좋겠음. 지금은 깎여나간 것 같음."
+ },
+ "bend-down": {
+  "opt": "A",
+  "targets": [
+   "symbols/bend-down"
+  ]
+ }
+}

@@ -327,6 +327,12 @@ OS 동일). 다시 뜨려면 `python3 tools/gen-wordmark.py` → 출력을 edito
   적혀 있던 값과 똑같은지** 대조한다. 사전을 손본 뒤 `node tools/check-symbols-registry.mjs`가
   깨지면 악보 모양이 달라졌다는 뜻. 기호를 **새로 들이는 건 통과**시키고 몇 개 늘었는지만
   알려 준다 — 막는 건 옛 항목이 바뀌거나 사라지는 것뿐이라, 사전이 자라도 검사는 계속 쓸모 있다.
+- `tools/sigimsae-refine/` — **시김새 SVG 다듬기**(2026-11-19). 원본 그림에서 따 와 테두리가 거칠던 36개를
+  다듬어 `assets/symbol_svgs/`에 적용했다. 후보는 `assets/symbol_svgs/_다듬기/<안>/`(생성기가 안 읽는 폴더),
+  대조표는 `docs/시김새-다듬기-대조.html`(`build-compare.py`가 만든다 — '원본' 칸은 다듬기 전 커밋 `4fce109`에서
+  읽는다), 고른 결과는 `choices/`. 안: A 가장자리 다듬기(`smooth.py`) · B 새로 그리기(`src/`의 획 SVG) 또는
+  한자 s01~s18은 정해체(TW-Kai) 글자를 굵기 0.088로(`glyphs.py`+`bold.py`) · R 메모 반영. 대상·추천은 `rows.py`,
+  적용은 `apply.py <결과.json>`(symbols-data.js까지 다시 만든다). 기호 그림을 또 손볼 땐 이 도구를 이어 쓸 것.
 - `tools/lib/app-sandbox.mjs` — **app.js의 함수를 이름으로 떼어 와 Node에서 그대로 돌리는 상자**.
   app.js는 DOM에 붙은 큰 IIFE라 통째로는 못 부르는데, 검사 쪽에 같은 셈을 한 벌 더 적으면
   그건 '두 번째 구현'이라 app.js를 고쳐도 옛 답을 계속 맞다 한다. DOM은 그 함수들이 실제로
