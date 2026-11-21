@@ -145,6 +145,11 @@ setTimeout(function () { document.documentElement.classList.remove("jgb-boot"); 
         <div class="pp-row"><span>템포 (BPM)</span>
           <input type="number" id="tempoBpm" min="20" max="240" value="60">
         </div>
+        <!-- 시작 각 — 원하는 각(=마디)부터 듣기. 1이면 처음부터. [여기]는 지금 편집 중인 각을 넣는다.
+             문서에 저장된다(CTRL_IDS) — 값이 없는 문서는 기본값 1로 돌아간다. -->
+        <div class="pp-row"><span>시작 각</span>
+          <span class="pp-from"><input type="number" id="playFromGak" min="1" value="1" title="이 각부터 재생합니다 (1 = 처음부터)"><button type="button" id="playFromHere" title="지금 편집 중인 각을 시작 각으로 정합니다">여기</button></span>
+        </div>
         <!-- 시김새대로 연주 — 끄면 적힌 율명만 울리는 '민음'이 된다(가락의 뼈대만 듣는 자리).
              기본은 켬. **오선보는 이 값과 무관하다** — 거기선 늘 시김새를 그린다. -->
         <div class="pp-row"><span>시김새대로 연주</span>

@@ -6650,7 +6650,9 @@
     if (!$("btnPlay")) return;
     $("btnPlayIco").textContent = (!playing || paused) ? "▶" : "⏸";
     $("btnPlayLbl").textContent = !playing ? "재생" : (paused ? "이어하기" : "일시정지");
-    $("btnPlay").title = !playing ? "재생 (선율·장구 소리)" : (paused ? "이어 재생" : "일시정지");
+    const from = Math.max(1, parseInt($("playFromGak") && $("playFromGak").value, 10) || 1);
+    $("btnPlay").title = !playing ? (from > 1 ? from + "각부터 재생 (재생 설정에서 바꿉니다)" : "재생 (선율·장구 소리)")
+                                  : (paused ? "이어 재생" : "일시정지");
     $("btnStop").disabled = !playing;
   }
 
@@ -6669,7 +6671,8 @@
   // 멈춰있으므로 일시정지해도 하이라이트가 어긋나지 않는다.
   function tick() {
     if (!playing || paused || !playState) return;
-    const now = audioCtx.currentTime - playState.startAt;
+    // 첫 소리 전의 짧은 여유(0.15초) 동안 시작 각 앞 정간이 짚히지 않게 t0에 붙든다
+    const now = Math.max(playState.t0 || 0, audioCtx.currentTime - playState.startAt);
     if (now >= playState.total) { stopPlayback(); return; }
     // 열마다 '지금 지나고 있는 정간'을 하나씩 찾아 함께 짚는다
     highlightPlay(playState.marks.map(function (ms) {
@@ -6707,10 +6710,30 @@
   // 눌러 두 번 시작되는 걸 막는 빗장.
   let playPending = false;
 
+  // 시작 각(재생 설정의 #playFromGak, 사람이 세는 1부터) → 그 각이 시작되는 시각(초).
+  // 소리를 처음부터 짠 시간축을 그대로 두고 **어디서부터 들을지만** 고른다 — 그래서 시김새·
+  // 장단·합주 셈은 한 획도 안 바뀐다. 시각은 하이라이트 표식에서 읽는다(표식은 정간마다
+  // 하나씩 있고 각 수가 다른 파트가 섞여도 가장 먼저 그 각에 닿는 자리를 쓴다).
+  // 그 각이 악보에 없으면(곡보다 큰 번호) 처음부터 — 아무 소리 없이 끝나는 것보다 낫다.
+  function playStartTime(built) {
+    const el = $("playFromGak");
+    const gi = Math.max(1, parseInt(el && el.value, 10) || 1) - 1;
+    if (gi <= 0) return 0;
+    let t0 = Infinity;
+    (built.marks || []).forEach(function (ms) {
+      if (!ms) return;
+      for (let i = 0; i < ms.length; i++) {
+        if (ms[i].gak >= gi) { t0 = Math.min(t0, ms[i].t); break; }
+      }
+    });
+    return isFinite(t0) && t0 < (built.total || 0) ? t0 : 0;
+  }
+
   function playMelody() {
     if (playing || playPending) return;
     const built = buildAudioEvents();
     if (!built.events.length) return;
+    built.t0 = playStartTime(built);
     // iOS 무음 모드에서도 스피커로 나게 — 버튼을 누른 이 자리(사용자 동작 안)여야 한다(js/ios-audio.js)
     if (window.jgbAudioSession) window.jgbAudioSession.begin();
     if (!built.janggu.length) { startPlayback(built, null, null); return; }
@@ -6740,6 +6763,10 @@
       return Math.max(m, jangguLead(h.name));
     }, 0) : 0;
     const startAt = ctx.currentTime + 0.15 + maxLead;
+    // 시작 각부터 들을 때: 시간축 0초가 놓이는 오디오 시각(origin)을 t0만큼 앞으로 당긴다.
+    // 그러면 t0에 걸린 소리가 startAt에 울리고, 표식·오선보 짚기는 원래 시간축 그대로 맞는다.
+    const t0 = built.t0 || 0;
+    const origin = startAt - t0;
     const bus = makeOutBus(ctx);
     const master = ctx.createGain();
     // **소리 나는 파트 수로 나눈다.** 1/√N이 아니라 1/N인 것은 헤테로포니라 봉우리가 파트
@@ -6749,13 +6776,15 @@
 
     events.forEach(function (e) {
       if (e.freq == null) return;
+      if (e.t + e.dur <= t0) return;   // 시작 각보다 앞서 끝나는 소리
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = e.freq;
-      const on = startAt + e.t, off = on + e.dur;
-      const atk = Math.min(0.02, e.dur * 0.3);
-      const rel = Math.min(0.05, e.dur * 0.3);
+      // 시작 각에 걸쳐 있던 음(앞 각에서 이어지는 음)은 그 자리에서부터 울린다
+      const on = origin + Math.max(e.t, t0), off = origin + e.t + e.dur;
+      const atk = Math.min(0.02, (off - on) * 0.3);
+      const rel = Math.min(0.05, (off - on) * 0.3);
       g.gain.setValueAtTime(0, on);
       g.gain.linearRampToValueAtTime(1, on + atk);
       g.gain.setValueAtTime(1, Math.max(on + atk, off - rel));
@@ -6772,6 +6801,7 @@
       built.janggu.forEach(function (h) {
         const b = bufs[h.name];
         if (!b) return;   // 아직 음원이 없는 구음(사전에만 있는 것)은 조용히 넘어간다
+        if (h.t < t0 - 1e-6) return;   // 시작 각보다 앞선 타점
         const src = ctx.createBufferSource();
         src.buffer = b;
         const g = ctx.createGain();
@@ -6779,7 +6809,7 @@
         src.connect(g); g.connect(bus);
         // 겹타는 음원을 박보다 먼저 시작해 본 타가 박에 떨어지게 한다(JANGGU_LEAD)
         const at = h.t - jangguLead(h.name);
-        src.start(startAt + at);
+        src.start(origin + at);
         jangguEnd = Math.max(jangguEnd, at + b.duration);
       });
     }
@@ -6791,7 +6821,7 @@
     // 파트의 끝)을 쓰고, 이벤트 최대치와 장구 울림으로 한 번 더 받친다.
     const evEnd = events.reduce(function (m, e) { return Math.max(m, e.t + e.dur); }, 0);
     const total = Math.max(built.total || 0, evEnd, jangguEnd);
-    playState = { startAt: startAt, total: total, marks: marks };
+    playState = { startAt: origin, total: total, marks: marks, t0: t0 };
     updatePlayButtons();
     tick();
   }
@@ -8897,7 +8927,7 @@
     "daegang", "noteMode", "sizeScale", "pageFill", "noteScale", "lyricsScale", "cellSize", "gakGap", "bandGap", "header", "frame", "lyricsLane",
     "title", "titleSize", "titleOffset", "titleOffsetX", "titleSpacing",
     "subtitle", "subSize", "subOffset", "subOffsetX", "subSpacing", "titleFont", "titleLayout", "titleGakWidth",
-    "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "yulFont", "pageNumPos", "gakNumMode",
+    "hwangPitch", "tempoBpm", "playJanggu", "playSigimsae", "playFromGak", "tempoBpmGak", "tempoBpmGakMax", "wantJangdan", "wantTempo", "lyricsFont", "palSound", "palInsert", "joPreset", "yulFont", "pageNumPos", "gakNumMode",
     "gakNameSize", "gakNameGap", "gakNameHanja", "tempoSize", "tempoGap", "tempoSpacing", "tempoOffX", "tempoNumStyle",
     "scoreView", "staffUnit", "staffKey", "staffTime", "staffBar", "staffPerLine", "staffJanggu", "staffPrintSize"];
   const LS_KEY = "jgb_state_v1";
@@ -10343,6 +10373,18 @@
   // 장구 소리 켜기/끄기 — 재생 중에 바꾸면 다음 재생부터 반영된다(이미 예약된 소리는 그대로)
   $("playJanggu").addEventListener("change", saveState);
   $("playSigimsae").addEventListener("change", saveState);
+  // 시작 각 — 범위 밖 값은 떠날 때 1 이상으로 당긴다(곡보다 큰 번호는 재생할 때 처음부터로 친다)
+  $("playFromGak").addEventListener("change", function () {
+    const v = Math.max(1, parseInt($("playFromGak").value, 10) || 1);
+    $("playFromGak").value = v;
+    updatePlayButtons();
+    saveState();
+  });
+  // [여기] — 지금 편집 중인(노란 표시) 각을 시작 각으로. 편집 중인 칸이 없으면 처음부터.
+  $("playFromHere").addEventListener("click", function () {
+    $("playFromGak").value = activeGak >= 0 ? activeGak + 1 : 1;
+    $("playFromGak").dispatchEvent(new Event("change"));
+  });
   // 입력·소리 토글 상태 저장
   $("palSound").addEventListener("change", saveState);
   $("palInsert").addEventListener("change", saveState);

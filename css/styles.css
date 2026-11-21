@@ -792,6 +792,13 @@
                                        border-radius: 5px; font-family: inherit; font-size: 12px; }
   .play-pop select { padding-right: 20px; background-position: right 6px center; background-size: 10px; }
   .play-pop .hint { color: var(--muted); line-height: 1.4; }
+  /* 시작 각 — 숫자칸 + [여기]가 다른 칸(96px)과 같은 폭에 들어가게 */
+  .play-pop .pp-from { display: flex; gap: 4px; width: 96px; }
+  .play-pop .pp-from input { width: 0; flex: 1 1 auto; min-width: 0; }
+  .play-pop .pp-from button { flex: 0 0 auto; padding: 2px 6px; font-size: 11px; font-family: inherit;
+                              border: 1px solid var(--line); border-radius: 5px; background: var(--panel);
+                              color: var(--ink); cursor: pointer; }
+  .play-pop .pp-from button:hover { background: var(--hover); }
   @media print { .play-pop { display: none !important; } }
 
   /* 시김새 수정 패널 */
