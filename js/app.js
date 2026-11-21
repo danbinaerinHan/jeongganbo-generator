@@ -10380,7 +10380,7 @@
     updatePlayButtons();
     saveState();
   });
-  // [여기] — 지금 편집 중인(노란 표시) 각을 시작 각으로. 편집 중인 칸이 없으면 처음부터.
+  // [현재 각] — 편집 중인(노란 표시) 각을 시작 각으로. 편집 중인 칸이 없으면 처음부터.
   $("playFromHere").addEventListener("click", function () {
     $("playFromGak").value = activeGak >= 0 ? activeGak + 1 : 1;
     $("playFromGak").dispatchEvent(new Event("change"));
