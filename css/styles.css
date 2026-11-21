@@ -647,6 +647,16 @@
   #sheetArea { flex: 1 1 auto; min-height: 0; display: flex;
                align-items: flex-start; justify-content: center; padding: 16px; overflow: auto;
                background: var(--soft); position: relative; }
+  /* 재생 진행 막대 — 재생 중에만 악보 위 한 줄(#playSeek, app.js '재생' 절 showPlayPos·seekTo) */
+  /* 왼쪽 30px = 입력 도구 손잡이(#paletteToggle, 악보 열 왼쪽 끝에 붙는다)를 비켜서는 몫 */
+  #playSeek { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 6px 16px 6px 30px;
+              background: var(--panel); border-bottom: 1px solid var(--line); color: var(--ink);
+              font-size: 12px; }
+  #playSeek[hidden] { display: none; }
+  #playSeek input[type="range"] { flex: 1 1 auto; min-width: 0; margin: 0; }
+  #playSeek .ps-time { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--muted);
+                       min-width: 3.2em; text-align: center; }
+  #playSeek .ps-gak { min-width: 3.5em; font-weight: 600; white-space: nowrap; }
   #sheet { transform-origin: top center; transition: transform .08s ease;
            display: flex; flex-direction: column; align-items: center; gap: 16px; }
 

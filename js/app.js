@@ -6664,6 +6664,7 @@
     if (window.jgbAudioSession) window.jgbAudioSession.end();
     playHi.forEach(function (arr) { arr.forEach(function (h) { h.style.display = "none"; }); });
     staffPlayMark(null);
+    showSeekBar(false);
     updatePlayButtons();
   }
 
@@ -6671,18 +6672,11 @@
   // 멈춰있으므로 일시정지해도 하이라이트가 어긋나지 않는다.
   function tick() {
     if (!playing || paused || !playState) return;
-    // 첫 소리 전의 짧은 여유(0.15초) 동안 시작 각 앞 정간이 짚히지 않게 t0에 붙든다
+    // 첫 소리 전의 짧은 여유(0.15초) 동안 시작 자리 앞 정간이 짚히지 않게 t0에 붙든다
     const now = Math.max(playState.t0 || 0, audioCtx.currentTime - playState.startAt);
     if (now >= playState.total) { stopPlayback(); return; }
-    // 열마다 '지금 지나고 있는 정간'을 하나씩 찾아 함께 짚는다
-    highlightPlay(playState.marks.map(function (ms) {
-      if (!ms) return null;
-      for (let i = ms.length - 1; i >= 0; i--) if (now >= ms[i].t) return ms[i];
-      return null;
-    }));
-    // 오선보도 **같은 시계**를 본다(오선보 보기 절의 '재생 위치 짚기') — 칸이 닫혀 있거나
-    // 조판기로 안 그렸으면 그 안에서 조용히 아무 일도 안 한다.
-    staffPlayMark(now * 1000);
+    // 열마다 '지금 지나고 있는 정간'을 하나씩 찾아 함께 짚는다(+ 오선보·진행 막대)
+    showPlayPos(now);
     playTimer = setTimeout(tick, 60);
   }
 
@@ -6752,36 +6746,72 @@
   }
 
   // 음원을 다 푼 뒤의 실제 재생. ctx는 장구 음원을 풀 때 미리 만든 컨텍스트(없으면 여기서 만듦).
+  // 소리를 앉히는 일은 scheduleFrom이 맡는다 — 진행 막대로 자리를 옮길 때 같은 함수를 다시 부른다.
   function startPlayback(built, ctx, bufs) {
-    const events = built.events, marks = built.marks;
+    const events = built.events;
     track("play");
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     audioCtx = ctx;
-    // 첫 박에 겹타(기덕)가 있으면 그 음원은 0초보다 **앞서** 시작해야 한다 — 그만큼 여유를
+
+    // 마지막 박에 친 장구는 선율이 끝난 뒤에도 울림이 남는다 — 그만큼 총 길이를 늘려
+    // 컨텍스트가 닫히며 소리가 뚝 끊기지 않게 한다(하이라이트는 마지막 정간에 머문다).
+    // 합주는 파트마다 이벤트가 섞여 마지막 원소가 끝이 아닐 수 있다 — built.total(가장 긴
+    // 파트의 끝)을 쓰고, 이벤트 최대치와 장구 울림으로 한 번 더 받친다.
+    let jangguEnd = 0;
+    if (bufs) built.janggu.forEach(function (h) {
+      const b = bufs[h.name];
+      if (b) jangguEnd = Math.max(jangguEnd, h.t - jangguLead(h.name) + b.duration);
+    });
+    const evEnd = events.reduce(function (m, e) { return Math.max(m, e.t + e.dur); }, 0);
+    const total = Math.max(built.total || 0, evEnd, jangguEnd);
+
+    playing = true; paused = false;
+    playState = { built: built, bufs: bufs, bus: makeOutBus(ctx), session: null,
+                  startAt: 0, t0: 0, total: total, marks: built.marks };
+    scheduleFrom(built.t0 || 0);
+    updatePlayButtons();
+    showSeekBar(true);
+    tick();
+  }
+
+  // 시간축의 t0초부터 소리를 앉힌다. 소리는 늘 처음부터 짠 그대로이고(buildAudioEvents)
+  // 시간축 0초가 놓이는 오디오 시각(origin)만 t0만큼 앞으로 당긴다 — 그러면 t0에 걸린 소리가
+  // startAt에 울리고, 표식·오선보 짚기는 원래 시간축 그대로 맞는다.
+  // 다시 부르면(자리 옮기기) 앞서 앉힌 소리 묶음(session)을 짧게 줄여 떼고 새 묶음을 붙인다 —
+  // 이미 예약된 발진기를 하나하나 멈추지 않아도 되고, 뚝 끊기는 딸깍 소리도 안 난다.
+  function scheduleFrom(t0) {
+    const ps = playState, ctx = audioCtx, built = ps.built, bufs = ps.bufs;
+    if (ps.session) {
+      const old = ps.session, now = ctx.currentTime;
+      old.gain.setValueAtTime(old.gain.value, now);
+      old.gain.linearRampToValueAtTime(0, now + 0.03);
+      setTimeout(function () { try { old.disconnect(); } catch (e) { /* 이미 닫힌 컨텍스트 */ } }, 120);
+    }
+    const session = ctx.createGain();
+    session.connect(ps.bus);   // **destination에 직접 잇지 말 것** — 출력 버스를 지나야 한다
+    ps.session = session;
+
+    // t0 바로 뒤 박에 겹타(기덕)가 있으면 그 음원은 박보다 **앞서** 시작해야 한다 — 그만큼 여유를
     // 더 두지 않으면 시작 시각이 과거가 되어 그 한 번만 앞꾸밈이 잘린 채 울린다.
-    const maxLead = bufs ? built.janggu.reduce(function (m, h) {
-      return Math.max(m, jangguLead(h.name));
-    }, 0) : 0;
+    const jg = bufs ? built.janggu.filter(function (h) { return h.t >= t0 - 1e-6; }) : [];
+    const maxLead = jg.reduce(function (m, h) { return Math.max(m, jangguLead(h.name)); }, 0);
     const startAt = ctx.currentTime + 0.15 + maxLead;
-    // 시작 각부터 들을 때: 시간축 0초가 놓이는 오디오 시각(origin)을 t0만큼 앞으로 당긴다.
-    // 그러면 t0에 걸린 소리가 startAt에 울리고, 표식·오선보 짚기는 원래 시간축 그대로 맞는다.
-    const t0 = built.t0 || 0;
     const origin = startAt - t0;
-    const bus = makeOutBus(ctx);
+
     const master = ctx.createGain();
     // **소리 나는 파트 수로 나눈다.** 1/√N이 아니라 1/N인 것은 헤테로포니라 봉우리가 파트
     // 수에 정비례하기 때문이다(위 '출력 버스' 머리말 참고 — 실측으로 정확히 0.25×N이었다).
     master.gain.value = MELODY_PEAK / Math.max(1, built.voices || 1);
-    master.connect(bus);
+    master.connect(session);
 
-    events.forEach(function (e) {
+    built.events.forEach(function (e) {
       if (e.freq == null) return;
-      if (e.t + e.dur <= t0) return;   // 시작 각보다 앞서 끝나는 소리
+      if (e.t + e.dur <= t0) return;   // 시작 자리보다 앞서 끝나는 소리
       const osc = ctx.createOscillator();
       const g = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = e.freq;
-      // 시작 각에 걸쳐 있던 음(앞 각에서 이어지는 음)은 그 자리에서부터 울린다
+      // 시작 자리에 걸쳐 있던 음(앞에서 이어지는 음)은 그 자리에서부터 울린다
       const on = origin + Math.max(e.t, t0), off = origin + e.t + e.dur;
       const atk = Math.min(0.02, (off - on) * 0.3);
       const rel = Math.min(0.05, (off - on) * 0.3);
@@ -6796,34 +6826,61 @@
     // 장구 타점 — 녹음된 소리라 선율 master를 함께 타면 묻힌다(파트 수로 나뉘므로 더욱).
     // 그래서 master와 나란히, 그러나 **같은 버스로** 내보낸다 — destination에 직결하면
     // 소프트 클립을 우회해 장구만 잘린 채 울린다(음원 봉우리가 이미 0dBFS 가까이 차 있다).
-    let jangguEnd = 0;
-    if (bufs) {
-      built.janggu.forEach(function (h) {
-        const b = bufs[h.name];
-        if (!b) return;   // 아직 음원이 없는 구음(사전에만 있는 것)은 조용히 넘어간다
-        if (h.t < t0 - 1e-6) return;   // 시작 각보다 앞선 타점
-        const src = ctx.createBufferSource();
-        src.buffer = b;
-        const g = ctx.createGain();
-        g.gain.value = JANGGU_GAIN;
-        src.connect(g); g.connect(bus);
-        // 겹타는 음원을 박보다 먼저 시작해 본 타가 박에 떨어지게 한다(JANGGU_LEAD)
-        const at = h.t - jangguLead(h.name);
-        src.start(origin + at);
-        jangguEnd = Math.max(jangguEnd, at + b.duration);
-      });
-    }
+    jg.forEach(function (h) {
+      const b = bufs[h.name];
+      if (!b) return;   // 아직 음원이 없는 구음(사전에만 있는 것)은 조용히 넘어간다
+      const src = ctx.createBufferSource();
+      src.buffer = b;
+      const g = ctx.createGain();
+      g.gain.value = JANGGU_GAIN;
+      src.connect(g); g.connect(session);
+      // 겹타는 음원을 박보다 먼저 시작해 본 타가 박에 떨어지게 한다(JANGGU_LEAD)
+      src.start(origin + h.t - jangguLead(h.name));
+    });
 
-    playing = true; paused = false;
-    // 마지막 박에 친 장구는 선율이 끝난 뒤에도 울림이 남는다 — 그만큼 총 길이를 늘려
-    // 컨텍스트가 닫히며 소리가 뚝 끊기지 않게 한다(하이라이트는 마지막 정간에 머문다).
-    // 합주는 파트마다 이벤트가 섞여 마지막 원소가 끝이 아닐 수 있다 — built.total(가장 긴
-    // 파트의 끝)을 쓰고, 이벤트 최대치와 장구 울림으로 한 번 더 받친다.
-    const evEnd = events.reduce(function (m, e) { return Math.max(m, e.t + e.dur); }, 0);
-    const total = Math.max(built.total || 0, evEnd, jangguEnd);
-    playState = { startAt: origin, total: total, marks: marks, t0: t0 };
-    updatePlayButtons();
-    tick();
+    ps.startAt = origin; ps.t0 = t0;
+  }
+
+  // ----- 진행 막대 (#playSeek) -----
+  // 재생하는 동안만 악보 위에 서서 지난 시간 / 전체 길이 · 지금 각을 보이고, 끌어 놓으면
+  // 그 자리부터 이어 듣는다(seekTo → scheduleFrom). 끄는 동안은 tick이 막대를 덮어쓰지 않는다.
+  let seekDragging = false;
+  function fmtPlayTime(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+  function showSeekBar(on) {
+    const bar = $("playSeek");
+    if (!bar) return;
+    bar.hidden = !on;
+    document.body.classList.toggle("play-on", !!on);
+    if (on && playState) {
+      $("playSeekRange").max = String(playState.total);
+      $("playSeekTotal").textContent = fmtPlayTime(playState.total);
+    }
+  }
+  // 지금 자리(시간축 초)를 악보 하이라이트·오선보·진행 막대에 함께 비춘다
+  function showPlayPos(now) {
+    const spots = playState.marks.map(function (ms) {
+      if (!ms) return null;
+      for (let i = ms.length - 1; i >= 0; i--) if (now >= ms[i].t) return ms[i];
+      return null;
+    });
+    highlightPlay(spots);
+    // 오선보도 **같은 시계**를 본다(오선보 보기 절의 '재생 위치 짚기') — 칸이 닫혀 있거나
+    // 조판기로 안 그렸으면 그 안에서 조용히 아무 일도 안 한다.
+    staffPlayMark(now * 1000);
+    if (!$("playSeek")) return;
+    $("playSeekNow").textContent = fmtPlayTime(now);
+    const sp = spots.find(function (x) { return x; });
+    if (sp) $("playSeekGak").textContent = (sp.gak + 1) + "각";
+    if (!seekDragging) $("playSeekRange").value = String(now);
+  }
+  function seekTo(t) {
+    if (!playing || !playState || !audioCtx) return;
+    t = Math.max(0, Math.min(t, playState.total - 0.05));
+    scheduleFrom(t);
+    showPlayPos(t);   // 일시정지 중이면 tick이 안 돌므로 여기서 바로 비춘다
   }
 
   // ---------- 보기별 레이아웃 (총보/파트보 프로필) ----------
@@ -10346,6 +10403,17 @@
     if (!playing) playMelody(); else togglePause();
   });
   $("btnStop").addEventListener("click", stopPlayback);
+  // 진행 막대 — 끄는 동안은 시간 글자만 따라가고, 놓는 순간(change) 그 자리부터 이어 듣는다.
+  // 놓은 뒤 포커스를 떼야 스페이스바가 다시 재생·일시정지로 먹는다(입력칸이면 비켜서므로).
+  $("playSeekRange").addEventListener("input", function () {
+    seekDragging = true;
+    $("playSeekNow").textContent = fmtPlayTime(parseFloat($("playSeekRange").value) || 0);
+  });
+  $("playSeekRange").addEventListener("change", function () {
+    seekDragging = false;
+    seekTo(parseFloat($("playSeekRange").value) || 0);
+    $("playSeekRange").blur();
+  });
   // 스페이스바 = 재생 버튼과 같다: 멈춰 있으면 재생, 재생 중이면 일시정지 ↔ 이어하기.
   // (예전엔 재생 중에만 먹었는데 '스페이스로 재생도 시작하게' 해 달라는 제안이 있었다 — 2026-11-19
   // 문의·제안 게시판.) 글자를 치는 자리에서는 띄어쓰기라 비켜선다. 방금 누른 버튼에 포커스가
